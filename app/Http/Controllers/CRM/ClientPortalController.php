@@ -15,7 +15,17 @@ use App\Models\ActivitiesLog;
 use App\Models\CpDocChecklist;
 use App\Models\Document;
 use App\Models\ClientPortalDetailAudit;
+use App\Models\ClientAddress;
+use App\Models\ClientContact;
+use App\Models\ClientEmail;
+use App\Models\ClientExperience;
 use App\Models\ClientMatter;
+use App\Models\ClientOccupation;
+use App\Models\ClientPassportInformation;
+use App\Models\ClientQualification;
+use App\Models\ClientTestScore;
+use App\Models\ClientTravelInformation;
+use App\Models\ClientVisaCountry;
 use App\Models\Note;
 use App\Models\WorkflowStage;
 use App\Models\Message;
@@ -677,6 +687,2857 @@ class ClientPortalController extends Controller
         }
     }
 
+    /**
+     * Approve visa audit: save the audited visa to client_visa_countries and remove from clientportal_details_audit.
+     */
+    public function approveVisaAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $visaKeys = ['visa', 'visa_country', 'visa_type', 'visa_description', 'visa_expiry_date', 'visa_grant_date'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $visaKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending visa audit found for this row.'], 404);
+            }
+
+            $visaType = null;
+            $visaDescription = null;
+            $visaGrantDate = null;
+            $visaExpiryDate = null;
+            $existingVisaId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'visa' && $entry->meta_type !== null && $entry->meta_type !== '') {
+                    $existingVisaId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                }
+                switch ($entry->meta_key) {
+                    case 'visa_type':
+                        $visaType = $v;
+                        break;
+                    case 'visa_description':
+                        $visaDescription = $v;
+                        break;
+                    case 'visa_grant_date':
+                        $visaGrantDate = $this->parseVisaDate($v);
+                        break;
+                    case 'visa_expiry_date':
+                        $visaExpiryDate = $this->parseVisaDate($v);
+                        break;
+                }
+            }
+            if ($visaType === null) {
+                return response()->json(['success' => false, 'message' => 'Visa type is required.'], 422);
+            }
+
+            // meta_type can be a real client_visa_countries id (small integer) or a temp id for "create" (e.g. timestamp)
+            // PostgreSQL integer max is 2147483647; values above that cause "out of range" - treat as new visa only
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingVisaId !== null && $existingVisaId > 0 && $existingVisaId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientVisaCountry::where('id', $existingVisaId)->where('client_id', $clientId)->exists()) {
+                    ClientVisaCountry::where('id', $existingVisaId)->update([
+                        'visa_type' => $visaType,
+                        'visa_description' => $visaDescription,
+                        'visa_grant_date' => $visaGrantDate,
+                        'visa_expiry_date' => $visaExpiryDate,
+                    ]);
+                } else {
+                    ClientVisaCountry::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'visa_type' => $visaType,
+                        'visa_description' => $visaDescription,
+                        'visa_grant_date' => $visaGrantDate,
+                        'visa_expiry_date' => $visaExpiryDate,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Visa Information change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approveVisaAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your visa information update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'visa_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approveVisaAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Visa approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving visa: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject visa audit: remove the audited visa from clientportal_details_audit and notify client.
+     */
+    public function rejectVisaAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $visaKeys = ['visa', 'visa_country', 'visa_type', 'visa_description', 'visa_expiry_date', 'visa_grant_date'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $visaKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending visa audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Visa Information change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectVisaAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your visa information update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'visa_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectVisaAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Visa change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting visa: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve email audit: save to client_emails and remove from clientportal_details_audit.
+     */
+    public function approveEmailAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $emailKeys = ['email', 'email_type'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $emailKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending email audit found for this row.'], 404);
+            }
+
+            $emailAddress = null;
+            $emailType = null;
+            $existingEmailId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'email') {
+                    $emailAddress = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingEmailId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'email_type') {
+                    $emailType = $v;
+                }
+            }
+            if (empty($emailAddress)) {
+                return response()->json(['success' => false, 'message' => 'Email address is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingEmailId !== null && $existingEmailId > 0 && $existingEmailId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientEmail::where('id', $existingEmailId)->where('client_id', $clientId)->exists()) {
+                    ClientEmail::where('id', $existingEmailId)->update([
+                        'email' => $emailAddress,
+                        'email_type' => $emailType ?? 'Personal',
+                    ]);
+                } else {
+                    ClientEmail::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'email' => $emailAddress,
+                        'email_type' => $emailType ?? 'Personal',
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Email Address change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approveEmailAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your email address update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'email_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approveEmailAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Email approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving email: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject email audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectEmailAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $emailKeys = ['email', 'email_type'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $emailKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending email audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Email Address change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectEmailAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your email address update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'email_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectEmailAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Email change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting email: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve phone audit: save to client_contacts and remove from clientportal_details_audit.
+     */
+    public function approvePhoneAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $phoneKeys = ['phone', 'phone_type', 'phone_country_code', 'phone_extension'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $phoneKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending phone audit found for this row.'], 404);
+            }
+
+            $phoneNumber = null;
+            $contactType = null;
+            $countryCode = null;
+            $existingPhoneId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'phone') {
+                    $phoneNumber = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingPhoneId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'phone_type') {
+                    $contactType = $v;
+                } elseif ($entry->meta_key === 'phone_country_code') {
+                    $countryCode = $v;
+                }
+            }
+            if (empty($phoneNumber)) {
+                return response()->json(['success' => false, 'message' => 'Phone number is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingPhoneId !== null && $existingPhoneId > 0 && $existingPhoneId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientContact::where('id', $existingPhoneId)->where('client_id', $clientId)->exists()) {
+                    ClientContact::where('id', $existingPhoneId)->update([
+                        'phone' => $phoneNumber,
+                        'contact_type' => $contactType ?? 'Mobile',
+                        'country_code' => $countryCode,
+                    ]);
+                } else {
+                    ClientContact::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'phone' => $phoneNumber,
+                        'contact_type' => $contactType ?? 'Mobile',
+                        'country_code' => $countryCode,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Phone Number change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approvePhoneAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your phone number update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'phone_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approvePhoneAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Phone approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving phone: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject phone audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectPhoneAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $phoneKeys = ['phone', 'phone_type', 'phone_country_code', 'phone_extension'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $phoneKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending phone audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Phone Number change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectPhoneAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your phone number update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'phone_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectPhoneAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Phone change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting phone: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Parse visa date from audit (d/m/Y or Y-m-d) to Y-m-d for DB.
+     */
+    private function parseVisaDate($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+        try {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+                return \Carbon\Carbon::parse($value)->format('Y-m-d');
+            }
+            if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}/', $value)) {
+                return \Carbon\Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+            }
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Approve passport audit: save to client_passport_informations and remove from clientportal_details_audit.
+     */
+    public function approvePassportAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $passportKeys = ['passport', 'passport_country', 'passport_issue_date', 'passport_expiry_date'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $passportKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending passport audit found for this row.'], 404);
+            }
+
+            $passportNumber = null;
+            $passportCountry = null;
+            $passportIssueDate = null;
+            $passportExpiryDate = null;
+            $existingPassportId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'passport') {
+                    $passportNumber = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingPassportId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'passport_country') {
+                    $passportCountry = $v;
+                } elseif ($entry->meta_key === 'passport_issue_date') {
+                    $passportIssueDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'passport_expiry_date') {
+                    $passportExpiryDate = $this->parseVisaDate($v);
+                }
+            }
+            if (empty($passportNumber)) {
+                return response()->json(['success' => false, 'message' => 'Passport number is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingPassportId !== null && $existingPassportId > 0 && $existingPassportId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientPassportInformation::where('id', $existingPassportId)->where('client_id', $clientId)->exists()) {
+                    ClientPassportInformation::where('id', $existingPassportId)->update([
+                        'passport' => $passportNumber,
+                        'passport_country' => $passportCountry,
+                        'passport_issue_date' => $passportIssueDate,
+                        'passport_expiry_date' => $passportExpiryDate,
+                    ]);
+                } else {
+                    ClientPassportInformation::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'passport' => $passportNumber,
+                        'passport_country' => $passportCountry,
+                        'passport_issue_date' => $passportIssueDate,
+                        'passport_expiry_date' => $passportExpiryDate,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Passport Information change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approvePassportAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your passport information update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'passport_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approvePassportAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Passport approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving passport: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject passport audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectPassportAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $passportKeys = ['passport', 'passport_country', 'passport_issue_date', 'passport_expiry_date'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $passportKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending passport audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Passport Information change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectPassportAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your passport information update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'passport_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectPassportAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Passport change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting passport: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve qualification audit: save to client_qualifications and remove from clientportal_details_audit.
+     */
+    public function approveQualificationAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $qualificationKeys = ['qualification', 'qualification_level', 'qualification_name', 'qualification_college_name', 'qualification_campus', 'qualification_country', 'qualification_state', 'qualification_start_date', 'qualification_finish_date', 'qualification_relevant', 'qualification_specialist_education', 'qualification_stem', 'qualification_regional_study'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $qualificationKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending qualification audit found for this row.'], 404);
+            }
+
+            $level = null;
+            $name = null;
+            $collegeName = null;
+            $campus = null;
+            $country = null;
+            $state = null;
+            $startDate = null;
+            $finishDate = null;
+            $relevant = false;
+            $existingQualificationId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'qualification_level') {
+                    $level = $v;
+                } elseif ($entry->meta_key === 'qualification_name') {
+                    $name = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingQualificationId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'qualification_college_name') {
+                    $collegeName = $v;
+                } elseif ($entry->meta_key === 'qualification_campus') {
+                    $campus = $v;
+                } elseif ($entry->meta_key === 'qualification_country') {
+                    $country = $v;
+                } elseif ($entry->meta_key === 'qualification_state') {
+                    $state = $v;
+                } elseif ($entry->meta_key === 'qualification_start_date') {
+                    $startDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'qualification_finish_date') {
+                    $finishDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'qualification_relevant') {
+                    $relevant = ($v == '1' || $v == 1);
+                }
+            }
+            if (empty($level) && empty($name)) {
+                return response()->json(['success' => false, 'message' => 'Level or name is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingQualificationId !== null && $existingQualificationId > 0 && $existingQualificationId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientQualification::where('id', $existingQualificationId)->where('client_id', $clientId)->exists()) {
+                    ClientQualification::where('id', $existingQualificationId)->update([
+                        'level' => $level,
+                        'name' => $name,
+                        'qual_college_name' => $collegeName,
+                        'qual_campus' => $campus,
+                        'country' => $country,
+                        'qual_state' => $state,
+                        'start_date' => $startDate,
+                        'finish_date' => $finishDate,
+                        'relevant_qualification' => $relevant ? 1 : 0,
+                    ]);
+                } else {
+                    ClientQualification::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'level' => $level,
+                        'name' => $name,
+                        'qual_college_name' => $collegeName,
+                        'qual_campus' => $campus,
+                        'country' => $country,
+                        'qual_state' => $state,
+                        'start_date' => $startDate,
+                        'finish_date' => $finishDate,
+                        'relevant_qualification' => $relevant ? 1 : 0,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Educational Qualification change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approveQualificationAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your educational qualification update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'qualification_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approveQualificationAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Qualification approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving qualification: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject qualification audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectQualificationAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $qualificationKeys = ['qualification', 'qualification_level', 'qualification_name', 'qualification_college_name', 'qualification_campus', 'qualification_country', 'qualification_state', 'qualification_start_date', 'qualification_finish_date', 'qualification_relevant', 'qualification_specialist_education', 'qualification_stem', 'qualification_regional_study'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $qualificationKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending qualification audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Educational Qualification change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectQualificationAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your educational qualification update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'qualification_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectQualificationAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Qualification change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting qualification: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve experience audit: save to client_experiences and remove from clientportal_details_audit.
+     */
+    public function approveExperienceAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $experienceKeys = ['experience', 'experience_job_title', 'experience_job_code', 'experience_country', 'experience_start_date', 'experience_finish_date', 'experience_relevant', 'experience_employer_name', 'experience_state', 'experience_job_type', 'experience_fte_multiplier'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $experienceKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending experience audit found for this row.'], 404);
+            }
+
+            $jobTitle = null;
+            $jobCode = null;
+            $country = null;
+            $startDate = null;
+            $finishDate = null;
+            $relevant = false;
+            $employerName = null;
+            $state = null;
+            $jobType = null;
+            $fteMultiplier = null;
+            $existingExperienceId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'experience_job_title') {
+                    $jobTitle = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingExperienceId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'experience_job_code') {
+                    $jobCode = $v;
+                } elseif ($entry->meta_key === 'experience_country') {
+                    $country = $v;
+                } elseif ($entry->meta_key === 'experience_start_date') {
+                    $startDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'experience_finish_date') {
+                    $finishDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'experience_relevant') {
+                    $relevant = ($v == '1' || $v == 1);
+                } elseif ($entry->meta_key === 'experience_employer_name') {
+                    $employerName = $v;
+                } elseif ($entry->meta_key === 'experience_state') {
+                    $state = $v;
+                } elseif ($entry->meta_key === 'experience_job_type') {
+                    $jobType = $v;
+                } elseif ($entry->meta_key === 'experience_fte_multiplier') {
+                    $fteMultiplier = $v !== null && $v !== '' ? (float) $v : null;
+                }
+            }
+            if (empty($jobTitle)) {
+                return response()->json(['success' => false, 'message' => 'Job title is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingExperienceId !== null && $existingExperienceId > 0 && $existingExperienceId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientExperience::where('id', $existingExperienceId)->where('client_id', $clientId)->exists()) {
+                    ClientExperience::where('id', $existingExperienceId)->update([
+                        'job_title' => $jobTitle,
+                        'job_code' => $jobCode,
+                        'job_country' => $country,
+                        'job_start_date' => $startDate,
+                        'job_finish_date' => $finishDate,
+                        'relevant_experience' => $relevant ? 1 : 0,
+                        'job_emp_name' => $employerName,
+                        'job_state' => $state,
+                        'job_type' => $jobType,
+                        'fte_multiplier' => $fteMultiplier,
+                    ]);
+                } else {
+                    ClientExperience::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'job_title' => $jobTitle,
+                        'job_code' => $jobCode,
+                        'job_country' => $country,
+                        'job_start_date' => $startDate,
+                        'job_finish_date' => $finishDate,
+                        'relevant_experience' => $relevant ? 1 : 0,
+                        'job_emp_name' => $employerName,
+                        'job_state' => $state,
+                        'job_type' => $jobType,
+                        'fte_multiplier' => $fteMultiplier,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Work Experience change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approveExperienceAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your work experience update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'experience_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approveExperienceAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Experience approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving experience: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject experience audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectExperienceAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $experienceKeys = ['experience', 'experience_job_title', 'experience_job_code', 'experience_country', 'experience_start_date', 'experience_finish_date', 'experience_relevant', 'experience_employer_name', 'experience_state', 'experience_job_type', 'experience_fte_multiplier'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $experienceKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending experience audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Work Experience change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectExperienceAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your work experience update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'experience_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectExperienceAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Experience change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting experience: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve occupation audit: save to client_occupations and remove from clientportal_details_audit.
+     */
+    public function approveOccupationAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $occupationKeys = ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $occupationKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending occupation audit found for this row.'], 404);
+            }
+
+            $skillAssessment = null;
+            $nominatedOccupation = null;
+            $occupationCode = null;
+            $assessingAuthority = null;
+            $visaSubclass = null;
+            $assessmentDate = null;
+            $expiryDate = null;
+            $referenceNo = null;
+            $relevant = false;
+            $anzscoId = null;
+            $existingOccupationId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'occupation_skill_assessment') {
+                    $skillAssessment = $v;
+                } elseif ($entry->meta_key === 'occupation_nominated') {
+                    $nominatedOccupation = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingOccupationId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'occupation_code') {
+                    $occupationCode = $v;
+                } elseif ($entry->meta_key === 'occupation_assessing_authority') {
+                    $assessingAuthority = $v;
+                } elseif ($entry->meta_key === 'occupation_visa_subclass') {
+                    $visaSubclass = $v;
+                } elseif ($entry->meta_key === 'occupation_assessment_date') {
+                    $assessmentDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'occupation_expiry_date') {
+                    $expiryDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'occupation_reference_no') {
+                    $referenceNo = $v;
+                } elseif ($entry->meta_key === 'occupation_relevant') {
+                    $relevant = ($v == '1' || $v == 1);
+                } elseif ($entry->meta_key === 'occupation_anzsco_id') {
+                    $anzscoId = $v !== null && $v !== '' ? (int) $v : null;
+                }
+            }
+            if (empty($nominatedOccupation) && empty($occupationCode)) {
+                return response()->json(['success' => false, 'message' => 'Occupation or code is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingOccupationId !== null && $existingOccupationId > 0 && $existingOccupationId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientOccupation::where('id', $existingOccupationId)->where('client_id', $clientId)->exists()) {
+                    ClientOccupation::where('id', $existingOccupationId)->update([
+                        'skill_assessment' => $skillAssessment,
+                        'nomi_occupation' => $nominatedOccupation,
+                        'occupation_code' => $occupationCode,
+                        'list' => $assessingAuthority,
+                        'visa_subclass' => $visaSubclass,
+                        'dates' => $assessmentDate,
+                        'expiry_dates' => $expiryDate,
+                        'occ_reference_no' => $referenceNo,
+                        'relevant_occupation' => $relevant ? 1 : 0,
+                        'anzsco_occupation_id' => $anzscoId,
+                    ]);
+                } else {
+                    ClientOccupation::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'skill_assessment' => $skillAssessment,
+                        'nomi_occupation' => $nominatedOccupation,
+                        'occupation_code' => $occupationCode,
+                        'list' => $assessingAuthority,
+                        'visa_subclass' => $visaSubclass,
+                        'dates' => $assessmentDate,
+                        'expiry_dates' => $expiryDate,
+                        'occ_reference_no' => $referenceNo,
+                        'relevant_occupation' => $relevant ? 1 : 0,
+                        'anzsco_occupation_id' => $anzscoId,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Occupation change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approveOccupationAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your occupation update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'occupation_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approveOccupationAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Occupation approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving occupation: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject occupation audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectOccupationAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $occupationKeys = ['occupation', 'occupation_skill_assessment', 'occupation_nominated', 'occupation_code', 'occupation_assessing_authority', 'occupation_visa_subclass', 'occupation_assessment_date', 'occupation_expiry_date', 'occupation_reference_no', 'occupation_relevant', 'occupation_anzsco_id'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $occupationKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending occupation audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Occupation change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectOccupationAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your occupation update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'occupation_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectOccupationAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Occupation change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting occupation: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve test score audit: save to client_testscore and remove from clientportal_details_audit.
+     */
+    public function approveTestScoreAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $testScoreKeys = ['test_score', 'test_score_test_type', 'test_score_listening', 'test_score_reading', 'test_score_writing', 'test_score_speaking', 'test_score_overall_score', 'test_score_test_date', 'test_score_reference_no', 'test_score_relevant'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $testScoreKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending test score audit found for this row.'], 404);
+            }
+
+            $testType = null;
+            $listening = null;
+            $reading = null;
+            $writing = null;
+            $speaking = null;
+            $overallScore = null;
+            $testDate = null;
+            $referenceNo = null;
+            $relevant = false;
+            $existingTestScoreId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'test_score_test_type') {
+                    $testType = $v;
+                    if ($entry->meta_type !== null && $entry->meta_type !== '') {
+                        $existingTestScoreId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                    }
+                } elseif ($entry->meta_key === 'test_score_listening') {
+                    $listening = $v !== null && $v !== '' ? (float) $v : null;
+                } elseif ($entry->meta_key === 'test_score_reading') {
+                    $reading = $v !== null && $v !== '' ? (float) $v : null;
+                } elseif ($entry->meta_key === 'test_score_writing') {
+                    $writing = $v !== null && $v !== '' ? (float) $v : null;
+                } elseif ($entry->meta_key === 'test_score_speaking') {
+                    $speaking = $v !== null && $v !== '' ? (float) $v : null;
+                } elseif ($entry->meta_key === 'test_score_overall_score') {
+                    $overallScore = $v !== null && $v !== '' ? (float) $v : null;
+                } elseif ($entry->meta_key === 'test_score_test_date') {
+                    $testDate = $this->parseVisaDate($v);
+                } elseif ($entry->meta_key === 'test_score_reference_no') {
+                    $referenceNo = $v;
+                } elseif ($entry->meta_key === 'test_score_relevant') {
+                    $relevant = ($v == '1' || $v == 1);
+                }
+            }
+            if (empty($testType)) {
+                return response()->json(['success' => false, 'message' => 'Test type is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingTestScoreId !== null && $existingTestScoreId > 0 && $existingTestScoreId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientTestScore::where('id', $existingTestScoreId)->where('client_id', $clientId)->exists()) {
+                    ClientTestScore::where('id', $existingTestScoreId)->update([
+                        'test_type' => $testType,
+                        'listening' => $listening,
+                        'reading' => $reading,
+                        'writing' => $writing,
+                        'speaking' => $speaking,
+                        'overall_score' => $overallScore,
+                        'test_date' => $testDate,
+                        'test_reference_no' => $referenceNo,
+                        'relevant_test' => $relevant ? 1 : 0,
+                    ]);
+                } else {
+                    ClientTestScore::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'test_type' => $testType,
+                        'listening' => $listening,
+                        'reading' => $reading,
+                        'writing' => $writing,
+                        'speaking' => $speaking,
+                        'overall_score' => $overallScore,
+                        'test_date' => $testDate,
+                        'test_reference_no' => $referenceNo,
+                        'relevant_test' => $relevant ? 1 : 0,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Test Score change was approved by Admin.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('approveTestScoreAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' approved your test score update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'test_score_detail_approved',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('approveTestScoreAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Test score approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving test score: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject test score audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectTestScoreAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $testScoreKeys = ['test_score', 'test_score_test_type', 'test_score_listening', 'test_score_reading', 'test_score_writing', 'test_score_speaking', 'test_score_overall_score', 'test_score_test_date', 'test_score_reference_no', 'test_score_relevant'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $testScoreKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending test score audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $sender = Auth::guard('admin')->user();
+                $senderId = $sender ? $sender->id : null;
+                $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+                $message = 'Your Test Score change was rejected by Admin. Please try again.';
+                $messageData = [
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now(),
+                    'client_matter_id' => $clientMatterId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                $messageId = DB::table('messages')->insertGetId($messageData);
+                if ($messageId) {
+                    MessageRecipient::insert([
+                        'message_id' => $messageId,
+                        'recipient_id' => $clientId,
+                        'recipient' => $client->first_name . ' ' . $client->last_name,
+                        'is_read' => false,
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    if (class_exists('\App\Events\MessageSent')) {
+                        $messageForBroadcast = [
+                            'id' => $messageId,
+                            'message' => $message,
+                            'sender' => $senderName,
+                            'sender_name' => $senderName,
+                            'sender_id' => $senderId,
+                            'sent_at' => now()->toISOString(),
+                            'created_at' => now()->toISOString(),
+                            'client_matter_id' => $clientMatterId,
+                            'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                        ];
+                        try {
+                            broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                        } catch (\Exception $e) {
+                            Log::warning('rejectTestScoreAudit broadcast failed', ['error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+                $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+                $actionMessage = ($senderName ?: 'Admin') . ' rejected your test score update in ' . $matterNo . '.';
+                DB::table('notifications')->insert([
+                    'sender_id' => $senderId,
+                    'receiver_id' => $clientId,
+                    'module_id' => $clientMatterId,
+                    'url' => '/details',
+                    'notification_type' => 'test_score_detail_rejected',
+                    'message' => $actionMessage,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'sender_status' => 1,
+                    'receiver_status' => 0,
+                    'seen' => 0,
+                ]);
+                try {
+                    $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+                    broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+                } catch (\Exception $e) {
+                    Log::warning('rejectTestScoreAudit NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+                }
+                $clientMatterModel = ClientMatter::find($clientMatterId);
+                if ($clientMatterModel) {
+                    $this->createClientPortalAction($clientMatterModel, $actionMessage);
+                }
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Test score change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error rejecting test score: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve address audit: save to client_addresses and remove from clientportal_details_audit.
+     */
+    public function approveAddressAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $addressKeys = ['address', 'address_line_1', 'address_line_2', 'address_suburb', 'address_state', 'address_postcode', 'address_country', 'address_regional_code', 'address_start_date', 'address_end_date', 'address_is_current'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $addressKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending address audit found for this row.'], 404);
+            }
+
+            $address = null;
+            $addressLine1 = null;
+            $addressLine2 = null;
+            $suburb = null;
+            $state = null;
+            $postcode = null;
+            $country = null;
+            $regionalCode = null;
+            $startDate = null;
+            $endDate = null;
+            $isCurrent = false;
+            $existingAddressId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'address_line_1' && $entry->meta_type !== null && $entry->meta_type !== '') {
+                    $existingAddressId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                }
+                switch ($entry->meta_key) {
+                    case 'address':
+                        $address = $v;
+                        break;
+                    case 'address_line_1':
+                        $addressLine1 = $v;
+                        break;
+                    case 'address_line_2':
+                        $addressLine2 = $v;
+                        break;
+                    case 'address_suburb':
+                        $suburb = $v;
+                        break;
+                    case 'address_state':
+                        $state = $v;
+                        break;
+                    case 'address_postcode':
+                        $postcode = $v;
+                        break;
+                    case 'address_country':
+                        $country = $v;
+                        break;
+                    case 'address_regional_code':
+                        $regionalCode = $v;
+                        break;
+                    case 'address_start_date':
+                        $startDate = $this->parseVisaDate($v);
+                        break;
+                    case 'address_end_date':
+                        $endDate = $this->parseVisaDate($v);
+                        break;
+                    case 'address_is_current':
+                        $isCurrent = ($v == '1' || $v === 1);
+                        break;
+                }
+            }
+            if (empty($addressLine1) && empty($address)) {
+                return response()->json(['success' => false, 'message' => 'Address line 1 or address is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingAddressId !== null && $existingAddressId > 0 && $existingAddressId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientAddress::where('id', $existingAddressId)->where('client_id', $clientId)->exists()) {
+                    ClientAddress::where('id', $existingAddressId)->update([
+                        'address' => $address,
+                        'address_line_1' => $addressLine1,
+                        'address_line_2' => $addressLine2,
+                        'suburb' => $suburb,
+                        'state' => $state,
+                        'zip' => $postcode,
+                        'country' => $country,
+                        'regional_code' => $regionalCode,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'is_current' => $isCurrent ? 1 : 0,
+                    ]);
+                } else {
+                    ClientAddress::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'address' => $address,
+                        'address_line_1' => $addressLine1,
+                        'address_line_2' => $addressLine2,
+                        'suburb' => $suburb,
+                        'state' => $state,
+                        'zip' => $postcode,
+                        'country' => $country,
+                        'regional_code' => $regionalCode,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'is_current' => $isCurrent ? 1 : 0,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $this->sendApprovalMessageAndNotify($client, $clientMatterId, 'Address Information', $clientId);
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Address approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error approving address: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reject address audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectAddressAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $addressKeys = ['address', 'address_line_1', 'address_line_2', 'address_suburb', 'address_state', 'address_postcode', 'address_country', 'address_regional_code', 'address_start_date', 'address_end_date', 'address_is_current'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $addressKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending address audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $this->sendRejectionMessageAndNotify($client, $clientMatterId, 'Address Information', $clientId);
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Address change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error rejecting address: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Approve travel audit: save to client_travel_informations and remove from clientportal_details_audit.
+     */
+    public function approveTravelAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $travelKeys = ['travel', 'travel_country_visited', 'travel_arrival_date', 'travel_departure_date', 'travel_purpose'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $travelKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending travel audit found for this row.'], 404);
+            }
+
+            $countryVisited = null;
+            $arrivalDate = null;
+            $departureDate = null;
+            $purpose = null;
+            $existingTravelId = null;
+            foreach ($auditEntries as $entry) {
+                $v = $entry->new_value;
+                if ($entry->meta_key === 'travel_country_visited' && $entry->meta_type !== null && $entry->meta_type !== '') {
+                    $existingTravelId = is_numeric($entry->meta_type) ? (int) $entry->meta_type : null;
+                }
+                switch ($entry->meta_key) {
+                    case 'travel_country_visited':
+                        $countryVisited = $v;
+                        break;
+                    case 'travel_arrival_date':
+                        $arrivalDate = $this->parseVisaDate($v);
+                        break;
+                    case 'travel_departure_date':
+                        $departureDate = $this->parseVisaDate($v);
+                        break;
+                    case 'travel_purpose':
+                        $purpose = $v;
+                        break;
+                }
+            }
+            if (empty($countryVisited)) {
+                return response()->json(['success' => false, 'message' => 'Country visited is required.'], 422);
+            }
+
+            $maxValidId = 2147483647;
+            $isValidExistingId = $existingTravelId !== null && $existingTravelId > 0 && $existingTravelId <= $maxValidId;
+
+            DB::beginTransaction();
+            try {
+                if ($isValidExistingId && ClientTravelInformation::where('id', $existingTravelId)->where('client_id', $clientId)->exists()) {
+                    ClientTravelInformation::where('id', $existingTravelId)->update([
+                        'travel_country_visited' => $countryVisited,
+                        'travel_arrival_date' => $arrivalDate,
+                        'travel_departure_date' => $departureDate,
+                        'travel_purpose' => $purpose,
+                    ]);
+                } else {
+                    ClientTravelInformation::create([
+                        'client_id' => $clientId,
+                        'admin_id' => $clientId,
+                        'travel_country_visited' => $countryVisited,
+                        'travel_arrival_date' => $arrivalDate,
+                        'travel_departure_date' => $departureDate,
+                        'travel_purpose' => $purpose,
+                    ]);
+                }
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $this->sendApprovalMessageAndNotify($client, $clientMatterId, 'Travel Information', $clientId);
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Travel approved and saved. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error approving travel: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reject travel audit: remove from clientportal_details_audit and notify client.
+     */
+    public function rejectTravelAudit(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|integer',
+                'client_matter_id' => 'required|integer',
+                'meta_order' => 'required|integer',
+            ]);
+            $clientId = (int) $request->client_id;
+            $clientMatterId = (int) $request->client_matter_id;
+            $metaOrder = (int) $request->meta_order;
+
+            $client = Admin::whereIn('type', ['client', 'lead'])->find($clientId);
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found'], 404);
+            }
+
+            $travelKeys = ['travel', 'travel_country_visited', 'travel_arrival_date', 'travel_departure_date', 'travel_purpose'];
+            $auditEntries = ClientPortalDetailAudit::where('client_id', $clientId)
+                ->where('meta_order', $metaOrder)
+                ->whereIn('meta_key', $travelKeys)
+                ->get();
+
+            if ($auditEntries->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending travel audit found for this row.'], 404);
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($auditEntries as $e) {
+                    $e->delete();
+                }
+                $this->sendRejectionMessageAndNotify($client, $clientMatterId, 'Travel Information', $clientId);
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Travel change rejected. Message sent to client.']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error rejecting travel: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Send approval message and notification (shared for address/travel to avoid duplication).
+     */
+    private function sendApprovalMessageAndNotify($client, $clientMatterId, $sectionName, $clientId)
+    {
+        $sender = Auth::guard('admin')->user();
+        $senderId = $sender ? $sender->id : null;
+        $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+        $message = 'Your ' . $sectionName . ' change was approved by Admin.';
+        $messageData = [
+            'message' => $message,
+            'sender' => $senderName,
+            'sender_id' => $senderId,
+            'sent_at' => now(),
+            'client_matter_id' => $clientMatterId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        $messageId = DB::table('messages')->insertGetId($messageData);
+        if ($messageId) {
+            MessageRecipient::insert([
+                'message_id' => $messageId,
+                'recipient_id' => $clientId,
+                'recipient' => $client->first_name . ' ' . $client->last_name,
+                'is_read' => false,
+                'read_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            if (class_exists('\App\Events\MessageSent')) {
+                $messageForBroadcast = [
+                    'id' => $messageId,
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_name' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now()->toISOString(),
+                    'created_at' => now()->toISOString(),
+                    'client_matter_id' => $clientMatterId,
+                    'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                ];
+                try {
+                    broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                } catch (\Exception $e) {
+                    Log::warning('sendApprovalMessageAndNotify broadcast failed', ['error' => $e->getMessage()]);
+                }
+            }
+        }
+        $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+        $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+        $actionMessage = ($senderName ?: 'Admin') . ' approved your ' . strtolower($sectionName) . ' update in ' . $matterNo . '.';
+        DB::table('notifications')->insert([
+            'sender_id' => $senderId,
+            'receiver_id' => $clientId,
+            'module_id' => $clientMatterId,
+            'url' => '/details',
+            'notification_type' => 'detail_approved',
+            'message' => $actionMessage,
+            'created_at' => now(),
+            'updated_at' => now(),
+            'sender_status' => 1,
+            'receiver_status' => 0,
+            'seen' => 0,
+        ]);
+        try {
+            $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+            broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+        } catch (\Exception $e) {
+            Log::warning('sendApprovalMessageAndNotify NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+        }
+        $clientMatterModel = ClientMatter::find($clientMatterId);
+        if ($clientMatterModel) {
+            $this->createClientPortalAction($clientMatterModel, $actionMessage);
+        }
+    }
+
+    /**
+     * Send rejection message and notification (shared for address/travel).
+     */
+    private function sendRejectionMessageAndNotify($client, $clientMatterId, $sectionName, $clientId)
+    {
+        $sender = Auth::guard('admin')->user();
+        $senderId = $sender ? $sender->id : null;
+        $senderName = $sender ? ($sender->first_name . ' ' . $sender->last_name) : 'Admin';
+        $message = 'Your ' . $sectionName . ' change was rejected by Admin. Please try again.';
+        $messageData = [
+            'message' => $message,
+            'sender' => $senderName,
+            'sender_id' => $senderId,
+            'sent_at' => now(),
+            'client_matter_id' => $clientMatterId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        $messageId = DB::table('messages')->insertGetId($messageData);
+        if ($messageId) {
+            MessageRecipient::insert([
+                'message_id' => $messageId,
+                'recipient_id' => $clientId,
+                'recipient' => $client->first_name . ' ' . $client->last_name,
+                'is_read' => false,
+                'read_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            if (class_exists('\App\Events\MessageSent')) {
+                $messageForBroadcast = [
+                    'id' => $messageId,
+                    'message' => $message,
+                    'sender' => $senderName,
+                    'sender_name' => $senderName,
+                    'sender_id' => $senderId,
+                    'sent_at' => now()->toISOString(),
+                    'created_at' => now()->toISOString(),
+                    'client_matter_id' => $clientMatterId,
+                    'recipients' => [['recipient_id' => $clientId, 'recipient' => $client->first_name . ' ' . $client->last_name]],
+                ];
+                try {
+                    broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
+                } catch (\Exception $e) {
+                    Log::warning('sendRejectionMessageAndNotify broadcast failed', ['error' => $e->getMessage()]);
+                }
+            }
+        }
+        $clientMatter = DB::table('client_matters')->where('id', $clientMatterId)->first();
+        $matterNo = $clientMatter ? ($clientMatter->client_unique_matter_no ?? 'ID:' . $clientMatterId) : 'ID:' . $clientMatterId;
+        $actionMessage = ($senderName ?: 'Admin') . ' rejected your ' . strtolower($sectionName) . ' update in ' . $matterNo . '.';
+        DB::table('notifications')->insert([
+            'sender_id' => $senderId,
+            'receiver_id' => $clientId,
+            'module_id' => $clientMatterId,
+            'url' => '/details',
+            'notification_type' => 'detail_rejected',
+            'message' => $actionMessage,
+            'created_at' => now(),
+            'updated_at' => now(),
+            'sender_status' => 1,
+            'receiver_status' => 0,
+            'seen' => 0,
+        ]);
+        try {
+            $clientCount = (int) DB::table('notifications')->where('receiver_id', $clientId)->where('receiver_status', 0)->count();
+            broadcast(new \App\Events\NotificationCountUpdated($clientId, $clientCount, $actionMessage, '/details'));
+        } catch (\Exception $e) {
+            Log::warning('sendRejectionMessageAndNotify NotificationCountUpdated failed', ['error' => $e->getMessage()]);
+        }
+        $clientMatterModel = ClientMatter::find($clientMatterId);
+        if ($clientMatterModel) {
+            $this->createClientPortalAction($clientMatterModel, $actionMessage);
+        }
+    }
+
 	//Load Application Insert Update Data
 		public function loadMatterUpsert(Request $request){
 		$clientId = $request->client_id;
@@ -713,7 +3574,21 @@ class ClientPortalController extends Controller
 			return response('<div class="p-4 text-danger">Client not found.</div>', 404);
 		}
 		$id1 = $clientMatter->client_unique_matter_no;
-		return view('crm.clients.tabs.client_portal', compact('fetchedData', 'id1'));
+		$clientId = $fetchedData->id;
+		$clientContacts = ClientContact::where('client_id', $clientId)->orderBy('id')->get();
+		$emails = ClientEmail::where('client_id', $clientId)->get();
+		$clientAddresses = ClientAddress::where('client_id', $clientId)->orderBy('created_at', 'desc')->get();
+		$clientPassports = ClientPassportInformation::where('client_id', $clientId)->orderBy('id')->get();
+		$visaCountries = ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id')->get();
+		$clientTravels = ClientTravelInformation::where('client_id', $clientId)->orderBy('id')->get();
+		$qualifications = ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date DESC NULLS LAST')->get();
+		$experiences = ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date DESC NULLS LAST')->get();
+		$clientOccupations = ClientOccupation::where('client_id', $clientId)->get();
+		$testScores = ClientTestScore::where('client_id', $clientId)->get();
+		return view('crm.clients.tabs.client_portal', compact(
+			'fetchedData', 'id1', 'clientContacts', 'emails', 'clientAddresses', 'clientPassports',
+			'visaCountries', 'clientTravels', 'qualifications', 'experiences', 'clientOccupations', 'testScores'
+		));
 	}
 
 	public function completestage(Request $request){

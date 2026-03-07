@@ -1173,7 +1173,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without phone
+        // Convert to indexed array and filter out entries without phone; add meta_order for approve/reject
         $phones = [];
         foreach ($phoneData as $order => $phone) {
             // Include phone if it has at least phone number
@@ -1181,6 +1181,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 // Determine primary phone (Personal type first)
                 $phoneType = strtolower($phone['type'] ?? '');
                 $phone['is_primary'] = ($phoneType === 'personal') ? true : false;
+                $phone['meta_order'] = $order;
                 $phones[] = $phone;
             }
         }
@@ -1490,7 +1491,7 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without email
+        // Convert to indexed array and filter out entries without email; add meta_order for approve/reject
         $emails = [];
         foreach ($emailData as $order => $email) {
             // Include email if it has at least email address
@@ -1498,6 +1499,7 @@ class ClientPortalPersonalDetailsController extends Controller
                 // Determine primary email (Personal type first)
                 $emailType = strtolower($email['type'] ?? '');
                 $email['is_primary'] = ($emailType === 'personal') ? true : false;
+                $email['meta_order'] = $order;
                 $emails[] = $email;
             }
         }
@@ -1791,10 +1793,11 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without passport_number
+        // Convert to indexed array and filter out entries without passport_number; include meta_order for approve/reject
         $passports = [];
         foreach ($passportData as $order => $passport) {
             if (!empty($passport['passport_number'])) {
+                $passport['meta_order'] = $order;
                 $passports[] = $passport;
             }
         }
@@ -1803,6 +1806,62 @@ class ClientPortalPersonalDetailsController extends Controller
             'passports' => $passports,
             'actions' => $actionMap
         ];
+    }
+
+    /**
+     * Public entry point for CRM client portal: returns passports merged from
+     * client_passport_informations and clientportal_details_audit (same logic as getPassportsData).
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedPassportsForClient($clientId)
+    {
+        return $this->getPassportsData($clientId);
+    }
+
+    /**
+     * Get merged qualifications for client (source + audit) for CRM Details tab.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedQualificationsForClient($clientId)
+    {
+        return $this->getQualificationsData($clientId);
+    }
+
+    /**
+     * Get merged experiences for client (source + audit) for CRM Details tab.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedExperiencesForClient($clientId)
+    {
+        return $this->getExperiencesData($clientId);
+    }
+
+    /**
+     * Get merged occupations for client (source + audit) for CRM Details tab.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedOccupationsForClient($clientId)
+    {
+        return $this->getOccupationsData($clientId);
+    }
+
+    /**
+     * Get merged test scores for client (source + audit) for CRM Details tab.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedTestScoresForClient($clientId)
+    {
+        return $this->getTestScoresData($clientId);
     }
 
     /**
@@ -1872,6 +1931,40 @@ class ClientPortalPersonalDetailsController extends Controller
      * @param int $clientId
      * @return array
      */
+    /**
+     * Public entry point for CRM client portal: returns visas merged from
+     * client_visa_countries and clientportal_details_audit (same logic as getVisasData).
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedVisasForClient($clientId)
+    {
+        return $this->getVisasData($clientId);
+    }
+
+    /**
+     * Get merged emails for client (source + audit) for CRM Details tab.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedEmailsForClient($clientId)
+    {
+        return $this->getEmailsData($clientId);
+    }
+
+    /**
+     * Get merged phones for client (source + audit) for CRM Details tab.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedPhonesForClient($clientId)
+    {
+        return $this->getPhonesData($clientId);
+    }
+
     private function getVisasData($clientId)
     {
         // Get all visas from source table
@@ -2117,10 +2210,11 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without visa_type
+        // Convert to indexed array and filter out entries without visa_type; include meta_order for approve/reject
         $visas = [];
         foreach ($visaData as $order => $visa) {
             if (!empty($visa['visa_type'])) {
+                $visa['meta_order'] = $order;
                 $visas[] = $visa;
             }
         }
@@ -2433,11 +2527,12 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least search_address or address_line_1
+        // Convert to indexed array and filter out entries without at least search_address or address_line_1; include meta_order for approve/reject
         $addresses = [];
         foreach ($addressData as $order => $address) {
             // Include address if it has at least search_address or address_line_1
             if (!empty($address['search_address']) || !empty($address['address_line_1'])) {
+                $address['meta_order'] = $order;
                 $addresses[] = $address;
             }
         }
@@ -2446,6 +2541,18 @@ class ClientPortalPersonalDetailsController extends Controller
             'addresses' => $addresses,
             'actions' => $actionMap
         ];
+    }
+
+    /**
+     * Public entry point for CRM client portal: returns addresses merged from
+     * client_addresses and clientportal_details_audit.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedAddressesForClient($clientId)
+    {
+        return $this->getAddressesData($clientId);
     }
 
     /**
@@ -2729,11 +2836,12 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least country_visited
+        // Convert to indexed array and filter out entries without at least country_visited; include meta_order for approve/reject
         $travels = [];
         foreach ($travelData as $order => $travel) {
             // Include travel if it has country_visited
             if (!empty($travel['country_visited'])) {
+                $travel['meta_order'] = $order;
                 $travels[] = $travel;
             }
         }
@@ -2742,6 +2850,18 @@ class ClientPortalPersonalDetailsController extends Controller
             'travels' => $travels,
             'actions' => $actionMap
         ];
+    }
+
+    /**
+     * Public entry point for CRM client portal: returns travels merged from
+     * client_travel_informations and clientportal_details_audit.
+     *
+     * @param int $clientId
+     * @return array
+     */
+    public function getMergedTravelsForClient($clientId)
+    {
+        return $this->getTravelsData($clientId);
     }
 
     /**
@@ -3038,11 +3158,12 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least level or name
+        // Convert to indexed array and filter out entries without at least level or name; add meta_order for approve/reject
         $qualifications = [];
         foreach ($qualificationData as $order => $qualification) {
             // Include qualification if it has at least level or name
             if (!empty($qualification['level']) || !empty($qualification['name'])) {
+                $qualification['meta_order'] = $order;
                 $qualifications[] = $qualification;
             }
         }
@@ -3356,11 +3477,12 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least job_title
+        // Convert to indexed array and filter out entries without at least job_title; add meta_order for approve/reject
         $experiences = [];
         foreach ($experienceData as $order => $experience) {
             // Include experience if it has job_title
             if (!empty($experience['job_title'])) {
+                $experience['meta_order'] = $order;
                 $experiences[] = $experience;
             }
         }
@@ -3682,11 +3804,12 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least nominated_occupation or occupation_code
+        // Convert to indexed array and filter out entries without at least nominated_occupation or occupation_code; add meta_order for approve/reject
         $occupations = [];
         foreach ($occupationData as $order => $occupation) {
             // Include occupation if it has at least nominated_occupation or occupation_code
             if (!empty($occupation['nominated_occupation']) || !empty($occupation['occupation_code'])) {
+                $occupation['meta_order'] = $order;
                 $occupations[] = $occupation;
             }
         }
@@ -4004,11 +4127,12 @@ class ClientPortalPersonalDetailsController extends Controller
             }
         }
 
-        // Convert to indexed array and filter out entries without at least test_type
+        // Convert to indexed array and filter out entries without at least test_type; add meta_order for approve/reject
         $testScores = [];
         foreach ($testScoreData as $order => $testScore) {
             // Include test score if it has test_type
             if (!empty($testScore['test_type'])) {
+                $testScore['meta_order'] = $order;
                 $testScores[] = $testScore;
             }
         }

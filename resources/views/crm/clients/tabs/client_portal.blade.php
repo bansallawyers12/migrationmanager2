@@ -714,6 +714,621 @@
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    <!-- Phone Number Section (source: client_contacts + clientportal_details_audit) -->
+                                                    <?php
+                                                    $phonesMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedPhonesForClient($clientId);
+                                                    ?>
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-phone"></i> Phone Number</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($phonesMergedForDetails as $contact)
+                                                                    <?php
+                                                                    $phoneHasAudit = isset($contact['action']) && in_array($contact['action'], ['create', 'update'], true) && isset($contact['meta_order']);
+                                                                    $phoneTypeLabel = strtoupper($contact['type'] ?? 'Phone');
+                                                                    $phoneCountryCode = $contact['country_code'] ?? '';
+                                                                    $phoneNumber = $contact['phone'] ?? '—';
+                                                                    $phoneExtension = $contact['extension'] ?? null;
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">{{ $phoneTypeLabel }}:</span>
+                                                                            <span class="summary-value {{ $phoneHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $phoneCountryCode }}{{ $phoneCountryCode ? ' ' : '' }}{{ $phoneNumber }}
+                                                                                @if(!empty($phoneExtension))
+                                                                                    <span class="text-muted">(ext. {{ $phoneExtension }})</span>
+                                                                                @endif
+                                                                                @if($phoneHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($phoneHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approvePhoneAudit({{ $contact['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectPhoneAudit({{ $contact['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">PHONE:</span>
+                                                                        <span class="summary-value text-muted">No phone numbers recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <?php
+                                                    // Email: use source + clientportal_details_audit (same as Visa section)
+                                                    $emailsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedEmailsForClient($clientId);
+                                                    $clientAddressesForDetails = isset($clientAddresses) ? $clientAddresses : \App\Models\ClientAddress::where('client_id', $clientId)->orderBy('created_at', 'desc')->get();
+                                                    // Address: use source + clientportal_details_audit (same as Passport section)
+                                                    $addressesMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedAddressesForClient($clientId);
+                                                    // Travel: use source + clientportal_details_audit (same as Passport section)
+                                                    $travelsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedTravelsForClient($clientId);
+                                                    $clientPassportsForDetails = isset($clientPassports) ? $clientPassports : \App\Models\ClientPassportInformation::where('client_id', $clientId)->orderBy('id')->get();
+                                                    // Passport: use source + clientportal_details_audit (same as Visa section)
+                                                    $passportsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedPassportsForClient($clientId);
+                                                    $visaCountriesForDetails = isset($visaCountries) ? $visaCountries : \App\Models\ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id')->get();
+                                                    // Visa: use source + clientportal_details_audit (same as Basic Details / API)
+                                                    $visasMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedVisasForClient($clientId);
+                                                    $clientTravelsForDetails = isset($clientTravels) ? $clientTravels : \App\Models\ClientTravelInformation::where('client_id', $clientId)->orderBy('id')->get();
+                                                    // Qualifications: use source + clientportal_details_audit (same as Passport section)
+                                                    $qualificationsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedQualificationsForClient($clientId);
+                                                    // Work Experience: use source + clientportal_details_audit (same as Qualification section)
+                                                    $experiencesMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedExperiencesForClient($clientId);
+                                                    // Occupation: use source + clientportal_details_audit (same as Qualification section)
+                                                    $occupationsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedOccupationsForClient($clientId);
+                                                    // Test Score: use source + clientportal_details_audit (same as Qualification section)
+                                                    $testScoresMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedTestScoresForClient($clientId);
+                                                    ?>
+
+                                                    <!-- Email Address Section (source: client_emails + clientportal_details_audit) -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-envelope"></i> Email Address</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($emailsMergedForDetails as $emailRec)
+                                                                    <?php
+                                                                    $emailHasAudit = isset($emailRec['action']) && in_array($emailRec['action'], ['create', 'update'], true) && isset($emailRec['meta_order']);
+                                                                    $emailTypeLabel = strtoupper($emailRec['type'] ?? 'Email');
+                                                                    $emailValue = $emailRec['email'] ?? '—';
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">{{ $emailTypeLabel }}:</span>
+                                                                            <span class="summary-value {{ $emailHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $emailValue }}
+                                                                                @if($emailHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($emailHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approveEmailAudit({{ $emailRec['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectEmailAudit({{ $emailRec['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">EMAIL:</span>
+                                                                        <span class="summary-value text-muted">No email addresses recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Passport Information Section (source: client_passport_informations + clientportal_details_audit) -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-id-card"></i> Passport Information</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($passportsMergedForDetails as $passport)
+                                                                    <?php
+                                                                    $passportHasAudit = isset($passport['action']) && in_array($passport['action'], ['create', 'update'], true) && isset($passport['meta_order']);
+                                                                    $passportIssueDate = $passport['issue_date'] ?? null;
+                                                                    $passportExpiryDate = $passport['expiry_date'] ?? null;
+                                                                    ?>
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">PASSPORT NUMBER:</span>
+                                                                        <span class="summary-value">{{ $passport['passport_number'] ?? '—' }}</span>
+                                                                    </div>
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">COUNTRY:</span>
+                                                                        <span class="summary-value">{{ $passport['country'] ?? '—' }}</span>
+                                                                    </div>
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">ISSUE / EXPIRY:</span>
+                                                                        <span class="summary-value {{ $passportHasAudit ? 'audit-value' : '' }}">
+                                                                            {{ $passportIssueDate ?: '—' }}
+                                                                            /
+                                                                            {{ $passportExpiryDate ?: '—' }}
+                                                                            @if($passportHasAudit)
+                                                                                <span class="audit-badge" title="Pending approval">
+                                                                                    <i class="fas fa-clock"></i>
+                                                                                </span>
+                                                                            @endif
+                                                                        </span>
+                                                                        @if($passportHasAudit)
+                                                                            <div class="audit-actions">
+                                                                                <button type="button" class="btn-approve" onclick="approvePassportAudit({{ $passport['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                    <i class="fas fa-check-circle"></i>
+                                                                                </button>
+                                                                                <button type="button" class="btn-reject" onclick="rejectPassportAudit({{ $passport['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                    <i class="fas fa-times-circle"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">PASSPORT:</span>
+                                                                        <span class="summary-value text-muted">No passport information recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Visa Information Section (source: client_visa_countries + clientportal_details_audit) -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-stamp"></i> Visa Information</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($visasMergedForDetails as $visa)
+                                                                    <?php
+                                                                    $visaTypeLabel = '—';
+                                                                    if (!empty($visa['visa_type'])) {
+                                                                        $matter = is_numeric($visa['visa_type']) ? \App\Models\Matter::find($visa['visa_type']) : null;
+                                                                        $visaTypeLabel = $matter ? $matter->title : $visa['visa_type'];
+                                                                    }
+                                                                    $visaHasAudit = isset($visa['action']) && in_array($visa['action'], ['create', 'update'], true) && isset($visa['meta_order']);
+                                                                    ?>
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">VISA TYPE:</span>
+                                                                        <span class="summary-value">{{ $visaTypeLabel }}</span>
+                                                                    </div>
+                                                                    @if(!empty($visa['visa_description']))
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">DESCRIPTION:</span>
+                                                                            <span class="summary-value">{{ $visa['visa_description'] }}</span>
+                                                                        </div>
+                                                                    @endif
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">GRANT / EXPIRY:</span>
+                                                                        <span class="summary-value {{ $visaHasAudit ? 'audit-value' : '' }}">
+                                                                            {{ $visa['visa_grant_date'] ?? '—' }}
+                                                                            /
+                                                                            {{ $visa['visa_expiry_date'] ?? '—' }}
+                                                                            @if($visaHasAudit)
+                                                                                <span class="audit-badge" title="Pending approval">
+                                                                                    <i class="fas fa-clock"></i>
+                                                                                </span>
+                                                                            @endif
+                                                                        </span>
+                                                                        @if($visaHasAudit)
+                                                                            <div class="audit-actions">
+                                                                                <button type="button" class="btn-approve" onclick="approveVisaAudit({{ $visa['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                    <i class="fas fa-check-circle"></i>
+                                                                                </button>
+                                                                                <button type="button" class="btn-reject" onclick="rejectVisaAudit({{ $visa['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                    <i class="fas fa-times-circle"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">VISA:</span>
+                                                                        <span class="summary-value text-muted">No visa information recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Address Information Section (source: client_addresses + clientportal_details_audit) -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-map-marker-alt"></i> Address Information</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($addressesMergedForDetails as $addr)
+                                                                    <?php
+                                                                    $addrHasAudit = isset($addr['action']) && in_array($addr['action'], ['create', 'update'], true) && isset($addr['meta_order']);
+                                                                    $addrLine = trim(implode(', ', array_filter([$addr['address_line_1'] ?? '', $addr['address_line_2'] ?? '', $addr['suburb'] ?? '', $addr['state'] ?? '', $addr['postcode'] ?? '', $addr['country'] ?? ''])));
+                                                                    if ($addrLine === '') {
+                                                                        $addrLine = $addr['search_address'] ?? '—';
+                                                                    }
+                                                                    if ($addrLine === '') {
+                                                                        $addrLine = '—';
+                                                                    }
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">ADDRESS:</span>
+                                                                            <span class="summary-value">{{ $addrLine }}</span>
+                                                                        </div>
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">PERIOD:</span>
+                                                                            <span class="summary-value {{ $addrHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $addr['start_date'] ?? '—' }}
+                                                                                to {{ $addr['end_date'] ?? '—' }}
+                                                                                @if(!empty($addr['is_current'])) <span class="badge badge-success">Current</span> @endif
+                                                                                @if($addrHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($addrHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approveAddressAudit({{ $addr['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectAddressAudit({{ $addr['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">ADDRESS:</span>
+                                                                        <span class="summary-value text-muted">No address information recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Travel Information Section (source: client_travel_informations + clientportal_details_audit) -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-plane"></i> Travel Information</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($travelsMergedForDetails as $travel)
+                                                                    <?php
+                                                                    $travelHasAudit = isset($travel['action']) && in_array($travel['action'], ['create', 'update'], true) && isset($travel['meta_order']);
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">COUNTRY:</span>
+                                                                            <span class="summary-value">{{ $travel['country_visited'] ?? '—' }}</span>
+                                                                        </div>
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">ARRIVAL / DEPARTURE:</span>
+                                                                            <span class="summary-value {{ $travelHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $travel['arrival_date'] ?? '—' }}
+                                                                                /
+                                                                                {{ $travel['departure_date'] ?? '—' }}
+                                                                                @if($travelHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($travelHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approveTravelAudit({{ $travel['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectTravelAudit({{ $travel['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                        @if(!empty($travel['purpose']))
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">PURPOSE:</span>
+                                                                                <span class="summary-value">{{ $travel['purpose'] }}</span>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">TRAVEL:</span>
+                                                                        <span class="summary-value text-muted">No travel information recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Educational Qualifications Section -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-graduation-cap"></i> Educational Qualifications</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($qualificationsMergedForDetails as $qual)
+                                                                    <?php
+                                                                    $qualHasAudit = isset($qual['action']) && in_array($qual['action'], ['create', 'update'], true) && isset($qual['meta_order']);
+                                                                    $qualLevel = $qual['level'] ?? '—';
+                                                                    $qualName = $qual['name'] ?? '';
+                                                                    $qualCollege = $qual['college_name'] ?? '—';
+                                                                    $qualCountry = $qual['country'] ?? '';
+                                                                    $qualStart = $qual['start_date'] ?? null;
+                                                                    $qualFinish = $qual['finish_date'] ?? null;
+                                                                    $qualRelevant = !empty($qual['relevant_qualification']);
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">LEVEL / NAME:</span>
+                                                                            <span class="summary-value">{{ $qualLevel }} {{ $qualName ? ' – ' . $qualName : '' }}</span>
+                                                                        </div>
+                                                                        @if($qualCollege !== '—' || $qualCountry)
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">INSTITUTION / COUNTRY:</span>
+                                                                                <span class="summary-value">{{ $qualCollege }} {{ $qualCountry ? ', ' . $qualCountry : '' }}</span>
+                                                                            </div>
+                                                                        @endif
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">DATES:</span>
+                                                                            <span class="summary-value {{ $qualHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $qualStart ?: '—' }}
+                                                                                to {{ $qualFinish ?: '—' }}
+                                                                                @if($qualRelevant) <span class="badge badge-info">Relevant</span> @endif
+                                                                                @if($qualHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($qualHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approveQualificationAudit({{ $qual['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectQualificationAudit({{ $qual['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">QUALIFICATIONS:</span>
+                                                                        <span class="summary-value text-muted">No educational qualifications recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Work Experience Section -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-briefcase"></i> Work Experience</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($experiencesMergedForDetails as $exp)
+                                                                    <?php
+                                                                    $expHasAudit = isset($exp['action']) && in_array($exp['action'], ['create', 'update'], true) && isset($exp['meta_order']);
+                                                                    $expJobTitle = $exp['job_title'] ?? '—';
+                                                                    $expJobCode = $exp['job_code'] ?? null;
+                                                                    $expEmployer = $exp['employer_name'] ?? null;
+                                                                    $expCountry = $exp['country'] ?? '—';
+                                                                    $expStart = $exp['start_date'] ?? null;
+                                                                    $expFinish = $exp['finish_date'] ?? null;
+                                                                    $expRelevant = !empty($exp['relevant_experience']);
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">JOB TITLE:</span>
+                                                                            <span class="summary-value">{{ $expJobTitle }} @if($expJobCode) ({{ $expJobCode }}) @endif</span>
+                                                                        </div>
+                                                                        @if($expEmployer)
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">EMPLOYER:</span>
+                                                                                <span class="summary-value">{{ $expEmployer }}</span>
+                                                                            </div>
+                                                                        @endif
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">COUNTRY / DATES:</span>
+                                                                            <span class="summary-value {{ $expHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $expCountry }} —
+                                                                                {{ $expStart ?: '—' }}
+                                                                                to {{ $expFinish ?: '—' }}
+                                                                                @if($expRelevant) <span class="badge badge-info">Relevant</span> @endif
+                                                                                @if($expHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($expHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approveExperienceAudit({{ $exp['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectExperienceAudit({{ $exp['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">EXPERIENCE:</span>
+                                                                        <span class="summary-value text-muted">No work experience recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Occupation Section -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-user-tie"></i> Occupation</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($occupationsMergedForDetails as $occ)
+                                                                    <?php
+                                                                    $occHasAudit = isset($occ['action']) && in_array($occ['action'], ['create', 'update'], true) && isset($occ['meta_order']);
+                                                                    $occNominated = $occ['nominated_occupation'] ?? '—';
+                                                                    $occCode = $occ['occupation_code'] ?? null;
+                                                                    $occSkill = $occ['skill_assessment'] ?? null;
+                                                                    $occList = $occ['assessing_authority'] ?? null;
+                                                                    $occSubclass = $occ['visa_subclass'] ?? null;
+                                                                    $occDates = $occ['assessment_date'] ?? null;
+                                                                    $occExpiry = $occ['expiry_date'] ?? null;
+                                                                    $occRelevant = !empty($occ['relevant_occupation']);
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">OCCUPATION / CODE:</span>
+                                                                            <span class="summary-value">{{ $occNominated }} {{ $occCode ? '(' . $occCode . ')' : '' }}</span>
+                                                                        </div>
+                                                                        @if($occSkill || $occList)
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">ASSESSMENT / LIST:</span>
+                                                                                <span class="summary-value">{{ $occSkill ?? '—' }} {{ $occList ? ' / ' . $occList : '' }}</span>
+                                                                            </div>
+                                                                        @endif
+                                                                        @if($occSubclass || $occDates || $occExpiry || $occHasAudit)
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">SUBCLASS / DATES:</span>
+                                                                                <span class="summary-value {{ $occHasAudit ? 'audit-value' : '' }}">
+                                                                                    {{ $occSubclass ?? '—' }} {{ $occDates ? ' / ' . $occDates : '' }}{{ $occExpiry ? ' / ' . $occExpiry : '' }}
+                                                                                    @if($occHasAudit)
+                                                                                        <span class="audit-badge" title="Pending approval">
+                                                                                            <i class="fas fa-clock"></i>
+                                                                                        </span>
+                                                                                    @endif
+                                                                                </span>
+                                                                                @if($occHasAudit)
+                                                                                    <div class="audit-actions">
+                                                                                        <button type="button" class="btn-approve" onclick="approveOccupationAudit({{ $occ['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                            <i class="fas fa-check-circle"></i>
+                                                                                        </button>
+                                                                                        <button type="button" class="btn-reject" onclick="rejectOccupationAudit({{ $occ['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                            <i class="fas fa-times-circle"></i>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                @endif
+                                                                            </div>
+                                                                        @endif
+                                                                        @if($occRelevant)
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">RELEVANT:</span>
+                                                                                <span class="summary-value"><span class="badge badge-info">Yes</span></span>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">OCCUPATION:</span>
+                                                                        <span class="summary-value text-muted">No occupation information recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Test Score Section -->
+                                                    <div class="details-section-card">
+                                                        <div class="details-section-header">
+                                                            <h5><i class="fas fa-chart-line"></i> Test Score</h5>
+                                                        </div>
+                                                        <div class="summary-view">
+                                                            <div class="summary-grid">
+                                                                @forelse($testScoresMergedForDetails as $test)
+                                                                    <?php
+                                                                    $testHasAudit = isset($test['action']) && in_array($test['action'], ['create', 'update'], true) && isset($test['meta_order']);
+                                                                    $testType = $test['test_type'] ?? '—';
+                                                                    $testDate = $test['test_date'] ?? null;
+                                                                    $testListening = $test['listening'] ?? '—';
+                                                                    $testReading = $test['reading'] ?? '—';
+                                                                    $testWriting = $test['writing'] ?? '—';
+                                                                    $testSpeaking = $test['speaking'] ?? '—';
+                                                                    $testOverall = $test['overall_score'] ?? '—';
+                                                                    $testProficiency = $test['proficiency_level'] ?? null;
+                                                                    $testRelevant = !empty($test['relevant_test']);
+                                                                    ?>
+                                                                    <div class="summary-row">
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">TEST TYPE:</span>
+                                                                            <span class="summary-value">{{ $testType }} @if($testDate) ({{ $testDate }}) @endif</span>
+                                                                        </div>
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">L / R / W / S:</span>
+                                                                            <span class="summary-value">{{ $testListening }} / {{ $testReading }} / {{ $testWriting }} / {{ $testSpeaking }}</span>
+                                                                        </div>
+                                                                        <div class="summary-item">
+                                                                            <span class="summary-label">OVERALL / PROFICIENCY:</span>
+                                                                            <span class="summary-value {{ $testHasAudit ? 'audit-value' : '' }}">
+                                                                                {{ $testOverall }} {{ $testProficiency ? ' (' . $testProficiency . ')' : '' }}
+                                                                                @if($testHasAudit)
+                                                                                    <span class="audit-badge" title="Pending approval">
+                                                                                        <i class="fas fa-clock"></i>
+                                                                                    </span>
+                                                                                @endif
+                                                                            </span>
+                                                                            @if($testHasAudit)
+                                                                                <div class="audit-actions">
+                                                                                    <button type="button" class="btn-approve" onclick="approveTestScoreAudit({{ $test['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Approve">
+                                                                                        <i class="fas fa-check-circle"></i>
+                                                                                    </button>
+                                                                                    <button type="button" class="btn-reject" onclick="rejectTestScoreAudit({{ $test['meta_order'] }}, {{ $clientId }}, {{ $selectedMatter ? $selectedMatter->id : 'null' }})" title="Reject">
+                                                                                        <i class="fas fa-times-circle"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                        @if($testRelevant)
+                                                                            <div class="summary-item">
+                                                                                <span class="summary-label">RELEVANT:</span>
+                                                                                <span class="summary-value"><span class="badge badge-info">Yes</span></span>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="summary-item">
+                                                                        <span class="summary-label">TEST SCORE:</span>
+                                                                        <span class="summary-value text-muted">No test scores recorded</span>
+                                                                    </div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1968,6 +2583,15 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 15px;
+}
+
+/* One full row per address/travel/passport/visa record so 2nd record is 2nd row, etc. */
+.summary-grid .summary-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    align-items: start;
 }
 
 .summary-item {
@@ -4765,6 +5389,663 @@ $(document).ready(function () {
                     alert(errorMsg);
                 }
             }
+        });
+    }
+
+    // Approve Visa Audit - save to client_visa_countries and remove from audit
+    function approveVisaAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this visa? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-visa-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Visa approved and saved.');
+                    } else {
+                        alert(response.message || 'Visa approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve visa.');
+                    } else {
+                        alert(response.message || 'Failed to approve visa.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving visa. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Visa Audit - remove from audit table and notify client
+    function rejectVisaAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this visa change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-visa-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Visa change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Visa change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject visa.');
+                    } else {
+                        alert(response.message || 'Failed to reject visa.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting visa. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Email Audit - save to client_emails and remove from audit
+    function approveEmailAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this email? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-email-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Email approved and saved.');
+                    } else {
+                        alert(response.message || 'Email approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve email.');
+                    } else {
+                        alert(response.message || 'Failed to approve email.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving email. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Email Audit - remove from audit table and notify client
+    function rejectEmailAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this email change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-email-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Email change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Email change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject email.');
+                    } else {
+                        alert(response.message || 'Failed to reject email.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting email. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Phone Audit - save to client_contacts and remove from audit
+    function approvePhoneAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this phone number? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-phone-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Phone approved and saved.');
+                    } else {
+                        alert(response.message || 'Phone approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve phone.');
+                    } else {
+                        alert(response.message || 'Failed to approve phone.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving phone. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Phone Audit - remove from audit table and notify client
+    function rejectPhoneAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this phone number change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-phone-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Phone change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Phone change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject phone.');
+                    } else {
+                        alert(response.message || 'Failed to reject phone.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting phone. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Passport Audit - save to client_passport_informations and remove from audit
+    function approvePassportAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this passport? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-passport-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Passport approved and saved.');
+                    } else {
+                        alert(response.message || 'Passport approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve passport.');
+                    } else {
+                        alert(response.message || 'Failed to approve passport.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving passport. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Passport Audit - remove from audit table and notify client
+    function rejectPassportAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this passport change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-passport-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Passport change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Passport change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject passport.');
+                    } else {
+                        alert(response.message || 'Failed to reject passport.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting passport. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Qualification Audit - save to client_qualifications and remove from audit
+    function approveQualificationAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this qualification? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-qualification-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Qualification approved and saved.');
+                    } else {
+                        alert(response.message || 'Qualification approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve qualification.');
+                    } else {
+                        alert(response.message || 'Failed to approve qualification.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving qualification. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Qualification Audit - remove from audit table and notify client
+    function rejectQualificationAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this qualification change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-qualification-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Qualification change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Qualification change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject qualification.');
+                    } else {
+                        alert(response.message || 'Failed to reject qualification.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting qualification. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Experience Audit - save to client_experiences and remove from audit
+    function approveExperienceAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this work experience? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-experience-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Experience approved and saved.');
+                    } else {
+                        alert(response.message || 'Experience approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve experience.');
+                    } else {
+                        alert(response.message || 'Failed to approve experience.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving experience. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Experience Audit - remove from audit table and notify client
+    function rejectExperienceAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this work experience change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-experience-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Experience change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Experience change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject experience.');
+                    } else {
+                        alert(response.message || 'Failed to reject experience.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting experience. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Occupation Audit - save to client_occupations and remove from audit
+    function approveOccupationAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this occupation? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-occupation-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Occupation approved and saved.');
+                    } else {
+                        alert(response.message || 'Occupation approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve occupation.');
+                    } else {
+                        alert(response.message || 'Failed to approve occupation.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving occupation. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Occupation Audit - remove from audit table and notify client
+    function rejectOccupationAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this occupation change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-occupation-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Occupation change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Occupation change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject occupation.');
+                    } else {
+                        alert(response.message || 'Failed to reject occupation.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting occupation. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Test Score Audit - save to client_testscore and remove from audit
+    function approveTestScoreAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this test score? It will be saved to the main record and the pending change will be removed.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/approve-test-score-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Test score approved and saved.');
+                    } else {
+                        alert(response.message || 'Test score approved and saved.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to approve test score.');
+                    } else {
+                        alert(response.message || 'Failed to approve test score.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving test score. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Reject Test Score Audit - remove from audit table and notify client
+    function rejectTestScoreAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this test score change? A message will be sent to the client.')) {
+            return;
+        }
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) {
+            alert('Error: Client matter ID is required. Please select a matter first.');
+            return;
+        }
+        $.ajax({
+            url: '/api/client-portal-details/reject-test-score-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message || 'Test score change rejected. Message sent to client.');
+                    } else {
+                        alert(response.message || 'Test score change rejected.');
+                    }
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Failed to reject test score.');
+                    } else {
+                        alert(response.message || 'Failed to reject test score.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting test score. Please try again.';
+                if (typeof toastr !== 'undefined') { toastr.error(errorMsg); } else { alert(errorMsg); }
+            }
+        });
+    }
+
+    // Approve Address Audit
+    function approveAddressAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this address? It will be saved to the main record and the pending change will be removed.')) return;
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) { alert('Error: Client matter ID is required. Please select a matter first.'); return; }
+        $.ajax({
+            url: '/api/client-portal-details/approve-address-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(r) {
+                if (r.success) { (typeof toastr !== 'undefined' ? toastr.success(r.message) : alert(r.message)); setTimeout(function() { location.reload(); }, 1000); }
+                else { (typeof toastr !== 'undefined' ? toastr.error(r.message) : alert(r.message)); }
+            },
+            error: function(xhr) { var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving address.'; (typeof toastr !== 'undefined' ? toastr.error(msg) : alert(msg)); }
+        });
+    }
+    // Reject Address Audit
+    function rejectAddressAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this address change? A message will be sent to the client.')) return;
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) { alert('Error: Client matter ID is required. Please select a matter first.'); return; }
+        $.ajax({
+            url: '/api/client-portal-details/reject-address-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(r) {
+                if (r.success) { (typeof toastr !== 'undefined' ? toastr.success(r.message) : alert(r.message)); setTimeout(function() { location.reload(); }, 1000); }
+                else { (typeof toastr !== 'undefined' ? toastr.error(r.message) : alert(r.message)); }
+            },
+            error: function(xhr) { var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting address.'; (typeof toastr !== 'undefined' ? toastr.error(msg) : alert(msg)); }
+        });
+    }
+    // Approve Travel Audit
+    function approveTravelAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to approve this travel? It will be saved to the main record and the pending change will be removed.')) return;
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) { alert('Error: Client matter ID is required. Please select a matter first.'); return; }
+        $.ajax({
+            url: '/api/client-portal-details/approve-travel-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(r) {
+                if (r.success) { (typeof toastr !== 'undefined' ? toastr.success(r.message) : alert(r.message)); setTimeout(function() { location.reload(); }, 1000); }
+                else { (typeof toastr !== 'undefined' ? toastr.error(r.message) : alert(r.message)); }
+            },
+            error: function(xhr) { var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error approving travel.'; (typeof toastr !== 'undefined' ? toastr.error(msg) : alert(msg)); }
+        });
+    }
+    // Reject Travel Audit
+    function rejectTravelAudit(metaOrder, clientId, clientMatterId) {
+        if (!confirm('Are you sure you want to reject this travel change? A message will be sent to the client.')) return;
+        if (!clientMatterId || clientMatterId === 'null' || clientMatterId === null) { alert('Error: Client matter ID is required. Please select a matter first.'); return; }
+        $.ajax({
+            url: '/api/client-portal-details/reject-travel-audit',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { client_id: clientId, client_matter_id: clientMatterId, meta_order: metaOrder },
+            success: function(r) {
+                if (r.success) { (typeof toastr !== 'undefined' ? toastr.success(r.message) : alert(r.message)); setTimeout(function() { location.reload(); }, 1000); }
+                else { (typeof toastr !== 'undefined' ? toastr.error(r.message) : alert(r.message)); }
+            },
+            error: function(xhr) { var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error rejecting travel.'; (typeof toastr !== 'undefined' ? toastr.error(msg) : alert(msg)); }
         });
     }
 </script>
