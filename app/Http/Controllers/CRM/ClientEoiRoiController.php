@@ -374,18 +374,21 @@ class ClientEoiRoiController extends Controller
             //     ], 404);
             // }
 
-            // Update verification fields
+            // Update verification fields (admin guard uses staff provider, so id is staff.id)
             $eoiReference->staff_verified = true;
             $eoiReference->confirmation_date = Carbon::now();
             $eoiReference->checked_by = auth('admin')->id();
             $eoiReference->save();
 
+            $verifierName = auth('admin')->user()
+                ? trim((auth('admin')->user()->first_name ?? '') . ' ' . (auth('admin')->user()->last_name ?? ''))
+                : null;
+
             // Log activity
             $this->logActivity(
                 $client->id,
                 'EOI Verified by Staff',
-                'EOI details verified by ' . auth('admin')->user()->first_name . ' ' . auth('admin')->user()->last_name . 
-                ' for EOI #' . $eoiReference->EOI_number,
+                'EOI details verified by ' . ($verifierName ?: 'Staff') . ' for EOI #' . $eoiReference->EOI_number,
                 'eoi_verification'
             );
 
@@ -393,7 +396,7 @@ class ClientEoiRoiController extends Controller
                 'success' => true,
                 'message' => 'EOI details verified successfully. You can now send confirmation email to the client.',
                 'confirmation_date' => $eoiReference->confirmation_date->format('d/m/Y H:i'),
-                'checked_by' => auth('admin')->user()->first_name . ' ' . auth('admin')->user()->last_name
+                'checked_by' => $verifierName ?? 'Staff'
             ]);
 
         } catch (\Exception $e) {
