@@ -2424,9 +2424,23 @@ function customValidate(formName, savetype = '')
 						// Explicitly set the CSRF token in FormData (overwrites any stale token from form)
 						fd.set('_token', csrfToken);
 						
+						// Use same-origin URL to avoid 403 from wrong domain (e.g. APP_URL vs current host)
+						var actionAttr = $("form[name='" + formName + "']").attr('action') || '';
+						var sendmailUrl = actionAttr;
+						try {
+							if (actionAttr.indexOf('http') === 0) {
+								var actionUrl = new URL(actionAttr, window.location.origin);
+								if (actionUrl.origin !== window.location.origin) {
+									sendmailUrl = window.location.origin + actionUrl.pathname + (actionUrl.search || '');
+								} else {
+									sendmailUrl = actionUrl.pathname + (actionUrl.search || '');
+								}
+							}
+						} catch (e) {}
+						
 						$.ajax({
 							type:'post',
-							url:$("form[name="+formName+"]").attr('action'),
+							url: sendmailUrl,
 							processData: false,
 							contentType: false,
 							data: fd,
@@ -2436,7 +2450,8 @@ function customValidate(formName, savetype = '')
 							},
 							headers: {
 								'X-CSRF-TOKEN': csrfToken,
-								'Accept': 'application/json'  // Tell Laravel to return JSON for auth/CSRF errors
+								'Accept': 'application/json',  // Tell Laravel to return JSON for auth/CSRF errors
+								'X-Requested-With': 'XMLHttpRequest'
 							},
 							success: function(response){
 								$('.popuploader').hide();
@@ -2494,19 +2509,16 @@ function customValidate(formName, savetype = '')
 									setTimeout(function(){ location.reload(); }, 1500);
 									return;
 								}
-								// 403 Forbidden - often session/access issues; offer refresh
+								// 403 Forbidden - show message without auto-reload so user can refresh and retry
 								if(xhr.status === 403){
 									var responseText = xhr.responseText || '';
 									var responseJSON = xhr.responseJSON || {};
-									if(responseText.includes('CSRF') || responseText.includes('csrf') ||
-									   (responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')))){
-										$('.custom-error-msg').html('<span class="alert alert-warning">Security token expired. Refreshing page...</span>');
-										setTimeout(function(){ location.reload(); }, 1500);
-										return;
-									}
-									// 403 without CSRF in body - likely session/access; auto-refresh for better UX
-									$('.custom-error-msg').html('<span class="alert alert-warning">Access denied. Your session may have expired. Refreshing page...</span>');
-									setTimeout(function(){ location.reload(); }, 1500);
+									var isCsrf = responseText.includes('CSRF') || responseText.includes('csrf') ||
+										(responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')));
+									var msg = isCsrf
+										? 'Security token expired. Refresh the page and try again.'
+										: 'Access denied. If you are logged in, refresh the page and try again.';
+									$('.custom-error-msg').html('<span class="alert alert-warning">' + msg + '</span>');
 									return;
 								}
 								if(xhr.status === 422){
