@@ -1105,6 +1105,8 @@ public function getChapters(Request $request)
 
     public function sendmail(Request $request){
 		$requestData = $request->all();
+		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
+		$requestData['subject'] = str_replace('__AMP__', '&', $requestData['subject'] ?? '');
 		//echo '<pre>'; print_r($requestData); die;
 		$user_id = @Auth::user()->id;
 		$reciept_id = null;

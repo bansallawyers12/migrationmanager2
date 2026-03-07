@@ -2423,6 +2423,11 @@ function customValidate(formName, savetype = '')
 						var fd = new FormData(myform);
 						// Explicitly set the CSRF token in FormData (overwrites any stale token from form)
 						fd.set('_token', csrfToken);
+						// Replace & in subject with placeholder to avoid WAF 403; server restores it before sending email
+						var subjectEl = myform.querySelector('input[name="subject"], [name="subject"]');
+						if (subjectEl && subjectEl.value) {
+							fd.set('subject', String(subjectEl.value).replace(/\&/g, '__AMP__'));
+						}
 						
 						// Use same-origin URL to avoid 403 from wrong domain (e.g. APP_URL vs current host)
 						var actionAttr = $("form[name='" + formName + "']").attr('action') || '';
@@ -2462,11 +2467,10 @@ function customValidate(formName, savetype = '')
 									$('#emailmodal').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+(obj.message || response.message || 'Email sent successfully!')+'</span>');
 									// On reload: switch to Emails tab and Sent view (for client detail page)
-									// Commented out for now - do not redirect to emails tab after send
-									// try {
-									// 	localStorage.setItem('activeTab', 'emails');
-									// 	localStorage.setItem('emailTabSwitchToSent', '1');
-									// } catch (e) {}
+									try {
+										localStorage.setItem('activeTab', 'emails');
+										localStorage.setItem('emailTabSwitchToSent', '1');
+									} catch (e) {}
 									// Show prominent success alert so user sees confirmation
 									var successMsg = obj.message || response.message || 'Email successfully sent.';
 									if (typeof iziToast !== 'undefined' && iziToast.success) {
