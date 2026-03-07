@@ -19,6 +19,7 @@ use App\Http\Controllers\API\ClientPortalBillingController;
 use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
 use App\Http\Controllers\API\VisaPricingEstimatorController;
+use App\Http\Controllers\API\SignupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,7 @@ use App\Http\Controllers\API\VisaPricingEstimatorController;
 // Public routes (no authentication required)
 Route::post('/login', [ClientPortalController::class, 'login']);
 Route::post('/admin-login', [ClientPortalController::class, 'adminLogin']);
+Route::post('/signup', [SignupController::class, 'signup']);
 Route::post('/refresh', [ClientPortalController::class, 'refresh']);
 Route::post('/forgot-password', [ClientPortalController::class, 'forgotPassword']);
 Route::post('/reset-password', [ClientPortalController::class, 'resetPassword']);

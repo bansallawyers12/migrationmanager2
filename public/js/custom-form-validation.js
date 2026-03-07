@@ -2447,10 +2447,11 @@ function customValidate(formName, savetype = '')
 									$('#emailmodal').modal('hide');
 									$('.custom-error-msg').html('<span class="alert alert-success">'+(obj.message || response.message || 'Email sent successfully!')+'</span>');
 									// On reload: switch to Emails tab and Sent view (for client detail page)
-									try {
-										localStorage.setItem('activeTab', 'emails');
-										localStorage.setItem('emailTabSwitchToSent', '1');
-									} catch (e) {}
+									// Commented out for now - do not redirect to emails tab after send
+									// try {
+									// 	localStorage.setItem('activeTab', 'emails');
+									// 	localStorage.setItem('emailTabSwitchToSent', '1');
+									// } catch (e) {}
 									// Show prominent success alert so user sees confirmation
 									var successMsg = obj.message || response.message || 'Email successfully sent.';
 									if (typeof iziToast !== 'undefined' && iziToast.success) {
