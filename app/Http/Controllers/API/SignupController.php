@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Mail\LeadSignupNotification;
 use App\Models\Admin;
 use App\Models\ClientContact;
 use App\Models\ClientEmail;
+use App\Models\Staff;
 use App\Services\ClientReferenceService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
 
 class SignupController extends BaseController
 {
@@ -152,9 +155,12 @@ class SignupController extends BaseController
                 'email' => $email,
             ]);
 
+            // Notify super admin(s) (role=1 in staff table)
+            $this->sendLeadSignupNotificationToSuperAdmins($clientId, $data['first_name'], $data['last_name'], $email, $phoneNormalized);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Signup successful.',
+                'message' => 'Signup successful.You can login in app after admin verification and assign you to a matter',
                 'data' => [
                     'id' => $adminId,
                     'client_id' => $clientId,
@@ -171,6 +177,35 @@ class SignupController extends BaseController
                 'request' => $request->only(['first_name', 'last_name', 'email']),
             ]);
             return $this->sendError('An error occurred while creating your account. Please try again.', [], 500);
+        }
+    }
+
+    /**
+     * Send email to all super admins (role=1 in staff table) when a lead signs up from the Client mobile app.
+     * Subject: Lead - {client_id} is generated from Client mobile app
+     * Body: Lead details and instruction to convert to Client, create matter, assign client portal access.
+     */
+    private function sendLeadSignupNotificationToSuperAdmins(string $clientId, string $firstName, string $lastName, string $leadEmail, string $leadPhone): void
+    {
+        $superAdmins = Staff::where('role', 1)
+            ->where('status', 1)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get();
+
+        $mailable = new LeadSignupNotification($clientId, $firstName, $lastName, $leadEmail, $leadPhone);
+
+        foreach ($superAdmins as $staff) {
+            try {
+                Mail::to($staff->email)->send($mailable);
+                Log::info('Signup notification sent to super admin', ['email' => $staff->email, 'client_id' => $clientId]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send signup notification to super admin', [
+                    'email' => $staff->email,
+                    'client_id' => $clientId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

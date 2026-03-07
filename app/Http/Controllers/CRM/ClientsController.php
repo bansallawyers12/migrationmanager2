@@ -5760,16 +5760,20 @@ class ClientsController extends Controller
     /**
      * Change client type (lead to client conversion)
      */
-    public function changetype(Request $request,$id = Null, $slug = Null){ 
+    public function changetype(Request $request,$id = Null, $slug = Null){
+        Log::info('ConvertLeadToClient: changetype called', ['id_raw' => $id, 'slug' => $slug, 'query' => $request->query()]);
         if(isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
+            Log::info('ConvertLeadToClient: decoded id', ['decoded_id' => $id]);
             if(Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $obj = Admin::find($id);
                 $client_type = $obj->type;
+                Log::info('ConvertLeadToClient: admin found', ['admin_id' => $id, 'client_type' => $client_type]);
                 if($slug == 'client') {
                     $obj->type = $slug;
                     $obj->user_id = $request['user_id'];
                     $saved = $obj->save();
+                    Log::info('ConvertLeadToClient: admin type updated to client', ['saved' => $saved]);
 
                     $matter = new ClientMatter();
                     $matter->user_id = $request['user_id'];
@@ -5779,6 +5783,13 @@ class ClientsController extends Controller
                     $matter->sel_person_responsible = $request['person_responsible'];
                     $matter->sel_person_assisting = $request['person_assisting'];
                     $matter->sel_matter_id = $request['matter_id'];
+                    Log::info('ConvertLeadToClient: matter payload', [
+                        'client_id' => $request['client_id'],
+                        'user_id' => $request['user_id'],
+                        'matter_id' => $request['matter_id'],
+                        'office_id' => $matter->office_id,
+                        'migration_agent' => $request['migration_agent'],
+                    ]);
 
                     $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',$request['client_id'])->count();
                     $client_matters_current_no = $client_matters_cnt_per_client+1;
@@ -5786,8 +5797,9 @@ class ClientsController extends Controller
                         $matter->client_unique_matter_no = 'GN_'.$client_matters_current_no;
                     } else {
                         $matterInfo = Matter::select('nick_name')->where('id', '=', $request['matter_id'])->first();
-                        $matter->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
+                        $matter->client_unique_matter_no = $matterInfo ? $matterInfo->nick_name."_".$client_matters_current_no : 'Matter_'.$client_matters_current_no;
                     }
+                    Log::info('ConvertLeadToClient: client_unique_matter_no', ['client_unique_matter_no' => $matter->client_unique_matter_no]);
 
                     $matterType = Matter::find($request['matter_id']);
                     $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
@@ -5797,7 +5809,8 @@ class ClientsController extends Controller
                     $matter->workflow_stage_id = $firstStageId;
                     $matter->matter_status = 1; // Active by default
                     $matter->save();
-                    
+                    Log::info('ConvertLeadToClient: matter saved', ['matter_id' => $matter->id]);
+
                     if($client_type == 'lead'){
                         $activity = new \App\Models\ActivitiesLog;
                         $activity->client_id = $request['client_id'];
@@ -5822,17 +5835,23 @@ class ClientsController extends Controller
                         $msg = 'Matter '.$matter->client_unique_matter_no. ' created';
                     }
                     // Redirect with matter number in URL
-                    return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)).'/'.$matter->client_unique_matter_no)->with('success', $msg);
+                    $redirectUrl = '/clients/detail/'.base64_encode(convert_uuencode(@$id)).'/'.$matter->client_unique_matter_no;
+                    Log::info('ConvertLeadToClient: success, redirecting', ['redirect_url' => $redirectUrl]);
+                    return Redirect::to($redirectUrl)->with('success', $msg);
                 } else if($slug == 'lead' ) {
                     $obj->type = $slug;
                     $obj->user_id = "";
                     $saved = $obj->save();
+                    Log::info('ConvertLeadToClient: reverted to lead');
                 }
+                Log::info('ConvertLeadToClient: redirecting to detail (slug was '.$slug.')');
                 return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('success', 'Record Updated successfully');
             } else {
+                Log::warning('ConvertLeadToClient: admin not found or wrong type', ['id' => $id]);
                 return Redirect::to('/clients')->with('error', 'Clients Not Exist');
             }
         } else {
+                Log::warning('ConvertLeadToClient: missing or empty id', ['id' => $id]);
                 return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
             }
 	}

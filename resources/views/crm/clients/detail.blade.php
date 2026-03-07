@@ -71,8 +71,8 @@ use App\Http\Controllers\Controller;
             
             <!-- Client/Lead Toggle Buttons -->
             <div class="sidebar-client-lead-buttons">
-                <a class="status-btn status-btn-client convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button">Client</a>
-                <a href="javascript:;" class="status-btn status-btn-lead <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>">Lead</a>
+                <a class="status-btn status-btn-client convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button" data-toggle="modal" data-target="#convertLeadToClientModal">Client</a>
+                <a href="javascript:;" class="status-btn status-btn-lead <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>" role="button" data-toggle="modal" data-target="#convertLeadToClientModal">Lead</a>
             </div>
             
             <!-- Matter Selection Dropdown in Sidebar -->
@@ -467,6 +467,7 @@ use App\Http\Controllers\Controller;
 @include('crm.clients.addclientmodal')
 @include('crm.clients.editclientmodal')
 @include('crm.clients.modals.edit-matter-office')
+@include('crm.clients.modals.client-management')
 
 
 

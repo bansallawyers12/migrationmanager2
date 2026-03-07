@@ -8,6 +8,9 @@ var equal = "This field should be equal to ";
 
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
+		if (formName === 'convert_lead_to_client') {
+			console.log('[ConvertLeadToClient] customValidate called (Save clicked)');
+		}
 		$(".popuploader").show(); //all form submit
 
 		// Legacy sales forecast flows are disabled
@@ -19,7 +22,10 @@ function customValidate(formName, savetype = '')
 		var i = 0;
 		$(".custom-error").remove(); //remove all errors when submit the button
 
-		$("form[name="+formName+"] :input[data-valid]").each(function(){
+		var $inputsToValidate = (formName === 'convert_lead_to_client')
+			? $("#convertLeadToClientModal form[name='convert_lead_to_client'] :input[data-valid]")
+			: $("form[name="+formName+"] :input[data-valid]");
+		$inputsToValidate.each(function(){
 			var dataValidation = $(this).attr('data-valid');
 			var splitDataValidation = dataValidation.split(' ');
 
@@ -120,7 +126,9 @@ function customValidate(formName, savetype = '')
 
 		if(i > 0)
 			{
-
+				if (formName === 'convert_lead_to_client') {
+					console.warn('[ConvertLeadToClient] Validation failed (i=' + i + '), form not submitted');
+				}
 				if(formName == 'add-query'){
 					$('html, body').animate({scrollTop:$("#row_scroll"). offset(). top}, 'slow');
 				}else if(formName != 'upload-answer')	{
@@ -2610,6 +2618,42 @@ function customValidate(formName, savetype = '')
 								$('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
 							}
 						});
+						return true;
+					}
+					else if(formName == 'convert_lead_to_client')
+					{
+						console.log('[ConvertLeadToClient] Save clicked, validation passed');
+						$(".popuploader").hide();
+						var formEl = document.querySelector("#convertLeadToClientModal form[name='convert_lead_to_client']") || document.querySelector("form[name='convert_lead_to_client']");
+						if (!formEl) {
+							console.warn('[ConvertLeadToClient] Form not found in modal, falling back to form[name=convert_lead_to_client]');
+							$("form[name="+formName+"]").submit();
+							return true;
+						}
+						console.log('[ConvertLeadToClient] Form found', { action: formEl.action, method: formEl.method });
+						var generalCheckbox = document.getElementById('general_matter_checkbox_new');
+						var matterSelect = document.getElementById('sel_matter_id');
+						var matterHidden = document.getElementById('convert_matter_id_final');
+						var matterVal = (generalCheckbox && generalCheckbox.checked) ? '1' : (matterSelect ? (matterSelect.value || '').trim() : '');
+						console.log('[ConvertLeadToClient] Matter resolution', { generalCheckboxChecked: !!(generalCheckbox && generalCheckbox.checked), matterSelectValue: matterSelect ? matterSelect.value : null, matterVal: matterVal });
+						if (!matterVal) {
+							console.warn('[ConvertLeadToClient] Matter required but empty, showing error');
+							$(".custom-error").remove();
+							var errMsg = "<span class='custom-error' role='alert'>" + requiredError + "</span>";
+							if (matterSelect && matterSelect.parentNode) {
+								$(matterSelect).after(errMsg);
+							}
+							$('html, body').animate({scrollTop: $('#convertLeadToClientModal').offset().top - 100}, 'slow');
+							return false;
+						}
+						if (matterHidden) {
+							matterHidden.value = matterVal;
+							console.log('[ConvertLeadToClient] Set hidden matter_id to', matterVal);
+						} else {
+							console.warn('[ConvertLeadToClient] Hidden #convert_matter_id_final not found');
+						}
+						console.log('[ConvertLeadToClient] Submitting form now');
+						formEl.submit();
 						return true;
 					}
                     else

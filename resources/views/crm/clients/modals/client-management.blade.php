@@ -32,6 +32,7 @@
                     <div class="row">
                         <input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                         <input type="hidden" name="user_id" value="{{@Auth::user()->id}}">
+                        <input type="hidden" name="matter_id" id="convert_matter_id_final" value="">
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="migration_agent">Migration Agent <span class="span_req">*</span></label>
@@ -90,13 +91,13 @@
                             <div class="form-group">
                                 <label for="matter_id">Select Matter <span class="span_req">*</span></label>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="matter_id" value="1" id="general_matter_checkbox_new">
+                                    <input class="form-check-input" type="checkbox" value="1" id="general_matter_checkbox_new">
                                     <label class="form-check-label" for="general_matter_checkbox_new">General Matter</label>
                                 </div>
 
                                 <label class="form-check-label">Or Select any option</label>
 
-                                <select data-valid="required" class="form-control select2" name="matter_id" id="sel_matter_id">
+                                <select class="form-control select2" name="matter_id_select" id="sel_matter_id">
                                     <option value="">Select Matter</option>
                                     @php
                                         // Filter matters based on client type
