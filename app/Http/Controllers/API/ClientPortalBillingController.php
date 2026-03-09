@@ -121,4 +121,103 @@ class ClientPortalBillingController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Billing invoice Update (Google Pay / Apple Pay)
+     * POST /api/billing/invoice-update
+     *
+     * Input (JSON body):
+     * - billing_invoice_id: receipt_id from account_client_receipts
+     * - client_matter_id: client matter ID (required)
+     * - payment_type: "google_pay" or "apple_pay"
+     * - payment_token: unique token value
+     * - payment_status: "completed" or "failed"
+     *
+     * Lookup by receipt_id and client_matter_id. When payment_status is "completed": updates invoice_status to 1 and saves payment_token (and payment_type).
+     * When payment_status is "failed": no update.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateInvoice(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'billing_invoice_id' => 'required|integer|min:1',
+                'client_matter_id' => 'required|integer|min:1',
+                'payment_type' => 'required|string|in:google_pay,apple_pay',
+                'payment_token' => 'required|string|max:500',
+                'payment_status' => 'required|string|in:completed,failed',
+            ]);
+
+            $clientId = $request->user()->id;
+            $receiptId = (int) $validated['billing_invoice_id'];
+            $clientMatterId = (int) $validated['client_matter_id'];
+
+            $exists = DB::table('account_client_receipts')
+                ->where('receipt_id', $receiptId)
+                ->where('client_matter_id', $clientMatterId)
+                ->where('client_id', $clientId)
+                ->where('receipt_type', 3)
+                ->where('client_portal_sent', 1)
+                ->limit(1)
+                ->exists();
+
+            if (!$exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invoice not found or not accessible.',
+                ], 404);
+            }
+
+            if ($validated['payment_status'] === 'completed') {
+                $updated = DB::table('account_client_receipts')
+                    ->where('receipt_id', $receiptId)
+                    ->where('client_matter_id', $clientMatterId)
+                    ->where('client_id', $clientId)
+                    ->update([
+                        'invoice_status' => 1,
+                        'client_portal_payment_token' => $validated['payment_token'],
+                        'client_portal_payment_type' => $validated['payment_type'],
+                    ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Invoice payment recorded successfully.',
+                    'data' => [
+                        'receipt_id' => $receiptId,
+                        'invoice_status' => 1,
+                        'updated' => (bool) $updated,
+                    ],
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment status is failed; no update performed.',
+                'data' => [
+                    'receipt_id' => $receiptId,
+                    'payment_status' => 'failed',
+                ],
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Billing invoice Update API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()?->id ?? null,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update billing invoice.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

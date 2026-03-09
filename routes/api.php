@@ -185,7 +185,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Billing routes
     Route::get('/billing/list', [ClientPortalBillingController::class, 'list']);
-    
+    Route::post('/billing/invoice-update', [ClientPortalBillingController::class, 'updateInvoice']);
+
     // Client Personal Details routes
     Route::get('/get-client-personal-detail', [ClientPortalPersonalDetailsController::class, 'getClientPersonalDetail']);
     Route::post('/update-client-basic-detail', [ClientPortalPersonalDetailsController::class, 'updateClientBasicDetail']);

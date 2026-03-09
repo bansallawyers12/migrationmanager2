@@ -942,6 +942,39 @@
 							"body": "{\n    \"message\": \"The client matter id field is required.\",\n    \"errors\": {\n        \"client_matter_id\": [\n            \"The client matter id field is required.\"\n        ]\n    }\n}"
 						}
 					]
+				},
+				{
+					"name": "Billing invoice Update",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"description": "Use token from login response"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"billing_invoice_id\": 123,\n    \"client_matter_id\": 2435,\n    \"payment_type\": \"google_pay\",\n    \"payment_token\": \"unique_token_value\",\n    \"payment_status\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/billing/invoice-update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"invoice-update"
+							]
+						},
+						"description": "Update billing invoice with mobile payment (Google Pay / Apple Pay). Input: billing_invoice_id (receipt_id), client_matter_id (required), payment_type (google_pay or apple_pay), payment_token (unique token), payment_status (completed or failed). Lookup by receipt_id and client_matter_id. If payment_status is completed, invoice_status is set to 1 and payment_token is saved; if failed, no update."
+					},
+					"response": []
 				}
 			]
 		},
