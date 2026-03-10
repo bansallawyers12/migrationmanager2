@@ -314,7 +314,7 @@ class BookingAppointment extends Model
     {
         return match($this->location) {
             'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000',
-            'adelaide' => '98 Gawler Place, Adelaide SA 5000',
+            'adelaide' => 'Unit 5, 55 Gawler Pl, Adelaide SA 5000, Australia',
             default => 'Office Address'
         };
     }

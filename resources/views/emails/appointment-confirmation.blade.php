@@ -140,7 +140,7 @@
         <div class="contact-info">
             <strong style="color: #1a1a1a;">Need to reschedule or have questions?</strong>
             <p style="margin: 10px 0 0 0; color: #1a1a1a;">
-                Phone: <a href="tel:1300859368" style="color: #2563eb; text-decoration: none; font-weight: 600;">1300 859 368</a><br>
+                Phone: <a href="tel:{{ str_replace([' ', '-'], '', $locationPhone) }}" style="color: #2563eb; text-decoration: none; font-weight: 600;">{{ $locationPhone }}</a><br>
                 Email: <a href="mailto:info@bansalimmigration.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@bansalimmigration.com</a><br>
                 Website: <a href="https://bansalimmigration.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">bansalimmigration.com</a>
             </p>

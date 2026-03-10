@@ -44,6 +44,7 @@ class AppointmentCancellation extends Mailable
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
                 'location' => ucfirst($this->details['location'] ?? 'melbourne'),
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
+                'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
                 'consultant' => $this->details['consultant'] ?? 'Our Team',
                 'serviceType' => $this->details['service_type'] ?? 'Immigration Consultation',
                 'cancellationReason' => $this->details['cancellation_reason'] ?? null,
@@ -68,8 +69,20 @@ class AppointmentCancellation extends Mailable
     {
         return match ($location) {
             'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000',
-            'adelaide' => '98 Gawler Place, Adelaide SA 5000',
+            'adelaide' => 'Unit 5, 55 Gawler Pl, Adelaide SA 5000, Australia',
             default => 'Bansal Immigration Office'
+        };
+    }
+
+    /**
+     * Get phone number for location (used in appointment emails)
+     */
+    protected function getLocationPhone(string $location): string
+    {
+        return match ($location) {
+            'adelaide' => '08 8317 1340',
+            'melbourne' => '+61 3 9602 1330',
+            default => '1300 859 368'
         };
     }
 }
