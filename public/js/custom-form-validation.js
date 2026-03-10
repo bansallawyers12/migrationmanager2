@@ -11,6 +11,9 @@ function customValidate(formName, savetype = '')
 		if (formName === 'convert_lead_to_client') {
 			console.log('[ConvertLeadToClient] customValidate called (Save clicked)');
 		}
+		if (formName === 'change_matter_assignee') {
+			console.log('[ChangeMatterAssignee] customValidate called, formName=', formName);
+		}
 		$(".popuploader").show(); //all form submit
 
 		// Legacy sales forecast flows are disabled
@@ -22,9 +25,17 @@ function customValidate(formName, savetype = '')
 		var i = 0;
 		$(".custom-error").remove(); //remove all errors when submit the button
 
-		var $inputsToValidate = (formName === 'convert_lead_to_client')
-			? $("#convertLeadToClientModal form[name='convert_lead_to_client'] :input[data-valid]")
-			: $("form[name="+formName+"] :input[data-valid]");
+		var $inputsToValidate;
+		if (formName === 'convert_lead_to_client') {
+			$inputsToValidate = $("#convertLeadToClientModal form[name='convert_lead_to_client'] :input[data-valid]");
+		} else if (formName === 'change_matter_assignee') {
+			$inputsToValidate = $("#changeMatterAssigneeModal form[name='change_matter_assignee'] :input[data-valid]");
+		} else {
+			$inputsToValidate = $("form[name="+formName+"] :input[data-valid]");
+		}
+		if (formName === 'change_matter_assignee') {
+			console.log('[ChangeMatterAssignee] inputs to validate count=', $inputsToValidate.length, 'selector= #changeMatterAssigneeModal form[name=change_matter_assignee] :input[data-valid]');
+		}
 		$inputsToValidate.each(function(){
 			var dataValidation = $(this).attr('data-valid');
 			var splitDataValidation = dataValidation.split(' ');
@@ -60,7 +71,12 @@ function customValidate(formName, savetype = '')
 						}
 					else
 						{
-							if( !$.trim($(this).val()) )
+							var rawVal = $(this).val();
+							var trimVal = $.trim(typeof rawVal === 'string' ? rawVal : (Array.isArray(rawVal) ? (rawVal[0] || '') : (rawVal || '')));
+							if (formName === 'change_matter_assignee' && (i + j) < 3) {
+								console.log('[ChangeMatterAssignee] required check: name=', $(this).attr('name'), 'id=', $(this).attr('id'), 'rawVal=', rawVal, 'trimVal=', trimVal, 'empty=', !trimVal);
+							}
+							if( !trimVal )
 								{
 									i++;
 									j++;
@@ -128,6 +144,9 @@ function customValidate(formName, savetype = '')
 			{
 				if (formName === 'convert_lead_to_client') {
 					console.warn('[ConvertLeadToClient] Validation failed (i=' + i + '), form not submitted');
+				}
+				if (formName === 'change_matter_assignee') {
+					console.warn('[ChangeMatterAssignee] Validation FAILED, error count i=' + i + ', form will NOT submit. Check required fields (Migration Agent, Person Responsible, Person Assisting).');
 				}
 				if(formName == 'add-query'){
 					$('html, body').animate({scrollTop:$("#row_scroll"). offset(). top}, 'slow');
@@ -547,25 +566,57 @@ function customValidate(formName, savetype = '')
 					}
 
                     else if(formName == 'change_matter_assignee'){
-                        var client_id = $('#change_matter_assignee input[name="client_id"]').val();
+                        console.log('[ChangeMatterAssignee] Validation passed, entering submit block');
                         var myform = document.getElementById('change_matter_assignee');
+                        if (!myform) {
+                            console.error('[ChangeMatterAssignee] Form element #change_matter_assignee not found');
+                            $('.popuploader').hide();
+                            return;
+                        }
+                        // Sync Select2 dropdown values to underlying selects so FormData includes changed options
+                        var selectIds = ['change_sel_migration_agent_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'];
+                        for (var s = 0; s < selectIds.length; s++) {
+                            var selEl = document.getElementById(selectIds[s]);
+                            if (selEl) {
+                                var chosen = $('#' + selectIds[s]).val();
+                                selEl.value = (chosen === null || chosen === undefined) ? '' : (Array.isArray(chosen) ? (chosen[0] || '') : chosen);
+                                console.log('[ChangeMatterAssignee] select sync:', selectIds[s], 'value=', selEl.value);
+                            }
+                        }
                         var fd = new FormData(myform);
+                        var postUrl = $("form[name=\"change_matter_assignee\"]").attr('action');
+                        console.log('[ChangeMatterAssignee] Submitting to URL=', postUrl, 'FormData keys: _token, client_id, user_id, selectedMatterLM, migration_agent, person_responsible, person_assisting, office_id');
+                        console.log('[ChangeMatterAssignee] selectedMatterLM=', document.getElementById('selectedMatterLM') ? document.getElementById('selectedMatterLM').value : 'N/A');
                         $.ajax({
                             type:'post',
-                            url:$("form[name="+formName+"]").attr('action'),
+                            url: postUrl,
                             processData: false,
                             contentType: false,
                             data: fd,
+                            dataType: 'json',
                             success: function(response){
-                                var obj = response; // Remove $.parseJSON(response)
-                                $('#changeMatterAssigneeModal').modal('hide');
-                                location.reload();
+                                console.log('[ChangeMatterAssignee] AJAX success, response=', response);
+                                var obj = (typeof response === 'string' ? (function(){ try { return JSON.parse(response); } catch(e){ return {}; } })() : response) || {};
                                 $('.popuploader').hide();
+                                $('#changeMatterAssigneeModal').modal('hide');
                                 if(obj.status){
-                                    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
+                                    $('.custom-error-msg').html('<span class="alert alert-success">'+(obj.message || 'Matter assignee updated successfully.')+'</span>');
                                 }else{
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
+                                    $('.custom-error-msg').html('<span class="alert alert-danger">'+(obj.message || 'Something went wrong. Please try again.')+'</span>');
                                 }
+                                location.reload();
+                            },
+                            error: function(xhr, textStatus, errorThrown){
+                                console.error('[ChangeMatterAssignee] AJAX error: status=', xhr.status, 'statusText=', xhr.statusText, 'textStatus=', textStatus, 'errorThrown=', errorThrown);
+                                console.error('[ChangeMatterAssignee] responseText=', xhr.responseText ? xhr.responseText.substring(0, 500) : 'none');
+                                if (xhr.responseJSON) console.error('[ChangeMatterAssignee] responseJSON=', xhr.responseJSON);
+                                $('.popuploader').hide();
+                                var errMsg = 'Unable to update matter assignee. Please try again.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) errMsg = xhr.responseJSON.message;
+                                else if (xhr.responseJSON && xhr.responseJSON.errors) errMsg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                                else if (xhr.status === 419) errMsg = 'Session expired. Please refresh the page and try again.';
+                                else if (xhr.status >= 500) errMsg = 'Server error. Please try again later.';
+                                $('.custom-error-msg').html('<span class="alert alert-danger">'+errMsg+'</span>');
                             }
                         });
                     }

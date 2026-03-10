@@ -761,23 +761,27 @@ class ClientPersonalDetailsController extends Controller
     }
 
     public function updateClientMatterAssignee(Request $request){
-        //dd($request->all());
+        $response = ['status' => false, 'message' => 'Invalid request. Please try again.'];
         $requstData = $request->all();
-        if(ClientMatter::where('id', '=', $requstData['selectedMatterLM'])->exists()) {
+
+        if (empty($requstData['selectedMatterLM'])) {
+            $response['message'] = 'Please select a matter first.';
+            return response()->json($response);
+        }
+
+        if (ClientMatter::where('id', '=', $requstData['selectedMatterLM'])->exists()) {
             $obj = ClientMatter::find($requstData['selectedMatterLM']);
             $obj->sel_migration_agent = $requstData['migration_agent'];
             $obj->sel_person_responsible = $requstData['person_responsible'];
             $obj->sel_person_assisting = $requstData['person_assisting'];
             $obj->user_id = $requstData['user_id'];
-            
-            // Update office if provided
-            if (isset($requstData['office_id']) && !empty($requstData['office_id'])) {
+
+            if (isset($requstData['office_id']) && $requstData['office_id'] !== '') {
                 $obj->office_id = $requstData['office_id'];
             }
-            
-            $saved = $obj->save();
-            if($saved) {
 
+            $saved = $obj->save();
+            if ($saved) {
                 $objs = new \App\Models\ActivitiesLog;
                 $objs->client_id = $requstData['client_id'];
                 $objs->created_by = Auth::user()->id;
@@ -787,17 +791,16 @@ class ClientPersonalDetailsController extends Controller
                 $objs->pin = 0;
                 $objs->save();
 
-                $response['status'] 	= 	true;
-                $response['message']	=	'Record is exist';
-            }else{
-                $response['status'] 	= 	false;
-                $response['message']	=	'Record is not exist.Please try again';
+                $response['status'] = true;
+                $response['message'] = 'Matter assignee updated successfully.';
+            } else {
+                $response['message'] = 'Record could not be updated. Please try again.';
             }
         } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Record is not exist.Please try again';
+            $response['message'] = 'Matter not found. Please try again.';
         }
-        echo json_encode($response);
+
+        return response()->json($response);
     }
     
     /**
