@@ -5421,6 +5421,16 @@ class ClientPersonalDetailsController extends Controller
                     $primaryDetails = implode(', ', $detailsParts);
                 }
 
+                // When details-only (no expanded form): populate first_name/last_name from details
+                // so the client detail page can display the name (it uses first_name/last_name, not details)
+                $firstNameToSave = $saveExtraFields ? ($parentData['first_name'] ?? null) : null;
+                $lastNameToSave = $saveExtraFields ? ($parentData['last_name'] ?? null) : null;
+                if (!$saveExtraFields && !empty(trim($primaryDetails ?? ''))) {
+                    $nameParts = preg_split('/\s+/u', trim($primaryDetails), 2);
+                    $firstNameToSave = $nameParts[0] ?? null;
+                    $lastNameToSave = isset($nameParts[1]) ? $nameParts[1] : null;
+                }
+
                 // Save primary parent relationship
                 $parentRelationship = ClientRelationship::create([
                     'admin_id' => auth()->id(),
@@ -5429,8 +5439,8 @@ class ClientPersonalDetailsController extends Controller
                     'relationship_type' => $parentData['relationship_type'],
                     'details' => $primaryDetails,
                     'email' => $saveExtraFields ? ($parentData['email'] ?? null) : null,
-                    'first_name' => $saveExtraFields ? ($parentData['first_name'] ?? null) : null,
-                    'last_name' => $saveExtraFields ? ($parentData['last_name'] ?? null) : null,
+                    'first_name' => $firstNameToSave,
+                    'last_name' => $lastNameToSave,
                     'phone' => $saveExtraFields ? ($parentData['phone'] ?? null) : null,
                     'dob' => $dobFormatted,
                     'gender' => $parentData['gender'] ?? null,

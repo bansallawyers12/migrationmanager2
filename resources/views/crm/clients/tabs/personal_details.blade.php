@@ -527,9 +527,10 @@
                                                 // Handle empty or null names properly
                                                 $firstName = trim($relationship->first_name ?? '');
                                                 $lastName = trim($relationship->last_name ?? '');
-                                                
+                                                // Fallback to details when first/last name are empty (e.g. details-only parents)
                                                 if (empty($firstName) && empty($lastName)) {
-                                                    $relatedClientFullName = 'Name not provided';
+                                                    $detailsFallback = trim($relationship->details ?? '');
+                                                    $relatedClientFullName = $detailsFallback !== '' ? $detailsFallback : 'Name not provided';
                                                 } elseif (empty($firstName)) {
                                                     $relatedClientFullName = $lastName;
                                                 } elseif (empty($lastName)) {
