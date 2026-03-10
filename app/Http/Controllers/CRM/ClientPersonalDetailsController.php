@@ -5858,23 +5858,9 @@ class ClientPersonalDetailsController extends Controller
             }
         }
 
-        // If no specific identifiers found, try to extract name and search by name
-        $namePart = trim(explode('(', $details)[0]);
-        $nameParts = explode(' ', $namePart);
-        
-        if (count($nameParts) >= 2) {
-            $firstName = trim($nameParts[0]);
-            $lastName = trim($nameParts[1]);
-            
-            $client = Admin::whereIn('type', ['client', 'lead'])
-                ->where('first_name', $firstName)
-                ->where('last_name', $lastName)
-                ->first();
-            if ($client) {
-                return $client;
-            }
-        }
-
+        // Do not link by name only: when Details is just a name (e.g. "Gurmail Singh") with no
+        // email/phone/client_id, we do not search by first_name+last_name. That would incorrectly
+        // link this parent to another client who happens to share the same name.
         return null;
     }
 
