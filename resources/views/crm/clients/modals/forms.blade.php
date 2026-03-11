@@ -257,10 +257,30 @@
 					</button>
 				</div>
 				<div class="modal-body">
-					<input type="file" name="agreement_doc" class="form-control" accept=".pdf" required>
-				</div>
-				<div class="modal-footer">
-					<button type="submit" class="btn btn-primary">Upload</button>
+					<div id="agreementDropZone" class="agreement-drop-zone" role="button" tabindex="0" aria-label="Drop PDF or click to browse">
+						<input type="file" name="agreement_doc" id="agreementFileInput" class="agreement-file-input" accept=".pdf" required>
+						<i class="fas fa-cloud-upload-alt agreement-drop-icon"></i>
+						<p class="agreement-drop-text mb-0">Drag file here or <strong>click to browse</strong></p>
+						<span id="agreementFileName" class="agreement-file-name text-muted small d-block mt-1"></span>
+					</div>
+					<div id="agreementUploadError" class="text-danger small mt-2" style="display:none;"></div>
+					<style>
+						.agreement-drop-zone {
+							border: 2px dashed #007bff;
+							border-radius: 8px;
+							padding: 32px 24px;
+							text-align: center;
+							background: #e9ecef;
+							cursor: pointer;
+							transition: border-color .2s, background-color .2s;
+							position: relative;
+						}
+						.agreement-drop-zone:hover { border-color: #0056b3; background: #dee2e6; }
+						.agreement-drop-zone.agreement-drop-zone--over { border-color: #0056b3; background: #cfe2ff; }
+						.agreement-drop-icon { font-size: 2.5rem; color: #007bff; display: block; margin-bottom: 12px; }
+						.agreement-drop-text { color: #495057; }
+						.agreement-file-input { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+					</style>
 				</div>
 			</div>
 		</form>

@@ -5095,145 +5095,117 @@ Bansal Immigration`;
 
 
 
-        $(document).on('submit', '#agreementUploadForm', function(e) {
+        // Prevent form from submitting (no Upload button; upload is triggered on file select/drop)
+        $(document).on('submit', '#agreementUploadForm', function(e) { e.preventDefault(); });
 
-            e.preventDefault();
-
-            var formData = new FormData(this);
-
-            $('.popuploader').show();
-
-            $.ajax({
-
-                url: window.ClientDetailConfig.urls.uploadAgreement,
-
-                type: 'POST',
-
-                data: formData,
-
-                processData: false,
-
-                contentType: false,
-
-                headers: {'X-CSRF-TOKEN': window.ClientDetailConfig.csrfToken},
-
-                success: function(response) {
-
-                    $('.popuploader').hide();
-
-                    if(response.status){
-
-                        $('#agreementModal').modal('hide');
-
-                        // Open inline signature placement modal (stays on page)
-                        if (response.document_id) {
-                            $(document).trigger('openSignaturePlacementModal', { documentId: response.document_id });
-                        } else {
-                            localStorage.setItem('activeTab', 'checklists');
-                            setTimeout(function() { location.reload(); }, 1000);
-                        }
-
-                    } else {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">'+response.message+'</span>');
-
-                    }
-
-                },
-
-                error: function(xhr, status, error) {
-
-                    $('.popuploader').hide();
-
-                    if(xhr.responseJSON && xhr.responseJSON.message) {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">Error: ' + xhr.responseJSON.message + '</span>');
-
-                    } else {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">An error occurred while uploading the agreement.</span>');
-
-                    }
-
-                }
-
-            });
-
-        });
-
-
-
-        // Backup click handler for the submit button
-
-        $(document).on('click', '#agreementUploadForm button[type="submit"]', function(e) {
-
-            e.preventDefault();
-
-            var form = $('#agreementUploadForm')[0];
-
+        // Agreement modal: single upload function used for auto-upload on drop or browse
+        function doAgreementUpload() {
+            var form = document.getElementById('agreementUploadForm');
+            if (!form || !form.agreement_doc || !form.agreement_doc.files || !form.agreement_doc.files.length) return;
             var formData = new FormData(form);
-
             $('.popuploader').show();
-
+            $('#agreementUploadError').hide();
             $.ajax({
-
                 url: window.ClientDetailConfig.urls.uploadAgreement,
-
                 type: 'POST',
-
                 data: formData,
-
                 processData: false,
-
                 contentType: false,
-
                 headers: {'X-CSRF-TOKEN': window.ClientDetailConfig.csrfToken},
-
                 success: function(response) {
-
                     $('.popuploader').hide();
-
-                    if(response.status){
-
+                    if (response.status) {
                         $('#agreementModal').modal('hide');
-
-                        // Open inline signature placement modal (stays on page)
                         if (response.document_id) {
                             $(document).trigger('openSignaturePlacementModal', { documentId: response.document_id });
                         } else {
                             localStorage.setItem('activeTab', 'checklists');
                             setTimeout(function() { location.reload(); }, 1000);
                         }
-
                     } else {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">'+response.message+'</span>');
-
+                        $('#agreementUploadError').text(response.message || 'Upload failed.').show();
                     }
-
                 },
-
                 error: function(xhr, status, error) {
-
                     $('.popuploader').hide();
-
-                    if(xhr.responseJSON && xhr.responseJSON.message) {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">Error: ' + xhr.responseJSON.message + '</span>');
-
-                    } else {
-
-                        $('.custom-error-msg').html('<span class="alert alert-danger">An error occurred while uploading the agreement.</span>');
-
-                    }
-
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while uploading the agreement.';
+                    $('#agreementUploadError').text(msg).show();
                 }
+            });
+        }
 
+        // Agreement modal: drag-and-drop and click-to-browse; auto-upload on file set
+        (function() {
+            var $form = $('#agreementUploadForm');
+            var $input = $form.find('input[name="agreement_doc"]');
+            var $dropZone = $('#agreementDropZone');
+            var $fileName = $('#agreementFileName');
+            var $err = $('#agreementUploadError');
+
+            function setAgreementFile(file) {
+                if (!file) return;
+                var name = file.name || 'File chosen';
+                var isPdf = file.type === 'application/pdf' || (name.toLowerCase().indexOf('.pdf') === name.length - 4);
+                if (!isPdf) {
+                    $err.text('Please upload a PDF file.').show();
+                    return;
+                }
+                $err.hide();
+                var dt = new DataTransfer();
+                dt.items.add(file);
+                $input[0].files = dt.files;
+                $fileName.text(name);
+                $dropZone.addClass('agreement-drop-zone--over');
+                setTimeout(function() { $dropZone.removeClass('agreement-drop-zone--over'); }, 300);
+                doAgreementUpload();
+            }
+
+            function clearAgreementUploadState() {
+                $input.val('');
+                $fileName.text('');
+                $err.hide();
+                $dropZone.removeClass('agreement-drop-zone--over');
+            }
+
+            $dropZone.on('click', function(e) {
+                if ($(e.target).closest('.agreement-file-input').length) return;
+                e.preventDefault();
+                $input[0].click();
+            });
+            $dropZone.on('keydown', function(e) { if (e.which === 13 || e.which === 32) { e.preventDefault(); $input[0].click(); } });
+
+            $dropZone.on('dragenter', function(e) { e.preventDefault(); e.stopPropagation(); $dropZone.addClass('agreement-drop-zone--over'); });
+            $dropZone.on('dragover', function(e) { e.preventDefault(); e.stopPropagation(); });
+            $dropZone.on('dragleave', function(e) {
+                e.preventDefault();
+                if (!$dropZone[0].contains(e.relatedTarget)) $dropZone.removeClass('agreement-drop-zone--over');
+            });
+            $dropZone.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropZone.removeClass('agreement-drop-zone--over');
+                var file = (e.originalEvent && e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files) ? e.originalEvent.dataTransfer.files[0] : null;
+                if (file) setAgreementFile(file);
             });
 
-        });
+            $(document).on('change', '#agreementUploadForm input[name="agreement_doc"]', function() {
+                var f = this.files && this.files[0];
+                if (f) {
+                    var isPdf = f.type === 'application/pdf' || (f.name && f.name.toLowerCase().indexOf('.pdf') === f.name.length - 4);
+                    if (!isPdf) {
+                        $err.text('Please upload a PDF file.').show();
+                        return;
+                    }
+                    $fileName.text(f.name);
+                    $err.hide();
+                    doAgreementUpload();
+                } else {
+                    $fileName.text('');
+                }
+            });
 
-
+            $('#agreementModal').on('hidden.bs.modal', function() { clearAgreementUploadState(); });
+        })();
 
         $(document).delegate('.uploadSentAndFetchMail','click', function(){
 
