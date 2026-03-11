@@ -6256,6 +6256,26 @@ class ClientsController extends Controller
                 $notification->save();
             }
 
+            // Log to Activity Feed when action is updated (only for client-linked actions)
+            if ($clientId !== null) {
+                $assigneeName = $this->getAssigneeName($action->assigned_to);
+                $activityLog = new ActivitiesLog;
+                $activityLog->client_id = $clientId;
+                $activityLog->created_by = Auth::user()->id;
+                $activityLog->subject = 'Updated action for ' . $assigneeName;
+                $activityLog->description = '<span class="text-semi-bold">' . ($action->task_group ?? '') . '</span><p>' . ($action->description ?? '') . '</p>';
+                $activityLog->task_status = $action->status === '1' ? 1 : 0;
+                $activityLog->pin = 0;
+                if (Auth::user()->id != $action->assigned_to) {
+                    $activityLog->use_for = $action->assigned_to;
+                } else {
+                    $activityLog->use_for = null;
+                }
+                $activityLog->followup_date = isset($action->action_date) ? $action->action_date : null;
+                $activityLog->task_group = $action->task_group;
+                $activityLog->save();
+            }
+
             return response()->json(['success' => true, 'message' => 'Action updated successfully']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating action: ' . $e->getMessage()], 500);

@@ -210,7 +210,7 @@
                                                                     <div class="form-group row" style="margin-bottom:12px">
                                                                         <label for="popoverdatetime" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Date</label>
                                                                         <div class="col-sm-9">
-                                                                            <input type="date" class="form-control f13" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ date('Y-m-d') }}" name="popoverdate">
+                                                                            <input type="date" class="form-control f13" placeholder="yyyy-mm-dd" id="popoverdatetime" value="{{ $list->action_date ? date('Y-m-d', strtotime($list->action_date)) : date('Y-m-d') }}" name="popoverdate">
                                                                         </div>
                                                                     </div>
                                                                     <div class="form-group row" style="margin-bottom:12px">
@@ -342,7 +342,7 @@
             $('#assign_note_id').val(task_id);
         });
 
-        // Update task
+        // Update task - set fields when button is clicked
         $(document).on('click', '.listing-container .update_task', function() {
             var note_id = $(this).attr('data-noteid');
             $('#assignnote').val(note_id);
@@ -352,6 +352,15 @@
             $('#task_group').val(taskgroup_id);
             var followupdate_id = $(this).attr('data-actiondate');
             $('#popoverdatetime').val(followupdate_id);
+        });
+
+        // Set date when popover is actually shown (content is in DOM by then)
+        $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
+            var followupdate_id = $(this).attr('data-actiondate');
+            if (followupdate_id) {
+                var dateVal = followupdate_id.split(' ')[0]; // yyyy-mm-dd if datetime
+                $('.popover-body #popoverdatetime').val(dateVal);
+            }
         });
 
         // Mark task as not complete
