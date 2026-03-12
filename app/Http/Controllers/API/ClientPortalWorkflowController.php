@@ -391,7 +391,7 @@ class ClientPortalWorkflowController extends Controller
                         ->where('type', 'workflow_checklist')
                         ->where('client_matter_id', $clientMatterId)
                         ->orderBy('id', 'desc')
-                        ->select('file_name', 'myfile', 'cp_doc_status')
+                        ->select('id', 'file_name', 'myfile', 'cp_doc_status', 'created_at')
                         ->get();
                     if ($allDocs->isEmpty()) {
                         continue;
@@ -423,6 +423,8 @@ class ClientPortalWorkflowController extends Controller
                             'file_url'          => $doc->myfile,
                             'doc_status'        => $docStatus,
                             'doc_status_text'   => $docStatusText,
+                            'uploaded_doc_id'  => $doc->id,
+                            'upload_doc_date'  => $doc->created_at ? date('Y-m-d', strtotime($doc->created_at)) : null,
                         ]);
                     }
                 }
@@ -434,7 +436,7 @@ class ClientPortalWorkflowController extends Controller
                         ->where('type', 'workflow_checklist')
                         ->where('client_matter_id', $clientMatterId)
                         ->orderBy('id', 'desc')
-                        ->select('file_name', 'myfile', 'cp_doc_status')
+                        ->select('id', 'file_name', 'myfile', 'cp_doc_status', 'created_at')
                         ->first();
 
                     $stageSlug = $item->wf_stage
@@ -465,6 +467,8 @@ class ClientPortalWorkflowController extends Controller
                         'file_url'          => $latestDoc->myfile ?? null,
                         'doc_status'        => $docStatus,
                         'doc_status_text'   => $docStatusText,
+                        'uploaded_doc_id'  => $latestDoc->id ?? null,
+                        'upload_doc_date'  => $latestDoc->created_at ? date('Y-m-d', strtotime($latestDoc->created_at)) : null,
                     ];
                 });
             }
