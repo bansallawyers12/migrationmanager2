@@ -25,8 +25,6 @@
     {{-- Select2 CSS for contact person search --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-    {{-- Flatpickr CSS for date pickers in address autocomplete --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 @endpush
 
 @section('content')
@@ -982,8 +980,6 @@
     @push('scripts')
     {{-- Select2 JS for contact person search --}}
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    {{-- Flatpickr JS for date pickers in address autocomplete --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
     <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>

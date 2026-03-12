@@ -4,9 +4,6 @@
     <link rel="stylesheet" href="{{asset('css/client-forms.css')}}">
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
     <link rel="stylesheet" href="{{asset('css/leads/lead-form.css')}}">
-    {{-- Flatpickr CSS for date pickers --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
     <style>
         /* Compact Error Display Styles */
         .form-validation-errors {
@@ -736,9 +733,6 @@
 @push('scripts')
     <script src="{{ asset('js/leads/lead-form-navigation.js') }}"></script>
     <script src="{{ asset('js/leads/lead-form.js') }}"></script>
-    {{-- Flatpickr JS for date pickers --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded');

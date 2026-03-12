@@ -6,7 +6,7 @@
 				<h5 class="modal-title" id="interestModalLabel" style="font-weight: 700; font-size: 18px;">
 					<i class="fas fa-calendar-plus mr-2"></i>Schedule Appointment
 				</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9; font-size: 24px; font-weight: 300;">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9; font-size: 24px; font-weight: 300;">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -312,7 +312,7 @@
 							<button onclick="customValidate('appointform')" type="button" class="btn btn-primary btn-lg px-4" id="appointform_save">
 								<i class="fas fa-calendar-check mr-2"></i>Schedule Appointment
 							</button>
-							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ml-2" data-dismiss="modal">
+							<button type="button" class="btn btn-outline-secondary btn-lg px-4 ml-2" data-bs-dismiss="modal">
 								<i class="fas fa-times mr-2"></i>Cancel
 							</button>
 						</div>

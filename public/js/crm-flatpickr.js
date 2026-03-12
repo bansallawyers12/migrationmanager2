@@ -444,6 +444,21 @@ $(document).ready(function() {
     $('[data-flatpickr="range"]').each(function() {
         CRM_Flatpickr.initRange(this);
     });
+
+    // Backward compatibility: data-datepicker (was daterangepicker/global-datepicker)
+    $('[data-datepicker="standard"]').each(function() {
+        CRM_Flatpickr.initStandard(this);
+    });
+    $('[data-datepicker="dob"]').each(function() {
+        var ageField = $(this).data('age-field');
+        CRM_Flatpickr.initDOB(this, ageField);
+    });
+    $('[data-datepicker="datetime"]').each(function() {
+        CRM_Flatpickr.initDateTime(this);
+    });
+    $('[data-datepicker="range"]').each(function() {
+        CRM_Flatpickr.initRange(this);
+    });
     
     console.log('✅ CRM_Flatpickr auto-initialization complete');
 });

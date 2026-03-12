@@ -66,7 +66,7 @@
 		<!-- Apnamentor necessary plugins-->
 			<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 			<script src="{{asset('public/js/popper.js/js/popper.min.js')}}"></script>
-			<script src="{{asset('public/js/bootstarp/js/bootstrap.min.js')}}"></script>
+			<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 			<script src="{{asset('public/js/pace-progress/js/pace.min.js')}}"></script>
 			<script src="{{asset('public/js/perfect-scrollbar/js/perfect-scrollbar.min.js')}}"></script>
 			<script src="{{asset('public/icons/@coreui/coreui-pro/js/coreui.min.js')}}"></script>

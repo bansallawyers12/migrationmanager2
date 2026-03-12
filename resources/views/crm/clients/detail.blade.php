@@ -63,7 +63,7 @@ use App\Http\Controllers\Controller;
                         <a href="javascript:;" class="send-google-review" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" data-template-id="{{ optional($googleReviewTemplate)->id ?? '' }}" title="Send Google Review"><i class="fab fa-google"></i></a>
                         <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
                         <a href="javascript:;" datatype="not_picked_call" class="not_picked_call" title="Not Picked Call"><i class="fas fa-mobile-alt"></i></a>
-                        <a href="javascript:;" data-toggle="modal" data-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
+                        <a href="javascript:;" data-bs-toggle="modal" data-bs-target="#create_appoint" title="Add Appointment"><i class="fas fa-calendar-plus"></i></a>
                     </div>
                     
                 </div>
@@ -71,8 +71,8 @@ use App\Http\Controllers\Controller;
             
             <!-- Client/Lead Toggle Buttons -->
             <div class="sidebar-client-lead-buttons">
-                <a class="status-btn status-btn-client convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button" data-toggle="modal" data-target="#convertLeadToClientModal">Client</a>
-                <a href="javascript:;" class="status-btn status-btn-lead <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>" role="button" data-toggle="modal" data-target="#convertLeadToClientModal">Lead</a>
+                <a class="status-btn status-btn-client convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button" data-bs-toggle="modal" data-bs-target="#convertLeadToClientModal">Client</a>
+                <a href="javascript:;" class="status-btn status-btn-lead <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>" role="button" data-bs-toggle="modal" data-bs-target="#convertLeadToClientModal">Lead</a>
             </div>
             
             <!-- Matter Selection Dropdown in Sidebar -->
@@ -479,7 +479,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -609,7 +609,7 @@ use App\Http\Controllers\Controller;
 							</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="saveComposeEmail()" type="button" class="btn btn-primary">Send</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -625,7 +625,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="messageModalLabel">Send Message</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -648,7 +648,7 @@ use App\Http\Controllers\Controller;
 						</div>
                         <div class="col-12 col-md-12 col-lg-12">
 							<button onclick="saveSendMessage()" type="button" class="btn btn-primary">Send</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -665,7 +665,7 @@ use App\Http\Controllers\Controller;
 				<h5 class="modal-title" id="smsModalLabel">
 					<i class="fas fa-sms"></i> Send SMS
 				</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -720,7 +720,7 @@ use App\Http\Controllers\Controller;
 							<button type="submit" class="btn btn-primary" id="sendSmsBtn">
 								<i class="fas fa-paper-plane"></i> Send SMS
 							</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -735,10 +735,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to delete this note?</h4>
 				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Delete</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -748,10 +748,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to send this document in Not Use Tab?</h4>
 				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Send</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -761,10 +761,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to send this in related document Tab again?</h4>
 				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Send</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -774,10 +774,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to verify this doc?</h4>
 				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Verify</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -788,10 +788,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to delete this log?</h4>
 				<button type="submit" style="margin-top: 40px;" class="button btn btn-danger accept">Delete</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -803,10 +803,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to complete the Application?</h4>
 				<button  data-id="" type="submit" style="margin-top: 40px;" class="button btn btn-danger acceptapplication">Complete</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -816,10 +816,10 @@ use App\Http\Controllers\Controller;
 	<div class="modal-dialog">
 		<div class="modal-content popUp">
 			<div class="modal-body text-center">
-				<button type="button" data-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
+				<button type="button" data-bs-dismiss="modal" aria-label="Close" class="close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title text-center message col-v-5">Do you want to delete this Cost Agreement?</h4>
 				<button data-id="" type="submit" style="margin-top: 40px;" class="button btn btn-danger acceptCostAgreementDelete">Yes, Delete</button>
-				<button type="button" style="margin-top: 40px;" data-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
+				<button type="button" style="margin-top: 40px;" data-bs-dismiss="modal" class="button btn btn-secondary cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -832,7 +832,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Matter Ownership Ratio</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -853,7 +853,7 @@ use App\Http\Controllers\Controller;
 
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('xmatter_ownership')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -867,7 +867,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Tags</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -911,7 +911,7 @@ use App\Http\Controllers\Controller;
 
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('stags_matter')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -941,7 +941,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				  <h4 class="modal-title">Re-assign Inbox Email</h4>
-				  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				  </button>
 			</div>
@@ -985,7 +985,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				  <h4 class="modal-title">Re-assign Sent Email</h4>
-				  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				  </button>
 			</div>
@@ -1029,7 +1029,7 @@ use App\Http\Controllers\Controller;
 		<div class="modal-content">
 			<div class="modal-header">
 				  <h4 class="modal-title" id="memail_subject"></h4>
-				  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				  </button>
 			</div>

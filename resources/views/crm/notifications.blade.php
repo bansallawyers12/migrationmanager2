@@ -51,9 +51,9 @@
 										<tr id="id_{{@$list->id}}" style="{{ ($list->receiver_status ?? 0) == 0 ? 'background-color: #f8f9fa; font-weight: 600;' : '' }}"> 
 											<td class="text-center">
 												@if(($list->receiver_status ?? 0) == 1)
-													<span class="notification-status-read" data-toggle="tooltip" title="Read" aria-label="Read"></span>
+													<span class="notification-status-read" data-bs-toggle="tooltip" title="Read" aria-label="Read"></span>
 												@else
-													<span class="notification-status-unread" data-toggle="tooltip" title="Unread" aria-label="Unread"></span>
+													<span class="notification-status-unread" data-bs-toggle="tooltip" title="Unread" aria-label="Unread"></span>
 												@endif
 											</td>
 											<td>

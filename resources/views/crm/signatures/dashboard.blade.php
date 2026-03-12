@@ -347,7 +347,7 @@
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         {{ session('success') }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
@@ -356,7 +356,7 @@
     @if(session('error'))
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         {{ session('error') }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
@@ -568,7 +568,7 @@
                     <h5 class="modal-title">
                         <i class="fas fa-link"></i> Attach Document to Client/Lead
                     </h5>
-                    <button type="button" class="close" data-dismiss="modal">
+                    <button type="button" class="close" data-bs-dismiss="modal">
                         <span>&times;</span>
                     </button>
                 </div>
@@ -601,7 +601,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Attach Document
                     </button>

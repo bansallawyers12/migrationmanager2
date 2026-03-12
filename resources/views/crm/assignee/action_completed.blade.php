@@ -283,7 +283,7 @@
                                                 <tr>
                                                     <td style="text-align: center;">{{ ++$i }}</td>
                                                     <td style="text-align: center;">
-                                                        <input type="radio" class="not_complete_task" data-toggle="tooltip" title="Mark Incomplete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                                                        <input type="radio" class="not_complete_task" data-bs-toggle="tooltip" title="Mark Incomplete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
                                                     </td>
                                                     <td>{{ $full_name }}</td>
                                                     <td>
@@ -298,7 +298,7 @@
                                                         @if(isset($list->description) && $list->description != "")
                                                             @if(strlen($list->description) > 190)
                                                                 {{ substr($list->description, 0, 190) }}
-                                                                <button type="button" class="btn btn-link" data-toggle="popover" title="" data-content="{{ htmlspecialchars($list->description, ENT_QUOTES, 'UTF-8') }}">Read more</button>
+                                                                <button type="button" class="btn btn-link" data-bs-toggle="popover" title="" data-content="{{ htmlspecialchars($list->description, ENT_QUOTES, 'UTF-8') }}">Read more</button>
                                                             @else
                                                                 {{ $list->description }}
                                                             @endif
@@ -309,7 +309,7 @@
                                                     <td>
                                                         <div class="action-buttons">
                                                             @if($list->task_group != 'Personal Action')
-                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-toggle="tooltip" title="Update Task" class="btn btn-primary update_task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id='popover-content'>
+                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary update_task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id='popover-content'>
                                                                     <h4 class='text-center'>Update Task</h4>
                                                                     <div class='clearfix'></div>
                                                                     <div class='box-header with-border'>
@@ -372,7 +372,7 @@
                                                             <form action="{{ route('assignee.destroy_complete_activity', $list->id) }}" method="POST">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="btn btn-danger" data-toggle="tooltip" title="Delete" onclick="return confirm('Are you sure want to delete?');">
+                                                                <button type="submit" class="btn btn-danger" data-bs-toggle="tooltip" title="Delete" onclick="return confirm('Are you sure want to delete?');">
                                                                     <i class="fa fa-trash" aria-hidden="true"></i>
                                                                 </button>
                                                             </form>
@@ -416,7 +416,7 @@
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 <script>
 jQuery(document).ready(function($){
-    $('.listing-container [data-toggle="tooltip"]').tooltip();
+    $('.listing-container [data-bs-toggle="tooltip"]').tooltip();
 
     $(document).delegate('.listing-container .openassignee', 'click', function(){
         $('.assignee').show();

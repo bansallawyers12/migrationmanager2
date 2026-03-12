@@ -6,7 +6,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="editDatetimeModalLabel">Edit Date & Time</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -26,7 +26,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button type="button" id="save_datetime_btn" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
 					</div>
 				</form>
@@ -41,7 +41,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Are you sure want to send text message to this user?</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
             </div>
@@ -50,7 +50,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary sendMessage">Send</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -62,7 +62,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="convertActivityToNoteModalLabel">Convert Activity Into Note</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -111,7 +111,7 @@
                         
                         <div class="col-12 col-md-12 col-lg-12">
                             <button type="submit" class="btn btn-primary">Convert to Note</button>
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </form>

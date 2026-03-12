@@ -1400,9 +1400,6 @@
 </div>
 @endsection
 @push('scripts')
-{{-- Bootstrap-datepicker removed - using Flatpickr --}}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 jQuery(document).ready(function($){
      $('.listing-container .filter_btn').on('click', function(){

@@ -252,7 +252,7 @@
                                             @if(Auth::user()->role == 1)
                                             <td class="tdCls">
                                                 <div class="dropdown d-inline">
-                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                                                     <div class="dropdown-menu">
                                                         <a class="dropdown-item has-icon" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->id)) )}}"><i class="fas fa-eye"></i> View Details</a>
                                                         <a class="dropdown-item has-icon" href="mailto:{{ @$list->email }}"><i class="fas fa-envelope"></i> Send Email</a>

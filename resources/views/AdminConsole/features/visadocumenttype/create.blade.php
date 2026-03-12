@@ -28,7 +28,7 @@
 							<div class="card-body">
 								<div id="accordion">
 									<div class="accordion">
-										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 											<h4>Add Visa Document Category</h4>
 										</div>
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">

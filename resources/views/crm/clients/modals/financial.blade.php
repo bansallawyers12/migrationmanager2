@@ -7,7 +7,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editLedgerModalLabel">Edit Client Funds Ledger Entry</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
@@ -50,7 +50,7 @@
                     <input class="docclientreceiptupload" type="file" name="document_upload[]"/>
                 </div>
                 </form>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="updateLedgerEntryBtn">Update Entry</button>
             </div>
         </div>
@@ -63,7 +63,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editOfficeReceiptModalLabel"><i class="fas fa-hand-holding-usd"></i> Edit Direct Office Receipt</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
             </div>
@@ -147,7 +147,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-secondary" id="updateOfficeReceiptDraftBtn"><i class="fas fa-save"></i> Save as Draft</button>
                 <button type="button" class="btn btn-primary" id="updateOfficeReceiptFinalBtn"><i class="fas fa-check"></i> Save and Finalize</button>
             </div>
@@ -161,7 +161,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="costAssignmentModalLabel">Create Cost Assignment</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">×</span>
 				</button>
 			</div>
@@ -202,7 +202,7 @@
 
                     <div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
 
-						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 							<h4>Block Fee</h4>
 						</div>
 
@@ -253,7 +253,7 @@
 							</div>
 						</div>
 
-                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
                             <h4>Department Fee</h4>
 							<div class="col-3">
 								<label for="surcharge">Surcharge</label>
@@ -460,7 +460,7 @@
                             </div>
                         </div>
 
-						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
                             <h4>Additional Fee</h4>
                         </div>
 
@@ -498,7 +498,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="costAssignmentModalLabelLead">Create Cost Assignment</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">×</span>
 				</button>
 			</div>
@@ -575,7 +575,7 @@
 					</div>
 
 					<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
-                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 							<h4>Block Fee</h4>
 						</div>
 
@@ -626,7 +626,7 @@
 							</div>
 						</div>
 
-                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
                             <h4>Department Fee</h4>
 							<div class="col-3">
 								<label for="surcharge">Surcharge</label>
@@ -833,7 +833,7 @@
                             </div>
                         </div>
 
-						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+						<div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
                             <h4>Additional Fee</h4>
                         </div>
 

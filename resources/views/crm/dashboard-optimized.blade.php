@@ -61,7 +61,7 @@
                             <div class="form-group">
                                 <label class="control-label"><i class="fa fa-users"></i> Assignees</label>
                                 <div class="dropdown-multi-select" style="width: 100%;">
-                                    <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
+                                    <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
                                         Select assignees <span class="selected-count"></span>
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="width: 100%;">

@@ -83,7 +83,7 @@
 										<td>{{ $wf->stages->count() }}</td>
 										<td>
 											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Action</button>
+												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Action</button>
 												<div class="dropdown-menu">
 													<a class="dropdown-item" href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id))) }}"><i class="fas fa-list"></i> Manage Stages</a>
 													<a class="dropdown-item" href="{{ route('adminconsole.features.workflow.editWorkflow', base64_encode(convert_uuencode($wf->id))) }}"><i class="far fa-edit"></i> Edit</a>

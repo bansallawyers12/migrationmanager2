@@ -3,7 +3,6 @@
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
-<link rel="stylesheet" href="{{ asset('css/bootstrap-datepicker.min.css') }}">
 <style>
     /* Remove top blank space */
     .visa-sheet-page.listing-container { 
@@ -497,7 +496,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/bootstrap-datepicker.min.js') }}"></script>
 <script>
 jQuery(document).ready(function($) {
     var $scroll = $('#visa-table-scroll');
@@ -534,7 +532,13 @@ jQuery(document).ready(function($) {
     $('.filter_btn').on('click', function() {
         $('.filter_panel').toggleClass('show');
     });
-    $('.datepicker').datepicker({ format: 'dd/mm/yyyy', autoclose: true, todayHighlight: true });
+    if (typeof flatpickr !== 'undefined') {
+        $('.datepicker').each(function() {
+            if (!$(this).data('flatpickr')) {
+                flatpickr(this, { dateFormat: 'd/m/Y', allowInput: true, locale: { firstDayOfWeek: 1 } });
+            }
+        });
+    }
 
     // Handle star/pin clicks - use capture phase (true) so we run before td's stopPropagation blocks bubble
     var visaTable = document.getElementById('visa-sheet-table');

@@ -267,7 +267,7 @@
 
                             <td style="text-align: center; vertical-align: middle;">
                                 <div class="dropdown d-inline-block">
-                                    <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                                    <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownReceipt{{$rec_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                         <?php echo $rec_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                     </span>
                                     <div class="dropdown-menu" aria-labelledby="dropdownReceipt{{$rec_val->id}}">
@@ -477,7 +477,7 @@
                                     data-invoice-status="{{$inc_val->invoice_status}}">
                                         <td style="text-align: center; vertical-align: middle;">
                                             <div class="dropdown d-inline-block">
-                                            <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownInvoice{{$inc_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                                            <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownInvoice{{$inc_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                                 <?php echo $inc_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                             </span>
                                             <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
@@ -727,7 +727,7 @@
                                 
                                     <td style="text-align: center; vertical-align: middle;">
                                         <div class="dropdown d-inline-block">
-                                        <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownOffice{{$off_val->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                                        <span class="reference-dropdown-trigger dropdown-toggle" id="dropdownOffice{{$off_val->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                                             <?php echo $off_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                         </span>
                                         <div class="dropdown-menu" aria-labelledby="dropdownOffice{{$off_val->id}}">
@@ -1858,7 +1858,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="modal-content">' +
             '<div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">' +
             '<h5 class="modal-title"><i class="fas fa-magic"></i> Allocate Deposit to Invoice</h5>' +
-            '<button type="button" class="close" data-dismiss="modal" style="color: white;">' +
+            '<button type="button" class="close" data-bs-dismiss="modal" style="color: white;">' +
             '<span>&times;</span>' +
             '</button>' +
             '</div>' +
@@ -1950,7 +1950,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         modalHtml += '</div>' +
             '<div class="modal-footer">' +
-            '<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>' +
+            '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>' +
             '</div>' +
             '</div>' +
             '</div>' +
@@ -2031,7 +2031,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="modal-content">' +
             '<div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">' +
             '<h5 class="modal-title"><i class="fas fa-magic"></i> Smart Invoice Allocation</h5>' +
-            '<button type="button" class="close" data-dismiss="modal" style="color: white;">' +
+            '<button type="button" class="close" data-bs-dismiss="modal" style="color: white;">' +
             '<span>&times;</span>' +
             '</button>' +
             '</div>' +
@@ -2142,7 +2142,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         modalHtml += '</div>' +
             '<div class="modal-footer">' +
-            '<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>' +
+            '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>' +
             '</div>' +
             '</div>' +
             '</div>' +
@@ -2839,7 +2839,7 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
                 <h5 class="modal-title">
                     <i class="fas fa-upload"></i> Upload Receipt Document
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -2887,7 +2887,7 @@ tr.unallocated-receipt[draggable="true"]:hover::after {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-upload"></i> Upload Document
                     </button>

@@ -12,7 +12,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Discontinue Matter</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -47,7 +47,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('discontinue_matter')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -62,7 +62,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="verificationPaymentFormsModalLabel">Verification: Payment, Service Agreement, Forms</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -91,7 +91,7 @@
 							<button type="button" class="btn btn-primary" id="verification-payment-forms-submit">
 								<i class="fas fa-check"></i> Verify and Proceed to Next Stage
 							</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</form>
@@ -106,7 +106,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="decisionReceivedModalLabel">Decision Received</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -139,7 +139,7 @@
 							<button type="button" class="btn btn-primary" id="decision-received-submit">
 								<i class="fas fa-check"></i> Proceed to Decision Received
 							</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</form>
@@ -154,7 +154,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="discontinueMatterModalLabel">Discontinue Matter</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -189,7 +189,7 @@
 							<button type="button" class="btn btn-danger" id="discontinue-matter-submit">
 								<i class="fas fa-ban"></i> Discontinue
 							</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						</div>
 					</div>
 				</form>
@@ -204,7 +204,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="changeWorkflowModalLabel">Change Workflow</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -222,7 +222,7 @@
 				<button type="button" class="btn btn-primary" id="change-workflow-submit">
 					<i class="fas fa-exchange-alt"></i> Change Workflow
 				</button>
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -234,7 +234,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Revert Discontinued Matter</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -252,7 +252,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('revertapplication')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>

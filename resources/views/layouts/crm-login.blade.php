@@ -40,6 +40,7 @@
 		var site_url = "<?php echo URL::to('/'); ?>";
 	</script>
 	<script src="{{asset('js/app.min.js')}}"></script>
+	<script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
 	<script src="{{asset('js/scripts.js')}}"></script>
 	<script src="{{asset('js/custom.js')}}"></script>
 </body>

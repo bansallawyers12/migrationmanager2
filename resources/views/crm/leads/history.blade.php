@@ -2,8 +2,6 @@
 @section('title', 'Leads')
 
 @section('content')
-{{-- Bootstrap-datepicker removed - using Flatpickr --}}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>.popover {max-width:700px;}
 .timeline{margin:0 0 45px;padding:0;position:relative}.timeline::before{border-radius:.25rem;background:#dee2e6;bottom:0;content:'';left:31px;margin:0;position:absolute;top:0;width:4px}.timeline>div{margin-bottom:15px;margin-right:10px;position:relative}.timeline>div::after,.timeline>div::before{content:"";display:table}.timeline>div>.timeline-item{box-shadow:0 0 1px rgba(0,0,0,.125),0 1px 3px rgba(0,0,0,.2);border-radius:.25rem;background:#fff;color:#495057;margin-left:60px;margin-right:15px;margin-top:0;padding:0;position:relative}.timeline>div>.timeline-item>.time{color:#999;float:right;font-size:12px;padding:10px}.timeline>div>.timeline-item>.timeline-header{border-bottom:1px solid rgba(0,0,0,.125);color:#495057;font-size:16px;line-height:1.1;margin:0;padding:10px}.timeline>div>.timeline-item>.timeline-header>a{font-weight:600}.timeline>div>.timeline-item>.timeline-body,.timeline>div>.timeline-item>.timeline-footer{padding:10px}.timeline>div>.timeline-item>.timeline-body>img{margin:10px}.timeline>div>.timeline-item>.timeline-body ol,.timeline>div>.timeline-item>.timeline-body ul,.timeline>div>.timeline-item>.timeline-body>dl{margin:0}.timeline>div>.timeline-item>.timeline-footer>a{color:#fff}.timeline>div>.fa,.timeline>div>.fab,.timeline>div>.far,.timeline>div>.fas,.timeline>div>.glyphicon,.timeline>div>.ion{background:#adb5bd;border-radius:50%;font-size:15px;height:30px;left:18px;line-height:30px;position:absolute;text-align:center;top:0;width:30px}.timeline>.time-label>span{border-radius:4px;background-color:#fff;display:inline-block;font-weight:600;padding:5px}.timeline-inverse>div>.timeline-item{box-shadow:none;background:#f8f9fa;border:1px solid #dee2e6}.timeline-inverse>div>.timeline-item>.timeline-header{border-bottom-color:#dee2e6}
 .timeline i{color: #fff;}
@@ -185,12 +183,12 @@
 									<div class=&quot;row&quot;>
 										<div class=&quot;col-sm-5 form-group mt2 f13&quot; id=&quot;timegroup&quot; style=&quot;line-height:28px&quot;>
 											<label class=&quot;c6 f12&quot;>Presets</label><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this); return false;&quot; id=&quot;hrs2&quot; data-toggle=&quot;tooltip&quot;>In 2 hours</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;hrs4&quot;  data-toggle=&quot;tooltip&quot;>In 4 hours</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tom_mor&quot; data-toggle=&quot;tooltip&quot;>Tomorrow morning</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tom_eve&quot; data-toggle=&quot;tooltip&quot;>Tomorrow evening</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tow_day&quot; data-toggle=&quot;tooltip&quot;>In 2 Days</a><br/>
-											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;in_week&quot;  data-toggle=&quot;tooltip&quot;>In 1 Week</a><br/>
+											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this); return false;&quot; id=&quot;hrs2&quot; data-bs-toggle=&quot;tooltip&quot;>In 2 hours</a><br/>
+											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;hrs4&quot;  data-bs-toggle=&quot;tooltip&quot;>In 4 hours</a><br/>
+											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tom_mor&quot; data-bs-toggle=&quot;tooltip&quot;>Tomorrow morning</a><br/>
+											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tom_eve&quot; data-bs-toggle=&quot;tooltip&quot;>Tomorrow evening</a><br/>
+											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;tow_day&quot; data-bs-toggle=&quot;tooltip&quot;>In 2 Days</a><br/>
+											<a href=&quot;#&quot; title=&quot;&quot; onmouseover=&quot;setTitledate(this)&quot; onClick=&quot;setDateTimeInput(this);  return false;&quot; id=&quot;in_week&quot;  data-bs-toggle=&quot;tooltip&quot;>In 1 Week</a><br/>
 										</div>
 										<div class=&quot;col-sm-1 no-margin&quot;></div>
 										<div class=&quot;col-sm-6 form-group no-margin&quot;>
@@ -250,8 +248,8 @@
 							</div>
 							<div class="history_timeline">
 								<ul class="nav nav-tabs" id="myTab" role="tablist">
-									<li class="nav-item "><a class="nav-link active" href="#timeline" data-toggle="tab">History</a></li>
-									<li class="nav-item"><a class="nav-link" href="#emails" data-toggle="tab"><i class="fa fa-inbox"></i> Emails</a></li>
+									<li class="nav-item "><a class="nav-link active" href="#timeline" data-bs-toggle="tab">History</a></li>
+									<li class="nav-item"><a class="nav-link" href="#emails" data-bs-toggle="tab"><i class="fa fa-inbox"></i> Emails</a></li>
 								</ul>
 								<div class="tab-content">								
 									<div class="active tab-pane" id="timeline">
@@ -287,7 +285,7 @@
 		<div class="modal-content">
 			<div class="modal-header"> 
 			<h4 class="modal-title">Modal Header</h4>
-				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 				
 			</div>
 			<form action="#" method="POST" name="add-note" autocomplete="off" enctype="multipart/form-data" id="addnoteform">
@@ -314,7 +312,7 @@
 		<div class="modal-content">
 			<div class="modal-header"> 
 			<h4 class="modal-title">Modal Header</h4>
-				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<button type="button" class="close" data-bs-dismiss="modal">&times;</button>
 				
 			</div>
 				<div class="modal-body showeditform">
@@ -330,7 +328,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -427,7 +425,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('add-compose')" type="button" class="btn btn-primary">Send</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -436,8 +434,6 @@
 	</div>
 </div>
 <script src="{{URL::to('/')}}/public/js/popover.js"></script>  
-{{-- Bootstrap-datepicker removed - using Flatpickr --}}
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script> 
 
 var lead_id = '{{base64_encode(convert_uuencode(@$fetchedData->id))}}';
@@ -525,8 +521,8 @@ $(function () {
 		$('.js-data-example-ajax').trigger('change');
 	
 });
-  $('[data-toggle="tooltip"]').tooltip();
-   $('[data-toggle="popover"]').popover();
+  $('[data-bs-toggle="tooltip"]').tooltip();
+   $('[data-bs-toggle="popover"]').popover();
    
    // Initialize Flatpickr for datepickers
    if (typeof flatpickr !== 'undefined') {

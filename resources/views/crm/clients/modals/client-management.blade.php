@@ -4,7 +4,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Convert Lead To Client</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -124,7 +124,7 @@
 
 						<div class="col-9 col-md-9 col-lg-9 text-right">
                             <button onclick="customValidate('convert_lead_to_client')" type="button" class="btn btn-primary">Save</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
                     </div>
 				</form>
@@ -662,7 +662,7 @@
                     <h5 class="modal-title mb-0" id="create_action_popupLabel">Assign Staff</h5>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -805,7 +805,7 @@
                     <button class="btn btn-primary btn-lg btn-assign-staff" id="assignStaff">
                         <i class="fas fa-user-plus mr-2"></i>Assign Staff
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-lg" data-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
                         <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                 </div>
@@ -828,7 +828,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="change_MatterModalLabel">Change Matter Assignee</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -892,7 +892,7 @@
 
                         <div class="col-9 col-md-9 col-lg-9 text-right">
                             <button onclick="customValidate('change_matter_assignee')" type="button" class="btn btn-primary">Change</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
                     </div>
 				</form>

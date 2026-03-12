@@ -264,14 +264,14 @@
                                                             <td>
                                                                 <button type="button" class="btn btn-sm btn-info" 
                                                                         onclick="viewActivityDetails({{ $activity->id }})"
-                                                                        data-toggle="tooltip" title="View Details">
+                                                                        data-bs-toggle="tooltip" title="View Details">
                                                                     <i class="fas fa-eye"></i>
                                                                 </button>
                                                                 @if($activity->client_id)
                                                                     <a href="{{ route('crm.clients.detail', $activity->client_id) }}" 
                                                                        target="_blank" 
                                                                        class="btn btn-sm btn-primary"
-                                                                       data-toggle="tooltip" title="View Client">
+                                                                       data-bs-toggle="tooltip" title="View Client">
                                                                         <i class="fas fa-user"></i>
                                                                     </a>
                                                                 @endif
@@ -313,7 +313,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Activity Details</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -363,7 +363,7 @@ $(document).ready(function() {
     });
     
     // Initialize tooltips
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-bs-toggle="tooltip"]').tooltip();
 });
 
 function resetForm() {

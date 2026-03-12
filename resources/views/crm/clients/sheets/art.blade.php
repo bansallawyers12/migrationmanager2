@@ -4,7 +4,6 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
-<link rel="stylesheet" href="{{ asset('css/bootstrap-datepicker.min.css') }}">
 <style>
     /* Remove top blank space: no margin/padding above ART content */
     .art-sheet-page.listing-container {
@@ -463,7 +462,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/bootstrap-datepicker.min.js') }}"></script>
 <script>
 jQuery(document).ready(function($) {
     var $scrollContainer = $('#table-scroll-container');
@@ -495,7 +493,13 @@ jQuery(document).ready(function($) {
     $('.filter_btn').on('click', function() {
         $('.filter_panel').toggleClass('show');
     });
-    $('.datepicker').datepicker({ format: 'dd/mm/yyyy', autoclose: true, todayHighlight: true });
+    if (typeof flatpickr !== 'undefined') {
+        $('.datepicker').each(function() {
+            if (!$(this).data('flatpickr')) {
+                flatpickr(this, { dateFormat: 'd/m/Y', allowInput: true, locale: { firstDayOfWeek: 1 } });
+            }
+        });
+    }
     $('.sortable').on('click', function() {
         var sortField = $(this).data('sort');
         var currentSort = '{{ request("sort") }}';

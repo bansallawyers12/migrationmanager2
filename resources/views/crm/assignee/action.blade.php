@@ -527,7 +527,7 @@
                             <div class='form-group'>
                                 <label class='control-label'><i class='fa fa-users'></i> Assignees</label>
                                 <div class='dropdown-multi-select' style='width: 100%;'>
-                                    <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false' style='width: 100%;'>
+                                    <button type='button' class='btn btn-default dropdown-toggle' id='dropdownMenuButton' data-bs-toggle='dropdown' aria-haspopup='true' aria-expanded='false' style='width: 100%;'>
                                         Select assignees <span class='selected-count'></span>
                                     </button>
                                     <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' style='width: 100%;'>
@@ -636,7 +636,7 @@
                 <h5 class="modal-title" id="completionNotesModalLabel">
                     <i class="fa fa-check-circle"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -658,7 +658,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="background-color: #f8f9fa;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-success" id="confirmTaskCompletion">
@@ -1074,23 +1074,8 @@
         max-width: 100vw;
     }*/
     
-    /* Datepicker z-index fix to appear above popovers */
-    .daterangepicker {
-        z-index: 99999 !important;
-        position: fixed !important;
-    }
-    
-    /* Ensure datepicker dropdown appears above all other elements */
-    .daterangepicker .drp-buttons {
-        z-index: 99999 !important;
-    }
-    
-    /* Additional z-index for datepicker elements */
-    .daterangepicker .calendar-table {
-        z-index: 99999 !important;
-    }
-    
-    .daterangepicker .ranges {
+    /* Flatpickr z-index fix to appear above popovers */
+    .flatpickr-calendar {
         z-index: 99999 !important;
     }
 </style>
@@ -1138,7 +1123,7 @@ $(function () {
         ],
         "fnDrawCallback": function() {
             // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
-            $('[data-toggle="popover"]').not('.update_task').popover({
+            $('[data-bs-toggle="popover"]').not('.update_task').popover({
                 html: true,
                 sanitize: false,
                 trigger: 'click',

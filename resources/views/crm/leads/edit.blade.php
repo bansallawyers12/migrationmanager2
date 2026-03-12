@@ -6,8 +6,6 @@
     <link rel="stylesheet" href="{{asset('css/clients/edit-client-components.css')}}">
     <link rel="stylesheet" href="{{asset('css/leads/lead-form.css')}}">
     <link rel="stylesheet" href="{{asset('css/anzsco-admin.css')}}">
-    {{-- Flatpickr CSS for date pickers in address autocomplete --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 @endpush
 
 @section('content')
@@ -1536,8 +1534,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
-    {{-- Flatpickr JS for date pickers in address autocomplete --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>
     <script src="{{asset('js/clients/address-regional-codes.js')}}"></script>

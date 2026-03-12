@@ -190,7 +190,7 @@
                                 <strong>Attaching Documents:</strong> When you send the confirmation email to the client, you'll be able to select which visa documents to attach from a list. No pre-mapping required!
                             </div>
                             <div class="eoi-map-help mt-2">
-                                <button type="button" class="btn btn-link btn-sm p-0 text-info" data-toggle="collapse" data-target="#eoi-map-help-collapse" aria-expanded="false">
+                                <button type="button" class="btn btn-link btn-sm p-0 text-info" data-bs-toggle="collapse" data-bs-target="#eoi-map-help-collapse" aria-expanded="false">
                                     {{-- OLD help text removed --}}
                                 </button>
                                 <div class="collapse mt-1" id="eoi-map-help-collapse">
@@ -269,7 +269,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Send EOI Confirmation Email</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -344,7 +344,7 @@
                                 <button type="button" class="btn btn-primary" id="btn-eoi-send-email">
                                     <i class="fas fa-paper-plane"></i> Send Email
                                 </button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                     <i class="fas fa-times"></i> Cancel
                                 </button>
                             </div>

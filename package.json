@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "copy:flatpickr": "node -e \"const fs=require('fs');const p='node_modules/flatpickr/dist/';fs.copyFileSync(p+'flatpickr.min.js','public/js/flatpickr.min.js');fs.copyFileSync(p+'flatpickr.min.css','public/css/flatpickr.min.css')\""
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",

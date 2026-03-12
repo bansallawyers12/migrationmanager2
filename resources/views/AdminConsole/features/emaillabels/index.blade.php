@@ -143,7 +143,7 @@
 										
 										<td>
 											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" id="actionBtn_{{@$list->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+												<button class="btn btn-primary dropdown-toggle" type="button" id="actionBtn_{{@$list->id}}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu" aria-labelledby="actionBtn_{{@$list->id}}">
 													@if(@$list->type == 'system')
 														<a class="dropdown-item has-icon text-muted" href="javascript:void(0);" style="cursor: not-allowed; pointer-events: none;"><i class="far fa-edit"></i> Edit (System labels cannot be edited)</a>

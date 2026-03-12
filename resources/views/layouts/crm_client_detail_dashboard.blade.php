@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/fullcalendar.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    <link rel="stylesheet" href="{{asset('css/daterangepicker.css')}}">
+    @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/bootstrap-formhelpers.min.css')}}">
@@ -27,11 +27,6 @@
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
     <script src="{{asset('js/jquery_min_latest.js')}}"></script>
     
-    {{-- Bootstrap Datepicker CSS --}}
-    {{-- <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}"> --}} {{-- ❌ REMOVED: Conflicts with daterangepicker used in leads --}}
-    {{-- Bootstrap Datepicker JS --}}
-    {{-- <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script> --}} {{-- ❌ REMOVED: Leads/Dashboard use daterangepicker instead --}}
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8f9fa; color: #343a40; line-height: 1.6; }
@@ -710,13 +705,14 @@
     <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
-    <script src="{{asset('js/daterangepicker.js')}}"></script> {{-- ✅ Daterangepicker for leads/dashboard --}}
-    <script src="{{asset('js/global-datepicker.js')}}"></script> {{-- ✅ Global DatePicker Helper for NEW code --}}
+    @include('components.flatpickr-scripts')
+    <script src="{{asset('js/crm-flatpickr.js')}}"></script> {{-- CRM_Flatpickr helper (replaces global-datepicker/daterangepicker) --}}
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
+    <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>

@@ -632,8 +632,8 @@ $(function () {
     return false;
   });
 
-  // Dismiss modal
-  $("[data-dismiss=modal]").click(function () {
+  // Dismiss modal (Bootstrap 5: data-bs-dismiss="modal")
+  $("[data-bs-dismiss=modal], [data-dismiss=modal]").click(function () {
     $(this)
       .closest(".modal")
       .modal("hide");
@@ -669,8 +669,8 @@ $(function () {
     });
   }
 
-  // Daterangepicker
-  if (jQuery().daterangepicker) {
+  // Date pickers (Flatpickr - standardized)
+  if (typeof flatpickr !== 'undefined') {
     // Check if we're on client detail page (uses bootstrap-datepicker instead)
     // Client detail pages have .report_date_fields or .client-navigation-sidebar
     var isClientDetailPage = $('.report_date_fields').length > 0 || 

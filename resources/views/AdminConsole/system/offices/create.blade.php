@@ -25,7 +25,7 @@
 							<div class="card-body">
 								<div id="accordion"> 
 									<div class="accordion">
-										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#primary_info" aria-expanded="true">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
 											<h4>Primary Information</h4>
 										</div>
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
@@ -46,7 +46,7 @@
 										</div>
 									</div>
 									<div class="accordion">
-										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#address">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#address">
 											<h4>Address</h4>
 										</div>
 										<div class="accordion-body collapse" id="address" data-parent="#accordion">
@@ -123,7 +123,7 @@
 										</div>
 									</div>
 									<div class="accordion">
-										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#contact_details">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#contact_details">
 											<h4>Contact Details</h4>
 										</div>
 										<div class="accordion-body collapse" id="contact_details" data-parent="#accordion">
@@ -180,7 +180,7 @@
 										</div>
 									</div>
 									<div class="accordion">
-										<div class="accordion-header" role="button" data-toggle="collapse" data-target="#other_info">
+										<div class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#other_info">
 											<h4>Other Information</h4>
 										</div>
 										<div class="accordion-body collapse" id="other_info" data-parent="#accordion">

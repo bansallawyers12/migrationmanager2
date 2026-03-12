@@ -316,7 +316,7 @@
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
                         @endif
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-toggle="modal" data-target="#importClientModal" title="Import Client">
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-bs-toggle="modal" data-bs-target="#importClientModal" title="Import Client">
                             <i class="fas fa-upload"></i> Import Client
                         </a>
                         <select name="per_page" id="per_page" class="form-control per-page-select">
@@ -557,7 +557,7 @@
                                             </td>
                                             <td style="white-space: initial;">
                                                 <div class="dropdown d-inline">
-                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                         Action
                                                     </button>
                                                     <div class="dropdown-menu">
@@ -611,7 +611,7 @@
                 <h5 class="modal-title" id="importClientModalLabel">
                     <i class="fas fa-upload"></i> Import Client from File
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -650,7 +650,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-upload"></i> Import Client
                         </button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -663,7 +663,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="clientModalLabel">Compose Email</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -753,7 +753,7 @@
 						</div>
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('sendmail')" type="button" class="btn btn-primary">Send</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>

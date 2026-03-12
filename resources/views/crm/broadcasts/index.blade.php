@@ -14,12 +14,12 @@
         <div class="section-body">
             <ul class="nav nav-tabs" id="broadcastTabs" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active" id="broadcasts-tab" data-toggle="tab" href="#broadcasts" role="tab" aria-controls="broadcasts" aria-selected="true">
+                    <a class="nav-link active" id="broadcasts-tab" data-bs-toggle="tab" href="#broadcasts" role="tab" aria-controls="broadcasts" aria-selected="true">
                         <i class="fas fa-bullhorn mr-1"></i> Broadcasts
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="active-staff-tab" data-toggle="tab" href="#active-staff" role="tab" aria-controls="active-staff" aria-selected="false">
+                    <a class="nav-link" id="active-staff-tab" data-bs-toggle="tab" href="#active-staff" role="tab" aria-controls="active-staff" aria-selected="false">
                         <i class="fas fa-users mr-1"></i> Active Staff
                     </a>
                 </li>
@@ -97,17 +97,17 @@
                                     <!-- Tabs for different views -->
                                     <ul class="nav nav-pills nav-fill" id="history-tabs" role="tablist">
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="all-broadcasts-tab" data-toggle="pill" data-target="#all-broadcasts" type="button" role="tab">
+                                            <button class="nav-link active" id="all-broadcasts-tab" data-bs-toggle="pill" data-bs-target="#all-broadcasts" type="button" role="tab">
                                                 <i class="fas fa-globe mr-1"></i> All Broadcasts
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="my-sent-tab" data-toggle="pill" data-target="#my-sent" type="button" role="tab">
+                                            <button class="nav-link" id="my-sent-tab" data-bs-toggle="pill" data-bs-target="#my-sent" type="button" role="tab">
                                                 <i class="fas fa-paper-plane mr-1"></i> My Sent
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="my-read-tab" data-toggle="pill" data-target="#my-read" type="button" role="tab">
+                                            <button class="nav-link" id="my-read-tab" data-bs-toggle="pill" data-bs-target="#my-read" type="button" role="tab">
                                                 <i class="fas fa-check-circle mr-1"></i> My Read
                                             </button>
                                         </li>
@@ -378,7 +378,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="broadcastDetailModalLabel">Broadcast Details</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -406,7 +406,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

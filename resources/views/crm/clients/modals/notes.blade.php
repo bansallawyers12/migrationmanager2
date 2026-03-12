@@ -10,7 +10,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Create Note</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -62,7 +62,7 @@
 
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('notetermform')" type="button" class="btn btn-primary">Submit</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>
@@ -82,7 +82,7 @@
 					<h5 class="modal-title mb-0" id="appliationModalLabel">Create Note</h5>
 				</div>
 				<div class="modal-actions">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -193,7 +193,7 @@
 								<button onclick="customValidate('notetermform_n')" type="button" class="btn btn-primary btn-lg btn-create-note">
 									<i class="fas fa-save mr-2"></i>Create Note
 								</button>
-								<button type="button" class="btn btn-outline-secondary btn-lg" data-dismiss="modal">
+								<button type="button" class="btn btn-outline-secondary btn-lg" data-bs-dismiss="modal">
 									<i class="fas fa-times mr-2"></i>Cancel
 								</button>
 							</div>
@@ -211,7 +211,7 @@
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -227,7 +227,7 @@
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -247,7 +247,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="appliationModalLabel">Create Matter Note</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -279,7 +279,7 @@
 
 						<div class="col-12 col-md-12 col-lg-12">
 							<button onclick="customValidate('appnotetermform')" type="button" class="btn btn-primary">Submit</button>
-							<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 						</div>
 					</div>
 				</form>

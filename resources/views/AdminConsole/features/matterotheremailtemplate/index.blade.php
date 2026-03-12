@@ -45,7 +45,7 @@
 										<td>{{ @$list->created_at ? date('d M Y', strtotime(@$list->created_at)) : config('constants.empty') }}</td>
 										<td>
 											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
 													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matterotheremailtemplate.edit', [$list->id, $matterId])}}"><i class="far fa-edit"></i> Edit</a>
 													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'email_templates')"><i class="fas fa-trash"></i> Delete</a>

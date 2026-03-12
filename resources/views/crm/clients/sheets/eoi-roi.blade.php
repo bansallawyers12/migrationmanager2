@@ -4,7 +4,6 @@
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/listing-container.css') }}">
 <link rel="stylesheet" href="{{ asset('css/listing-pagination.css') }}">
-<link rel="stylesheet" href="{{ asset('css/bootstrap-datepicker.min.css') }}">
 <style>
     /* Sheet tabs styling */
     .sheet-tabs {
@@ -683,7 +682,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/bootstrap-datepicker.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 jQuery(document).ready(function($) {
@@ -743,12 +741,24 @@ jQuery(document).ready(function($) {
         $('.filter_panel').toggleClass('show');
     });
 
-    // Datepicker
-    $('.datepicker').datepicker({
-        format: 'dd/mm/yyyy',
-        autoclose: true,
-        todayHighlight: true
-    });
+    // Datepicker - Flatpickr (loaded in layout)
+    if (typeof flatpickr !== 'undefined') {
+        $('.datepicker').each(function() {
+            var $this = $(this);
+            if (!$this.data('flatpickr')) {
+                flatpickr(this, {
+                    dateFormat: 'd/m/Y',
+                    allowInput: true,
+                    clickOpens: true,
+                    locale: { firstDayOfWeek: 1 },
+                    onChange: function(selectedDates, dateStr) {
+                        $this.val(dateStr);
+                        $this.trigger('change');
+                    }
+                });
+            }
+        });
+    }
 
     // Sortable columns
     $('.sortable').on('click', function() {

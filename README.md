@@ -15,7 +15,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 ## Features
 
 - **Client Management**: Complete client profiles with personal information, visa history, and documents
-- **Application Tracking**: Monitor visa applications with workflow stages and status updates
+- **Matter & Application Tracking**: Monitor visa applications via matters with workflow stages and status updates
 - **Appointment System**: Schedule consultations with calendar integration and automated reminders
 - **Invoice & Payment Management**: Generate invoices, track payments, and manage receipts
 - **Document Management**: Secure storage and organization of client documents and checklists
@@ -29,15 +29,19 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 - **Client Portal**: Secure portal for clients to view status and submit documents
 - **Multi-Currency Support**: Handle international payments and multiple currencies
 - **Task Management**: Assign and track tasks related to cases and clients
+- **Company & Employer Sponsorship**: Full employer sponsorship management with company profiles, directors, trading names, Trust entities, nominations, and sponsorship tracking
+- **EOI (Expression of Interest) Workflows**: Client confirmation sheets, ROI forms, and amendment request flows for visa applications
+- **Assignee Actions**: Dedicated action views for assigned tasks and follow-ups
 - **Windows Friendly**: Optimized for XAMPP on Windows environments
 
 ## Technology Stack
 
-- **Backend**: Laravel 10.x (PHP 8.1+)
-- **Frontend**: Bootstrap 4, jQuery, DataTables, Select2
-- **Database**: MySQL (Primary), SQLite (Development)
+- **Backend**: Laravel 12.x (PHP 8.2+)
+- **Frontend**: Bootstrap 4/5, jQuery, DataTables, Select2, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
+- **Build**: Vite 7.x
+- **Database**: PostgreSQL (Primary), MySQL (optional for migration), SQLite (Development)
 - **PDF Generation**: DomPDF for invoices and reports
-- **Document Processing**: Python scripts for DOCX to PDF conversion
+- **Document Processing**: Python API service (`python_services/`) for DOCX to PDF conversion
 - **Email System**: Laravel Mail with SMTP/IMAP integration
 - **Payment Integration**: Stripe, PayU payment gateways
 - **File Storage**: Local storage with S3 support for attachments
@@ -46,12 +50,12 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 ## Prerequisites
 
-- PHP 8.1 or higher
+- PHP 8.2 or higher
 - Composer
 - Node.js and npm
-- Python 3.x (for document conversion)
-- MySQL 5.7+ or MariaDB 10.3+
-- XAMPP (recommended for Windows)
+- Python 3.x (for document conversion, optional)
+- PostgreSQL 12+ (primary database)
+- XAMPP (optional, for Apache; PostgreSQL must be installed separately on Windows)
 
 ## Installation
 
@@ -59,6 +63,8 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
    ```bash
    git clone https://github.com/viplucmca/migrationmanager.git
    cd migrationmanager
+   # Or if using migrationmanager2:
+   # cd migrationmanager2
    ```
 
 2. **Install PHP dependencies**
@@ -78,16 +84,17 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
    ```
 
 5. **Database setup**
-   - Create a MySQL database
+   - Create a PostgreSQL database
    - Update `.env` file with your database credentials:
    ```env
-   DB_CONNECTION=mysql
+   DB_CONNECTION=pgsql
    DB_HOST=127.0.0.1
-   DB_PORT=3306
+   DB_PORT=5432
    DB_DATABASE=migration_manager
-   DB_USERNAME=root
+   DB_USERNAME=postgres
    DB_PASSWORD=
    ```
+   - Ensure PHP has the `pdo_pgsql` extension enabled (check `public/check_pgsql.php` if available)
    - Run migrations and seeders:
    ```bash
    php artisan migrate --seed
@@ -119,18 +126,19 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 8. **Build frontend assets**
    ```bash
+   npm install
+   npm run copy:flatpickr   # Copies Flatpickr assets to public/ (required for date pickers)
    npm run build
    # Or for development:
    npm run dev
    ```
 
-9. **Install Python dependencies** (for document conversion)
+9. **Install Python dependencies** (optional, for DOCX to PDF document conversion)
+   - If using document conversion, run from project root:
    ```bash
-   cd python
-   pip install -r requirements.txt
-   # For LibreOffice converter:
-   pip install -r requirements_libreoffice.txt
+   cd python_services && pip install -r requirements.txt
    ```
+   - LibreOffice may be required for high-quality DOCX conversion
 
 10. **Configure payment gateways** (Optional)
     Add to `.env`:
@@ -145,7 +153,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 11. **Start the application**
     - If using XAMPP:
       - Point your virtual host to the `public` directory
-      - Or access via `http://localhost/migrationmanager/public`
+      - Or access via `http://localhost/migrationmanager2/public` (adjust path if your folder name differs)
     
     - Using PHP's built-in server:
       ```bash
@@ -162,8 +170,8 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 ### Running the application
 
 For development with XAMPP:
-1. Start Apache and MySQL from XAMPP Control Panel
-2. Access the application at `http://localhost/migrationmanager/public`
+1. Start Apache from XAMPP Control Panel; ensure PostgreSQL is running (install separately if needed)
+2. Access the application at `http://localhost/migrationmanager2/public` (or `http://migrationmanager.local` if virtual host is configured)
 
 For development with PHP built-in server:
 ```bash
@@ -192,9 +200,9 @@ After running migrations with seed, use these credentials:
 Add to `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
 ```apache
 <VirtualHost *:80>
-    DocumentRoot "C:/xampp/htdocs/migrationmanager/public"
+    DocumentRoot "C:/xampp/htdocs/migrationmanager2/public"
     ServerName migrationmanager.local
-    <Directory "C:/xampp/htdocs/migrationmanager/public">
+    <Directory "C:/xampp/htdocs/migrationmanager2/public">
         AllowOverride All
         Require all granted
     </Directory>
@@ -210,26 +218,25 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 
 ### 1) Manage Leads
 - Navigate to `Leads` to view all potential clients
-- Create new leads with inquiry details, source, and interested services
+- Create new leads with inquiry details, source, and interested services (including company/trading names for employer leads)
 - Track lead status: New, Follow-up, Converted, Lost
 - Convert leads to clients when ready to proceed
-- View lead history and notes
+- View lead history, notes, and assignee actions
 
 ### 2) Client Management
 - Go to `Clients` to view all active clients
-- Create detailed client profiles with personal information
+- Create detailed client profiles with personal information (individual or company)
+- For company clients: use Company Edit for employer sponsorship details (trading names, directors, Trust, nominations)
 - Upload client documents and visa history
 - Track client relationships (spouse, children, dependents)
 - View client summary with all applications, invoices, and documents
 - Access client portal credentials
 
-### 3) Application Tracking
-- Navigate to `Applications` to manage visa applications
-- Create new applications linked to clients
-- Select visa type and upload required documents
-- Track application workflow stages
-- Set important dates (submission, interview, decision)
-- Add notes and updates for each application
+### 3) Matter & Application Tracking
+- Visa applications are tracked via **Matters** (client matters) on each client profile
+- Create matters linked to clients; select visa type and upload required documents
+- Track workflow stages, important dates (submission, interview, decision)
+- Add notes and updates for each matter
 
 ### 4) Appointment Scheduling
 - Go to `Appointments` to manage client consultations
@@ -285,7 +292,7 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 ### Admin Module
 - Dashboard with key metrics
 - Complete client management
-- Application tracking
+- Matter/case tracking (visa applications)
 - Invoice and payment management
 - Staff and team management
 - System settings and configuration
@@ -308,7 +315,7 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
 - **Models**: 
   - `User` - Multi-role user authentication (Admin, Staff, Agent, Client)
   - `Client` - Client profiles with personal information and relationships
-  - `Application` - Visa application tracking with workflow stages
+  - `ClientMatter` - Matter/case tracking with visa workflow stages (replaces legacy applications)
   - `Invoice` - Invoice generation and payment tracking
   - `Receipt` - Payment receipts and transaction records
   - `Appointment` - Consultation scheduling and management
@@ -316,12 +323,16 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `Document` - Document storage and electronic signatures
   - `Matter` - Case/matter management with categories
   - `Quotation` - Service quotation generation
+  - `Company` - Company profiles for employer sponsorship (with trading names, directors, nominations)
+  - `CompanyTradingName` - Multiple trading names per company
+  - `CompanyDirector` - Company directors with optional client/lead linking
+  - `CompanyNomination` - Employer nomination tracking with nominated person linking
   
 - **Controllers**: 
   - `ClientsController` - Client CRUD operations and relationship management
   - `ClientPortalController` - Client portal operations including application tracking, workflow management, and portal user management
   - `InvoiceController` - Invoice generation, payment processing, and schedules
-  - `AppointmentsController` - Appointment scheduling and calendar management (NOTE: This controller has been deleted - old appointment system removed. New system uses `BookingAppointmentsController`)
+  - `BookingAppointmentsController` - Appointment scheduling and calendar (replaces legacy AppointmentsController)
   - `DocumentController` - Document upload, download, and signature handling
   - `OfficeVisitController` - Walk-in client management
   - `AdminController` - Admin dashboard and system management
@@ -331,18 +342,16 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `EmailService` - Email sending and SMTP integration
   - `PaymentService` - Payment gateway integration
   
-- **Python Scripts**:
-  - `libreoffice_converter.py` - Convert DOCX to PDF using LibreOffice
-  - `python_converter.py` - Alternative document conversion utility
-  - `test_libreoffice_converter.py` - Test document conversion functionality
+- **Python Services** (`python_services/`):
+  - `docx_converter_service.py` - DOCX to PDF conversion via HTTP API
+  - `PythonConverterService` (PHP) calls the Python API at `PYTHON_CONVERTER_URL` (default: `http://localhost:5000`)
   
 - **Database Migrations**: 
   - User roles and permissions
-  - Client management tables
-  - Application tracking
+  - Client and matter management tables
   - Financial transactions
   - Document storage
-  - Appointment scheduling
+  - Appointment scheduling (booking system)
   
 - **Policies**: 
   - Role-based access control for Admin, Staff, Agent, and Client
@@ -361,10 +370,22 @@ storage/app/public/
 
 public/
 ├── assets/              # UI assets and images
-├── css/                 # Custom stylesheets
-├── js/                  # JavaScript files
+├── css/                 # Custom stylesheets (includes flatpickr.min.css)
+├── js/                  # JavaScript files (flatpickr.min.js, crm-flatpickr.js, scripts.js)
 └── img/                 # Public images
 ```
+
+### Date Picker (Flatpickr)
+
+The CRM uses **Flatpickr** for all date inputs (replacing Bootstrap Datepicker/daterangepicker). A global `CRM_Flatpickr` helper provides:
+
+- **initStandard** - Single date picker (DD/MM/YYYY)
+- **initPastDates** - Past-dates-only (max: today) for DOB, address dates, visa dates
+- **initDOB** - Date of birth with automatic age calculation
+- **initDateTime** - Date + time for appointments
+- **initRange** - Date range for report filters
+
+Use `data-flatpickr="standard"`, `data-flatpickr="dob"`, `data-flatpickr="datetime"`, or `data-flatpickr="range"` for auto-initialization. Run `npm run copy:flatpickr` after `npm install` to copy Flatpickr assets to `public/`.
 
 ### Background Jobs & Scheduling
 
@@ -381,22 +402,12 @@ public/
 
 ### Document Conversion
 
-The system includes Python-based document conversion:
+The system includes Python-based document conversion via `python_services/`:
 
-#### `libreoffice_converter.py`
 - **Purpose**: Convert DOCX documents to PDF format
-- **Usage**: Automatically called when documents are uploaded
-- **Features**: 
-  - Uses LibreOffice for high-quality conversion
-  - Maintains document formatting
-  - Handles multiple file formats
-  - Error logging and recovery
-
-#### Integration with Laravel
-- Documents uploaded as DOCX are automatically converted to PDF
-- Conversion happens in background queue
-- Original and converted files are both stored
-- Fallback to alternative conversion methods if needed
+- **Usage**: `PythonConverterService` (PHP) calls the Python API; set `PYTHON_CONVERTER_URL` in `.env` (default: `http://localhost:5000`)
+- **Setup**: Run `python_services/start_services.py` or equivalent to start the conversion API
+- **Integration**: Documents uploaded as DOCX are converted via the API; conversion can run in background queue
 
 ## Main Routes
 
@@ -415,11 +426,8 @@ The system includes Python-based document conversion:
   - `DELETE /clients/{id}` - Delete client
   - Note: Clients are created by converting leads (see Lead Conversion below)
   
-- **Applications:**
-  - `GET /applications` - List all applications
-  - `GET /applications/create` - Create application
-  - `GET /applications/{id}` - View application details
-  - `PUT /applications/{id}` - Update application status
+- **Matters** (visa/case tracking on client detail):
+  - Matters are managed within the client detail view; no standalone applications routes
   
 - **Invoices:**
   - `GET /invoices` - List invoices
@@ -428,11 +436,8 @@ The system includes Python-based document conversion:
   - `POST /invoices/{id}/send` - Email invoice
   - `POST /invoices/{id}/payment` - Record payment
   
-- **Appointments:**
-  - `GET /appointments` - Calendar view
-  - `POST /appointments` - Create appointment
-  - `PUT /appointments/{id}` - Update appointment
-  - `DELETE /appointments/{id}` - Cancel appointment
+- **Appointments** (Booking system):
+  - Uses `BookingAppointmentsController`; see `routes/client_portal.php` for booking routes
   
 - **Leads:**
   - `GET /leads` - List leads
@@ -465,12 +470,12 @@ APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
 
-# Database
-DB_CONNECTION=mysql
+# Database (PostgreSQL)
+DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=3306
+DB_PORT=5432
 DB_DATABASE=migration_manager
-DB_USERNAME=root
+DB_USERNAME=postgres
 DB_PASSWORD=
 
 # Mail Configuration
@@ -492,7 +497,7 @@ PAYU_SALT=your_payu_salt
 # File Storage
 FILESYSTEM_DISK=local
 
-# Queue Configuration
+# Queue Configuration (database or redis)
 QUEUE_CONNECTION=database
 QUEUE_RETRY_AFTER=90
 
@@ -507,7 +512,7 @@ LOG_LEVEL=debug
 
 ### Database
 
-The application uses MySQL as the primary database. For development, you can use SQLite by changing the `DB_CONNECTION` to `sqlite` in `.env`.
+The application uses **PostgreSQL** as the primary database (default in `config/database.php`). MySQL is supported for legacy migration from existing MySQL installations. For development, you can use SQLite by changing `DB_CONNECTION` to `sqlite` in `.env`.
 
 ## Contributing
 
@@ -521,11 +526,26 @@ The application uses MySQL as the primary database. For development, you can use
 
 This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
+## Recent Changes
+
+- **PostgreSQL**: Primary database is now PostgreSQL (default in config); MySQL supported for legacy migration.
+- **Laravel 12**: Upgraded from Laravel 10; requires PHP 8.2+.
+- **Matter-based tracking**: Legacy `applications` table removed; visa tracking is via `client_matters` (Matter model).
+- **Flatpickr migration**: All date pickers now use Flatpickr (DD/MM/YYYY format). Bootstrap Datepicker removed.
+- **Company Employer Sponsorship**: Full implementation including Trust entities, trading names, directors (with client/lead linking), nominations, sponsorship tracking, and per-section AJAX save.
+- **EOI workflows**: Client confirmation sheets (`eoi-client-confirmation`, `eoi-confirmation-success`, `eoi-roi`) for Expression of Interest visa flows.
+- **Assignee action view**: Dedicated action page for assigned tasks.
+- **CRM layouts**: Updated `crm_client_detail` and `crm_client_detail_dashboard` with Flatpickr components.
+- **Vite build**: Frontend built with Vite; includes FullCalendar, Flatpickr, Signature Pad, Alpine.js, Tailwind.
+
+For detailed Company Employer Sponsorship implementation notes, see `docs/COMPANY_EMPLOYER_SPONSORSHIP_IMPLEMENTATION_PLAN.md`.
+
 ## Important Notes
 
-- The application is optimized to work with XAMPP on Windows
-- Python scripts are used for document conversion (DOCX to PDF)
-- MySQL database is recommended for production environments
+- The application is optimized to work with XAMPP (Apache) on Windows; PostgreSQL must be installed separately
+- Run `npm run copy:flatpickr` after `npm install` so date pickers work correctly
+- Python API service (`python_services/`) handles DOCX to PDF conversion; optional if not using DOCX uploads
+- PostgreSQL is the primary database; ensure `pdo_pgsql` PHP extension is enabled
 - The application uses Laravel's built-in authentication with multi-role support
 - Document storage is handled locally by default, with optional S3 integration
 - Comprehensive logging is available in `storage/logs/laravel.log`
@@ -536,19 +556,23 @@ This project is open-sourced software licensed under the [MIT license](https://o
 ## Troubleshooting
 
 ### Database Issues
-- **Connection refused**: Ensure MySQL is running in XAMPP Control Panel
+- **Connection refused**: Ensure PostgreSQL is running (XAMPP does not include PostgreSQL; install separately)
+- **pdo_pgsql not loaded**: Enable the `pdo_pgsql` extension in `php.ini`; use `public/check_pgsql.php` to verify
 - **Access denied**: Verify database credentials in `.env` file
 - **Table not found**: Run `php artisan migrate --seed` to create tables
 
-### PDF Generation Issues
-- **DOCX conversion fails**: Ensure Python is installed and accessible
-- **LibreOffice not found**: Install LibreOffice or use alternative converter
+### PDF / DOCX Conversion Issues
+- **DOCX conversion fails**: Ensure the Python conversion service is running (`python_services/`); set `PYTHON_CONVERTER_URL` in `.env` if not using default `http://localhost:5000`
 - **Permission denied**: Check storage folder permissions (775 or 777)
 
 ### Email Issues
 - **Emails not sending**: Verify MAIL_* configuration in `.env`
 - **SMTP authentication failed**: Use app-specific passwords for Gmail
 - **Emails going to spam**: Configure SPF and DKIM records for your domain
+
+### Date Picker (Flatpickr) Issues
+- **Date pickers not appearing**: Run `npm run copy:flatpickr` to copy Flatpickr assets to `public/js/` and `public/css/`
+- **"flatpickr is not defined"**: Ensure `flatpickr-assets` and `flatpickr-scripts` components are included in the layout (see `layouts/crm_client_detail.blade.php`)
 
 ### Performance Issues
 - **Slow page loads**: Run `php artisan optimize` and `npm run build`
@@ -569,7 +593,7 @@ This project is open-sourced software licensed under the [MIT license](https://o
 ## Backup & Data Management
 
 ### What to Backup
-- **Database**: MySQL database dumps (daily recommended)
+- **Database**: PostgreSQL database dumps (daily recommended)
 - **Storage folder**: `storage/app/public/` containing:
   - Client documents
   - Agreements
@@ -580,8 +604,8 @@ This project is open-sourced software licensed under the [MIT license](https://o
 
 ### Backup Commands
 ```bash
-# Database backup
-mysqldump -u root -p migration_manager > backup_$(date +%Y%m%d).sql
+# PostgreSQL database backup
+pg_dump -U postgres migration_manager > backup_$(date +%Y%m%d).sql
 
 # Storage backup
 tar -czf storage_backup_$(date +%Y%m%d).tar.gz storage/app/public/
@@ -589,19 +613,18 @@ tar -czf storage_backup_$(date +%Y%m%d).tar.gz storage/app/public/
 
 ### Data Retention
 - Keep client records for minimum 7 years (immigration regulations)
-- Archive old applications after case closure
+- Archive old matters after case closure
 - Regularly clean up old logs and temporary files
 
 ## FAQ
 
 **Q: Nothing appears after login**
 - Ensure migrations have been run: `php artisan migrate --seed`
-- Check that Apache and MySQL are running in XAMPP
-- Verify `.env` database configuration
+- Check that PostgreSQL is running (and Apache if using XAMPP)
+- Verify `.env` database configuration and `pdo_pgsql` extension
 
-**Q: PDF generation not working**
-- Install Python 3.x and add to system PATH
-- Install LibreOffice for document conversion
+**Q: PDF/DOCX conversion not working**
+- Ensure the Python conversion service (`python_services/`) is running and reachable at `PYTHON_CONVERTER_URL`
 - Check `storage/logs/laravel.log` for conversion errors
 
 **Q: Client portal not accessible**

@@ -40,7 +40,7 @@
 										<td>{{ $countmatters }}</td>
 										<td>
 											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Action</button>
+												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Action</button>
 												<div class="dropdown-menu">
 													<a class="dropdown-item" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}"><i class="far fa-edit"></i> Edit</a>
 													<a class="dropdown-item" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>

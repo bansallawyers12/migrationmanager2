@@ -158,7 +158,7 @@
                                                 <tr>
                                                     <td style="text-align: center;">{{ ++$i }}</td>
                                                     <td style="text-align: center;">
-                                                        <input type="radio" class="complete_task" data-toggle="tooltip" title="Mark Complete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
+                                                        <input type="radio" class="complete_task" data-bs-toggle="tooltip" title="Mark Complete!" data-id="{{ $list->id }}" data-unique_group_id="{{ $list->unique_group_id }}">
                                                     </td>
                                                     <td>{{ $full_name }}</td>
                                                     <td>
@@ -174,7 +174,7 @@
                                                         @if (isset($list->description) && $list->description != "")
                                                             @if (strlen($list->description) > 190)
                                                                 {!! substr($list->description, 0, 190) !!}
-                                                                <button type="button" class="btn btn-link" data-toggle="popover" title="" data-content="{{ $list->description }}">Read more</button>
+                                                                <button type="button" class="btn btn-link" data-bs-toggle="popover" title="" data-content="{{ $list->description }}">Read more</button>
                                                             @else
                                                                 {!! $list->description !!}
                                                             @endif
@@ -184,7 +184,7 @@
                                                     </td>
                                                     <td>
                                                         @if ($list->task_group != 'Personal Action')
-                                                            <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" class="btn btn-primary btn-sm update_task" data-toggle="tooltip" title="Update Task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content='
+                                                            <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" class="btn btn-primary btn-sm update_task" data-bs-toggle="tooltip" title="Update Task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content='
                                                                 <div id="popover-content">
                                                                     <h4 class="text-center">Update Task</h4>
                                                                     <div class="form-group row" style="margin-bottom:12px">
@@ -234,7 +234,7 @@
                                                                 </div>'>
                                                                 <i class="fa fa-edit" aria-hidden="true"></i>
                                                             </button>
-                                                            <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-toggle="tooltip" title="Delete Task">
+                                                            <button class="btn btn-danger btn-sm deleteNote" data-remote="/destroy_activity/{{ $list->id }}" data-bs-toggle="tooltip" title="Delete Task">
                                                                 <i class="fa fa-trash" aria-hidden="true"></i>
                                                             </button>
                                                         @endif
@@ -281,7 +281,7 @@
                 <h5 class="modal-title" id="completionNotesModalLabel">
                     <i class="fa fa-check-circle"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -303,7 +303,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="background-color: #f8f9fa;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-success" id="confirmTaskCompletion">

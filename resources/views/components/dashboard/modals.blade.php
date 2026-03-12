@@ -4,7 +4,7 @@
         <div class="modal-content simple-action-modal">
             <div class="modal-header simple-modal-header">
                 <h5 class="modal-title" id="createActionModalLabel">Create New Task</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -33,7 +33,7 @@
                             <i class="fas fa-users text-primary"></i> Assignees
                         </label>
                         <div class="dropdown-multi-select modern-dropdown">
-                            <button type="button" class="btn btn-default dropdown-toggle simple-dropdown-btn" id="dashboard_dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" class="btn btn-default dropdown-toggle simple-dropdown-btn" id="dashboard_dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span id="dashboard-selected-users-text">SELECT ASSIGNEES</span>
                                 <i class="fas fa-chevron-down"></i>
                             </button>
@@ -337,7 +337,7 @@
         <div class="modal-content" style="padding: 20px;">
             <div class="modal-header" style="padding-bottom: 11px;">
                 <h5 class="modal-title assignnn" id="create_action_popupLabel" style="margin: 0 -24px;">Extend Notes Deadline</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -384,7 +384,7 @@
                 <h5 class="modal-title" id="dashboardCompletionNotesModalLabel">
                     <i class="fa fa-check-circle"></i> Complete Task
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -406,7 +406,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="background-color: #f8f9fa;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
                 <button type="button" class="btn btn-success" id="dashboardConfirmTaskCompletion">

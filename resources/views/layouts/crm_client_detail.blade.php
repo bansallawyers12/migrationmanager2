@@ -15,9 +15,8 @@
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/fullcalendar.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    {{-- <link rel="stylesheet" href="{{asset('css/daterangepicker.css')}}"> --}} {{-- ❌ REMOVED: Conflicts with bootstrap-datepicker on client detail --}}
     <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/bootstrap-datepicker.min.css')}}"> {{-- ✅ ONLY datepicker CSS for client detail --}}
+    @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/bootstrap-formhelpers.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
@@ -1660,17 +1659,14 @@
     <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
-    {{-- <script src="{{asset('js/daterangepicker.js')}}"></script> --}} {{-- ❌ REMOVED: Conflicts with bootstrap-datepicker on client detail --}}
     <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
-    {{-- Flatpickr JS for date pickers (migrating from bootstrap-datepicker) --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    {{-- Bootstrap datepicker kept temporarily during migration --}}
-    <script src="{{asset('js/bootstrap-datepicker.min.js')}}"></script> {{-- ⚠️ TEMPORARY: Will be removed after full migration --}}
+    @include('components.flatpickr-scripts')
+    <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
     <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
+    <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
     <script src="{{asset('js/scripts.js')}}"></script>
     <script src="{{asset('js/iziToast.min.js')}}"></script>
     <script src="{{asset('js/custom.js')}}"></script>
@@ -2740,7 +2736,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="clientModalLabel">Create In Person Client</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -2805,7 +2801,7 @@
                             </div>
                             <div class="col-12 col-md-12 col-lg-12">
                                 <button onclick="customValidate('checkinmodalsave')" type="button" class="btn btn-primary">Send</button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </form>
@@ -2819,7 +2815,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="clientModalLabel">In Person Details</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>

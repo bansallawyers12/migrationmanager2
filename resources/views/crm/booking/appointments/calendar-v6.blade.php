@@ -132,7 +132,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Appointment Details</h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -141,7 +141,7 @@
             </div>
             <div class="modal-footer">
                 <a href="#" id="viewFullDetails" class="btn btn-primary" target="_blank">View Full Details</a>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -153,7 +153,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirm Cancellation</h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" data-bs-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -172,7 +172,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmCancelBtn">
                     <i class="fas fa-times"></i> Confirm Cancellation
                 </button>
@@ -1147,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.innerHTML = `
             ${message}
-            <button type="button" class="close" data-dismiss="alert">
+            <button type="button" class="close" data-bs-dismiss="alert">
                 <span>&times;</span>
             </button>
         `;

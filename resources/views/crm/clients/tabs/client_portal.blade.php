@@ -5097,7 +5097,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="createChecklistModalLabel">Add New Checklist</h5>
-                <button type="button" class="close" id="create_checklist_close_btn" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" id="create_checklist_close_btn" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -5126,7 +5126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-footer">
                 <button type="button" id="create_checklist_submit_btn" class="btn btn-primary">Add Checklist</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -6240,7 +6240,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cpWorkflowMoveDocModalLabel"><i class="fa fa-arrows-alt mr-1"></i> Move Document</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="moveDocumentId">
@@ -6262,7 +6262,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="moveDocumentSubmitBtn" style="background:#6f42c1;border-color:#6f42c1;">Move Document</button>
             </div>
         </div>

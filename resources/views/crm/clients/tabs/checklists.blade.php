@@ -158,7 +158,7 @@
                                                     ->first();
                                             @endphp
                                             <div class="checklist-item-wrapper" data-id="{{ $form->id }}">
-                                                <div class="checklist-item-header" data-toggle="collapse" data-target="#checklist-detail-{{ $form->id }}">
+                                                <div class="checklist-item-header" data-bs-toggle="collapse" data-bs-target="#checklist-detail-{{ $form->id }}">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             <i class="fas fa-chevron-right checklist-toggle-icon mr-2"></i>

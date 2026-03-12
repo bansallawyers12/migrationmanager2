@@ -6,7 +6,7 @@
                 <h5 class="modal-title" id="editMatterOfficeLabel">
                     <i class="fas fa-building"></i> Assign Office to Matter
                 </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -52,7 +52,7 @@
                 </div>
                 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">

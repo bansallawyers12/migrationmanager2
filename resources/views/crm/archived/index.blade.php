@@ -248,7 +248,7 @@
                                         <td style="white-space: initial;">{{date('d/m/Y', strtotime($list->created_at))}}</td>
                                         <td style="white-space: initial;">
                                             <div class="dropdown d-inline">
-                                                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+                                                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
                                                 <div class="dropdown-menu">
                                                     <a class="dropdown-item has-icon" href="javascript:;" onclick="movetoclientAction({{$list->id}}, 'admins','is_archived')">Move to clients</a>
                                                     <a class="dropdown-item has-icon" href="javascript:;" onclick="unarchiveClientAction({{$list->id}}, '{{ @$list->first_name }} {{ @$list->last_name }}')">
