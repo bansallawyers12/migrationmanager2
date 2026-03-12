@@ -424,6 +424,11 @@ class ClientPortalWorkflowController extends Controller
                 ];
             });
 
+            // When filtering by allowed_checklist_id, only include items where user has uploaded a file (file_url not null)
+            if ($allowedChecklistId !== null && $allowedChecklistId !== '') {
+                $allowedChecklists = $allowedChecklists->filter(fn ($item) => $item['is_upload'] === true)->values();
+            }
+
             return response()->json([
                 'success' => true,
                 'data'    => [
