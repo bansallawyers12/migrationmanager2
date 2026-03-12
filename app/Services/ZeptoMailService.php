@@ -124,13 +124,14 @@ class ZeptoMailService
 
             // Check for HTTP errors
             if ($response->failed()) {
-                $errorMessage = $response->json()['error'] ?? $response->body() ?? 'Unknown error';
+                $rawError = $response->json()['error'] ?? null;
+                $errorMessage = $this->normalizeZeptoMailErrorMessage($rawError, $response->body());
                 Log::error('ZeptoMail API request failed', [
                     'status' => $response->status(),
-                    'error' => $errorMessage,
+                    'error' => $rawError,
                     'payload' => $this->sanitizePayloadForLogging($payload)
                 ]);
-                throw new Exception("ZeptoMail API error: {$errorMessage}");
+                throw new Exception('ZeptoMail API error: ' . $errorMessage);
             }
 
             $responseData = $response->json();
@@ -213,6 +214,33 @@ class ZeptoMailService
         }
 
         return $formatted;
+    }
+
+    /**
+     * Normalize ZeptoMail API error to a string (API returns error as object/array).
+     *
+     * @param mixed $rawError Error from response (array or string)
+     * @param string|null $fallbackBody Raw response body fallback
+     * @return string
+     */
+    private function normalizeZeptoMailErrorMessage($rawError, ?string $fallbackBody = null): string
+    {
+        if (is_string($rawError)) {
+            return $rawError;
+        }
+        if (is_array($rawError)) {
+            if (!empty($rawError['message'])) {
+                return (string) $rawError['message'];
+            }
+            if (!empty($rawError['details']) && is_array($rawError['details'])) {
+                $first = $rawError['details'][0] ?? null;
+                if (is_array($first) && !empty($first['message'])) {
+                    return (string) $first['message'];
+                }
+            }
+            return json_encode($rawError);
+        }
+        return $fallbackBody !== null && $fallbackBody !== '' ? $fallbackBody : 'Unknown error';
     }
 
     /**
