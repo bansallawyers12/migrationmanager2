@@ -6,8 +6,7 @@ use App\Models\Email;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service for managing email SMTP configurations
- * Provides reusable SMTP config retrieval and application
+ * Service for resolving email sender configuration.
  */
 class EmailConfigService
 {
@@ -15,7 +14,7 @@ class EmailConfigService
      * Get email configuration for a specific account by email ID
      *
      * @param int $emailId The email record ID
-     * @return array SMTP configuration array
+     * @return array Sender configuration array
      * @throws \Exception If email config not found
      */
     public function forAccountById(int $emailId): array
@@ -37,7 +36,7 @@ class EmailConfigService
      * Get email configuration for a specific account by email address
      *
      * @param string $email The email address
-     * @return array SMTP configuration array
+     * @return array Sender configuration array
      * @throws \Exception If email config not found
      */
     public function forAccount(string $email): array
@@ -58,7 +57,7 @@ class EmailConfigService
     }
 
     /**
-     * Build SMTP configuration array from Email model
+     * Build sender configuration array from Email model
      *
      * @param Email $emailConfig
      * @return array
@@ -66,20 +65,14 @@ class EmailConfigService
     protected function buildConfig(Email $emailConfig): array
     {
         return [
-            'host' => $emailConfig->smtp_host ?? 'smtp.zoho.com',
-            'port' => $emailConfig->smtp_port ?? 587,
-            'encryption' => $emailConfig->smtp_encryption ?? 'tls',
-            'username' => $emailConfig->email,
-            'password' => $emailConfig->password,
             'from_address' => $emailConfig->email,
             'from_name' => $emailConfig->display_name ?? 'Bansal Migration',
             'email_signature' => $emailConfig->email_signature ?? '',
-            'timeout' => 30,
         ];
     }
 
     /**
-     * Apply email configuration to Laravel mail config at runtime
+     * Deprecated: Keep for backward compatibility. SendGrid mailer is fixed.
      *
      * @param array $config Configuration array from forAccount()
      * @return void
@@ -87,19 +80,13 @@ class EmailConfigService
     public function applyConfig(array $config): void
     {
         config([
-            'mail.default' => 'smtp',  // Switch to SMTP mailer
-            'mail.mailers.smtp.host' => $config['host'],
-            'mail.mailers.smtp.port' => $config['port'],
-            'mail.mailers.smtp.encryption' => $config['encryption'],
-            'mail.mailers.smtp.username' => $config['username'],
-            'mail.mailers.smtp.password' => $config['password'],
+            'mail.default' => 'sendgrid',
             'mail.from.address' => $config['from_address'],
             'mail.from.name' => $config['from_name'],
         ]);
 
-        Log::debug('Applied email configuration', [
+        Log::debug('Applied sender configuration', [
             'from' => $config['from_address'],
-            'host' => $config['host']
         ]);
     }
 
@@ -136,14 +123,8 @@ class EmailConfigService
             // Fallback to environment defaults
             if (env('MAIL_FROM_ADDRESS')) {
                 return [
-                    'host' => env('MAIL_HOST', 'smtp.zoho.com'),
-                    'port' => env('MAIL_PORT', 587),
-                    'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-                    'username' => env('MAIL_USERNAME'),
-                    'password' => env('MAIL_PASSWORD'),
                     'from_address' => env('MAIL_FROM_ADDRESS'),
                     'from_name' => env('MAIL_FROM_NAME', 'Bansal Migration'),
-                    'timeout' => 30,
                 ];
             }
 
@@ -167,14 +148,8 @@ class EmailConfigService
         try {
             if (env('MAIL_FROM_ADDRESS')) {
                 return [
-                    'host' => env('MAIL_HOST', 'smtp.zoho.com'),
-                    'port' => env('MAIL_PORT', 587),
-                    'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-                    'username' => env('MAIL_USERNAME'),
-                    'password' => env('MAIL_PASSWORD'),
                     'from_address' => env('MAIL_FROM_ADDRESS'),
                     'from_name' => env('MAIL_FROM_NAME', 'Bansal Migration'),
-                    'timeout' => 30,
                 ];
             }
 
@@ -188,124 +163,11 @@ class EmailConfigService
     }
 
     /**
-     * Get Zepto email account configuration for signature facility
-     * This method is used exclusively for document signature emails
-     * SMTP settings are read from .env file, email address and signature from database
-     *
-     * @return array Email configuration with signature
-     * @throws \Exception If Zepto account not found or not active
-     */
-    public function getZeptoAccount(): array
-    {
-        try {
-            // Get email address from .env or search database
-            $zeptoEmail = env('ZEPTO_EMAIL', 'signature@bansalimmigration.com.au');
-            
-            // Try to find email account in database (for email address and signature)
-            $emailConfig = Email::where('status', true)
-                ->where('email', $zeptoEmail)
-                ->first();
-            
-            // If not found, try pattern search
-            if (!$emailConfig) {
-                $emailConfig = Email::where('status', true)
-                    ->where('email', 'like', '%zepto%')
-                    ->orWhere('email', 'like', '%signature%')
-                    ->first();
-            }
-            
-            // Get SMTP settings from .env file
-            $smtpHost = env('ZEPTO_SMTP_HOST', 'smtp.zeptomail.com');
-            $smtpPort = env('ZEPTO_SMTP_PORT', 587);
-            $smtpEncryption = env('ZEPTO_SMTP_ENCRYPTION', 'tls');
-            $smtpUsername = env('ZEPTO_SMTP_USERNAME', 'emailapikey');
-            $smtpPassword = env('ZEPTO_SMTP_PASSWORD');
-            $fromAddress = env('ZEPTO_EMAIL', $emailConfig->email ?? 'signature@bansalimmigration.com.au');
-            $fromName = env('ZEPTO_FROM_NAME', $emailConfig->display_name ?? 'Bansal Migration');
-            
-            // Validate required .env settings
-            if (empty($smtpPassword)) {
-                throw new \Exception('ZEPTO_SMTP_PASSWORD is not set in .env file');
-            }
-            
-            // Build config array with .env SMTP settings
-            $config = [
-                'host' => $smtpHost,
-                'port' => (int) $smtpPort,
-                'encryption' => $smtpEncryption,
-                'username' => $smtpUsername,
-                'password' => $smtpPassword,
-                'from_address' => $fromAddress,
-                'from_name' => $fromName,
-                'email_signature' => $emailConfig->email_signature ?? '',
-                'timeout' => 30,
-            ];
-            
-            return $config;
-        } catch (\Exception $e) {
-            Log::error('Failed to retrieve Zepto email account', [
-                'error' => $e->getMessage()
-            ]);
-            throw new \Exception("Zepto email account configuration error: {$e->getMessage()}");
-        }
-    }
-
-    /**
-     * Get ZeptoMail API configuration
-     * Returns configuration for using ZeptoMail REST API instead of SMTP
-     *
-     * @return array API configuration
-     * @throws \Exception If API key is not configured
-     */
-    public function getZeptoApiConfig(): array
-    {
-        try {
-            $apiKey = config('services.zeptomail.api_key', env('ZEPTOMAIL_API_KEY'));
-            
-            if (empty($apiKey)) {
-                throw new \Exception('ZEPTOMAIL_API_KEY is not set in .env file');
-            }
-
-            // Get email address from .env or search database
-            $zeptoEmail = config('services.zeptomail.from_email', env('ZEPTOMAIL_FROM_EMAIL', 'signature@bansalimmigration.com.au'));
-            
-            // Try to find email account in database (for email signature)
-            $emailConfig = Email::where('status', true)
-                ->where('email', $zeptoEmail)
-                ->first();
-            
-            // If not found, try pattern search
-            if (!$emailConfig) {
-                $emailConfig = Email::where('status', true)
-                    ->where('email', 'like', '%zepto%')
-                    ->orWhere('email', 'like', '%signature%')
-                    ->first();
-            }
-
-            $fromAddress = config('services.zeptomail.from_email', env('ZEPTOMAIL_FROM_EMAIL', $emailConfig->email ?? 'signature@bansalimmigration.com.au'));
-            $fromName = config('services.zeptomail.from_name', env('ZEPTOMAIL_FROM_NAME', $emailConfig->display_name ?? 'Bansal Migration'));
-
-            return [
-                'api_key' => $apiKey,
-                'from_address' => $fromAddress,
-                'from_name' => $fromName,
-                'email_signature' => $emailConfig->email_signature ?? '',
-                'api_url' => config('services.zeptomail.api_url', 'https://api.zeptomail.com/v1.1/email'),
-            ];
-        } catch (\Exception $e) {
-            Log::error('Failed to retrieve ZeptoMail API configuration', [
-                'error' => $e->getMessage()
-            ]);
-            throw new \Exception("ZeptoMail API configuration error: {$e->getMessage()}");
-        }
-    }
-
-    /**
      * Get email configuration for EOI verification/confirmation emails.
      * Looks up admin@bansalimmigration from the emails table (or EOI_FROM_EMAIL from .env).
-     * Returns full SMTP config so it can be applied before sending.
+     * Returns sender details for setting the from-address before sending.
      *
-     * @return array|null Config array (from_address, from_name, host, port, etc.) or null if not found
+     * @return array|null Config array (from_address, from_name, email_signature) or null if not found
      */
     public function getEoiFromAccount(): ?array
     {
@@ -339,17 +201,7 @@ class EmailConfigService
     public function validateConfig(array $config): bool
     {
         try {
-            // Temporarily apply config
-            $originalConfig = config('mail.mailers.smtp');
-            $this->applyConfig($config);
-
-            // Try to create transport and verify
-            $transport = app('mail.manager')->mailer()->getSymfonyTransport();
-            
-            // Restore original config
-            config(['mail.mailers.smtp' => $originalConfig]);
-
-            return true;
+            return !empty($config['from_address']);
         } catch (\Exception $e) {
             Log::warning('Email config validation failed', [
                 'config' => $config['from_address'] ?? 'unknown',

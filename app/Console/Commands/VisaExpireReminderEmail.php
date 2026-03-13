@@ -40,7 +40,7 @@ class VisaExpireReminderEmail extends Command
 
 	try {
 		$explodeTo = explode(';', $to);//for multiple and single to
-		$q = Mail::to($explodeTo);
+		$q = Mail::mailer('sendgrid')->to($explodeTo);
 		if(!empty($cc)){
 			$q->cc($cc);
 		}
@@ -66,7 +66,7 @@ class VisaExpireReminderEmail extends Command
         $totalLogs = $query->count();//dd($totalLogs);
 		$logs = $query->get(); //dd($logs);
         if($totalLogs >0){
-            $from_email = env("MAIL_USERNAME");
+            $from_email = env("MAIL_FROM_ADDRESS");
             $FROM_MAIL_COMPANY_NAME = env("FROM_MAIL_COMPANY_NAME");
 			foreach($logs as $key=>$val){ //dd($val->id);
 

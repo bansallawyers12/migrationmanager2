@@ -71,7 +71,7 @@ class EmailVerificationService
 
         // Send email
         try {
-            Mail::to($clientEmail->email)->send(new EmailVerificationMail(
+            Mail::mailer('sendgrid')->to($clientEmail->email)->send(new EmailVerificationMail(
                 $clientEmail,
                 $verificationUrl,
                 $expiresAt

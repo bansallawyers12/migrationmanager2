@@ -38,7 +38,7 @@ class NotificationService
                 'admin_notes' => $appointment->admin_notes,
             ];
 
-            Mail::to($appointment->client_email)->send(
+            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
                 new \App\Mail\AppointmentDetailedConfirmation($details)
             );
 
@@ -78,7 +78,7 @@ class NotificationService
                 'cancellation_reason' => $cancellationReason,
             ];
 
-            Mail::to($appointment->client_email)->send(
+            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
                 new \App\Mail\AppointmentCancellation($details)
             );
 

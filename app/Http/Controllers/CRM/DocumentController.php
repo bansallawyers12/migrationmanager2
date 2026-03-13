@@ -1465,9 +1465,15 @@ class DocumentController extends Controller
                         }
                     }
 
-                    // Use ZeptoMail API for signature emails
-                    $emailConfigService = app(\App\Services\EmailConfigService::class);
-                    $zeptoApiConfig = $emailConfigService->getZeptoApiConfig();
+                    $fromAddress = config('mail.from.address');
+                    $fromName = config('mail.from.name', 'Bansal Migration');
+                    $emailSignature = '';
+                    $activeEmail = Email::where('status', true)->orderBy('id')->first();
+                    if ($activeEmail) {
+                        $fromAddress = $activeEmail->email ?: $fromAddress;
+                        $fromName = $activeEmail->display_name ?: $fromName;
+                        $emailSignature = $activeEmail->email_signature ?: '';
+                    }
                     
                     // Prepare all attachments for ZeptoMail API
                     $allAttachments = [];
@@ -1485,23 +1491,37 @@ class DocumentController extends Controller
                         ];
                     }
                     
-                    // Send via ZeptoMail API
-                    $zeptoMailService = app(\App\Services\ZeptoMailService::class);
                     try {
-                        $sendMail = $zeptoMailService->sendFromTemplate(
+                        Mail::mailer('sendgrid')->send(
                             'emails.sign_agreement_document_email',
                             [
-                                'signingUrl' => $signingUrl, 
+                                'signingUrl' => $signingUrl,
                                 'firstName' => $signerName,
                                 'emailmessage' => $request->message,
-                                'emailSignature' => $zeptoApiConfig['email_signature'] ?? ''
+                                'emailSignature' => $emailSignature
                             ],
-                            ['address' => $signerEmail, 'name' => $signerName],
-                            $request->subject,
-                            $zeptoApiConfig['from_address'],
-                            $zeptoApiConfig['from_name'],
-                            $allAttachments
+                            function ($message) use ($signerEmail, $signerName, $request, $fromAddress, $fromName, $allAttachments) {
+                                $message->to($signerEmail, $signerName)
+                                    ->subject($request->subject)
+                                    ->from($fromAddress, $fromName);
+
+                                foreach ($allAttachments as $attachment) {
+                                    $path = $attachment['path'] ?? null;
+                                    if (!$path || !file_exists($path)) {
+                                        continue;
+                                    }
+                                    $options = [];
+                                    if (!empty($attachment['name'])) {
+                                        $options['as'] = $attachment['name'];
+                                    }
+                                    if (!empty($attachment['mime'])) {
+                                        $options['mime'] = $attachment['mime'];
+                                    }
+                                    $message->attach($path, $options);
+                                }
+                            }
                         );
+                        $sendMail = true;
                         
                         // Create activity note for successful email
                         \App\Models\SignatureActivity::create([
@@ -1513,8 +1533,7 @@ class DocumentController extends Controller
                                 'signer_email' => $signerEmail,
                                 'signer_name' => $signerName,
                                 'subject' => $request->subject,
-                                'request_id' => $sendMail['request_id'] ?? null,
-                                'status' => isset($sendMail['data'][0]['message']) ? $sendMail['data'][0]['message'] : 'Email request received',
+                                'status' => 'sent_via_sendgrid',
                             ]
                         ]);
                     } catch (\Exception $emailException) {
@@ -1537,7 +1556,7 @@ class DocumentController extends Controller
                         //Save to mail reports table
                         $obj5 = new \App\Models\EmailLog;
                         $obj5->user_id 		=  @Auth::guard('admin')->user()->id;
-                        $obj5->from_mail 	=  $zeptoApiConfig['from_address'];
+                        $obj5->from_mail 	=  $fromAddress;
                         $obj5->to_mail 		=  $document->client_id;
                         $obj5->template_id 	=  $request->template;
                         $obj5->subject		=  $request->subject; //'Bansal Migration Requesting To Sign Your Agreement Document';
@@ -1603,24 +1622,29 @@ class DocumentController extends Controller
                 }
                 else
                 {
-                    // Use ZeptoMail API for signature emails
-                    $emailConfigService = app(\App\Services\EmailConfigService::class);
-                    $zeptoApiConfig = $emailConfigService->getZeptoApiConfig();
-                    
-                    // Send via ZeptoMail API
-                    $zeptoMailService = app(\App\Services\ZeptoMailService::class);
+                    $fromAddress = config('mail.from.address');
+                    $fromName = config('mail.from.name', 'Bansal Migration');
+                    $emailSignature = '';
+                    $activeEmail = Email::where('status', true)->orderBy('id')->first();
+                    if ($activeEmail) {
+                        $fromAddress = $activeEmail->email ?: $fromAddress;
+                        $fromName = $activeEmail->display_name ?: $fromName;
+                        $emailSignature = $activeEmail->email_signature ?: '';
+                    }
+
                     try {
-                        $result = $zeptoMailService->sendFromTemplate(
+                        Mail::mailer('sendgrid')->send(
                             'emails.sign_document_email',
                             [
-                                'signingUrl' => $signingUrl, 
+                                'signingUrl' => $signingUrl,
                                 'firstName' => $signerName,
-                                'emailSignature' => $zeptoApiConfig['email_signature'] ?? ''
+                                'emailSignature' => $emailSignature
                             ],
-                            ['address' => $signerEmail, 'name' => $signerName],
-                            'Bansal Migration Requesting To Sign Your Document',
-                            $zeptoApiConfig['from_address'],
-                            $zeptoApiConfig['from_name']
+                            function ($message) use ($signerEmail, $signerName, $fromAddress, $fromName) {
+                                $message->to($signerEmail, $signerName)
+                                    ->subject('Bansal Migration Requesting To Sign Your Document')
+                                    ->from($fromAddress, $fromName);
+                            }
                         );
                         
                         // Create activity note for successful email
@@ -1632,8 +1656,7 @@ class DocumentController extends Controller
                             'metadata' => [
                                 'signer_email' => $signerEmail,
                                 'signer_name' => $signerName,
-                                'request_id' => $result['request_id'] ?? null,
-                                'status' => isset($result['data'][0]['message']) ? $result['data'][0]['message'] : 'Email request received',
+                                'status' => 'sent_via_sendgrid',
                             ]
                         ]);
                     } catch (\Exception $emailException) {

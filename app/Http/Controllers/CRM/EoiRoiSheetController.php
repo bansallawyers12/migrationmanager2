@@ -642,20 +642,23 @@ class EoiRoiSheetController extends Controller
             $attachmentLabels = $attachmentsData['labels'];
             $attachments = $attachmentsData['attachments'];
 
-            // Apply admin@bansalimmigration from address from database when available
             $eoiFromConfig = $this->emailConfigService->getEoiFromAccount();
-            if ($eoiFromConfig) {
-                $this->emailConfigService->applyConfig($eoiFromConfig);
-            }
-
-            // Send email
-            Mail::to($eoi->client->email)->send(new EoiConfirmationMail(
+            $mail = new EoiConfirmationMail(
                 $eoi,
                 $eoi->client,
                 $token,
                 $attachments,
                 $attachmentLabels
-            ));
+            );
+
+            if ($eoiFromConfig) {
+                $mail->from(
+                    $eoiFromConfig['from_address'],
+                    $eoiFromConfig['from_name'] ?? config('mail.from.name')
+                );
+            }
+
+            Mail::mailer('sendgrid')->to($eoi->client->email)->send($mail);
 
             // Log activity
             $this->logActivity(

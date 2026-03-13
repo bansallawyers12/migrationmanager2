@@ -5474,7 +5474,7 @@ public function getInvoiceAmount(Request $request)
          ];
 
         // Send email to Hubdoc
-        Mail::to(env('HUBDOC_EMAIL', 'bansalcrm11@gmail.com'))->send(new HubdocInvoiceMail($invoiceData));
+        Mail::mailer('sendgrid')->to(env('HUBDOC_EMAIL', 'bansalcrm11@gmail.com'))->send(new HubdocInvoiceMail($invoiceData));
 
          // Mark invoice as sent to Hubdoc
          $updateResult = DB::table('account_client_receipts')
@@ -5819,7 +5819,7 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
-            Mail::to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
@@ -5949,7 +5949,7 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
-            Mail::to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
@@ -6076,7 +6076,7 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
-            Mail::to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;

@@ -187,6 +187,53 @@ The methods `forAccount()`, `forAccountById()`, `buildConfig()`, and `applyConfi
 
 ---
 
+## 3.5) Pre-Apply Replacement Map (SMTP/Zepto -> SendGrid)
+
+Use this section as a gate before any code changes.  
+For every flow below, create/verify the sender in SendGrid first, then apply the code migration.
+
+| Area / Flow | Current dependency to replace | File(s) to change | Sender email to create/verify in SendGrid |
+|---|---|---|---|
+| Base template/compose sends | Bare `Mail::to()` + legacy SMTP behavior | `app/Http/Controllers/Controller.php` | All active sender addresses from `emails.email` |
+| Invoice + receipts (client sends) | SMTP-style/bare mail sends | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Mail/InvoiceEmailManager.php`, `app/Mail/MultipleattachmentEmailManager.php` | `invoice@bansalimmigration.com.au` |
+| EOI/ROI confirmation | `EmailConfigService::applyConfig()` (SMTP runtime swap) | `app/Http/Controllers/CRM/ClientEoiRoiController.php`, `app/Http/Controllers/CRM/EoiRoiSheetController.php` | `admin@bansalimmigration.com.au` (or your chosen EOI sender) |
+| Signature send/reminder | ZeptoMail API (`ZeptoMailService`) | `app/Services/SignatureService.php`, `app/Http/Controllers/CRM/SignatureDashboardController.php`, `app/Http/Controllers/CRM/DocumentController.php` | `signature@bansalimmigration.com.au` |
+| Client portal activation/deactivation | Bare `Mail::send()` | `app/Http/Controllers/CRM/ClientPortalController.php` | `MAIL_FROM_ADDRESS` value |
+| Appointment confirmation/cancellation | Bare `Mail::to()` | `app/Services/BansalAppointmentSync/NotificationService.php` | `MAIL_FROM_ADDRESS` value (or dedicated appointments sender) |
+| Visa expiry + cron email jobs | Bare `Mail` sends | `app/Console/Commands/VisaExpireReminderEmail.php`, `app/Console/Commands/CronJob.php` | `MAIL_FROM_ADDRESS` value (or dedicated reminders sender) |
+| Hubdoc invoice forwarding | Bare `Mail::to()` (transport default dependent) | `app/Http/Controllers/CRM/ClientAccountsController.php`, `app/Jobs/SendHubdocInvoiceJob.php` | `MAIL_FROM_ADDRESS` value (Hubdoc recipient stays `HUBDOC_EMAIL`) |
+
+### Required SendGrid sender identities (minimum set)
+
+Create/verify these first:
+
+1. `signature@bansalimmigration.com.au` (signature flows)
+2. `invoice@bansalimmigration.com.au` (invoice/receipt flows)
+3. `admin@bansalimmigration.com.au` (EOI/ROI confirmations)
+4. `MAIL_FROM_ADDRESS` current value (global fallback sender)
+
+Also verify any additional active sender rows in `emails.email` because compose/template sends may use them.
+
+### Quick SQL to list sender addresses in use
+
+```sql
+-- Active sender accounts used by CRM compose/template flows
+SELECT id, email, display_name, status
+FROM emails
+WHERE status = 1
+ORDER BY email;
+```
+
+### Pre-apply checklist
+
+- [ ] SendGrid API key has **Mail Send** permission
+- [ ] Domain authentication (SPF/DKIM) is completed in SendGrid
+- [ ] All required sender addresses above are verified in SendGrid
+- [ ] `SENDGRID_FROM_EMAIL` is set (optional but recommended fallback)
+- [ ] `MAIL_FROM_ADDRESS` is one of the verified SendGrid sender identities
+
+---
+
 ## 4) Backend Email Send Paths
 
 ### 4.1 Base controller helper methods — `app/Http/Controllers/Controller.php`

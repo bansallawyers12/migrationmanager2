@@ -9,24 +9,22 @@ use App\Models\Lead;
 use App\Models\SignatureActivity;
 use App\Models\ActivitiesLog;
 use Illuminate\Support\Str;
+use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use App\Services\ZeptoMailService;
 
 class SignatureService
 {
     protected EmailConfigService $emailConfigService;
-    protected ZeptoMailService $zeptoMailService;
 
     /**
      * Constructor with dependency injection
      */
-    public function __construct(EmailConfigService $emailConfigService, ZeptoMailService $zeptoMailService)
+    public function __construct(EmailConfigService $emailConfigService)
     {
         $this->emailConfigService = $emailConfigService;
-        $this->zeptoMailService = $zeptoMailService;
     }
     /**
      * Send a document for signature
@@ -73,14 +71,44 @@ class SignatureService
     }
 
     /**
-     * Send signing email to a signer using ZeptoMail API
+     * Resolve sender details from selected sender or defaults.
+     */
+    protected function resolveFrom(?string $preferredFrom = null): array
+    {
+        $fromAddress = $preferredFrom ?: config('mail.from.address');
+        $fromName = config('mail.from.name', 'Bansal Migration');
+        $signature = '';
+
+        if (!empty($fromAddress)) {
+            $emailAccount = \App\Models\Email::where('status', true)
+                ->where('email', $fromAddress)
+                ->first();
+            if ($emailAccount) {
+                $fromName = $emailAccount->display_name ?: $fromName;
+                $signature = $emailAccount->email_signature ?: '';
+            }
+        }
+
+        if (empty($signature)) {
+            $default = $this->emailConfigService->getDefaultAccount();
+            $signature = $default['email_signature'] ?? '';
+            $fromAddress = $fromAddress ?: ($default['from_address'] ?? config('mail.from.address'));
+            $fromName = $fromName ?: ($default['from_name'] ?? config('mail.from.name', 'Bansal Migration'));
+        }
+
+        return [
+            'from_address' => $fromAddress,
+            'from_name' => $fromName,
+            'email_signature' => $signature,
+        ];
+    }
+
+    /**
+     * Send signing email to a signer using SendGrid mailer.
      */
     protected function sendSigningEmail(Document $document, Signer $signer, array $options = []): void
     {
         try {
-            // Get ZeptoMail API configuration (for email signature)
-            $zeptoApiConfig = $this->emailConfigService->getZeptoApiConfig();
-
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
             
             // Determine template based on document type or options
@@ -91,6 +119,7 @@ class SignatureService
             
             $subject = $options['subject'] ?? 'Document Signature Request from Bansal Migration';
             $message = $options['message'] ?? "Please review and sign the attached document.";
+            $from = $this->resolveFrom($options['from_email'] ?? null);
             
             // Prepare template data
             $templateData = [
@@ -100,7 +129,7 @@ class SignatureService
                 'emailMessage' => $message,
                 'documentType' => $options['document_type'] ?? 'document',
                 'dueDate' => ($options['due_at'] ?? null)?->format('F j, Y'),
-                'emailSignature' => $zeptoApiConfig['email_signature'] ?? '',
+                'emailSignature' => $from['email_signature'] ?? '',
             ];
 
             // Prepare attachments
@@ -109,16 +138,32 @@ class SignatureService
                 $attachments = $options['attachments'];
             }
 
-            // Send email via ZeptoMail API
-            $result = $this->zeptoMailService->sendFromTemplate(
-                $template,
-                $templateData,
-                ['address' => $signer->email, 'name' => $signer->name],
-                $subject,
-                $zeptoApiConfig['from_address'],
-                $zeptoApiConfig['from_name'],
-                $attachments
-            );
+            Mail::mailer('sendgrid')->send($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments) {
+                $mail->to($signer->email, $signer->name)
+                    ->subject($subject)
+                    ->from($from['from_address'], $from['from_name']);
+
+                foreach ($attachments as $attachment) {
+                    if (is_string($attachment) && file_exists($attachment)) {
+                        $mail->attach($attachment);
+                        continue;
+                    }
+
+                    if (is_array($attachment)) {
+                        $path = $attachment['path'] ?? null;
+                        if ($path && file_exists($path)) {
+                            $options = [];
+                            if (!empty($attachment['name'])) {
+                                $options['as'] = $attachment['name'];
+                            }
+                            if (!empty($attachment['mime'])) {
+                                $options['mime'] = $attachment['mime'];
+                            }
+                            $mail->attach($path, $options);
+                        }
+                    }
+                }
+            });
 
             // Create activity note for successful email delivery
             SignatureActivity::create([
@@ -131,18 +176,16 @@ class SignatureService
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'subject' => $subject,
-                    'request_id' => $result['request_id'] ?? null,
-                    'status' => isset($result['data'][0]['message']) ? $result['data'][0]['message'] : 'Email request received',
-                    'email_account' => $zeptoApiConfig['from_address'],
+                    'status' => 'sent_via_sendgrid',
+                    'email_account' => $from['from_address'],
                 ]
             ]);
 
-            Log::info('Signing email sent via ZeptoMail API', [
+            Log::info('Signing email sent via SendGrid mailer', [
                 'document_id' => $document->id,
                 'signer_email' => $signer->email,
                 'template' => $template,
-                'email_account' => $zeptoApiConfig['from_address'],
-                'request_id' => $result['request_id'] ?? null
+                'email_account' => $from['from_address'],
             ]);
         } catch (\Exception $e) {
             // Create activity note for failed email delivery
@@ -178,7 +221,7 @@ class SignatureService
     }
 
     /**
-     * Send reminder to a signer using ZeptoMail API
+     * Send reminder to a signer using SendGrid mailer.
      */
     public function remind(Signer $signer, array $options = []): bool
     {
@@ -198,11 +241,9 @@ class SignatureService
                 throw new \Exception('Maximum reminders already sent');
             }
 
-            // Get ZeptoMail API configuration
-            $zeptoApiConfig = $this->emailConfigService->getZeptoApiConfig();
-
             $document = $signer->document;
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
+            $from = $this->resolveFrom($options['from_email'] ?? null);
 
             $templateData = [
                 'signerName' => $signer->name,
@@ -210,18 +251,14 @@ class SignatureService
                 'signingUrl' => $signingUrl,
                 'reminderNumber' => $signer->reminder_count + 1,
                 'dueDate' => null,
-                'emailSignature' => $zeptoApiConfig['email_signature'] ?? '',
+                'emailSignature' => $from['email_signature'] ?? '',
             ];
 
-            // Send via ZeptoMail API
-            $result = $this->zeptoMailService->sendFromTemplate(
-                'emails.signature.reminder',
-                $templateData,
-                ['address' => $signer->email, 'name' => $signer->name],
-                'Reminder: Please Sign Your Document - Bansal Migration',
-                $zeptoApiConfig['from_address'],
-                $zeptoApiConfig['from_name']
-            );
+            Mail::mailer('sendgrid')->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from) {
+                $mail->to($signer->email, $signer->name)
+                    ->subject('Reminder: Please Sign Your Document - Bansal Migration')
+                    ->from($from['from_address'], $from['from_name']);
+            });
 
             // Update reminder tracking
             $signer->update([
@@ -240,15 +277,14 @@ class SignatureService
                     'signer_email' => $signer->email,
                     'signer_name' => $signer->name,
                     'reminder_number' => $signer->reminder_count,
-                    'request_id' => $result['request_id'] ?? null,
-                    'status' => isset($result['data'][0]['message']) ? $result['data'][0]['message'] : 'Email request received',
+                    'status' => 'sent_via_sendgrid',
                 ]
             ]);
 
-            Log::info('Reminder sent via ZeptoMail API', [
+            Log::info('Reminder sent via SendGrid mailer', [
                 'signer_id' => $signer->id,
                 'reminder_count' => $signer->reminder_count,
-                'email_account' => $zeptoApiConfig['from_address']
+                'email_account' => $from['from_address']
             ]);
 
             return true;

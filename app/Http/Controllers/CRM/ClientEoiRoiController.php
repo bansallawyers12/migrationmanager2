@@ -484,14 +484,8 @@ class ClientEoiRoiController extends Controller
             // Use custom body if provided, otherwise use default view
             $body = $request->input('body');
 
-            // Apply admin@bansalimmigration from address from database when available
             $eoiFromConfig = $this->emailConfigService->getEoiFromAccount();
-            if ($eoiFromConfig) {
-                $this->emailConfigService->applyConfig($eoiFromConfig);
-            }
-
-            // Send email
-            Mail::to($client->email)->send(new EoiConfirmationMail(
+            $mail = new EoiConfirmationMail(
                 $eoiReference,
                 $client,
                 $eoiReference->client_confirmation_token,
@@ -499,7 +493,16 @@ class ClientEoiRoiController extends Controller
                 $attachmentLabels,
                 $subject, // Pass custom subject
                 $body // Pass custom body (null = use default)
-            ));
+            );
+
+            if ($eoiFromConfig) {
+                $mail->from(
+                    $eoiFromConfig['from_address'],
+                    $eoiFromConfig['from_name'] ?? config('mail.from.name')
+                );
+            }
+
+            Mail::mailer('sendgrid')->to($client->email)->send($mail);
 
             // Log activity
             $action = $isResend ? 'Resent' : 'Sent';

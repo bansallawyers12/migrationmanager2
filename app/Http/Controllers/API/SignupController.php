@@ -197,7 +197,7 @@ class SignupController extends BaseController
 
         foreach ($superAdmins as $staff) {
             try {
-                Mail::to($staff->email)->send($mailable);
+                Mail::mailer('sendgrid')->to($staff->email)->send($mailable);
                 Log::info('Signup notification sent to super admin', ['email' => $staff->email, 'client_id' => $clientId]);
             } catch (\Exception $e) {
                 Log::error('Failed to send signup notification to super admin', [

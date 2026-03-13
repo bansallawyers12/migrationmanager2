@@ -54,7 +54,7 @@ class Email extends Authenticatable
      */
     public function getSmtpHostAttribute($value)
     {
-        return $value ?? 'smtp.zoho.com';
+        return $value ?? 'smtp.sendgrid.net';
     }
 
     /**

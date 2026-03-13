@@ -18,9 +18,6 @@ use App\Models\UserRole;
 
 use Auth;
 //use Mail;
-use Swift_SmtpTransport;
-use Swift_Mailer;
-
 use Illuminate\Support\Facades\Mail;
 
 class Controller extends BaseController
@@ -134,17 +131,10 @@ class Controller extends BaseController
 		$explodeTo = explode(';', $to);//for multiple and single to
 
 		try {
-			// Use the custom mail service for handling dynamic SMTP configurations
-			$result = \App\Services\CustomMailService::sendEmailTemplate(
-				$replace, 
-				$replace_with, 
-				$alias, 
-				$to, 
-				$subject, 
-				$sender, 
-				$sendername
-			);
-			
+			Mail::mailer('sendgrid')
+				->to($explodeTo)
+				->send(new CommonMail($emailContent, $subject, $sender, $sendername, []));
+
 			return true;
 		} catch (\Exception $e) {
 			\Log::error('Email sending failed: ' . $e->getMessage());
@@ -158,7 +148,7 @@ class Controller extends BaseController
 
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
-			$q = Mail::to($explodeTo);
+			$q = Mail::mailer('sendgrid')->to($explodeTo);
 			if(!empty($cc)){
 				$q->cc($cc);
 			}
@@ -192,7 +182,7 @@ class Controller extends BaseController
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::to($explodeTo)->queue(new InvoiceEmailManager($invoicearray));
+			Mail::mailer('sendgrid')->to($explodeTo)->queue(new InvoiceEmailManager($invoicearray));
 			
 			return true;
 		} catch (\Exception $e) {
@@ -223,7 +213,7 @@ class Controller extends BaseController
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
+			Mail::mailer('sendgrid')->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
 			
 			return true;
 		} catch (\Exception $e) {
@@ -238,7 +228,7 @@ class Controller extends BaseController
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
 			$invoicearray['from'] = $sender;
-			Mail::to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
+			Mail::mailer('sendgrid')->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
 			
 			return true;
 		} catch (\Exception $e) {

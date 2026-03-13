@@ -495,25 +495,25 @@ class SignatureDashboardController extends Controller
                     'dueDate' => null,
                 ];
 
-                // Use ZeptoMail API for signature emails
-                $emailConfigService = app(\App\Services\EmailConfigService::class);
-                $zeptoApiConfig = $emailConfigService->getZeptoApiConfig();
-                
-                // Add email signature to template data
-                $templateData['emailSignature'] = $zeptoApiConfig['email_signature'] ?? '';
-                
-                // Send email via ZeptoMail API
-                $zeptoMailService = app(\App\Services\ZeptoMailService::class);
+                $fromAddress = $signer->from_email ?: config('mail.from.address');
+                $fromName = config('mail.from.name', 'Bansal Migration');
+                $emailSignature = '';
+                if (!empty($fromAddress)) {
+                    $emailAccount = \App\Models\Email::where('status', true)->where('email', $fromAddress)->first();
+                    if ($emailAccount) {
+                        $fromName = $emailAccount->display_name ?: $fromName;
+                        $emailSignature = $emailAccount->email_signature ?: '';
+                    }
+                }
+                $templateData['emailSignature'] = $emailSignature;
+
                 try {
-                    $result = $zeptoMailService->sendFromTemplate(
-                        $template,
-                        $templateData,
-                        ['address' => $signer->email, 'name' => $signer->name],
-                        $subject,
-                        $zeptoApiConfig['from_address'],
-                        $zeptoApiConfig['from_name']
-                    );
-                    
+                    Mail::mailer('sendgrid')->send($template, $templateData, function ($mail) use ($signer, $subject, $fromAddress, $fromName) {
+                        $mail->to($signer->email, $signer->name)
+                            ->subject($subject)
+                            ->from($fromAddress, $fromName);
+                    });
+
                     // Create activity note for successful email
                     \App\Models\SignatureActivity::create([
                         'document_id' => $document->id,
@@ -524,8 +524,7 @@ class SignatureDashboardController extends Controller
                             'signer_email' => $signer->email,
                             'signer_name' => $signer->name,
                             'subject' => $subject,
-                            'request_id' => $result['request_id'] ?? null,
-                            'status' => isset($result['data'][0]['message']) ? $result['data'][0]['message'] : 'Email request received',
+                            'status' => 'sent_via_sendgrid',
                         ]
                     ]);
                 } catch (\Exception $emailException) {
