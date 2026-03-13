@@ -169,6 +169,7 @@ Route::prefix('visa-estimate')->name('visa-estimate.')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [ClientPortalController::class, 'logout']);
     Route::post('/logout-all', [ClientPortalController::class, 'logoutAll']);
+    Route::get('/check-user-authentication', [ClientPortalController::class, 'checkUserAuthentication']);
     Route::get('/profile', [ClientPortalController::class, 'getProfile']);
     Route::post('/profile', [ClientPortalController::class, 'updateProfile']);
     Route::post('/update-password', [ClientPortalController::class, 'updatePassword']);

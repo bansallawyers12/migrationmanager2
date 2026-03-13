@@ -106,7 +106,7 @@ class SignupController extends BaseController
                 'is_archived' => 0,
                 'is_deleted' => null,
                 'verified' => 0,
-                'cp_status' => 1,
+                'cp_status' => 2,
                 'cp_code_verify' => 0,
                 'australian_study' => 0,
                 'specialist_education' => 0,
@@ -171,6 +171,8 @@ class SignupController extends BaseController
                     'last_name' => $data['last_name'],
                     'email' => $email,
                     'phone' => $phoneNormalized,
+                    'cp_status' => 2,
+                    'cp_status_text' => 'approval_pending',
                 ],
             ], 201);
         } catch (\Exception $e) {

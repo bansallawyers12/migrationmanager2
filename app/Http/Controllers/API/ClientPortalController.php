@@ -44,7 +44,7 @@ class ClientPortalController extends Controller
         $email = strtolower(trim($request->email));
         $admin = Admin::whereRaw('LOWER(email) = ?', [$email])
                      ->whereIn('type', ['client', 'lead'])
-                     ->where('cp_status', 1)
+                     ->whereIn('cp_status', [1, 2])
                      ->first();
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
@@ -128,7 +128,9 @@ class ClientPortalController extends Controller
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
                     'email' => $admin->email,
-                    'client_id' => $admin->client_id
+                    'client_id' => $admin->client_id,
+                    'cp_status' => (int) ($admin->cp_status ?? 0),
+                    'cp_status_text' => $this->getCpStatusText((int) ($admin->cp_status ?? 0)),
                 ]
             ]
         ], 200);
@@ -644,7 +646,9 @@ class ClientPortalController extends Controller
                     'id' => $admin->id,
                     'name' => $admin->first_name . ' ' . $admin->last_name,
                     'email' => $admin->email,
-                    'client_id' => $admin->client_id
+                    'client_id' => $admin->client_id,
+                    'cp_status' => (int) ($admin->cp_status ?? 0),
+                    'cp_status_text' => $this->getCpStatusText((int) ($admin->cp_status ?? 0)),
                 ]
             ]
         ], 200);
@@ -737,6 +741,43 @@ class ClientPortalController extends Controller
                 'device_token' => substr($deviceToken, 0, 20) . '...'
             ]);
         }
+    }
+
+    /**
+     * Get cp_status_text for a given cp_status value.
+     * 0 = default, 1 = approve, 2 = approval_pending
+     */
+    private function getCpStatusText(int $cpStatus): string
+    {
+        return match ($cpStatus) {
+            1 => 'approve',
+            2 => 'approval_pending',
+            default => 'default',
+        };
+    }
+
+    /**
+     * Check User Authentication
+     * GET /api/check-user-authentication
+     *
+     * Returns cp_status and cp_status_text for the logged-in user. No input parameters.
+     * cp_status: 0 = default, 1 = approve, 2 = approval_pending
+     */
+    public function checkUserAuthentication(Request $request)
+    {
+        $user = $request->user();
+        $cpStatus = 0;
+        if ($user && isset($user->cp_status)) {
+            $cpStatus = (int) $user->cp_status;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'cp_status' => $cpStatus,
+                'cp_status_text' => $this->getCpStatusText($cpStatus),
+            ],
+        ], 200);
     }
 
     /**
