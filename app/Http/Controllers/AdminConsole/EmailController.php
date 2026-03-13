@@ -6,9 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 use App\Models\Admin;
 use App\Models\Email;
+use App\Models\Staff;
 
 use Auth;
 
@@ -87,16 +90,86 @@ class EmailController extends Controller
 				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
 			} */
 		//check authorization end
-	
-		$query 		= Email::query();
 
-		$totalData 	= $query->count();	//for all data
+		$senders = $this->getVerifiedSenders();
+		$senderEmails = array_values(array_unique(array_filter(array_map(function ($sender) {
+			return $sender['email'] ?? null;
+		}, $senders))));
 
-		$lists		= $query->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
+		$metadataByEmail = Email::whereIn('email', $senderEmails)
+			->get()
+			->keyBy('email');
+		$staffNames = Staff::where('status', 1)
+			->get()
+			->keyBy('id')
+			->map(function ($staff) {
+				return trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
+			});
 
-		return view('AdminConsole.features.emails.index',compact(['lists', 'totalData']));
+		$lists = array_map(function ($sender) use ($metadataByEmail, $staffNames) {
+			$email = $sender['email'] ?? '';
+			$metadata = $metadataByEmail->get($email);
+			$userNames = [];
+
+			$userIds = json_decode($metadata->user_id ?? '[]', true);
+			foreach ((array) $userIds as $userId) {
+				$name = $staffNames->get((int) $userId);
+				if (!empty($name)) {
+					$userNames[] = $name;
+				}
+			}
+
+			return (object) [
+				'email' => $email,
+				'display_name' => $metadata->display_name ?? ($sender['name'] ?? ''),
+				'email_signature' => $metadata->email_signature ?? '',
+				'status' => isset($metadata->status) ? (int) $metadata->status : 0,
+				'user_sharing' => implode(', ', $userNames),
+			];
+		}, $senders);
+
+		$totalData = count($lists);
+
+		return view('AdminConsole.features.emails.index', compact(['lists', 'totalData']));
 
 		//return view('AdminConsole\.features\.producttype.index');
+	}
+
+	/**
+	 * Fetch verified senders from SendGrid.
+	 */
+	private function getVerifiedSenders(): array
+	{
+		$apiKey = config('services.sendgrid.api_key');
+		$baseUrl = rtrim(config('services.sendgrid.base_url', 'https://api.sendgrid.com'), '/');
+		$senders = [];
+
+		if (empty($apiKey)) {
+			Log::warning('SendGrid senders: SENDGRID_API_KEY is not configured.');
+			return [];
+		}
+
+		try {
+			$response = Http::withHeaders([
+				'Authorization' => 'Bearer ' . $apiKey,
+			])->timeout(10)->get($baseUrl . '/v3/verified_senders');
+
+			if ($response->successful()) {
+				$data = $response->json();
+				foreach (($data['results'] ?? []) as $sender) {
+					if (!empty($sender['from_email']) && (isset($sender['verified']) ? $sender['verified'] : true)) {
+						$senders[] = [
+							'email' => $sender['from_email'],
+							'name' => $sender['from_name'] ?? $sender['nickname'] ?? $sender['from_email'],
+						];
+					}
+				}
+			}
+		} catch (\Exception $exception) {
+			Log::error('Failed to fetch SendGrid verified senders: ' . $exception->getMessage());
+		}
+
+		return collect($senders)->unique('email')->values()->toArray();
 	}
 
 	public function create(Request $request)

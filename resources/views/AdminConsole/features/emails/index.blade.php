@@ -115,38 +115,27 @@
 					<div class="card">
 						<div class="card-header">
 							<h4>All Emails</h4>
-							<div class="card-header-action">
-								<a href="{{route('adminconsole.features.emails.create')}}" class="btn btn-primary">Create Emails</a>
-							</div>
 						</div>
 						<div class="card-body">
 							<div class="table-responsive common_table"> 
 								<table class="table text_wrap">
 								<thead>
 									<tr>
-										
 										<th>Name</th>
+										<th>Display Name</th>
+										<th>Email Signature</th>
 										<th>User Sharing</th>
 										<th>Status</th>
-										<th></th>
 									</tr> 
 								</thead>
 								@if(@$totalData !== 0)
-								<?php $i=0; ?>
 								<tbody class="tdata">	
 								@foreach (@$lists as $list)
-									<?php
-										$userids = json_decode($list->user_id);
-										$username = '';
-										foreach(($userids ?? []) as $userid){
-											$users = \App\Models\Staff::where('id', $userid)->first();
-											$username .= ($users ? $users->first_name.', ' : '');
-										}
-									?>
-									<tr id="id_{{@$list->id}}">
-										
+									<tr id="id_{{ md5(@$list->email) }}">
 										<td>{{ @$list->email == "" ? config('constants.empty') : Str::limit(@$list->email, '50', '...') }}</td> 	
-										<td>{{ @$username == "" ? config('constants.empty') : Str::limit(rtrim(@$username,', '), '50', '...') }}</td> 	
+										<td>{{ @$list->display_name == "" ? config('constants.empty') : Str::limit(@$list->display_name, '50', '...') }}</td>
+										<td>{!! @$list->email_signature == "" ? config('constants.empty') : Str::limit(strip_tags(@$list->email_signature), '80', '...') !!}</td>
+										<td>{{ @$list->user_sharing == "" ? config('constants.empty') : Str::limit(@$list->user_sharing, '50', '...') }}</td> 	
 										<td>
 										<?php
 										if($list->status == 1){ echo '<span class=" text-success">Active</span>'; }else{
@@ -154,15 +143,6 @@
 										}
 										?>
 										</td> 	
-										<td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.emails.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
-													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'emails')"><i class="fas fa-trash"></i> Delete</a>
-												</div>
-											</div>								  
-										</td>
 									</tr>	
 								@endforeach	 
 								</tbody>
