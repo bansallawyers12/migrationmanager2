@@ -344,12 +344,7 @@
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_from_lead">From <span class="span_req">*</span></label>
-								<select name="email_from" id="email_from_lead" class="form-control" data-valid="required">
-									<option value="">Select From</option>
-									@foreach(\App\Models\Email::where('status',1)->get() as $em)
-									<option value="{{ $em->email }}">{{ $em->email }}</option>
-									@endforeach
-								</select>
+								@include('partials.email-from-sendgrid', ['email_from_id' => 'email_from_lead'])
 							</div>
 						</div>
 						<div class="col-12 col-md-6 col-lg-6">

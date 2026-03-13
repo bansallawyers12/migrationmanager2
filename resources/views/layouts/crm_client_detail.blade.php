@@ -2895,6 +2895,7 @@
         }, 100); // Check every 100ms
     </script>
 
+    @include('partials.email-from-sendgrid-script')
     @yield('scripts')
 </body>
 </html>

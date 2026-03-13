@@ -495,16 +495,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_from">From <span class="span_req">*</span></label>
-								<select class="form-control" name="email_from" data-valid="required">
-                                    <option value="">Select From</option>
-									<?php
-									$emails = \App\Models\Email::select('email')->where('status', 1)->get();
-									foreach($emails as $nemail){
-										?>
-											<option value="<?php echo $nemail->email; ?>"><?php echo $nemail->email; ?></option>
-										<?php
-									}?>
-								</select>
+								@include('partials.email-from-sendgrid')
 								@if ($errors->has('email_from'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('email_from') }}</strong>
@@ -1504,6 +1495,8 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}"></script>
+{{-- Bootstrap Datepicker required by Schedule Appointment modal (appointments.js) --}}
+<script src="{{ URL::asset('js/bootstrap-datepicker.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/visa-expiry.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>

@@ -18,6 +18,7 @@ use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\ClientPortalController;
 use App\Http\Controllers\CRM\Form956Controller;
 use App\Http\Controllers\CRM\UploadChecklistController;
+use App\Http\Controllers\CRM\SendGridSendersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +99,7 @@ Route::get('/clients/get-allclients', [ClientsController::class, 'getallclients'
 Route::get('/clients/change_assignee', [ClientsController::class, 'change_assignee']);
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
+Route::get('/crm/sendgrid-senders', [SendGridSendersController::class, 'senders'])->name('crm.sendgrid.senders');
 Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clients.sendmail');
 
 Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);
