@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Events\NotificationCountUpdated;
 use App\Models\ClientMatter;
+use App\Models\Document;
 use App\Models\Note;
 use App\Models\Notification;
 use App\Models\Staff;
@@ -59,11 +60,16 @@ class ClientPortalWorkflowController extends Controller
                         
                         $allowedChecklistCount = $checklistItems->count();
                         
-                        // Format checklist items as array with id and name
-                        $allowedChecklist = $checklistItems->map(function ($item) {
+                        // Format checklist items as array with id, name, and no_of_document_uploaded (for this API only)
+                        $allowedChecklist = $checklistItems->map(function ($item) use ($clientMatterId) {
+                            $noOfDocumentUploaded = Document::workflowChecklist()
+                                ->where('client_matter_id', $clientMatterId)
+                                ->where('cp_list_id', $item->id)
+                                ->count();
                             return [
                                 'id' => $item->id,
-                                'name' => $item->cp_checklist_name
+                                'name' => $item->cp_checklist_name,
+                                'no_of_document_uploaded' => $noOfDocumentUploaded,
                             ];
                         })->toArray();
                     }
@@ -312,11 +318,12 @@ class ClientPortalWorkflowController extends Controller
      * GET /api/workflow/allowed-checklist
      *
      * Returns all checklist items where allow_client = 1 for a given client matter,
-     * optionally filtered by workflow stage ID.
+     * optionally filtered by workflow stage ID or a single checklist item ID.
      *
      * Query params:
-     *   - client_matter_id (required): The client matter ID
-     *   - stage_id         (optional): Filter results to a specific workflow stage
+     *   - client_matter_id     (required): The client matter ID
+     *   - stage_id             (optional): Filter results to a specific workflow stage
+     *   - allowed_checklist_id (optional): Filter to a single checklist item by ID
      */
     public function getAllowedChecklist(Request $request)
     {
@@ -324,8 +331,9 @@ class ClientPortalWorkflowController extends Controller
             $admin    = $request->user();
             $clientId = $admin->id;
 
-            $clientMatterId = $request->get('client_matter_id');
-            $stageId        = $request->get('stage_id');
+            $clientMatterId     = $request->get('client_matter_id');
+            $stageId            = $request->get('stage_id');
+            $allowedChecklistId = $request->get('allowed_checklist_id');
 
             if (!$clientMatterId) {
                 return response()->json([
@@ -364,44 +372,106 @@ class ClientPortalWorkflowController extends Controller
                 $query->where('wf_stage_id', $stageId);
             }
 
+            if ($allowedChecklistId !== null && $allowedChecklistId !== '') {
+                $query->where('id', (int) $allowedChecklistId);
+            }
+
             $checklistItems = $query
                 ->select('id', 'cp_checklist_name', 'description', 'wf_stage', 'wf_stage_id', 'allow_client')
                 ->orderBy('wf_stage_id', 'asc')
                 ->orderBy('id', 'asc')
                 ->get();
 
-            // Enrich each item with upload status from the documents table
-            $allowedChecklists = $checklistItems->map(function ($item) use ($clientMatterId) {
-                $latestDoc = DB::table('documents')
-                    ->where('cp_list_id', $item->id)
-                    ->where('type', 'workflow_checklist')
-                    ->where('client_matter_id', $clientMatterId)
-                    ->orderBy('id', 'desc')
-                    ->select('file_name', 'myfile', 'cp_doc_status')
-                    ->first();
+            // When filtering by allowed_checklist_id: return one entry per uploaded document (so multiple docs for same checklist all appear)
+            if ($allowedChecklistId !== null && $allowedChecklistId !== '') {
+                $allowedChecklists = collect();
+                foreach ($checklistItems as $item) {
+                    $allDocs = DB::table('documents')
+                        ->where('cp_list_id', $item->id)
+                        ->where('type', 'workflow_checklist')
+                        ->where('client_matter_id', $clientMatterId)
+                        ->orderBy('id', 'desc')
+                        ->select('id', 'file_name', 'myfile', 'cp_doc_status', 'created_at')
+                        ->get();
+                    if ($allDocs->isEmpty()) {
+                        continue;
+                    }
+                    $stageSlug = $item->wf_stage
+                        ? strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($item->wf_stage)))
+                        : null;
+                    foreach ($allDocs as $doc) {
+                        $docStatus = $doc->cp_doc_status ?? null;
+                        $docStatusText = match (true) {
+                            $docStatus === 0 => 'In Progress',
+                            $docStatus === 1 => 'Approved',
+                            $docStatus === 2 => 'Rejected',
+                            default => null,
+                        };
+                        $allowedChecklists->push([
+                            'id'                => $item->id,
+                            'checklist_name'    => $item->cp_checklist_name,
+                            'document_type'     => $item->cp_checklist_name,
+                            'description'       => $item->description,
+                            'type'              => $stageSlug,
+                            'type_id'           => $item->wf_stage_id,
+                            'type_name'         => $item->wf_stage,
+                            'is_mandatory'      => (bool) $item->allow_client,
+                            'due_date'          => null,
+                            'due_time'          => null,
+                            'is_upload'         => true,
+                            'file_name'         => $doc->file_name,
+                            'file_url'          => $doc->myfile,
+                            'doc_status'        => $docStatus,
+                            'doc_status_text'   => $docStatusText,
+                            'uploaded_doc_id'  => $doc->id,
+                            'upload_doc_date'  => $doc->created_at ? date('Y-m-d', strtotime($doc->created_at)) : null,
+                        ]);
+                    }
+                }
+            } else {
+                // Enrich each item with upload status from the documents table (latest document only per checklist)
+                $allowedChecklists = $checklistItems->map(function ($item) use ($clientMatterId) {
+                    $latestDoc = DB::table('documents')
+                        ->where('cp_list_id', $item->id)
+                        ->where('type', 'workflow_checklist')
+                        ->where('client_matter_id', $clientMatterId)
+                        ->orderBy('id', 'desc')
+                        ->select('id', 'file_name', 'myfile', 'cp_doc_status', 'created_at')
+                        ->first();
 
-                // Convert stage name to a URL-friendly slug (e.g. "Immi Request Received" → "immi-request-received")
-                $stageSlug = $item->wf_stage
-                    ? strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($item->wf_stage)))
-                    : null;
+                    $stageSlug = $item->wf_stage
+                        ? strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($item->wf_stage)))
+                        : null;
 
-                return [
-                    'id'             => $item->id,
-                    'checklist_name' => $item->cp_checklist_name,
-                    'document_type'  => $item->cp_checklist_name,
-                    'description'    => $item->description,
-                    'type'           => $stageSlug,
-                    'type_id'        => $item->wf_stage_id,
-                    'type_name'      => $item->wf_stage,
-                    'is_mandatory'   => (bool) $item->allow_client,
-                    'due_date'       => null,
-                    'due_time'       => null,
-                    'is_upload'      => !is_null($latestDoc),
-                    'file_name'      => $latestDoc->file_name ?? null,
-                    'file_url'       => $latestDoc->myfile ?? null,
-                    'doc_status'     => $latestDoc->cp_doc_status ?? null,
-                ];
-            });
+                    $docStatus = $latestDoc->cp_doc_status ?? null;
+                    $docStatusText = match (true) {
+                        $docStatus === 0 => 'In Progress',
+                        $docStatus === 1 => 'Approved',
+                        $docStatus === 2 => 'Rejected',
+                        default => null,
+                    };
+
+                    return [
+                        'id'                => $item->id,
+                        'checklist_name'    => $item->cp_checklist_name,
+                        'document_type'     => $item->cp_checklist_name,
+                        'description'       => $item->description,
+                        'type'              => $stageSlug,
+                        'type_id'           => $item->wf_stage_id,
+                        'type_name'         => $item->wf_stage,
+                        'is_mandatory'      => (bool) $item->allow_client,
+                        'due_date'          => null,
+                        'due_time'          => null,
+                        'is_upload'         => !is_null($latestDoc),
+                        'file_name'         => $latestDoc->file_name ?? null,
+                        'file_url'          => $latestDoc->myfile ?? null,
+                        'doc_status'        => $docStatus,
+                        'doc_status_text'   => $docStatusText,
+                        'uploaded_doc_id'  => $latestDoc->id ?? null,
+                        'upload_doc_date'  => $latestDoc->created_at ? date('Y-m-d', strtotime($latestDoc->created_at)) : null,
+                    ];
+                });
+            }
 
             return response()->json([
                 'success' => true,
@@ -420,10 +490,11 @@ class ClientPortalWorkflowController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Allowed Checklist API Error: ' . $e->getMessage(), [
-                'user_id'          => $admin->id ?? null,
-                'client_matter_id' => $clientMatterId ?? null,
-                'stage_id'         => $stageId ?? null,
-                'trace'            => $e->getTraceAsString()
+                'user_id'               => $admin->id ?? null,
+                'client_matter_id'      => $clientMatterId ?? null,
+                'stage_id'              => $stageId ?? null,
+                'allowed_checklist_id'  => $allowedChecklistId ?? null,
+                'trace'                 => $e->getTraceAsString()
             ]);
 
             return response()->json([
