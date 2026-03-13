@@ -16,22 +16,22 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 - **Client Management**: Complete client profiles with personal information, visa history, and documents
 - **Matter & Application Tracking**: Monitor visa applications via matters with workflow stages and status updates
-- **Appointment System**: Schedule consultations with calendar integration and automated reminders
+- **Appointment System**: Schedule consultations with calendar integration and automated reminders (Booking system)
 - **Invoice & Payment Management**: Generate invoices, track payments, and manage receipts
-- **Document Management**: Secure storage and organization of client documents and checklists
-- **Lead Management**: Track potential clients from inquiry to conversion
+- **Document Management**: Secure storage, electronic signatures, and organisation of client documents and checklists
+- **Lead Management**: Track potential clients from inquiry to conversion with analytics
 - **Office Visit Tracking**: Manage walk-in clients and office visit queues
 - **Email Integration**: Built-in email management with client correspondence tracking
 - **Quotation System**: Create and send professional service quotations
-- **Matter Management**: Organize cases by matter type and service category
-- **Team & Staff Management**: Role-based access control for team members
-- **Reporting & Analytics**: Comprehensive reports on clients, applications, and revenue
+- **Team & Staff Management**: Role-based access control; dedicated Staff model with login analytics
+- **Reporting & Analytics**: Comprehensive reports on clients, matters, and revenue
 - **Client Portal**: Secure portal for clients to view status and submit documents
-- **Multi-Currency Support**: Handle international payments and multiple currencies
-- **Task Management**: Assign and track tasks related to cases and clients
+- **SMS Notifications**: Integrated SMS via Twilio and Cellcast providers
+- **Broadcast Notifications**: In-app broadcasts to staff/agents with history
+- **Electronic Signatures**: Full signature workflow with templates and dashboard
+- **Task Management**: Assignee/action system for tasks related to cases and clients
 - **Company & Employer Sponsorship**: Full employer sponsorship management with company profiles, directors, trading names, Trust entities, nominations, and sponsorship tracking
 - **EOI (Expression of Interest) Workflows**: Client confirmation sheets, ROI forms, and amendment request flows for visa applications
-- **Assignee Actions**: Dedicated action views for assigned tasks and follow-ups
 - **Windows Friendly**: Optimized for XAMPP on Windows environments
 
 ## Technology Stack
@@ -78,8 +78,8 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
    ```
 
 4. **Environment setup**
-   ```bash
-   cp .env.example .env
+   ```powershell
+   copy .env.example .env
    php artisan key:generate
    ```
 
@@ -104,11 +104,9 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
    ```bash
    php artisan storage:link
    ```
-   - Create necessary directories:
-   ```bash
-   mkdir -p storage/app/public/agreements
-   mkdir -p storage/app/public/checklists
-   mkdir -p storage/app/public/attachments
+   - Create necessary directories (PowerShell):
+   ```powershell
+   New-Item -ItemType Directory -Force -Path storage/app/public/agreements, storage/app/public/checklists, storage/app/public/attachments
    ```
 
 7. **Configure mail settings**
@@ -126,7 +124,6 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 8. **Build frontend assets**
    ```bash
-   npm install
    npm run copy:flatpickr   # Copies Flatpickr assets to public/ (required for date pickers)
    npm run build
    # Or for development:
@@ -313,34 +310,47 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
 ### Key Components
 
 - **Models**: 
-  - `User` - Multi-role user authentication (Admin, Staff, Agent, Client)
-  - `Client` - Client profiles with personal information and relationships
-  - `ClientMatter` - Matter/case tracking with visa workflow stages (replaces legacy applications)
-  - `Invoice` - Invoice generation and payment tracking
-  - `Receipt` - Payment receipts and transaction records
-  - `Appointment` - Consultation scheduling and management
+  - `Admin` - Multi-role CRM users (Staff, Agent roles); handles authentication for the CRM
+  - `Staff` - Dedicated staff model (separate from Admin)
   - `Lead` - Lead tracking and conversion management
+  - `ClientMatter` - Matter/case tracking with visa workflow stages
+  - `Matter` - Case/matter categories and types
   - `Document` - Document storage and electronic signatures
-  - `Matter` - Case/matter management with categories
-  - `Quotation` - Service quotation generation
+  - `BookingAppointment` - Appointment scheduling and calendar
+  - `AccountAllInvoiceReceipt` / `AccountClientReceipt` - Invoice and receipt records
   - `Company` - Company profiles for employer sponsorship (with trading names, directors, nominations)
   - `CompanyTradingName` - Multiple trading names per company
   - `CompanyDirector` - Company directors with optional client/lead linking
   - `CompanyNomination` - Employer nomination tracking with nominated person linking
+  - `ClientEoiReference` - EOI (Expression of Interest) references
+  - `Note` - Client/lead notes and assignee tasks
+  - `EmailLog` - Email correspondence tracking
   
 - **Controllers**: 
   - `ClientsController` - Client CRUD operations and relationship management
-  - `ClientPortalController` - Client portal operations including application tracking, workflow management, and portal user management
-  - `InvoiceController` - Invoice generation, payment processing, and schedules
-  - `BookingAppointmentsController` - Appointment scheduling and calendar (replaces legacy AppointmentsController)
-  - `DocumentController` - Document upload, download, and signature handling
+  - `ClientPersonalDetailsController` - Per-section AJAX save for client/company details
+  - `ClientPortalController` - Client portal operations including workflow management and portal user management
+  - `ClientAccountsController` - Invoice, receipt, and payment management
+  - `BookingAppointmentsController` - Appointment scheduling and calendar
+  - `DocumentController` / `ClientDocumentsController` - Document upload, download, and signature handling
   - `OfficeVisitController` - Walk-in client management
-  - `AdminController` - Admin dashboard and system management
+  - `DashboardController` - Admin dashboard and metrics
+  - `LeadController` / `LeadConversionController` / `LeadAnalyticsController` - Lead management
+  - `AssigneeController` - Task/action assignment management
+  - `ReportController` - Reports and data export
+  - `ClientEoiRoiController` / `EoiRoiSheetController` - EOI/ROI workflows
+  - `BroadcastController` / `BroadcastNotificationAjaxController` - Broadcast notifications
   
 - **Services**:
-  - `PythonConverterService` - DOCX to PDF document conversion
-  - `EmailService` - Email sending and SMTP integration
-  - `PaymentService` - Payment gateway integration
+  - `PythonConverterService` - DOCX to PDF via Python HTTP API
+  - `EmailService` / `CustomMailService` / `ZeptoMailService` - Email sending and SMTP integration
+  - `StripePaymentService` - Stripe payment gateway integration
+  - `SignatureService` / `SignatureTemplateService` - Electronic document signing
+  - `Sms/UnifiedSmsManager` - SMS via Twilio or Cellcast providers
+  - `BroadcastNotificationService` - In-app broadcast notifications
+  - `ClientEditService` - Client/company section save logic
+  - `DashboardService` / `FinancialStatsService` - Dashboard and financial metrics
+  - `S3AttachmentStorageService` / `S3EmailStorageService` - S3 file storage
   
 - **Python Services** (`python_services/`):
   - `docx_converter_service.py` - DOCX to PDF conversion via HTTP API
@@ -551,6 +561,7 @@ For detailed Company Employer Sponsorship implementation notes, see `docs/COMPAN
 - Comprehensive logging is available in `storage/logs/laravel.log`
 - Email integration supports both SMTP and IMAP protocols
 - Payment gateways (Stripe, PayU) need to be configured for online payments
+- SMS providers (Twilio, Cellcast) need to be configured for SMS notifications
 - Client portal provides secure access for clients to track their applications
 
 ## Troubleshooting
@@ -603,12 +614,13 @@ For detailed Company Employer Sponsorship implementation notes, see `docs/COMPAN
 - **Uploaded files**: All content in `public/` except framework files
 
 ### Backup Commands
-```bash
-# PostgreSQL database backup
-pg_dump -U postgres migration_manager > backup_$(date +%Y%m%d).sql
+```powershell
+# PostgreSQL database backup (PowerShell)
+$date = Get-Date -Format "yyyyMMdd"
+pg_dump -U postgres migration_manager | Out-File "backup_$date.sql"
 
-# Storage backup
-tar -czf storage_backup_$(date +%Y%m%d).tar.gz storage/app/public/
+# Storage backup (use robocopy or 7-Zip on Windows)
+robocopy storage\app\public "backup_storage_$date" /E
 ```
 
 ### Data Retention
@@ -638,8 +650,8 @@ tar -czf storage_backup_$(date +%Y%m%d).tar.gz storage/app/public/
 - Test with sandbox/test keys before going live
 
 **Q: Can I customize invoice templates?**
-- Yes, edit templates in `resources/views/Admin/invoice/`
-- Customize email templates in `resources/views/emails/`
+- Edit the invoice email template at `resources/views/emails/geninvoice.blade.php`
+- Receipt email templates: `resources/views/emails/reciept.blade.php`, `genofficereceipt.blade.php`, `genclientfundreceipt.blade.php`
 
 **Q: How to add new visa types?**
 - Go to Admin → Settings → Visa Types
