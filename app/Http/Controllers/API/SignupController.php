@@ -35,6 +35,9 @@ class SignupController extends BaseController
             'phone' => 'required|string|max:50',
             'country_code' => 'nullable|string|max:20',
             'email' => 'required|email|max:255',
+            'password' => 'required|string|min:8|max:255',
+        ], [
+            'password.min' => 'The password must be at least 8 characters.',
         ]);
 
         if ($validator->fails()) {
@@ -95,7 +98,7 @@ class SignupController extends BaseController
 
             $adminData = [
                 'user_id' => $systemUserId,
-                'password' => Hash::make('LEAD_PLACEHOLDER'),
+                'password' => Hash::make($data['password']),
                 'client_counter' => $clientCounter,
                 'client_id' => $clientId,
                 'status' => '1',
@@ -103,7 +106,7 @@ class SignupController extends BaseController
                 'is_archived' => 0,
                 'is_deleted' => null,
                 'verified' => 0,
-                'cp_status' => 0,
+                'cp_status' => 1,
                 'cp_code_verify' => 0,
                 'australian_study' => 0,
                 'specialist_education' => 0,
@@ -160,7 +163,7 @@ class SignupController extends BaseController
 
             return response()->json([
                 'success' => true,
-                'message' => 'Signup successful.You can login in app after admin verification and assign you to a matter',
+                'message' => 'Signup successful. You can login in app but some features will be disabled until admin approve your account.',
                 'data' => [
                     'id' => $adminId,
                     'client_id' => $clientId,
