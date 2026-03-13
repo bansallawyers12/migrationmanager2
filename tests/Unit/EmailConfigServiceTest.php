@@ -20,64 +20,18 @@ class EmailConfigServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_can_get_email_config_by_id()
-    {
-        $email = Email::factory()->create([
-            'email' => 'test@example.com',
-            'password' => 'password123',
-            'display_name' => 'Test Sender',
-            'smtp_host' => 'smtp.example.com',
-            'smtp_port' => 587,
-            'smtp_encryption' => 'tls',
-            'status' => true
-        ]);
-
-        $config = $this->service->forAccountById($email->id);
-
-        $this->assertEquals('smtp.example.com', $config['host']);
-        $this->assertEquals(587, $config['port']);
-        $this->assertEquals('tls', $config['encryption']);
-        $this->assertEquals('test@example.com', $config['username']);
-        $this->assertEquals('password123', $config['password']);
-        $this->assertEquals('test@example.com', $config['from_address']);
-        $this->assertEquals('Test Sender', $config['from_name']);
-    }
-
-    /** @test */
     public function it_can_get_email_config_by_email_address()
     {
         Email::factory()->create([
             'email' => 'test@example.com',
-            'password' => 'password123',
             'display_name' => 'Test Sender',
             'status' => true
         ]);
 
         $config = $this->service->forAccount('test@example.com');
 
-        $this->assertEquals('test@example.com', $config['username']);
         $this->assertEquals('test@example.com', $config['from_address']);
         $this->assertEquals('Test Sender', $config['from_name']);
-    }
-
-    /** @test */
-    public function it_uses_default_zoho_settings_when_not_specified()
-    {
-        $email = Email::factory()->create([
-            'email' => 'test@example.com',
-            'password' => 'password123',
-            'display_name' => 'Test Sender',
-            'smtp_host' => null,
-            'smtp_port' => null,
-            'smtp_encryption' => null,
-            'status' => true
-        ]);
-
-        $config = $this->service->forAccountById($email->id);
-
-        $this->assertEquals('smtp.zoho.com', $config['host']);
-        $this->assertEquals(587, $config['port']);
-        $this->assertEquals('tls', $config['encryption']);
     }
 
     /** @test */
@@ -109,30 +63,6 @@ class EmailConfigServiceTest extends TestCase
         $this->expectException(\Exception::class);
 
         $this->service->forAccount('inactive@example.com');
-    }
-
-    /** @test */
-    public function it_can_apply_config_to_laravel_mail()
-    {
-        $config = [
-            'host' => 'smtp.test.com',
-            'port' => 465,
-            'encryption' => 'ssl',
-            'username' => 'user@test.com',
-            'password' => 'secret',
-            'from_address' => 'user@test.com',
-            'from_name' => 'Test User'
-        ];
-
-        $this->service->applyConfig($config);
-
-        $this->assertEquals('smtp.test.com', config('mail.mailers.smtp.host'));
-        $this->assertEquals(465, config('mail.mailers.smtp.port'));
-        $this->assertEquals('ssl', config('mail.mailers.smtp.encryption'));
-        $this->assertEquals('user@test.com', config('mail.mailers.smtp.username'));
-        $this->assertEquals('secret', config('mail.mailers.smtp.password'));
-        $this->assertEquals('user@test.com', config('mail.from.address'));
-        $this->assertEquals('Test User', config('mail.from.name'));
     }
 
     /** @test */
@@ -197,52 +127,54 @@ class EmailConfigServiceTest extends TestCase
     /** @test */
     public function it_falls_back_to_environment_config_when_no_active_accounts()
     {
-        // Set environment variables
         putenv('MAIL_FROM_ADDRESS=env@example.com');
         putenv('MAIL_FROM_NAME=Environment Sender');
-        putenv('MAIL_HOST=smtp.env.com');
-        putenv('MAIL_PORT=2525');
 
         $config = $this->service->getDefaultAccount();
 
         $this->assertNotNull($config);
         $this->assertEquals('env@example.com', $config['from_address']);
         $this->assertEquals('Environment Sender', $config['from_name']);
-        $this->assertEquals('smtp.env.com', $config['host']);
-        $this->assertEquals(2525, $config['port']);
 
-        // Clean up
         putenv('MAIL_FROM_ADDRESS');
         putenv('MAIL_FROM_NAME');
-        putenv('MAIL_HOST');
-        putenv('MAIL_PORT');
     }
 
     /** @test */
-    public function build_config_creates_properly_structured_array()
+    public function build_config_returns_only_from_address_from_name_and_email_signature()
     {
         $email = Email::factory()->create([
             'email' => 'test@example.com',
-            'password' => 'secret123',
             'display_name' => 'Test User',
-            'smtp_host' => 'smtp.custom.com',
-            'smtp_port' => 465,
-            'smtp_encryption' => 'ssl',
+            'email_signature' => '<p>Signature</p>',
             'status' => true
         ]);
 
         $config = $this->service->forAccountById($email->id);
 
         $this->assertIsArray($config);
-        $this->assertArrayHasKey('host', $config);
-        $this->assertArrayHasKey('port', $config);
-        $this->assertArrayHasKey('encryption', $config);
-        $this->assertArrayHasKey('username', $config);
-        $this->assertArrayHasKey('password', $config);
+        $this->assertCount(3, $config);
         $this->assertArrayHasKey('from_address', $config);
         $this->assertArrayHasKey('from_name', $config);
-        $this->assertArrayHasKey('timeout', $config);
-        $this->assertEquals(30, $config['timeout']);
+        $this->assertArrayHasKey('email_signature', $config);
+        $this->assertEquals('test@example.com', $config['from_address']);
+        $this->assertEquals('Test User', $config['from_name']);
+        $this->assertEquals('<p>Signature</p>', $config['email_signature']);
+    }
+
+    /** @test */
+    public function get_default_account_falls_back_to_mail_from_address_env_var()
+    {
+        putenv('MAIL_FROM_ADDRESS=fallback@example.com');
+        putenv('MAIL_FROM_NAME=Fallback Sender');
+
+        $config = $this->service->getDefaultAccount();
+
+        $this->assertNotNull($config);
+        $this->assertEquals('fallback@example.com', $config['from_address']);
+        $this->assertEquals('Fallback Sender', $config['from_name']);
+
+        putenv('MAIL_FROM_ADDRESS');
+        putenv('MAIL_FROM_NAME');
     }
 }
-

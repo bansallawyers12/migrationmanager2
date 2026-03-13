@@ -110,16 +110,14 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
    ```
 
 7. **Configure mail settings**
-   Update `.env` with your mail server details:
+   Update `.env` with SendGrid and sender details:
    ```env
-   MAIL_MAILER=smtp
-   MAIL_HOST=smtp.gmail.com
-   MAIL_PORT=587
-   MAIL_USERNAME=your_email@gmail.com
-   MAIL_PASSWORD=your_app_password
-   MAIL_ENCRYPTION=tls
-   MAIL_FROM_ADDRESS=your_email@gmail.com
-   MAIL_FROM_NAME="Migration Manager"
+   MAIL_MAILER=sendgrid
+   MAIL_FROM_ADDRESS=your_sender@yourdomain.com
+   MAIL_FROM_NAME="Your Company Name"
+   SENDGRID_API_KEY=SG.your_api_key_here
+   SENDGRID_FROM_EMAIL=your_sender@yourdomain.com
+   SENDGRID_BASE_URL=https://api.sendgrid.com
    ```
 
 8. **Build frontend assets**
@@ -343,7 +341,7 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   
 - **Services**:
   - `PythonConverterService` - DOCX to PDF via Python HTTP API
-  - `EmailService` / `CustomMailService` / `ZeptoMailService` - Email sending and SMTP integration
+  - `EmailConfigService` - Resolves sender from DB (SendGrid)
   - `StripePaymentService` - Stripe payment gateway integration
   - `SignatureService` / `SignatureTemplateService` - Electronic document signing
   - `Sms/UnifiedSmsManager` - SMS via Twilio or Cellcast providers
@@ -488,15 +486,13 @@ DB_DATABASE=migration_manager
 DB_USERNAME=postgres
 DB_PASSWORD=
 
-# Mail Configuration
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=your_email@gmail.com
-MAIL_FROM_NAME="Migration Manager"
+# Mail Configuration (SendGrid)
+MAIL_MAILER=sendgrid
+MAIL_FROM_ADDRESS=your_sender@yourdomain.com
+MAIL_FROM_NAME="Your Company Name"
+SENDGRID_API_KEY=SG.your_api_key_here
+SENDGRID_FROM_EMAIL=your_sender@yourdomain.com
+SENDGRID_BASE_URL=https://api.sendgrid.com
 
 # Payment Gateways
 STRIPE_KEY=your_stripe_key

@@ -65,19 +65,6 @@
 													</div>
 												</div>
 
-                                                <div class="col-12 col-md-12 col-lg-12">
-													<div class="form-group">
-														<label for="password">Password</label>
-														<input type="text" name="password" value="{{ @$fetchedData->password }}" class="form-control" data-valid="required" autocomplete="off" placeholder="">
-
-														@if ($errors->has('password'))
-															<span class="custom-error" role="alert">
-																<strong>{{ @$errors->first('password') }}</strong>
-															</span>
-														@endif
-													</div>
-												</div>
-
 												<div class="col-12 col-md-12 col-lg-12">
 													<h4>User Sharing</h4>
 													<div class="form-group">

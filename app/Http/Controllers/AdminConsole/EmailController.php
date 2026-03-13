@@ -192,7 +192,6 @@ class EmailController extends Controller
 			$obj->email	 =	@$requestData['email'];
 			$obj->email_signature	=	@$requestData['email_signature'];
 			$obj->display_name	=	@$requestData['display_name'];
-            $obj->password	=	@$requestData['password'];
 			$obj->status	=	@$requestData['status'];
 			$obj->user_id	=	json_encode(@$requestData['users']);
             $saved			=	$obj->save();
@@ -254,7 +253,6 @@ class EmailController extends Controller
 		$obj->email = @$requestData['email'];
 		$obj->email_signature = @$requestData['email_signature'];
 		$obj->display_name = @$requestData['display_name'];
-		$obj->password = @$requestData['password'];
 		$obj->status = @$requestData['status'];
 		$obj->user_id = json_encode(@$requestData['users']);
 		$saved = $obj->save();
