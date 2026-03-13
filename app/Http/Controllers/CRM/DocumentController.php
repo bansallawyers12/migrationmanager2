@@ -1475,7 +1475,7 @@ class DocumentController extends Controller
                         $emailSignature = $activeEmail->email_signature ?: '';
                     }
                     
-                    // Prepare all attachments for ZeptoMail API
+                    // Prepare all attachments
                     $allAttachments = [];
                     foreach ($attachments as $file) {
                         $allAttachments[] = [
