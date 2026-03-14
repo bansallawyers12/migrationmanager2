@@ -11,6 +11,7 @@ use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
 use App\Models\ClientTestScore;
+use App\Models\ClientOccupation;
 use App\Models\ActivitiesLog;
 use App\Models\Matter;
 use App\Services\ClientReferenceService;
@@ -51,9 +52,19 @@ class ClientImportService
 
             // Normalize office_visit_form_v1 format for CRM compatibility
             if (isset($importData['format']) && $importData['format'] === 'office_visit_form_v1') {
+                // visa_expiry -> visaExpiry alias
                 if (!isset($clientData['visaExpiry']) && isset($clientData['visa_expiry'])) {
                     $clientData['visaExpiry'] = $clientData['visa_expiry'];
                 }
+                // maritalStatus -> marital_status alias
+                if (!isset($clientData['marital_status']) && isset($clientData['maritalStatus'])) {
+                    $clientData['marital_status'] = $clientData['maritalStatus'];
+                }
+                // assessing_authority -> skill_assessment alias
+                if (!isset($clientData['skill_assessment']) && isset($clientData['assessing_authority'])) {
+                    $clientData['skill_assessment'] = $clientData['assessing_authority'];
+                }
+                // test_scores: overall -> overall_score alias
                 if (isset($importData['test_scores']) && is_array($importData['test_scores'])) {
                     foreach ($importData['test_scores'] as &$ts) {
                         if (isset($ts['overall']) && !isset($ts['overall_score'])) {
@@ -134,7 +145,8 @@ class ClientImportService
             // Optional bansalcrm2-style fields (if columns exist)
             $bansalOptional = [
                 'att_email', 'att_phone', 'att_country_code',
-                'nomi_occupation', 'skill_assessment', 'high_quali_aus', 'high_quali_overseas',
+                'nomi_occupation', 'skill_assessment', 'occupation_code',
+                'high_quali_aus', 'high_quali_overseas',
                 'relevant_work_exp_aus', 'relevant_work_exp_over',
                 'naati_py', 'total_points',
                 'service', 'assignee', 'lead_quality', 'comments_note', 'married_partner',
@@ -187,6 +199,20 @@ class ClientImportService
             
             $client->save();
             $newClientId = $client->id;
+
+            // Create occupation record from client-level occupation fields (office_visit_form_v1 and standard import)
+            $nomiOccupation   = $clientData['nomi_occupation'] ?? null;
+            $occupationCode   = $clientData['occupation_code'] ?? null;
+            $skillAssessment  = $clientData['skill_assessment'] ?? ($clientData['assessing_authority'] ?? null);
+            if (!empty($nomiOccupation) || !empty($occupationCode) || !empty($skillAssessment)) {
+                ClientOccupation::create([
+                    'client_id'        => $newClientId,
+                    'admin_id'         => Auth::id(),
+                    'nomi_occupation'  => $nomiOccupation,
+                    'occupation_code'  => $occupationCode,
+                    'skill_assessment' => $skillAssessment,
+                ]);
+            }
 
             // Import addresses
             if (isset($importData['addresses']) && is_array($importData['addresses'])) {
@@ -267,7 +293,9 @@ class ClientImportService
             // Import visa countries; resolve visa_type by matter title/nick_name when provided (cross-system portability)
             $lastVisaType = null;
             $lastVisaExpiry = null;
-            if (isset($importData['visa_countries']) && is_array($importData['visa_countries'])) {
+            $visaCountriesProvided = isset($importData['visa_countries']) && is_array($importData['visa_countries']) && count($importData['visa_countries']) > 0;
+
+            if ($visaCountriesProvided) {
                 foreach ($importData['visa_countries'] as $visaData) {
                     if (!is_array($visaData)) {
                         continue;
@@ -286,12 +314,35 @@ class ClientImportService
                     $lastVisaType = $resolvedType;
                     $lastVisaExpiry = $expiry;
                 }
-                // Sync last visa to client (visa_type, visaExpiry) for sidebar/summary display
-                if (Schema::hasColumn('admins', 'visa_type') && Schema::hasColumn('admins', 'visaExpiry')) {
-                    $client->visa_type = $lastVisaType ?? '';
-                    $client->visaExpiry = $lastVisaExpiry;
-                    $client->save();
+            } else {
+                // Fallback: build one visa record from client-level summary fields when visa_countries not provided
+                $clientVisaType   = $clientData['visa_type'] ?? null;
+                $clientVisaExpiry = $this->parseDate($clientData['visa_expiry'] ?? $clientData['visaExpiry'] ?? null);
+                if (!empty($clientVisaType) || !empty($clientVisaExpiry)) {
+                    $resolvedType = $this->resolveVisaType([
+                        'visa_type'                  => $clientVisaType,
+                        'visa_type_matter_title'     => $clientVisaType,
+                        'visa_type_matter_nick_name' => $clientVisaType,
+                    ]);
+                    ClientVisaCountry::create([
+                        'client_id'       => $newClientId,
+                        'admin_id'        => Auth::id(),
+                        'visa_type'       => $resolvedType,
+                        'visa_description'=> $clientData['visa_opt'] ?? null,
+                        'visa_expiry_date'=> $clientVisaExpiry,
+                        'visa_grant_date' => null,
+                    ]);
+                    $lastVisaType   = $resolvedType;
+                    $lastVisaExpiry = $clientVisaExpiry;
                 }
+            }
+
+            // Sync last visa to client summary columns for sidebar/summary display
+            if (($lastVisaType !== null || $lastVisaExpiry !== null) &&
+                Schema::hasColumn('admins', 'visa_type') && Schema::hasColumn('admins', 'visaExpiry')) {
+                $client->visa_type  = $lastVisaType ?? $client->visa_type;
+                $client->visaExpiry = $lastVisaExpiry ?? $client->visaExpiry;
+                $client->save();
             }
 
             // Import character information
@@ -326,24 +377,43 @@ class ClientImportService
             }
 
             // Import activities (supports both migrationmanager2 and bansalcrm2 formats)
+            $activitiesImported = false;
             if (isset($importData['activities']) && is_array($importData['activities'])) {
                 foreach ($importData['activities'] as $activityData) {
                     $activityAttrs = [
-                        'client_id' => $newClientId,
-                        'created_by' => $activityData['created_by'] ?? Auth::id(),
-                        'subject' => $activityData['subject'] ?? 'Imported Activity',
-                        'description' => $activityData['description'] ?? null,
+                        'client_id'     => $newClientId,
+                        'created_by'    => $activityData['created_by'] ?? Auth::id(),
+                        'subject'       => $activityData['subject'] ?? 'Imported Activity',
+                        'description'   => $activityData['description'] ?? null,
                         'activity_type' => $activityData['activity_type'] ?? 'activity',
                         'followup_date' => $this->parseDateTime($activityData['followup_date'] ?? null),
-                        'task_group' => $activityData['task_group'] ?? null,
-                        'task_status' => $activityData['task_status'] ?? 0,
-                        'pin' => $activityData['pin'] ?? 0,
+                        'task_group'    => $activityData['task_group'] ?? null,
+                        'task_status'   => $activityData['task_status'] ?? 0,
+                        'pin'           => $activityData['pin'] ?? 0,
                     ];
                     if (Schema::hasColumn('activities_logs', 'use_for') && array_key_exists('use_for', $activityData)) {
                         $activityAttrs['use_for'] = $activityData['use_for'];
                     }
                     ActivitiesLog::create($activityAttrs);
+                    $activitiesImported = true;
                 }
+            }
+
+            // Fallback: auto-generate activity from client.comments_note when no activities provided
+            if (!$activitiesImported && !empty($clientData['comments_note'])) {
+                $fallbackAttrs = [
+                    'client_id'     => $newClientId,
+                    'created_by'    => Auth::id(),
+                    'subject'       => 'Office Visit Check-in Notes',
+                    'description'   => $clientData['comments_note'],
+                    'activity_type' => 'office_visit_checkin',
+                    'task_status'   => 0,
+                    'pin'           => 0,
+                ];
+                if (Schema::hasColumn('activities_logs', 'use_for')) {
+                    $fallbackAttrs['use_for'] = null;
+                }
+                ActivitiesLog::create($fallbackAttrs);
             }
 
             DB::commit();
