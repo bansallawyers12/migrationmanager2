@@ -231,6 +231,9 @@
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
                         @endif
+                        <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-bs-toggle="modal" data-bs-target="#importLeadModal" title="Import Lead">
+                            <i class="fas fa-upload"></i> Import Lead
+                        </a>
                         <a href="{{route('leads.create')}}" class="btn btn-primary">Create Lead</a>
                         <select name="per_page" id="per_page" class="form-control per-page-select">
                             @foreach([10, 20, 50, 100, 200] as $option)
@@ -535,10 +538,78 @@
     </div>
 </div>
 
+<!-- Import Lead Modal -->
+<div id="importLeadModal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="importLeadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importLeadModalLabel">
+                    <i class="fas fa-upload"></i> Import Lead from File
+                </h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @if ($errors->has('import_file'))
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>{{ $errors->first('import_file') }}</strong>
+                    </div>
+                @endif
+
+                <form method="post" name="importLeadForm" action="{{ URL::to('/clients/import') }}" autocomplete="off" enctype="multipart/form-data">
+                    @csrf
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Instructions:</strong> Upload a JSON file from the client intake form. A new lead will be created and the Notes field will be added as an activity note.
+                    </div>
+
+                    <div class="form-group">
+                        <label for="import_lead_file">Select JSON File <span class="span_req">*</span></label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="import_lead_file" name="import_file" accept=".json" required>
+                            <label class="custom-file-label" for="import_lead_file">Choose file...</label>
+                        </div>
+                        <small class="form-text text-muted">JSON file from client intake form or exported from CRM.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="skip_duplicates_lead" name="skip_duplicates" value="1" checked>
+                            <label class="form-check-label" for="skip_duplicates_lead">
+                                Skip if lead with same email or phone already exists
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Import Lead
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <script>
     jQuery(document).ready(function($){
+        // Import Lead Modal - File input label update
+        $('#import_lead_file').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').html(fileName || 'Choose file...');
+        });
+
+        // Auto-open the import modal when there are import validation errors (after redirect back)
+        @if ($errors->has('import_file'))
+            $('#importLeadModal').modal('show');
+        @endif
+
         $('#per_page').on('change', function(){
             var currentUrl = new URL(window.location.href);
             currentUrl.searchParams.set('per_page', $(this).val());

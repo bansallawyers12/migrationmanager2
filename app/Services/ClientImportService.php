@@ -98,7 +98,7 @@ class ClientImportService
                         return [
                             'success' => false,
                             'client_id' => null,
-                            'message' => 'Client with same ' . $match . ' already exists. Import skipped.'
+                            'message' => 'Lead with same ' . $match . ' already exists. Import skipped.'
                         ];
                     }
                 }
@@ -173,7 +173,7 @@ class ClientImportService
             $client->py_test = $clientData['py_test'] ?? null;
             $client->py_date = $this->parseDate($clientData['py_date'] ?? null);
             $client->source = $clientData['source'] ?? null;
-            $client->type = $clientData['type'] ?? 'client';
+            $client->type = $clientData['type'] ?? 'lead';
             $client->status = $clientData['status'] ?? 1;
             $client->agent_id = $clientData['agent_id'] ?? null;
             
@@ -236,32 +236,73 @@ class ClientImportService
             }
 
             // Import contacts (phone numbers)
+            // The lead edit page reads phone numbers from client_contacts, NOT from admins.phone.
+            // So we must always have at least one ClientContact record for the phone to appear on the edit page.
+            $contactsCreated = 0;
             if (isset($importData['contacts']) && is_array($importData['contacts'])) {
                 foreach ($importData['contacts'] as $contactData) {
+                    $phone = $contactData['phone'] ?? null;
+                    if (empty($phone)) {
+                        continue;
+                    }
                     ClientContact::create([
-                        'client_id' => $newClientId,
-                        'admin_id' => Auth::id(),
-                        'contact_type' => $contactData['contact_type'] ?? null,
-                        'country_code' => $contactData['country_code'] ?? null,
-                        'phone' => $contactData['phone'] ?? null,
-                        'is_verified' => $contactData['is_verified'] ?? false,
-                        'verified_at' => $this->parseDateTime($contactData['verified_at'] ?? null),
+                        'client_id'    => $newClientId,
+                        'admin_id'     => Auth::id(),
+                        'contact_type' => $contactData['contact_type'] ?? 'Personal',
+                        'country_code' => $contactData['country_code'] ?? $clientData['country_code'] ?? null,
+                        'phone'        => $phone,
+                        'is_verified'  => $contactData['is_verified'] ?? false,
+                        'verified_at'  => $this->parseDateTime($contactData['verified_at'] ?? null),
                     ]);
+                    $contactsCreated++;
                 }
+            }
+            // Fallback: if no contacts array was provided but client.phone exists, create one record
+            // so the Phone Numbers section is populated on the lead edit page (mirrors LeadController::store)
+            if ($contactsCreated === 0 && !empty($clientData['phone'])) {
+                ClientContact::create([
+                    'client_id'    => $newClientId,
+                    'admin_id'     => Auth::id(),
+                    'contact_type' => $clientData['contact_type'] ?? 'Personal',
+                    'country_code' => $clientData['country_code'] ?? null,
+                    'phone'        => $clientData['phone'],
+                    'is_verified'  => false,
+                    'verified_at'  => null,
+                ]);
             }
 
             // Import emails
+            // The lead edit page reads emails from client_emails, NOT from admins.email.
+            // So we must always have at least one ClientEmail record for the email to appear on the edit page.
+            $emailsCreated = 0;
             if (isset($importData['emails']) && is_array($importData['emails'])) {
                 foreach ($importData['emails'] as $emailData) {
+                    $emailAddr = $emailData['email'] ?? null;
+                    if (empty($emailAddr)) {
+                        continue;
+                    }
                     ClientEmail::create([
-                        'client_id' => $newClientId,
-                        'admin_id' => Auth::id(),
-                        'email_type' => $emailData['email_type'] ?? null,
-                        'email' => $emailData['email'] ?? null,
+                        'client_id'   => $newClientId,
+                        'admin_id'    => Auth::id(),
+                        'email_type'  => $emailData['email_type'] ?? 'Personal',
+                        'email'       => $emailAddr,
                         'is_verified' => $emailData['is_verified'] ?? false,
                         'verified_at' => $this->parseDateTime($emailData['verified_at'] ?? null),
                     ]);
+                    $emailsCreated++;
                 }
+            }
+            // Fallback: if no emails array was provided but client.email exists, create one record
+            // so the Email Addresses section is populated on the lead edit page (mirrors LeadController::store)
+            if ($emailsCreated === 0 && !empty($clientData['email'])) {
+                ClientEmail::create([
+                    'client_id'   => $newClientId,
+                    'admin_id'    => Auth::id(),
+                    'email_type'  => $clientData['email_type'] ?? 'Personal',
+                    'email'       => $clientData['email'],
+                    'is_verified' => false,
+                    'verified_at' => null,
+                ]);
             }
 
             // Import passport
@@ -414,6 +455,26 @@ class ClientImportService
                     $fallbackAttrs['use_for'] = null;
                 }
                 ActivitiesLog::create($fallbackAttrs);
+                $activitiesImported = true;
+            }
+
+            // Root-level "notes" from client intake form → always create an activity note
+            // (independent of $activitiesImported — this field is specifically from the intake form)
+            if (isset($importData['notes']) && trim((string) $importData['notes']) !== '') {
+                $notesContent = trim((string) $importData['notes']);
+                $notesAttrs = [
+                    'client_id'     => $newClientId,
+                    'created_by'    => Auth::id(),
+                    'subject'       => 'Lead intake – additional information',
+                    'description'   => '<p>' . nl2br(e($notesContent)) . '</p>',
+                    'activity_type' => 'note',
+                    'task_status'   => 0,
+                    'pin'           => 0,
+                ];
+                if (Schema::hasColumn('activities_logs', 'use_for')) {
+                    $notesAttrs['use_for'] = null;
+                }
+                ActivitiesLog::create($notesAttrs);
             }
 
             DB::commit();
@@ -422,19 +483,19 @@ class ClientImportService
                 'success' => true,
                 'client_id' => $newClientId,
                 'client_id_reference' => $client_id,
-                'message' => 'Client imported successfully. Client ID: ' . $client_id
+                'message' => 'Lead imported successfully. Lead ID: ' . $client_id
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Client import error: ' . $e->getMessage(), [
+            Log::error('Lead import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
             return [
                 'success' => false,
                 'client_id' => null,
-                'message' => 'Failed to import client: ' . $e->getMessage()
+                'message' => 'Failed to import lead: ' . $e->getMessage()
             ];
         }
     }

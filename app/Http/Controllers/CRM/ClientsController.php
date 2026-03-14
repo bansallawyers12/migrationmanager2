@@ -7400,32 +7400,34 @@ class ClientsController extends Controller
             // Validate import data structure
             if (!isset($importData['client'])) {
                 return redirect()->back()
-                    ->withErrors(['import_file' => 'Invalid import file format: missing client data'])
+                    ->withErrors(['import_file' => 'Invalid import file format: missing lead/client data'])
                     ->withInput();
             }
 
-            // Check if client email is required (email is unique and NOT NULL in admins table)
+            // Check if lead email is required (email is unique and NOT NULL in admins table)
             if (empty($importData['client']['email'])) {
                 return redirect()->back()
-                    ->withErrors(['import_file' => 'Client email is required and cannot be empty'])
+                    ->withErrors(['import_file' => 'Lead email is required and cannot be empty'])
                     ->withInput();
             }
 
             // Check if first_name is required
             if (empty($importData['client']['first_name'])) {
                 return redirect()->back()
-                    ->withErrors(['import_file' => 'Client first name is required'])
+                    ->withErrors(['import_file' => 'Lead first name is required'])
                     ->withInput();
             }
 
-            // Import client
+            // Import as lead (JSON may contain client data; we always create a lead)
+            $importData['client']['type'] = 'lead';
             $skipDuplicates = $request->has('skip_duplicates');
             $importService = app(ClientImportService::class);
             $result = $importService->importClient($importData, $skipDuplicates);
 
             if ($result['success']) {
-                return redirect()->route('clients.index')
-                    ->with('success', $result['message']);
+                $message = 'Lead imported successfully. Lead ID: ' . ($result['client_id_reference'] ?? '');
+                return redirect()->route('leads.index')
+                    ->with('success', $message);
             } else {
                 return redirect()->back()
                     ->withErrors(['import_file' => $result['message']])
@@ -7437,12 +7439,12 @@ class ClientsController extends Controller
                 ->withErrors($e->validator)
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Client import error: ' . $e->getMessage(), [
+            Log::error('Lead import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()
-                ->withErrors(['import_file' => 'Failed to import client: ' . $e->getMessage()])
+                ->withErrors(['import_file' => 'Failed to import lead: ' . $e->getMessage()])
                 ->withInput();
         }
     }

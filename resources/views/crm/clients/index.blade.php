@@ -316,9 +316,6 @@
                             <i class="fas fa-chart-line"></i> Insights
                         </a>
                         @endif
-                        <a href="javascript:;" class="btn btn-theme btn-theme-sm" data-bs-toggle="modal" data-bs-target="#importClientModal" title="Import Client">
-                            <i class="fas fa-upload"></i> Import Client
-                        </a>
                         <select name="per_page" id="per_page" class="form-control per-page-select">
                             @foreach([10, 20, 50, 100, 200] as $option)
                                 <option value="{{ $option }}" {{ ($perPage ?? 20) == $option ? 'selected' : '' }}>
@@ -601,61 +598,6 @@
             </div>
         </div>
     </section>
-</div>
-
-<!-- Import Client Modal -->
-<div id="importClientModal" data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="importClientModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="importClientModalLabel">
-                    <i class="fas fa-upload"></i> Import Client from File
-                </h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form method="post" name="importClientForm" action="{{URL::to('/clients/import')}}" autocomplete="off" enctype="multipart/form-data">
-                    @csrf
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> 
-                        <strong>Instructions:</strong> Upload a JSON file exported from migrationmanager2 or bansalcrm2. The same JSON file can be imported into either system.
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="import_file">Select JSON File <span class="span_req">*</span></label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="import_file" name="import_file" accept=".json" data-valid="required" required>
-                            <label class="custom-file-label" for="import_file">Choose file...</label>
-                        </div>
-                        <small class="form-text text-muted">Only JSON files exported from CRM systems are supported.</small>
-                        @if ($errors->has('import_file'))
-                            <span class="custom-error" role="alert">
-                                <strong>{{ @$errors->first('import_file') }}</strong>
-                            </span>
-                        @endif
-                    </div>
-
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="skip_duplicates" name="skip_duplicates" value="1" checked>
-                            <label class="form-check-label" for="skip_duplicates">
-                                Skip if client with same email already exists
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Import Client
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div id="emailmodal"  data-backdrop="static" data-keyboard="false" class="modal fade custom_modal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
@@ -1085,12 +1027,6 @@ jQuery(document).ready(function($){
     function formatRepoSelection (repo) {
         return repo.name || repo.text;
     }
-
-    // Import Client Modal - File input label update
-    $('#import_file').on('change', function() {
-        var fileName = $(this).val().split('\\').pop();
-        $(this).next('.custom-file-label').html(fileName || 'Choose file...');
-    });
 
     // Archive client confirmation function - Global scope
     function archiveClientAction(event, clientName) {
