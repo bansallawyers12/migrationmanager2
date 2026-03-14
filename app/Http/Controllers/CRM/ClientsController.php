@@ -78,6 +78,7 @@ use App\Mail\HubdocInvoiceMail;
 use App\Services\Sms\UnifiedSmsManager;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
+use App\Services\FCMService;
 use App\Services\ClientImportService;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
@@ -5822,6 +5823,39 @@ class ClientsController extends Controller
                         $activity->save();
 
                         $msg = 'Lead converted to client. Matter '.$matter->client_unique_matter_no. ' created';
+
+                        // When cp_status=2 (approval pending), send push + in-app notification to client
+                        if ((int) ($obj->cp_status ?? 0) === 2) {
+                            $notificationMessage = 'Lead converted to client. Matter ' . $matter->client_unique_matter_no . ' created.';
+                            $path = '/clients/detail/' . base64_encode(convert_uuencode($request['client_id'])) . '/' . $matter->client_unique_matter_no . '/client_portal';
+                            DB::table('notifications')->insert([
+                                'sender_id' => Auth::user()->id,
+                                'receiver_id' => $request['client_id'],
+                                'module_id' => $matter->id,
+                                'url' => $path,
+                                'notification_type' => 'lead_converted_to_client',
+                                'message' => $notificationMessage,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                                'sender_status' => 1,
+                                'receiver_status' => 0,
+                                'seen' => 0,
+                            ]);
+                            try {
+                                $fcmService = new FCMService();
+                                $fcmService->sendToUser($request['client_id'], 'Lead converted to client', $notificationMessage, [
+                                    'type' => 'lead_converted_to_client',
+                                    'client_matter_id' => (string) $matter->id,
+                                    'message' => $notificationMessage,
+                                ]);
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to send push notification for lead converted to client', [
+                                    'client_id' => $request['client_id'],
+                                    'matter_id' => $matter->id,
+                                    'error' => $e->getMessage(),
+                                ]);
+                            }
+                        }
                     }  else if($client_type == 'client'){
                         $activity = new \App\Models\ActivitiesLog;
                         $activity->client_id = $request['client_id'];
@@ -5887,6 +5921,39 @@ class ClientsController extends Controller
         if ($firstMatter) {
             $redirectUrl .= '/' . $firstMatter->client_unique_matter_no;
         }
+
+        // When cp_status=2 (approval pending), send push + in-app notification to client
+        if ((int) ($obj->cp_status ?? 0) === 2) {
+            $notificationMessage = 'Lead converted to client.';
+            $path = $redirectUrl . '/client_portal';
+            DB::table('notifications')->insert([
+                'sender_id' => Auth::user()->id,
+                'receiver_id' => $clientId,
+                'module_id' => $firstMatter ? $firstMatter->id : null,
+                'url' => $path,
+                'notification_type' => 'lead_converted_to_client',
+                'message' => $notificationMessage,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'sender_status' => 1,
+                'receiver_status' => 0,
+                'seen' => 0,
+            ]);
+            try {
+                $fcmService = new FCMService();
+                $fcmService->sendToUser($clientId, 'Lead converted to client', $notificationMessage, [
+                    'type' => 'lead_converted_to_client',
+                    'client_matter_id' => $firstMatter ? (string) $firstMatter->id : '',
+                    'message' => $notificationMessage,
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to send push notification for lead converted to client (convertLeadOnly)', [
+                    'client_id' => $clientId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return redirect($redirectUrl)->with('success', 'Lead converted to client.');
     }
 

@@ -5,7 +5,7 @@
             <h3><i class="fas fa-globe"></i> Client Portal Access</h3>
             <div class="portal-header-controls">
                 <div class="portal-status-badge">
-                    @if(isset($fetchedData->cp_status) && $fetchedData->cp_status == 1)
+                    @if(isset($fetchedData->cp_status) && in_array($fetchedData->cp_status, [1, 2]))
                         <span class="badge badge-success"><i class="fas fa-check-circle"></i> Active</span>
                     @else
                         <span class="badge badge-secondary"><i class="fas fa-times-circle"></i> Inactive</span>
@@ -26,7 +26,7 @@
                         <div class="toggle-switch">
                             <input type="checkbox" id="client-portal-toggle-tab" 
                                    data-client-id="{{ $fetchedData->id}}" 
-                                   {{ isset($fetchedData->cp_status) && $fetchedData->cp_status == 1 ? 'checked' : '' }}>
+                                   {{ isset($fetchedData->cp_status) && in_array($fetchedData->cp_status, [1, 2]) ? 'checked' : '' }}>
                             <span class="toggle-slider"></span>
                         </div>
                         <span class="portal-toggle-loader" id="portal-toggle-loader-tab" style="display: none;">
@@ -39,7 +39,7 @@
         </div>
 
         <div class="portal-content">
-            @if(isset($fetchedData->cp_status) && $fetchedData->cp_status == 1)
+            @if(isset($fetchedData->cp_status) && in_array($fetchedData->cp_status, [1, 2]))
                 <!-- Portal is Active -->
                 <?php
                 // Get the selected matter based on URL parameter or latest active matter
