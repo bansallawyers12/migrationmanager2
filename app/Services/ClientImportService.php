@@ -75,21 +75,25 @@ class ClientImportService
                 }
             }
 
-            // Check for duplicate email if skip_duplicates is enabled
+            // Check for duplicate email/phone if skip_duplicates is enabled.
+            // The OR conditions are grouped inside a closure so the whereIn('type') restriction
+            // applies to both clauses (fixes SQL precedence bug with bare orWhere).
             if ($skipDuplicates) {
                 $email = isset($clientData['email']) ? trim((string) $clientData['email']) : '';
                 $phone = isset($clientData['phone']) ? trim((string) $clientData['phone']) : '';
 
-                $query = Admin::whereIn('type', ['client', 'lead']);
-                if ($email !== '') {
-                    $query->where('email', $email);
-                }
-                if ($phone !== '') {
-                    $query->orWhere('phone', $phone);
-                }
-
                 if ($email !== '' || $phone !== '') {
-                    $existingClient = $query->first();
+                    $existingClient = Admin::whereIn('type', ['client', 'lead'])
+                        ->where(function ($q) use ($email, $phone) {
+                            if ($email !== '') {
+                                $q->where('email', $email);
+                            }
+                            if ($phone !== '') {
+                                $q->orWhere('phone', $phone);
+                            }
+                        })
+                        ->first();
+
                     if ($existingClient) {
                         DB::rollBack();
                         $match = $email !== '' && $existingClient->email === $email
@@ -237,8 +241,9 @@ class ClientImportService
 
             // Import contacts (phone numbers)
             // The lead edit page reads phone numbers from client_contacts, NOT from admins.phone.
-            // So we must always have at least one ClientContact record for the phone to appear on the edit page.
-            $contactsCreated = 0;
+            // We always ensure client.phone appears in client_contacts so it shows on the edit page,
+            // UNLESS the exact same number was explicitly included in the contacts array already.
+            $contactPhonesFromArray = [];
             if (isset($importData['contacts']) && is_array($importData['contacts'])) {
                 foreach ($importData['contacts'] as $contactData) {
                     $phone = $contactData['phone'] ?? null;
@@ -254,12 +259,12 @@ class ClientImportService
                         'is_verified'  => $contactData['is_verified'] ?? false,
                         'verified_at'  => $this->parseDateTime($contactData['verified_at'] ?? null),
                     ]);
-                    $contactsCreated++;
+                    $contactPhonesFromArray[] = $phone;
                 }
             }
-            // Fallback: if no contacts array was provided but client.phone exists, create one record
-            // so the Phone Numbers section is populated on the lead edit page (mirrors LeadController::store)
-            if ($contactsCreated === 0 && !empty($clientData['phone'])) {
+            // Always persist client.phone to client_contacts (mirrors LeadController::store),
+            // unless that exact number was already added from the contacts array above.
+            if (!empty($clientData['phone']) && !in_array($clientData['phone'], $contactPhonesFromArray, true)) {
                 ClientContact::create([
                     'client_id'    => $newClientId,
                     'admin_id'     => Auth::id(),
@@ -273,8 +278,9 @@ class ClientImportService
 
             // Import emails
             // The lead edit page reads emails from client_emails, NOT from admins.email.
-            // So we must always have at least one ClientEmail record for the email to appear on the edit page.
-            $emailsCreated = 0;
+            // We always ensure client.email appears in client_emails so it shows on the edit page,
+            // UNLESS the exact same address was explicitly included in the emails array already.
+            $emailAddrsFromArray = [];
             if (isset($importData['emails']) && is_array($importData['emails'])) {
                 foreach ($importData['emails'] as $emailData) {
                     $emailAddr = $emailData['email'] ?? null;
@@ -289,12 +295,12 @@ class ClientImportService
                         'is_verified' => $emailData['is_verified'] ?? false,
                         'verified_at' => $this->parseDateTime($emailData['verified_at'] ?? null),
                     ]);
-                    $emailsCreated++;
+                    $emailAddrsFromArray[] = $emailAddr;
                 }
             }
-            // Fallback: if no emails array was provided but client.email exists, create one record
-            // so the Email Addresses section is populated on the lead edit page (mirrors LeadController::store)
-            if ($emailsCreated === 0 && !empty($clientData['email'])) {
+            // Always persist client.email to client_emails (mirrors LeadController::store),
+            // unless that exact address was already added from the emails array above.
+            if (!empty($clientData['email']) && !in_array($clientData['email'], $emailAddrsFromArray, true)) {
                 ClientEmail::create([
                     'client_id'   => $newClientId,
                     'admin_id'    => Auth::id(),
@@ -475,6 +481,71 @@ class ClientImportService
                     $notesAttrs['use_for'] = null;
                 }
                 ActivitiesLog::create($notesAttrs);
+            }
+
+            // Root-level "additional_fields" — extra form fields that don't map to CRM columns.
+            // Accepted as either:
+            //   • an object: { "Label": "value", ... }
+            //   • an array:  [ { "label": "Label", "value": "value" }, ... ]
+            // Creates one formatted activity note so staff can see all extra intake data at a glance.
+            if (isset($importData['additional_fields'])) {
+                $extraFields = $importData['additional_fields'];
+
+                // Normalise array-of-objects format to simple associative array
+                if (isset($extraFields[0]) && is_array($extraFields[0])) {
+                    $normalised = [];
+                    foreach ($extraFields as $item) {
+                        $label = $item['label'] ?? $item['name'] ?? $item['key'] ?? null;
+                        $val   = $item['value'] ?? $item['val'] ?? null;
+                        if ($label !== null && $label !== '') {
+                            $normalised[trim((string) $label)] = $val;
+                        }
+                    }
+                    $extraFields = $normalised;
+                }
+
+                if (is_array($extraFields) && count($extraFields) > 0) {
+                    // Build a cleanly formatted HTML table for the activity feed
+                    $rows = '';
+                    $isLast = false;
+                    $keys   = array_keys($extraFields);
+                    foreach ($keys as $idx => $label) {
+                        $isLast     = $idx === count($keys) - 1;
+                        $rowBorder  = $isLast ? '' : 'border-bottom: 1px solid #e9ecef;';
+                        $labelHtml  = e(trim((string) $label));
+                        $rawVal     = $extraFields[$label];
+                        $valueHtml  = ($rawVal === null || $rawVal === '')
+                            ? '<em style="color:#adb5bd;">—</em>'
+                            : nl2br(e(trim((string) $rawVal)));
+                        $rows .= '<tr>';
+                        $rows .= '<td style="padding:6px 12px 6px 0;font-weight:600;color:#495057;'
+                               . 'width:42%;vertical-align:top;' . $rowBorder . '">'
+                               . $labelHtml . '</td>';
+                        $rows .= '<td style="padding:6px 0;color:#212529;'
+                               . 'vertical-align:top;' . $rowBorder . '">'
+                               . $valueHtml . '</td>';
+                        $rows .= '</tr>';
+                    }
+
+                    $description = '<div style="margin-top:4px;">'
+                        . '<table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.5;">'
+                        . '<tbody>' . $rows . '</tbody>'
+                        . '</table></div>';
+
+                    $extraAttrs = [
+                        'client_id'     => $newClientId,
+                        'created_by'    => Auth::id(),
+                        'subject'       => 'Lead intake – form details',
+                        'description'   => $description,
+                        'activity_type' => 'note',
+                        'task_status'   => 0,
+                        'pin'           => 0,
+                    ];
+                    if (Schema::hasColumn('activities_logs', 'use_for')) {
+                        $extraAttrs['use_for'] = null;
+                    }
+                    ActivitiesLog::create($extraAttrs);
+                }
             }
 
             DB::commit();

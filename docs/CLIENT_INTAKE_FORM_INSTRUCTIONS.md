@@ -1,6 +1,6 @@
 # Client Intake Form – Implementation Instructions for Website
 
-This document describes how to build a **client intake form** on your website. When a client submits the form, the website should **generate a JSON file** that can be uploaded into the CRM. The CRM will create a **lead**, fill all mapped fields, and create an **activity note** from the form's "Notes" field.
+This document describes how to build a **client intake form** on your website. When a client submits the form, the website should **generate a JSON file** that can be uploaded into the CRM. The CRM will create a **lead**, fill all mapped fields, and create **activity notes** from the form's "Notes" field and any additional/custom form fields.
 
 ---
 
@@ -10,7 +10,7 @@ This document describes how to build a **client intake form** on your website. W
 2. **Website:** On submit, the front end builds a JSON object from the form fields (no server required for the form itself).
 3. **Website:** Trigger download of a `.json` file (e.g. `client-intake-YYYY-MM-DD.json`) containing that JSON.
 4. **CRM:** Staff upload the JSON file via **Leads → Import Lead** (on the Lead list page).
-5. **CRM:** Import creates a **lead**, fills all supported fields, and creates an activity note from the **Notes** field.
+5. **CRM:** Import creates a **lead**, fills all supported fields, and creates activity notes from the **Notes** field and any **Additional Fields**.
 
 > **Why import goes to Leads, not Clients:** Enquiries from the website are treated as leads first. Staff can convert a lead to a client once they're engaged.
 
@@ -40,15 +40,16 @@ When you import via JSON, the CRM skips the create form entirely and writes **al
 
 The CRM import expects a single JSON object with the following top-level keys. Only `client` is required; all others are optional.
 
-| Top-level key    | Description |
-|------------------|-------------|
-| `client`         | **Required.** Object with basic personal details. |
-| `contacts`       | Optional. Array of **extra** phone numbers beyond the primary. |
-| `emails`         | Optional. Array of **extra** email addresses beyond the primary. |
-| `passport`       | Optional. Single passport object. |
-| `visa_countries` | Optional. Array of visa entries. |
-| `addresses`      | Optional. Array of address entries. |
-| `notes`          | Optional. **Free-text notes.** Creates an activity note in the CRM. |
+| Top-level key       | Description |
+|---------------------|-------------|
+| `client`            | **Required.** Object with basic personal details. |
+| `contacts`          | Optional. Array of **extra** phone numbers beyond the primary. |
+| `emails`            | Optional. Array of **extra** email addresses beyond the primary. |
+| `passport`          | Optional. Single passport object. |
+| `visa_countries`    | Optional. Array of visa entries. |
+| `addresses`         | Optional. Array of address entries. |
+| `notes`             | Optional. **Free-text notes.** Creates an activity note with subject *"Lead intake – additional information"*. |
+| `additional_fields` | Optional. **Extra custom form fields** not mapped to CRM columns. Creates a formatted activity note (table layout) with subject *"Lead intake – form details"*. |
 
 ---
 
@@ -188,11 +189,48 @@ One passport per import:
 - Trim whitespace before writing to JSON; if the trimmed value is empty, omit the key.
 - The note is **always created** when `notes` is present — even if the JSON also contains other activity data.
 
+### 4.8 Additional Fields → Formatted Activity Note (optional)
+
+Use `additional_fields` for **any form question that doesn't map to a specific CRM column** — for example "How did you hear about us?", "Preferred consultation time", "Current visa status", etc.
+
+The CRM will create a second activity note with subject **"Lead intake – form details"**, displaying all the extra fields in a clean table layout in the activity feed.
+
+**Supported formats — choose whichever is easier for your website:**
+
+**Option A – object (recommended, simplest):**
+
+```json
+"additional_fields": {
+  "How did you hear about us?": "Google Search",
+  "Preferred consultation time": "Afternoons",
+  "Current immigration status": "Student Visa (subclass 500)",
+  "Urgency": "Need to act within 3 months"
+}
+```
+
+**Option B – array of objects:**
+
+```json
+"additional_fields": [
+  { "label": "How did you hear about us?", "value": "Google Search" },
+  { "label": "Preferred consultation time", "value": "Afternoons" }
+]
+```
+
+Both formats produce the same activity note in the CRM.
+
+**Rules:**
+- Keys/labels are shown exactly as written — use clear, human-readable labels.
+- If a field's value is empty or `null`, the table will show a dash (`—`) for that row.
+- Fields with empty labels are skipped.
+- If `additional_fields` is an empty object `{}` or empty array `[]`, no activity note is created.
+- Only include fields the client actually filled in; omit blank optional questions rather than sending empty strings.
+
 ---
 
-## 5. Full Minimal Example (phone + email only)
+## 5. Minimal Example
 
-The simplest valid JSON the CRM will accept:
+The minimum JSON the CRM requires is `client.first_name` and `client.email`. The example below also includes the fields a typical intake form would collect:
 
 ```json
 {
@@ -265,11 +303,21 @@ The CRM will create the lead and automatically ensure the phone and email appear
       "is_current": 1
     }
   ],
-  "notes": "Client will provide certified qualification copies next week. Enquiring about 485 to 189 pathway."
+  "notes": "Client will provide certified qualification copies next week. Enquiring about 485 to 189 pathway.",
+  "additional_fields": {
+    "How did you hear about us?": "Google Search",
+    "Preferred consultation time": "Afternoons (after 2pm)",
+    "Current immigration status": "Student Visa (subclass 500)",
+    "Urgency": "Need to act within 3 months",
+    "Additional comments": "Has dependent spouse also on student visa"
+  }
 }
 ```
 
-In this example, `contacts` and `emails` contain **extra** numbers/addresses. The primary phone (`412345678`) and primary email (`jane.smith@example.com`) from the `client` object are also saved automatically.
+In this example:
+- `contacts` and `emails` contain extra Work entries. The primary phone and email from the `client` object are **also** saved automatically as Personal entries — so the lead edit page shows both.
+- The `notes` field creates an activity note titled **"Lead intake – additional information"** with the free-text content.
+- The `additional_fields` object creates a second activity note titled **"Lead intake – form details"** with all five extra questions displayed as a formatted table in the activity feed.
 
 ---
 
@@ -307,7 +355,8 @@ Recommended client-side checks before generating the file:
 - A new **lead** record with all basic fields filled.
 - Phone Numbers and Email Addresses sections populated (visible on the lead edit page).
 - Passport, Visa, Address records if those sections were in the JSON.
-- One **activity note** (visible in the activity feed) from the `notes` field.
+- An **activity note** titled *"Lead intake – additional information"* from the `notes` field (if provided).
+- A **formatted activity note** titled *"Lead intake – form details"* from `additional_fields` (if provided), shown as a table of extra questions and answers in the activity feed.
 
 ---
 
@@ -315,6 +364,7 @@ Recommended client-side checks before generating the file:
 
 - [ ] Collects at least **first name** and **email** (required).
 - [ ] Has a **Notes** textarea → written to root-level `"notes"` in JSON.
+- [ ] Extra form questions (not mapped to CRM columns) → written to `"additional_fields"` as a key-value object.
 - [ ] Primary phone → `client.phone` + `client.country_code`.
 - [ ] Primary email → `client.email`.
 - [ ] Extra phones (if any) → `contacts` array only (don't repeat the primary).
