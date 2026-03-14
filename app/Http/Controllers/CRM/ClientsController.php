@@ -5855,6 +5855,9 @@ class ClientsController extends Controller
                                     'error' => $e->getMessage(),
                                 ]);
                             }
+                            // Update cp_status to 1 (approved/active) after conversion when it was 2 (approval pending)
+                            $obj->cp_status = 1;
+                            $obj->save();
                         }
                     }  else if($client_type == 'client'){
                         $activity = new \App\Models\ActivitiesLog;
@@ -5952,6 +5955,9 @@ class ClientsController extends Controller
                     'error' => $e->getMessage(),
                 ]);
             }
+            // Update cp_status to 1 (approved/active) after conversion when it was 2 (approval pending)
+            $obj->cp_status = 1;
+            $obj->save();
         }
 
         return redirect($redirectUrl)->with('success', 'Lead converted to client.');
