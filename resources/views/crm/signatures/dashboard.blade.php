@@ -449,9 +449,6 @@
             <!-- Bulk Actions Bar -->
             <div id="bulk-actions-bar" style="display: none; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
                 <span id="selected-count" style="font-weight: 600; margin-right: 15px;">0 selected</span>
-                <button type="button" onclick="bulkArchive()" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-archive"></i> Archive
-                </button>
                 <button type="button" onclick="bulkResend()" class="btn btn-sm btn-warning">
                     <i class="fas fa-bell"></i> Send Reminders
                 </button>
@@ -745,18 +742,6 @@ function updateBulkActions() {
 function getSelectedIds() {
     const checkboxes = document.querySelectorAll('.doc-checkbox:checked');
     return Array.from(checkboxes).map(cb => cb.value);
-}
-
-function bulkArchive() {
-    const ids = getSelectedIds();
-    if (ids.length === 0) return;
-    
-    if (confirm(`Archive ${ids.length} document(s)?`)) {
-        const form = document.getElementById('bulk-action-form');
-        form.action = '{{ route("signatures.bulk-archive") }}';
-        document.getElementById('bulk-ids').value = JSON.stringify(ids);
-        form.submit();
-    }
 }
 
 function bulkResend() {
