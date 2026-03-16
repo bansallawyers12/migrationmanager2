@@ -25,11 +25,14 @@
         background: white;
     }
 
-    /* Modern Header with Gradient */
+    /* Modern Header with Gradient - Sticky so title + Filter/Validate stay visible on scroll */
     .listing-container .card-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 24px 32px;
         border-bottom: none;
+        position: sticky;
+        top: 0;
+        z-index: 102;
     }
 
     .listing-container .card-header h4 {
@@ -180,7 +183,8 @@
 
     .listing-container .table-responsive {
         border-radius: 12px;
-        overflow: hidden;
+        overflow: auto;
+        max-height: calc(100vh - 280px);
         box-shadow: 0 0 0 1px #e2e8f0;
     }
 
@@ -202,6 +206,11 @@
         letter-spacing: 0.5px;
         color: #475569;
         white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 101;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
     }
 
     .listing-container .table tbody tr {
