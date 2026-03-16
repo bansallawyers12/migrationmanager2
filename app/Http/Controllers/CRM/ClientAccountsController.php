@@ -4634,7 +4634,7 @@ class ClientAccountsController extends Controller
         $clientname->country = $clientAddress->country ?? '';
     }
 
-    //Get client matter
+    //Get client matter (use receipt's client_matter_id so PDF shows the correct matter)
     if( !empty($record_get) && $record_get->client_id != '') {
         $client_matter_no = '';
         $client_matter_name = '';
@@ -4646,11 +4646,15 @@ class ClientAccountsController extends Controller
          $client_unique_id = '';
         }
 
-        $matter_info = DB::table('client_matters')
+        $matterQuery = DB::table('client_matters')
          ->join('matters', 'matters.id', '=', 'client_matters.sel_matter_id')
          ->select('client_matters.client_unique_matter_no', 'matters.title as matter_name', 'matters.nick_name')
-         ->where('client_matters.client_id', $record_get->client_id)
-         ->first();
+         ->where('client_matters.client_id', $record_get->client_id);
+        // Use receipt's matter when set; otherwise fallback to first matter (legacy receipts)
+        if (!empty($record_get->client_matter_id)) {
+            $matterQuery->where('client_matters.id', $record_get->client_matter_id);
+        }
+        $matter_info = $matterQuery->first();
         
         if($matter_info){
          $client_unique_matter_no = $matter_info->client_unique_matter_no;
