@@ -4679,8 +4679,8 @@ class ClientAccountsController extends Controller
         $client_matter_display = '';
     }
 
-    // Check if PDF already exists in AWS
-    if (!empty($record_get->pdf_document_id)) {
+    // Check if PDF already exists in AWS (skip cache when regenerate=1 so PDF is regenerated with correct matter)
+    if (!$request->has('regenerate') && !empty($record_get->pdf_document_id)) {
         $existingPdf = DB::table('documents')
          ->where('id', $record_get->pdf_document_id)
          ->first();
