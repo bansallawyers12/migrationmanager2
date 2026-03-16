@@ -443,7 +443,7 @@ class ClientPortalWorkflowController extends Controller
                         ? strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($item->wf_stage)))
                         : null;
 
-                    $docStatus = $latestDoc->cp_doc_status ?? null;
+                    $docStatus = $latestDoc?->cp_doc_status ?? null;
                     $docStatusText = match (true) {
                         $docStatus === 0 => 'In Progress',
                         $docStatus === 1 => 'Approved',
@@ -462,13 +462,13 @@ class ClientPortalWorkflowController extends Controller
                         'is_mandatory'      => (bool) $item->allow_client,
                         'due_date'          => null,
                         'due_time'          => null,
-                        'is_upload'         => !is_null($latestDoc),
-                        'file_name'         => $latestDoc->file_name ?? null,
-                        'file_url'          => $latestDoc->myfile ?? null,
+                        'is_upload'         => $latestDoc !== null,
+                        'file_name'         => $latestDoc?->file_name ?? null,
+                        'file_url'          => $latestDoc?->myfile ?? null,
                         'doc_status'        => $docStatus,
                         'doc_status_text'   => $docStatusText,
-                        'uploaded_doc_id'  => $latestDoc->id ?? null,
-                        'upload_doc_date'  => $latestDoc->created_at ? date('Y-m-d', strtotime($latestDoc->created_at)) : null,
+                        'uploaded_doc_id'  => $latestDoc?->id ?? null,
+                        'upload_doc_date'  => $latestDoc?->created_at ? date('Y-m-d', strtotime($latestDoc?->created_at)) : null,
                     ];
                 });
             }
