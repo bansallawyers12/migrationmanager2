@@ -188,13 +188,13 @@
                         if ($('#grid_'+obj.Id).length) {
                             $('#grid_'+obj.Id).html(fileName);
                         }
-                        var dropdownMenu = $(parent).closest('.drow').find('.dropdown-menu');
+                        var $row = $(parent).closest('.drow');
+                        var dropdownMenu = $row.find('.dropdown-menu');
                         dropdownMenu.find('.dropdown-item[href^="http"]').filter(function() {
                             return $(this).text().trim() === 'Preview';
                         }).attr('href', previewUrl);
-                        dropdownMenu.find('.dropdown-item.download-file')
-                            .attr('data-filelink', previewUrl)
-                            .attr('data-filename', fileName);
+                        // Update all download links in the row (hidden + dropdown) so context menu and download use new URL after rename
+                        $row.find('.download-file').attr('data-filelink', previewUrl).attr('data-filename', fileName);
                     } else {
                         parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
                         parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));
@@ -295,13 +295,13 @@
                         if ($('#grid_'+obj.Id).length) {
                             $('#grid_'+obj.Id).html(fileName);
                         }
-                        var dropdownMenu = $(parent).closest('.drow').find('.dropdown-menu');
+                        var $row = $(parent).closest('.drow');
+                        var dropdownMenu = $row.find('.dropdown-menu');
                         dropdownMenu.find('.dropdown-item[href^="http"]').filter(function() {
                             return $(this).text().trim() === 'Preview';
                         }).attr('href', previewUrl);
-                        dropdownMenu.find('.dropdown-item.download-file')
-                            .attr('data-filelink', previewUrl)
-                            .attr('data-filename', fileName);
+                        // Update all download links in the row (hidden + dropdown) so context menu and download use new URL after rename
+                        $row.find('.download-file').attr('data-filelink', previewUrl).attr('data-filename', fileName);
                     } else {
                         parent.find('.opentime').addClass('is-invalid').css({ 'background-image': 'none', 'padding-right': '0.75em' });
                         parent.append($('<div class="invalid-feedback">' + obj.message + '</div>'));

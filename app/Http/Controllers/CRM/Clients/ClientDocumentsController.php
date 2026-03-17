@@ -1126,11 +1126,13 @@ class ClientDocumentsController extends Controller
             $oldKey = $doc->myfile_key ?? '';
 
             // Step 8: Build new key and S3 paths
-            // Handle extension safely
+            // Use unique number at the end only (same convention as upload: name_timestamp.ext)
+            // so download filename does not show unique number twice (at start and end).
+            $timestamp = time();
             if (!empty($extension)) {
-                $newKey = time() . $filename . '.' . $extension;
+                $newKey = $filename . '_' . $timestamp . '.' . $extension;
             } else {
-                $newKey = time() . $filename;
+                $newKey = $filename . '_' . $timestamp;
             }
             
             $newS3Path = $client_unique_id . '/' . $doc_type . '/' . $newKey;

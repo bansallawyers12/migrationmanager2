@@ -565,18 +565,20 @@
                             openMoveVisaDocumentModal(currentVisaContextFile, 'visa');
                             break;
                         case 'preview':
-                            window.open(currentVisaContextData.fileUrl, '_blank');
+                            // Use current URL from DOM (updated after rename) so preview works without page refresh
+                            var $previewLink = $('.download-file[data-id="' + currentVisaContextFile + '"]').first();
+                            var previewUrl = ($previewLink.length && $previewLink.attr('data-filelink')) ? $previewLink.attr('data-filelink') : currentVisaContextData.fileUrl;
+                            window.open(previewUrl || currentVisaContextData.fileUrl, '_blank');
                             break;
                         case 'pdf':
                             const pdfUrl = '{{ URL::to('/document/download/pdf') }}/' + currentVisaContextFile;
                             window.open(pdfUrl, '_blank');
                             break;
                         case 'download':
-                            // Try to find download button by filelink (multiple elements may exist - table + grid; trigger only first to avoid multiple tabs)
-                            let $downloadBtn = $('.download-file[data-filelink="' + currentVisaContextData.fileUrl + '"]');
+                            // Prefer finding by document ID so we use the current link (updated after rename); fallback to filelink match
+                            let $downloadBtn = $('.download-file[data-id="' + currentVisaContextFile + '"]');
                             if ($downloadBtn.length === 0) {
-                                // Fallback: try finding by document ID
-                                $downloadBtn = $('.download-file[data-id="' + currentVisaContextFile + '"]');
+                                $downloadBtn = $('.download-file[data-filelink="' + currentVisaContextData.fileUrl + '"]');
                             }
                             if ($downloadBtn.length > 0) {
                                 $downloadBtn.first().click();
