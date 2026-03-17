@@ -170,6 +170,10 @@
                                                  $parentDocs = $documents->filter(fn($d) => !str_ends_with($d->checklist ?? '', '_signed'));
                                                  $signedByParent = $documents->filter(fn($d) => str_ends_with($d->checklist ?? '', '_signed'))
                                                     ->groupBy(fn($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . substr($d->checklist ?? '', 0, -7));
+                                                 // Keys that still have an active (visible) parent row — signed docs under these are rendered in the main loop
+                                                 $parentKeysWithActiveParent = $parentDocs->map(fn($d) => ($d->folder_name ?? '') . '|' . ($d->client_matter_id ?? '') . '|' . ($d->checklist ?? ''))->unique()->values();
+                                                 // Signed groups with no active parent (parent moved to not used or deleted) — show signed rows standalone
+                                                 $orphanSignedKeys = $signedByParent->keys()->filter(fn($k) => !$parentKeysWithActiveParent->contains($k))->sortBy(fn($k) => $signedByParent->get($k)->min('created_at'));
                                                 ?>
                                                 <?php foreach ($parentDocs as $visaKey => $fetch): ?>
                                                     <?php
@@ -341,6 +345,44 @@
                                                     </tr>
                                                     <?php endforeach; ?>
                                                 <?php endforeach; ?>
+                                                <?php
+                                                // Orphan signed docs: parent moved to not used or deleted — show signed row(s) so signed version still displays
+                                                foreach ($orphanSignedKeys as $orphanKey):
+                                                    $signedDocs = $signedByParent->get($orphanKey, collect());
+                                                    foreach ($signedDocs as $signedDoc):
+                                                        $signedAdmin = \App\Models\Staff::where('id', $signedDoc->user_id)->first();
+                                                        $signedIsForm956 = !empty($signedDoc->form956_id);
+                                                        if ($signedIsForm956) {
+                                                            $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
+                                                            $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
+                                                        } else {
+                                                            $signedFileUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
+                                                            $signedDownloadUrl = $signedFileUrl;
+                                                        }
+                                                        $signedDisplayName = ($signedDoc->file_name ?? 'signed') . '.' . ($signedDoc->filetype ?? 'pdf');
+                                                        $signedFileUrlJs = addslashes($signedFileUrl);
+                                                ?>
+                                                    <tr class="drow visa-signed-row" data-matterid="<?= $signedDoc->client_matter_id ?>" data-catid="<?= $signedDoc->folder_name ?>" id="id_<?= $signedDoc->id ?>">
+                                                        <td style="white-space: initial;">
+                                                            <div data-id="<?= $signedDoc->id ?>" class="visachecklist-row" style="display: flex; align-items: center; gap: 8px;">
+                                                                <span style="flex: 1;"><?= htmlspecialchars($signedDoc->checklist) ?></span>
+                                                            </div>
+                                                        </td>
+                                                        <td style="white-space: initial;">
+                                                            <div data-id="<?= $signedDoc->id ?>" data-name="<?= htmlspecialchars($signedDoc->file_name ?? '') ?>" class="doc-row" title="Signed document" oncontextmenu="showVisaFileContextMenu(event, <?= $signedDoc->id ?>, '<?= htmlspecialchars($signedDoc->filetype ?? 'pdf') ?>', '<?= $signedFileUrlJs ?>', '<?= $id ?>', '<?= $signedDoc->status ?? 'signed' ?>'); return false;">
+                                                                <a href="javascript:void(0);" onclick="previewFile('<?= $signedDoc->filetype ?? 'pdf' ?>','<?= $signedFileUrlJs ?>','preview-container-migdocumnetlist')">
+                                                                    <i class="fas fa-file-image"></i> <span><?= htmlspecialchars($signedDisplayName) ?></span>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
+                                                            <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
+                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->myfile_key ?? basename($signedDoc->signed_doc_link ?? '')) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                            <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; endforeach; ?>
                                             </tbody>
                                         </table>
                                     </div>
