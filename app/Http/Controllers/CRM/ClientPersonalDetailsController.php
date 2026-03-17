@@ -5661,7 +5661,7 @@ class ClientPersonalDetailsController extends Controller
             
             // Delete existing other relationships for this client
             ClientRelationship::where('client_id', $client->id)
-                ->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather'])
+                ->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather', 'Son-in-law', 'Daughter-in-law', 'Brother-in-law', 'Sister-in-law'])
                 ->delete();
 
             $othersCount = 0;
@@ -5726,8 +5726,8 @@ class ClientPersonalDetailsController extends Controller
                         // Update primary relationship with related client ID
                         $otherRelationship->update(['related_client_id' => $relatedClient->id]);
 
-                        // Determine reciprocal relationship type based on other's gender
-                        $reciprocalRelationshipType = $this->getReciprocalRelationshipForOther($otherData['relationship_type'], $otherData['gender'] ?? '');
+                        // Determine reciprocal relationship type (uses other's gender or client's gender for in-laws)
+                        $reciprocalRelationshipType = $this->getReciprocalRelationshipForOther($otherData['relationship_type'], $otherData['gender'] ?? '', $client->gender ?? '');
                         
                         // Check if reciprocal relationship already exists
                         $existingReciprocal = ClientRelationship::where('client_id', $relatedClient->id)
@@ -5909,9 +5909,15 @@ class ClientPersonalDetailsController extends Controller
     }
 
     /**
-     * Get reciprocal relationship for other
+     * Get reciprocal relationship for other.
+     * For in-law types (Son-in-law, Daughter-in-law, Brother-in-law, Sister-in-law), reciprocal is based on client's gender.
+     * For other types, reciprocal is based on the other person's gender.
+     *
+     * @param string $otherRelationship Relationship type on the client's record
+     * @param string $otherGender Gender of the "other" person (used for Uncle/Aunt/Niece/Nephew/Grand*, etc.)
+     * @param string $clientGender Gender of the client (used for Son-in-law, Daughter-in-law, Brother-in-law, Sister-in-law)
      */
-    private function getReciprocalRelationshipForOther($otherRelationship, $otherGender)
+    private function getReciprocalRelationshipForOther($otherRelationship, $otherGender, $clientGender = '')
     {
         switch ($otherRelationship) {
             case 'Uncle':
@@ -5934,6 +5940,15 @@ class ClientPersonalDetailsController extends Controller
                 return 'Cousin';
             case 'Friend':
                 return 'Friend';
+            // In-law reciprocals: based on client's gender
+            case 'Son-in-law':
+                return $clientGender === 'Female' ? 'Mother-in-law' : 'Father-in-law';
+            case 'Daughter-in-law':
+                return $clientGender === 'Female' ? 'Mother-in-law' : 'Father-in-law';
+            case 'Brother-in-law':
+                return $clientGender === 'Female' ? 'Sister-in-law' : 'Brother-in-law';
+            case 'Sister-in-law':
+                return $clientGender === 'Female' ? 'Sister-in-law' : 'Brother-in-law';
             default:
                 return 'Other';
         }

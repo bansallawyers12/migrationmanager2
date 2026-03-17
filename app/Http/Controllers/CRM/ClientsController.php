@@ -942,7 +942,7 @@ class ClientsController extends Controller
                 'siblings_last_name.*' => 'nullable|string|max:255',
                 'siblings_phone.*' => 'nullable|string|max:20',
                 'others_details.*' => 'nullable|string|max:255',
-                'others_relationship_type.*' => 'nullable|in:Cousin,Friend,Uncle,Aunt,Grandchild,Granddaughter,Grandparent,Niece,Nephew,Grandfather',
+                'others_relationship_type.*' => 'nullable|in:Cousin,Friend,Uncle,Aunt,Grandchild,Granddaughter,Grandparent,Niece,Nephew,Grandfather,Son-in-law,Daughter-in-law,Brother-in-law,Sister-in-law',
                 'others_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
                 'others_email.*' => 'nullable|email|max:255',
                 'others_first_name.*' => 'nullable|string|max:255',
@@ -1565,11 +1565,11 @@ class ClientsController extends Controller
                 'children' => ['Son', 'Daughter', 'Step Son', 'Step Daughter'],
                 'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law', 'Father-in-law'],
                 'siblings' => ['Brother', 'Sister', 'Step Brother', 'Step Sister'],
-                'others' => ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather'],
+                'others' => ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather', 'Son-in-law', 'Daughter-in-law', 'Brother-in-law', 'Sister-in-law'],
             ];
 
             // Function to get reciprocal relationship based on gender
-            $getReciprocalRelationship = function($relationshipType, $currentGender, $relatedGender) {
+            $getReciprocalRelationship = function($relationshipType, $currentGender, $relatedGender, $clientGender = '') {
                 switch ($relationshipType) {
                     // Partner relationships
                     case 'Husband':
@@ -1636,6 +1636,15 @@ class ClientsController extends Controller
                         return $relatedGender === 'Female' ? 'Aunt' : 'Uncle';
                     case 'Nephew':
                         return $relatedGender === 'Female' ? 'Aunt' : 'Uncle';
+                    // In-law reciprocals (based on client's gender when adding an "other")
+                    case 'Son-in-law':
+                        return $clientGender === 'Female' ? 'Mother-in-law' : 'Father-in-law';
+                    case 'Daughter-in-law':
+                        return $clientGender === 'Female' ? 'Mother-in-law' : 'Father-in-law';
+                    case 'Brother-in-law':
+                        return $clientGender === 'Female' ? 'Sister-in-law' : 'Brother-in-law';
+                    case 'Sister-in-law':
+                        return $clientGender === 'Female' ? 'Sister-in-law' : 'Brother-in-law';
                     
                     default:
                         return $relationshipType; // Fallback to same relationship type
@@ -1720,8 +1729,8 @@ class ClientsController extends Controller
                         if ($relatedClientId) {
                             $relatedClient = Admin::find($relatedClientId);
                             if ($relatedClient) {
-                                // Get the reciprocal relationship type based on gender
-                                $reciprocalRelationshipType = $getReciprocalRelationship($relationshipType, $gender, $relatedClient->gender ?? 'Male');
+                                // Get the reciprocal relationship type (for "others" in-laws, uses client's gender)
+                                $reciprocalRelationshipType = $getReciprocalRelationship($relationshipType, $gender, $relatedClient->gender ?? 'Male', $type === 'others' ? ($client->gender ?? '') : '');
                                 
                                 ClientRelationship::create([
                                     'admin_id' => Auth::user()->id,

@@ -1987,7 +1987,7 @@
                         <!-- Summary View -->
                         <div id="othersInfoSummary" class="summary-view">
                             @php
-                                $others = $clientPartners->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather']);
+                                $others = $clientPartners->whereIn('relationship_type', ['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather', 'Son-in-law', 'Daughter-in-law', 'Brother-in-law', 'Sister-in-law']);
                             @endphp
                             @if($others->count() > 0)
                                 <div style="margin-top: 15px;">
@@ -2049,7 +2049,7 @@
                                         :index="$index"
                                         :member="$other"
                                         type="others"
-                                        :relationshipOptions="['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather']"
+                                        :relationshipOptions="['Cousin', 'Friend', 'Uncle', 'Aunt', 'Grandchild', 'Granddaughter', 'Grandparent', 'Niece', 'Nephew', 'Grandfather', 'Son-in-law', 'Daughter-in-law', 'Brother-in-law', 'Sister-in-law']"
                                     />
                                 @endforeach
                             </div>

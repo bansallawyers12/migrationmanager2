@@ -523,6 +523,10 @@ function addPartnerRow(type) {
                 <option value="Niece">Niece</option>
                 <option value="Nephew">Nephew</option>
                 <option value="Grandfather">Grandfather</option>
+                <option value="Son-in-law">Son-in-law</option>
+                <option value="Daughter-in-law">Daughter-in-law</option>
+                <option value="Brother-in-law">Brother-in-law</option>
+                <option value="Sister-in-law">Sister-in-law</option>
             `;
             break;
         default: // Partner
