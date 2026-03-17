@@ -381,6 +381,8 @@
 }
 .sig-field-preview:hover { background: rgba(59, 130, 246, 0.25); }
 .sig-field-preview.dragging { border-color: #1d4ed8; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
+.sig-field-preview.sig-field-preview-selected { border-color: #1d4ed8; box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.5); background: rgba(59, 130, 246, 0.25); }
+.sig-field-row-selected { background-color: rgba(59, 130, 246, 0.08); border-color: #3b82f6; }
 .sig-field-label {
     position: absolute;
     top: -18px;
@@ -1197,9 +1199,12 @@
         function updateSigForm() {
             var html = '';
             sigState.signatureFields.forEach(function(f, i) {
-                html += '<div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded sig-field-row" data-index="' + i + '">';
+                var rowClass = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded sig-field-row';
+                if (i === sigState.selectedFieldIndex) rowClass += ' sig-field-row-selected';
+                var editBtnClass = (i === sigState.selectedFieldIndex) ? 'btn btn-primary btn-sm sig-edit-field mr-1' : 'btn btn-outline-secondary btn-sm sig-edit-field mr-1';
+                html += '<div class="' + rowClass + '" data-index="' + i + '">';
                 html += '<span class="small">Signature ' + (i + 1) + ' (Pg ' + f.page_number + ')</span>';
-                html += '<div><button type="button" class="btn btn-outline-secondary btn-sm sig-edit-field mr-1" data-index="' + i + '">Edit</button>';
+                html += '<div><button type="button" class="' + editBtnClass + '" data-index="' + i + '">Edit</button>';
                 html += '<button type="button" class="btn btn-outline-danger btn-sm sig-delete-field" data-index="' + i + '">Delete</button></div></div>';
             });
             $('#sig-fields-container').html(html || '<small class="text-muted">No fields. Click on the document or Add Signature Field.</small>');
@@ -1211,7 +1216,9 @@
             var dims = getSigDisplayDims();
             sigState.signatureFields.forEach(function(f, i) {
                 if (f.page_number !== sigState.currentPage) return;
-                var $el = $('<div class="sig-field-preview" data-index="' + i + '"></div>');
+                var previewClass = 'sig-field-preview';
+                if (i === sigState.selectedFieldIndex) previewClass += ' sig-field-preview-selected';
+                var $el = $('<div class="' + previewClass + '" data-index="' + i + '"></div>');
                 $el.css({ left: (f.x_percent * dims.width) + 'px', top: (f.y_percent * dims.height) + 'px', width: (f.w_percent * dims.width) + 'px', height: (f.h_percent * dims.height) + 'px' });
                 $el.html('<span class="sig-field-label">Signature ' + (i + 1) + '</span>');
                 $container.append($el);
@@ -1249,6 +1256,7 @@
                     if (sigState.signatureFields[i].page_number !== sigState.currentPage) {
                         sigSwitchPage(sigState.signatureFields[i].page_number);
                     }
+                    updateSigForm();
                     updateSigPreview();
                 }
             });
