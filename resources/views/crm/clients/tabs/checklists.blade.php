@@ -296,6 +296,8 @@
                                                                 $signingUrl = $primaryLink['url'] ?? '';
                                                                 $signerName = $primaryLink['name'] ?? '';
                                                                 $signerEmail = $primaryLink['email'] ?? '';
+                                                                // Pending signer for reminder (only when doc not signed)
+                                                                $primarySigner = $agreementDoc->status !== 'signed' ? $agreementDoc->signers()->where('status', 'pending')->first() : null;
                                                             @endphp
                                                             <!-- Signature Link Section -->
                                                             <div class="signature-section mt-3 p-3 bg-light rounded">
@@ -325,11 +327,30 @@
                                                                             data-client-matter-id="{{ $form->client_matter_id }}">
                                                                             <i class="fas fa-envelope mr-1"></i> Send Email
                                                                         </button>
+                                                                        @if($primarySigner)
+                                                                        <form action="{{ route('signatures.reminder', $agreementDoc->id) }}" method="POST" class="d-inline ml-1" onsubmit="return confirm('Send a reminder email to the signer?');">
+                                                                            @csrf
+                                                                            <input type="hidden" name="signer_id" value="{{ $primarySigner->id }}">
+                                                                            <button type="submit" class="btn btn-warning" title="Send reminder to signer"
+                                                                                {{ $primarySigner->reminder_count >= 3 ? 'disabled' : '' }}>
+                                                                                <i class="fas fa-bell mr-1"></i> Send Reminder ({{ $primarySigner->reminder_count }}/3)
+                                                                            </button>
+                                                                        </form>
+                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                                 <small class="text-muted d-block mt-2">
                                                                     <i class="fas fa-info-circle"></i> Share this link with the client to sign the agreement
                                                                 </small>
+                                                                @if($primarySigner)
+                                                                <small class="text-muted d-block mt-1">
+                                                                    @if($primarySigner->last_reminder_sent_at)
+                                                                        <i class="fas fa-clock"></i> Last reminder: {{ $primarySigner->last_reminder_sent_at->format('M d, Y g:i A') }}
+                                                                    @else
+                                                                        <i class="fas fa-info-circle"></i> No reminders sent yet
+                                                                    @endif
+                                                                </small>
+                                                                @endif
                                                                 @else
                                                                 <div class="alert alert-warning mb-0">
                                                                     <i class="fas fa-exclamation-triangle"></i> Signature link data is invalid. Please try placing signature fields again.
