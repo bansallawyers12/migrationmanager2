@@ -322,8 +322,9 @@
             e.preventDefault();
             e.stopPropagation();
             var $this = $(this);
-            var filelink = $this.data('filelink');
-            var filename = $this.data('filename');
+            // Read from current DOM attributes so updated values after rename are used (jQuery .data() caches and would return old URL)
+            var filelink = $this.attr('data-filelink') || $this.data('filelink');
+            var filename = $this.attr('data-filename') || $this.data('filename');
             if (!filelink || !filename) {
                 console.error('Missing file info - filelink:', filelink, 'filename:', filename);
                 alert('Missing file info. Please try again.');
