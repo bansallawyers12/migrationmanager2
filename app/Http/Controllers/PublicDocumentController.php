@@ -593,7 +593,21 @@ class PublicDocumentController extends Controller
                     $exists = Document::where('client_id', $document->client_id)->where('folder_name', $document->folder_name)
                         ->where('client_matter_id', $document->client_matter_id)->where('checklist', $signedChecklist)->exists();
                     if (!$exists) try {
-                        $signedKey = $document->id . '_signed.pdf';
+                        $parentKey = (string) ($document->myfile_key ?? '');
+                        $parentStem = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document');
+                        if ($parentKey !== '' && !preg_match('/^\d+_signed\.pdf$/i', $parentKey)) {
+                            $signedKey = pathinfo($parentKey, PATHINFO_FILENAME) . '_signed.pdf';
+                        } else {
+                            $signedKey = $parentStem . '_signed.pdf';
+                        }
+                        $signedKey = preg_replace('/[^a-zA-Z0-9_\-\.\s\$]+/', '_', $signedKey);
+                        $signedKey = trim($signedKey);
+                        if ($signedKey === '' || strcasecmp($signedKey, '_signed.pdf') === 0 || strlen($signedKey) > 200) {
+                            $signedKey = mb_substr(preg_replace('/[^a-zA-Z0-9_\-\.\s\$]+/', '_', $parentStem . '_signed.pdf'), 0, 200);
+                        }
+                        if ($signedKey === '' || strcasecmp($signedKey, '_signed.pdf') === 0) {
+                            $signedKey = $document->id . '_signed.pdf';
+                        }
                         $signedDoc = new Document();
                         $signedDoc->checklist = $signedChecklist;
                         $signedDoc->file_name = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document') . '_signed';
@@ -961,7 +975,7 @@ class PublicDocumentController extends Controller
                     // Check if file exists in local storage
                     if (Storage::disk('public')->exists($relativePath)) {
                         $filePath = storage_path('app/public/' . $relativePath);
-                        return response()->download($filePath, $document->id . '_signed.pdf');
+                        return response()->download($filePath, $document->getSignedDownloadFilename());
                     }
                 }
                 
@@ -971,10 +985,11 @@ class PublicDocumentController extends Controller
                     $disk = Storage::disk('s3');
                     
                     if ($disk->exists($s3Key)) {
+                        $dlName = $document->getSignedDownloadFilename();
                         $tempUrl = $disk->temporaryUrl(
                             $s3Key,
                             now()->addMinutes(5),
-                            ['ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"']
+                            ['ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', "'", $dlName) . '"']
                         );
                         return redirect($tempUrl);
                     }
@@ -1030,10 +1045,11 @@ class PublicDocumentController extends Controller
                         $disk = Storage::disk('s3');
                         
                         if ($disk->exists($s3Key)) {
+                            $dlName = $document->getSignedDownloadFilename();
                             $downloadUrl = $disk->temporaryUrl(
                                 $s3Key,
                                 now()->addMinutes(5),
-                                ['ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"']
+                                ['ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', "'", $dlName) . '"']
                             );
                         }
                     }
@@ -1083,10 +1099,11 @@ class PublicDocumentController extends Controller
                     $s3Key = ltrim($parsed['path'], '/');
                     $disk = Storage::disk('s3');
                     if ($disk->exists($s3Key)) {
+                        $dlName = $document->getSignedDownloadFilename();
                         $downloadUrl = $disk->temporaryUrl(
                             $s3Key,
                             now()->addMinutes(5),
-                            ['ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"']
+                            ['ResponseContentDisposition' => 'attachment; filename="' . str_replace('"', "'", $dlName) . '"']
                         );
                     }
                 }

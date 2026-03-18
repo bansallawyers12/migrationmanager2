@@ -339,7 +339,7 @@
                                                         <td>
                                                             <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
-                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->myfile_key ?? basename($signedDoc->signed_doc_link ?? '')) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
                                                             <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>
@@ -378,7 +378,7 @@
                                                         <td>
                                                             <a class="renamechecklist" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
                                                             <a class="renamedoc" data-id="<?= $signedDoc->id ?>" href="javascript:;" style="display: none;"></a>
-                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->myfile_key ?? basename($signedDoc->signed_doc_link ?? '')) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
+                                                            <a class="download-file" data-filelink="<?= e($signedDownloadUrl) ?>" data-filename="<?= e($signedDoc->getSignedDownloadFilename()) ?>" data-id="<?= $signedDoc->id ?>" href="#" style="display: none;"></a>
                                                             <a class="notuseddoc" data-id="<?= $signedDoc->id ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
                                                         </td>
                                                     </tr>

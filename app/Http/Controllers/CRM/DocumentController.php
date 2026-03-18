@@ -2307,7 +2307,7 @@ class DocumentController extends Controller
             $document = Document::findOrFail($id);
             
             $fileUrl = $document->signed_doc_link;
-            $filename = $document->id . '_signed.pdf';
+            $filename = $document->getSignedDownloadFilename();
             
             if (!$fileUrl) {
                 return abort(400, 'Missing signed document link');
@@ -2478,11 +2478,12 @@ class DocumentController extends Controller
                         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                         $disk = Storage::disk('s3');
                         if ($disk->exists($s3Key)) {
+                            $dlName = str_replace('"', "'", $document->getSignedDownloadFilename());
                             $downloadUrl = $disk->temporaryUrl(
                                 $s3Key,
                                 now()->addMinutes(5),
                                 [
-                                    'ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"',
+                                    'ResponseContentDisposition' => 'attachment; filename="' . $dlName . '"',
                                 ]
                             );
                         }
@@ -2527,11 +2528,12 @@ class DocumentController extends Controller
                     /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                     $disk = Storage::disk('s3');
                     if ($disk->exists($s3Key)) {
+                        $dlName = str_replace('"', "'", $document->getSignedDownloadFilename());
                         $downloadUrl = $disk->temporaryUrl(
                             $s3Key,
                             now()->addMinutes(5),
                             [
-                                'ResponseContentDisposition' => 'attachment; filename="' . $document->id . '_signed.pdf"',
+                                'ResponseContentDisposition' => 'attachment; filename="' . $dlName . '"',
                             ]
                         );
                     }

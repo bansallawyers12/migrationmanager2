@@ -427,4 +427,43 @@ class Document extends Model
             'class' => $this->status ?? 'draft'
         ];
     }
+
+    /**
+     * Filename for signed PDF downloads (Content-Disposition).
+     * Uses checklist-based file_name when set; otherwise derives from myfile_key; falls back to {id}_signed.pdf.
+     */
+    public function getSignedDownloadFilename(): string
+    {
+        $ext = strtolower((string) ($this->filetype ?? 'pdf'));
+        if ($ext === '') {
+            $ext = 'pdf';
+        }
+
+        $base = trim((string) ($this->file_name ?? ''));
+        if ($base !== '') {
+            if (!preg_match('/_signed$/i', $base)) {
+                $base .= '_signed';
+            }
+
+            return $this->sanitizeSignedDownloadFilename($base . '.' . $ext);
+        }
+
+        $mk = (string) ($this->myfile_key ?? '');
+        if ($mk !== '' && !preg_match('/^\d+_signed\.pdf$/i', $mk)) {
+            $stem = pathinfo($mk, PATHINFO_FILENAME);
+            if ($stem !== '') {
+                return $this->sanitizeSignedDownloadFilename($stem . '_signed.' . $ext);
+            }
+        }
+
+        return (string) $this->id . '_signed.pdf';
+    }
+
+    private function sanitizeSignedDownloadFilename(string $name): string
+    {
+        $name = str_replace(['"', "\r", "\n", '\\', '/'], '', $name);
+        $name = trim($name);
+
+        return $name !== '' ? mb_substr($name, 0, 220) : ((string) $this->id . '_signed.pdf');
+    }
 }
