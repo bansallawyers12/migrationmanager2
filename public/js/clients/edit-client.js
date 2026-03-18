@@ -2642,15 +2642,12 @@ window.saveAddressInfo = function() {
             if (!suburb) missingFields.push('Suburb');
             if (!country) missingFields.push('Country');
             
-            // Require postcode for Australian addresses
+            // Require postcode for Australian addresses (format allows digits and letters for overseas compatibility)
             if (country && country.toLowerCase().includes('australia') && !zip) {
                 missingFields.push('Postcode');
             }
-            // Validate postcode format if provided for Australian addresses
-            if (zip && country && country.toLowerCase().includes('australia') && !/^\d{4}$/.test(zip)) {
-                missingFields.push('Postcode (must be 4 digits)');
-            }
-            
+            // Postcode format is not restricted: Australian addresses use 4 digits; overseas may use letters (e.g. UK, Canada)
+
             if (missingFields.length > 0) {
                 validationErrors.push(`Address ${idx + 1} is incomplete. Missing: ${missingFields.join(', ')}`);
                 console.warn(`⚠️ Address ${idx + 1} incomplete:`, missingFields);
