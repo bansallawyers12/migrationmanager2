@@ -207,4 +207,53 @@ class EmailLog extends Authenticatable
     {
         return $query->doesntHave('attachments');
     }
+
+    /**
+     * CRM compose stores recipient Admin/Agent row IDs in to_mail; Sent tab should show addresses.
+     * Resolves comma-separated numeric IDs to emails. Leaves real addresses unchanged.
+     */
+    public static function resolveRecipientDisplay(?string $toMail, ?string $logType = null): string
+    {
+        if ($toMail === null || ($toMail = trim($toMail)) === '') {
+            return '';
+        }
+        $parts = array_values(array_filter(array_map('trim', explode(',', $toMail)), static fn ($p) => $p !== ''));
+        if ($parts === []) {
+            return $toMail;
+        }
+        $allEmails = true;
+        foreach ($parts as $p) {
+            if (! filter_var($p, FILTER_VALIDATE_EMAIL)) {
+                $allEmails = false;
+                break;
+            }
+        }
+        if ($allEmails) {
+            return $toMail;
+        }
+        foreach ($parts as $p) {
+            if (! ctype_digit((string) $p)) {
+                return $toMail;
+            }
+        }
+        $emails = [];
+        $isAgent = ($logType === 'agent');
+        foreach ($parts as $idStr) {
+            $idInt = (int) $idStr;
+            if ($isAgent) {
+                $agent = AgentDetails::find($idInt);
+                $em = $agent ? ($agent->email ?: $agent->business_email) : null;
+                if ($em) {
+                    $emails[] = $em;
+                }
+            } else {
+                $admin = Admin::find($idInt);
+                if ($admin && ! empty($admin->email)) {
+                    $emails[] = $admin->email;
+                }
+            }
+        }
+
+        return $emails !== [] ? implode(', ', array_unique($emails)) : $toMail;
+    }
 }

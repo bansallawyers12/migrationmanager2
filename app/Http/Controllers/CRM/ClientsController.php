@@ -3851,7 +3851,7 @@ class ClientsController extends Controller
 				// Add preview_url and ensure required fields have defaults
 				$emailArray['preview_url'] = $previewUrl;
 				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
-				$emailArray['to_mail'] = $emailArray['to_mail'] ?? '';
+				$emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
 				$emailArray['subject'] = $emailArray['subject'] ?? '';
 				$emailArray['message'] = $emailArray['message'] ?? '';
 				
@@ -3980,14 +3980,7 @@ class ClientsController extends Controller
                     : [];
                 $emailArray['preview_url'] = $previewUrl;
                 $emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
-                $toMail = $emailArray['to_mail'] ?? '';
-                if ($toMail && is_numeric(trim($toMail))) {
-                    $leadRecipient = \App\Models\Admin::where('id', (int) $toMail)->where('type', 'lead')->first();
-                    if ($leadRecipient && $leadRecipient->email) {
-                        $toMail = $leadRecipient->email;
-                    }
-                }
-                $emailArray['to_mail'] = $toMail;
+                $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? 'lead');
                 $emailArray['subject'] = $emailArray['subject'] ?? '';
                 $emailArray['message'] = $emailArray['message'] ?? '';
                 return $emailArray;

@@ -1131,9 +1131,42 @@ public function getChapters(Request $request)
 		$obj = new \App\Models\EmailLog;
 		$obj->user_id 		=  $user_id;
 		$obj->from_mail 	=  $requestData['email_from'];
-		$obj->to_mail 		=  implode(',',$requestData['email_to']);
-		if(isset($requestData['email_cc'])){
-		    $obj->cc 			=  implode(',',@$requestData['email_cc']);
+		// email_to / email_cc are Admin or Agent row IDs from the compose UI — store actual addresses
+		$emailToList = isset($requestData['email_to']) && is_array($requestData['email_to'])
+			? $requestData['email_to']
+			: array_filter([(string) ($requestData['email_to'] ?? '')]);
+		$resolvedTo = [];
+		foreach ($emailToList as $recipientId) {
+			if ($recipientId === '' || $recipientId === null) {
+				continue;
+			}
+			if (($requestData['type'] ?? '') === 'agent') {
+				$r = \App\Models\AgentDetails::where('id', $recipientId)->first();
+				if ($r) {
+					$em = $r->email ?: $r->business_email;
+					if ($em) {
+						$resolvedTo[] = $em;
+					}
+				}
+			} else {
+				$r = \App\Models\Admin::where('id', $recipientId)->first();
+				if ($r && ! empty($r->email)) {
+					$resolvedTo[] = $r->email;
+				}
+			}
+		}
+		$obj->to_mail = $resolvedTo !== []
+			? implode(',', array_unique($resolvedTo))
+			: implode(',', $emailToList);
+		if (isset($requestData['email_cc']) && ! empty($requestData['email_cc'])) {
+			$ccEmails = [];
+			foreach ($requestData['email_cc'] as $ccId) {
+				$ccRow = \App\Models\Admin::where('id', $ccId)->first();
+				if ($ccRow && ! empty($ccRow->email)) {
+					$ccEmails[] = $ccRow->email;
+				}
+			}
+			$obj->cc = implode(',', array_unique($ccEmails));
 		}
         $obj->template_id 	=  $requestData['template'] ?? null;
 		$obj->reciept_id 	=  $reciept_id;
@@ -1187,24 +1220,28 @@ public function getChapters(Request $request)
         }
 
         $saved	=	$obj->save();
-        if(isset($requestData['checklistfile'])){
-            if(!empty($requestData['checklistfile'])){
+        $activityClientId = $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
+        if ($activityClientId === null && ! empty($emailToList) && ($requestData['type'] ?? '') !== 'agent') {
+            $activityClientId = (int) reset($emailToList);
+        }
+        if (isset($requestData['checklistfile'])) {
+            if (! empty($requestData['checklistfile']) && $activityClientId) {
                 $objs = new \App\Models\ActivitiesLog;
-                $objs->client_id = $obj->to_mail;
+                $objs->client_id = $activityClientId;
                 $objs->created_by = Auth::user()->id;
-                $objs->subject = "Checklist sent to client";
+                $objs->subject = 'Checklist sent to client';
                 $objs->task_status = 0;
                 $objs->pin = 0;
                 $objs->save();
             }
         }
 
-        if(isset($requestData['checklistfile_document'])){
-            if(!empty($requestData['checklistfile_document'])){
+        if (isset($requestData['checklistfile_document'])) {
+            if (! empty($requestData['checklistfile_document']) && $activityClientId) {
                 $objs = new \App\Models\ActivitiesLog;
-                $objs->client_id = $obj->to_mail;
+                $objs->client_id = $activityClientId;
                 $objs->created_by = Auth::user()->id;
-                $objs->subject = "Document Checklist sent to client";
+                $objs->subject = 'Document Checklist sent to client';
                 $objs->task_status = 0;
                 $objs->pin = 0;
                 $objs->save();
