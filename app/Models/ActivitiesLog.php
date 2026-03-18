@@ -170,4 +170,19 @@ class ActivitiesLog extends Authenticatable
 			default => 'text-secondary',
 		};
 	}
+
+	/**
+	 * Client portal signature activities are stored with created_by = responsible staff (for notifications),
+	 * but the subject already starts with the client/signer name. Activity feed should not prepend staff name.
+	 */
+	public static function displaySubjectWithoutStaffPrefix(?string $activityType, ?string $subject): bool
+	{
+		if (($activityType ?? '') !== 'document' || $subject === null || $subject === '') {
+			return false;
+		}
+		$lower = strtolower($subject);
+
+		return str_contains($lower, 'signed document')
+			|| str_contains($lower, 'signed cost agreement');
+	}
 }

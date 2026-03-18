@@ -67,7 +67,11 @@
             </div>
         @else
             <p>
+                @if(\App\Models\ActivitiesLog::displaySubjectWithoutStaffPrefix($activity->activity_type ?? null, $activity->subject ?? null))
+                <strong>{{ $activity->subject ?? '' }}</strong>
+                @else
                 <strong>{{ $admin->first_name ?? 'NA' }}  {{ $activity->subject ?? '' }}</strong>
+                @endif
                 @if(str_contains($activity->subject ?? '', 'added a note') || str_contains($activity->subject ?? '', 'updated a note'))
                     <i class="fas fa-ellipsis-v convert-activity-to-note" 
                        style="margin-left: 5px; cursor: pointer;" 

@@ -1445,7 +1445,9 @@ $(document).ready(function() {
                                 '<div class="feed-item-stage-body">' + (v.message ? v.message : '') + '</div>' +
                             '</div>';
                         } else {
-                            contentHtml = '<p><strong>' + fullName + ' ' + subject + '</strong></p>' +
+                            var subjectOnly = v.subject_without_staff_prefix === true;
+                            var headline = subjectOnly ? subject : (fullName + ' ' + subject);
+                            contentHtml = '<p><strong>' + headline + '</strong></p>' +
                                 descriptionHtml +
                                 taskGroupHtml +
                                 followupDateHtml +

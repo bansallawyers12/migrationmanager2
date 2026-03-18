@@ -5720,6 +5720,7 @@ Bansal Immigration`;
                         var fullName = v.name ?? '';
                         
                         var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
+                        var headline = v.subject_without_staff_prefix === true ? subject : (fullName + ' ' + subject);
 
                         html += `
 
@@ -5733,7 +5734,7 @@ Bansal Immigration`;
 
                                 <div class="feed-content">
 
-                                    <p><strong>${fullName} ${subject}</strong></p>
+                                    <p><strong>${headline}</strong></p>
 
                                     ${description !== '' ? `<p>${description}</p>` : ''}
 

@@ -2985,6 +2985,7 @@ function getallactivities(client_id){
 			var createdBy = v.createdname ?? 'Unknown';
 			var fullName = v.name ?? '';
 			var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
+			var headline = v.subject_without_staff_prefix === true ? subject : (fullName + ' ' + subject);
 
 			html += `
 				<li class="feed-item feed-item--email activity ${activityTypeClass}" id="activity_${v.activity_id}">
@@ -2992,7 +2993,7 @@ function getallactivities(client_id){
 						${subjectIcon}
 					</span>
 					<div class="feed-content">
-						<p><strong>${fullName} ${subject}</strong></p>
+						<p><strong>${headline}</strong></p>
 						${description !== '' ? `<p>${description}</p>` : ''}
 						${taskGroup !== '' ? `<p>${taskGroup}</p>` : ''}
 						${followupDate !== '' ? `<p>${followupDate}</p>` : ''}

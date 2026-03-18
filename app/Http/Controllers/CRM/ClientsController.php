@@ -2789,9 +2789,14 @@ class ClientsController extends Controller
 					$admin = Staff::where('id', $activit->created_by)->first();
 					$fullName = $admin ? trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? '')) : 'Unknown';
 					if (empty(trim($fullName))) $fullName = $admin ? $admin->first_name : 'Unknown';
+					$subjectWithoutStaffPrefix = ActivitiesLog::displaySubjectWithoutStaffPrefix(
+						$activit->activity_type ?? null,
+						$activit->subject ?? null
+					);
 					$data[] = array(
 						'activity_id' => $activit->id,
 						'subject' => $activit->subject ?? '',
+						'subject_without_staff_prefix' => $subjectWithoutStaffPrefix,
 						'createdname' => $admin ? substr($admin->first_name, 0, 1) : '?',
 						'name' => $fullName,
 						'message' => $activit->description ?? '',
