@@ -260,22 +260,14 @@
         
         $('#noteterm-tab').find('.note-card-redesign').each(function() {
             const $note = $(this);
-            const noteMatterId = $note.data('matterid');
             const noteType = $note.data('type');
             
             // Check type match (All tab shows all types)
             const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
             
-            // Check matter match
-            let matterMatch = false;
-            if (matterId !== "" && matterId !== null && matterId !== undefined) {
-                // Show only notes that match the selected matter (exclude notes with no matter_id)
-                // Notes without matter_id should only appear in Activity feed, not in Notes tab
-                matterMatch = (noteMatterId == matterId && noteMatterId !== '' && noteMatterId !== null);
-            } else {
-                // Show all notes when no matter is selected
-                matterMatch = true;
-            }
+            // Notes tab: show every note for this client (ignore matter filter).
+            // Matter is for URL/context; notes remain visible across all matters.
+            const matterMatch = true;
             
             // Show/hide based on both type and matter match
             if (typeMatch && matterMatch) {

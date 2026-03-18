@@ -13,8 +13,9 @@ use App\Models\Staff;
 use App\Models\ActivitiesLog;
 // use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use App\Models\ClientMatter;
+use App\Support\NoteDescriptionHtml;
 use App\Traits\LogsClientActivity;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 /**
@@ -413,14 +414,7 @@ class ClientNotesController extends Controller
 
                 <div class="note-content-redesign">
                     <?php
-                    if (!empty($list->description)) {
-                        $description = $list->description;
-                        if (strpos($description, '<xml>') !== false || strpos($description, '<o:OfficeDocumentSettings>') !== false) {
-                            echo '<p>' . htmlentities($description) . '</p>';
-                        } else {
-                            echo '<p>' . $description . '</p>';
-                        }
-                    }
+                    echo NoteDescriptionHtml::forDisplay($list->description ?? '');
                     ?>
                 </div>
             </div>

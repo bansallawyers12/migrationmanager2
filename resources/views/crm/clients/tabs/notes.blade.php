@@ -287,15 +287,7 @@
                             <!--<div class="note-content-redesign">{--!! nl2br(e($desc)) !!--}</div>-->
                             <div class="note-content-redesign">
                                 @if(!empty($list->description))
-                                    @php
-                                        $description = $list->description;
-                                    @endphp
-
-                                    @if(strpos($description, '<xml>') !== false || strpos($description, '<o:OfficeDocumentSettings>') !== false)
-                                        <p>{!! htmlentities($description) !!}</p>
-                                    @else
-                                        <p>{!! $description !!}</p>
-                                    @endif
+                                    {!! \App\Support\NoteDescriptionHtml::forDisplay($list->description) !!}
                                 @endif
                             </div>
                         </div>
@@ -325,18 +317,12 @@
                     // Filter notes
                     document.querySelectorAll('.note-card-redesign').forEach(card => {
                         const cardType = card.getAttribute('data-type');
-                        const cardMatter = card.getAttribute('data-matterid');
                         
                         // Type matching
                         const typeMatch = (type === 'All' || cardType === type);
                         
-                        // Matter matching
-                        let matterMatch = false;
-                        if (selectedMatter && selectedMatter !== "" && selectedMatter !== null && selectedMatter !== undefined) {
-                            matterMatch = (cardMatter == selectedMatter || cardMatter == '' || cardMatter == null);
-                        } else {
-                            matterMatch = true;
-                        }
+                        // Show all client notes regardless of selected matter
+                        const matterMatch = true;
                         
                         // Text search matching
                         let searchMatch = true;

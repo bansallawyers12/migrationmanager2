@@ -62,7 +62,7 @@
                     <span class="feed-timestamp">{{ date('d M Y, H:i', strtotime($activity->created_at)) }}</span>
                 </div>
                 <div class="feed-item-stage-body">
-                    {!! $activity->description ?? '' !!}
+                    {!! \App\Support\NoteDescriptionHtml::forDisplay($activity->description ?? '') !!}
                 </div>
             </div>
         @else
@@ -85,7 +85,7 @@
                 @endif
                 -
                 @if($activity->description != '')
-                    <p>{!! $activity->description !!}</p>
+                    {!! \App\Support\NoteDescriptionHtml::forDisplay($activity->description) !!}
                 @endif
             </p>
             <span class="feed-timestamp">{{ date('d M Y, H:i A', strtotime($activity->created_at)) }}</span>

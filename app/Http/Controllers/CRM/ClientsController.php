@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use App\Services\ClientReferenceService;
+use App\Support\NoteDescriptionHtml;
 
 use Hfig\MAPI;
 use Hfig\MAPI\OLE\Pear;
@@ -399,7 +400,7 @@ class ClientsController extends Controller
     public function insights(Request $request)
     {
         // Restrict to admin and super admin only (roles 1, 12)
-        if (!in_array(\Auth::user()->role ?? 0, [1, 12])) {
+        if (!in_array(Auth::user()->role ?? 0, [1, 12])) {
             return redirect()->back()->with('error', 'Only admin and super admin can view insights.');
         }
 
@@ -2799,7 +2800,7 @@ class ClientsController extends Controller
 						'subject_without_staff_prefix' => $subjectWithoutStaffPrefix,
 						'createdname' => $admin ? substr($admin->first_name, 0, 1) : '?',
 						'name' => $fullName,
-						'message' => $activit->description ?? '',
+						'message' => NoteDescriptionHtml::forDisplay($activit->description ?? ''),
 						'date' => date('d M Y, H:i A', strtotime($activit->created_at)),
 						'created_at_ymd' => $activit->created_at ? \Carbon\Carbon::parse($activit->created_at)->format('Y-m-d') : '',
 						'followup_date' => $activit->followup_date ?? '',

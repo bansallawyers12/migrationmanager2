@@ -2022,25 +2022,12 @@ success: function(response) {
                     const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
                     
                     $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                        const noteMatterId = $(this).data('matterid');
                         const noteType = $(this).data('type');
                         
-                        let showNote = false;
-                        
-                        // Matter filtering logic
-                        if (selectedMatter !== "") {
-                            // Show notes that match the selected matter OR notes with no matter_id
-                            showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
-                        } else {
-                            // Show ALL notes when no matter is selected
-                            showNote = true;
-                        }
-                        
-                        // Task group filtering logic
-                        if (showNote && activeTaskGroup !== 'All') {
+                        let showNote = true;
+                        if (activeTaskGroup !== 'All') {
                             showNote = (noteType === activeTaskGroup);
                         }
-                        
                         if (showNote) {
                             $(this).show();
                         } else {
@@ -2188,25 +2175,12 @@ success: function(response) {
                 const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
                 
                 $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                    const noteMatterId = $(this).data('matterid');
                     const noteType = $(this).data('type');
                     
-                    let showNote = false;
-                    
-                    // Matter filtering logic
-                    if (selectedMatter !== "") {
-                        // Show notes that match the selected matter OR notes with no matter_id
-                        showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
-                    } else {
-                        // Show all notes when no matter is selected
-                        showNote = true;
-                    }
-                    
-                    // Task group filtering logic
-                    if (showNote && activeTaskGroup !== 'All') {
+                    let showNote = true;
+                    if (activeTaskGroup !== 'All') {
                         showNote = (noteType === activeTaskGroup);
                     }
-                    
                     if (showNote) {
                         $(this).show();
                     } else {

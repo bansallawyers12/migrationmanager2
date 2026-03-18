@@ -47,21 +47,14 @@
             success: function(responses) {
                 $('.popuploader').hide();
                 $('.note_term_list').html(responses);
-                var selectedMatter = $('.general_matter_checkbox_client_detail').is(':checked') ? $('.general_matter_checkbox_client_detail').val() : $('#sel_matter_id_client_detail').val();
                 var activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
                 if (!$('.subtab8-button.active').length) {
                     $('.subtab8-button.pill-tab[data-subtab8="All"]').addClass('active');
                     $('#noteterm-tab').find('.note-card-redesign').show();
                 } else {
                     $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                        var noteMatterId = $(this).data('matterid');
                         var noteType = $(this).data('type');
-                        var showNote = false;
-                        if (selectedMatter !== "") {
-                            showNote = (noteMatterId == selectedMatter || noteMatterId == '' || noteMatterId == null);
-                        } else {
-                            showNote = true;
-                        }
+                        var showNote = true;
                         if (showNote && activeTaskGroup !== 'All') {
                             showNote = (noteType === activeTaskGroup);
                         }
