@@ -559,7 +559,7 @@ class ClientPortalWorkflowController extends Controller
                 ->where('allow_client', 1)
                 ->first();
 
-            if (!$checklistItem) {
+            if (!$checklistItem) { 
                 return response()->json([
                     'success' => false,
                     'message' => 'Allowed checklist item not found'
@@ -592,7 +592,7 @@ class ClientPortalWorkflowController extends Controller
 
             // Upload to S3
             Storage::disk('s3')->put($filePath, file_get_contents($file));
-            $fileUrl = Storage::disk('s3')->url($filePath);
+            $fileUrl = $this->s3ObjectPublicUrl($filePath);
 
             // Insert new document record
             $documentId = DB::table('documents')->insertGetId([
@@ -760,7 +760,7 @@ class ClientPortalWorkflowController extends Controller
 
                 // Upload to S3
                 Storage::disk('s3')->put($filePath, file_get_contents($file));
-                $fileUrl = Storage::disk('s3')->url($filePath);
+                $fileUrl = $this->s3ObjectPublicUrl($filePath);
 
                 // Insert document record
                 $documentId = DB::table('documents')->insertGetId([
@@ -931,6 +931,17 @@ class ClientPortalWorkflowController extends Controller
                 'error'            => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Public URL for an object on the S3 disk (adapter implements url(); contract type does not).
+     */
+    private function s3ObjectPublicUrl(string $path): string
+    {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+        return $disk->url($path);
     }
 
     /**
