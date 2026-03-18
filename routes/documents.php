@@ -242,6 +242,9 @@ Route::get('/documents/{document}/sign', [AdminDocumentController::class, 'showS
 // Route::get('/documents/{id}/page/{page}', [AdminDocumentController::class, 'getPage'])
 //     ->name('documents.page');
 
+Route::get('/documents/{id}/preview-signed', [AdminDocumentController::class, 'previewSigned'])
+    ->name('documents.preview.signed');
+
 Route::get('/documents/{id}/download-signed', [AdminDocumentController::class, 'downloadSigned'])
     ->name('documents.download.signed');
 

@@ -315,8 +315,8 @@
                                                             $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
                                                             $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
                                                         } else {
-                                                            $signedFileUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
-                                                            $signedDownloadUrl = $signedFileUrl;
+                                                            $signedFileUrl = url()->route('documents.preview.signed', $signedDoc->id);
+                                                            $signedDownloadUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
                                                         }
                                                         $signedDisplayName = ($signedDoc->file_name ?? 'signed') . '.' . ($signedDoc->filetype ?? 'pdf');
                                                     ?>
@@ -356,8 +356,8 @@
                                                             $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
                                                             $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
                                                         } else {
-                                                            $signedFileUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
-                                                            $signedDownloadUrl = $signedFileUrl;
+                                                            $signedFileUrl = url()->route('documents.preview.signed', $signedDoc->id);
+                                                            $signedDownloadUrl = $signedDoc->signed_doc_link ?? $signedDoc->myfile;
                                                         }
                                                         $signedDisplayName = ($signedDoc->file_name ?? 'signed') . '.' . ($signedDoc->filetype ?? 'pdf');
                                                         $signedFileUrlJs = addslashes($signedFileUrl);
@@ -607,10 +607,10 @@
                             openMoveVisaDocumentModal(currentVisaContextFile, 'visa');
                             break;
                         case 'preview':
-                            // Use current URL from DOM (updated after rename) so preview works without page refresh
+                            // Prefer context menu fileUrl (preview route for signed docs; direct URL for unsigned). Fallback to download link for compatibility.
                             var $previewLink = $('.download-file[data-id="' + currentVisaContextFile + '"]').first();
-                            var previewUrl = ($previewLink.length && $previewLink.attr('data-filelink')) ? $previewLink.attr('data-filelink') : currentVisaContextData.fileUrl;
-                            window.open(previewUrl || currentVisaContextData.fileUrl, '_blank');
+                            var previewUrl = currentVisaContextData.fileUrl || ($previewLink.length ? $previewLink.attr('data-filelink') : null);
+                            if (previewUrl) window.open(previewUrl, '_blank');
                             break;
                         case 'pdf':
                             const pdfUrl = '{{ URL::to('/document/download/pdf') }}/' + currentVisaContextFile;

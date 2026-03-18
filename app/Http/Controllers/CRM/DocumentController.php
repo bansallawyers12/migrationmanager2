@@ -2447,6 +2447,63 @@ class DocumentController extends Controller
         }
     }
 
+    /**
+     * Inline preview of signed PDF with descriptive filename (same as download). Streams through app so URL and viewer show correct name.
+     */
+    public function previewSigned($id)
+    {
+        try {
+            $document = Document::findOrFail($id);
+            $fileUrl = $document->signed_doc_link;
+            if (!$fileUrl && str_ends_with((string) ($document->checklist ?? ''), '_signed')) {
+                $fileUrl = $document->myfile;
+            }
+            if (!$fileUrl) {
+                return abort(404, 'Signed document not available for preview.');
+            }
+
+            $filename = str_replace('"', "'", $document->getSignedDownloadFilename());
+            $parsed = parse_url($fileUrl);
+            $urlPath = $parsed['path'] ?? '';
+
+            if (strpos($urlPath, '/storage/') !== false) {
+                $parts = explode('/storage/', $urlPath);
+                $relativePath = end($parts);
+                if (!Storage::disk('public')->exists($relativePath)) {
+                    return abort(404, 'File not found');
+                }
+                $filePath = storage_path('app/public/' . $relativePath);
+
+                return response()->file($filePath, [
+                    'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                ]);
+            }
+
+            if (isset($parsed['path']) && $parsed['path'] !== '') {
+                $s3Key = ltrim(urldecode($parsed['path']), '/');
+                $disk = Storage::disk('s3');
+                if ($disk->exists($s3Key)) {
+                    $content = $disk->get($s3Key);
+
+                    return response($content, 200, [
+                        'Content-Type'        => 'application/pdf',
+                        'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                        'Content-Length'      => strlen($content),
+                        'Cache-Control'       => 'private, max-age=300',
+                    ]);
+                }
+            }
+
+            return redirect()->away($fileUrl);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return abort(404);
+        } catch (\Exception $e) {
+            Log::error('previewSigned failed', ['id' => $id, 'error' => $e->getMessage()]);
+
+            return abort(500, 'Unable to preview signed document.');
+        }
+    }
+
     public function downloadSignedAndThankyou($id)
     {
         try {
