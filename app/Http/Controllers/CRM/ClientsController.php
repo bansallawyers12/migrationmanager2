@@ -6143,7 +6143,7 @@ class ClientsController extends Controller
             // Validate required fields
             $request->validate([
                 'client_id' => 'required|integer',
-                'tag' => 'array'
+                'tag' => 'nullable|array',
             ]);
 
             $clientId = $request->input('client_id');

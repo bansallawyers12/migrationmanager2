@@ -873,7 +873,7 @@ use App\Http\Controllers\Controller;
 					<div class="row">
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
-								<label for="tags_modal_container">Tags <span class="span_req">*</span></label>
+								<label for="tags_modal_container">Tags</label>
 								<?php 
 								$tagIdsForModal = [];
 								$tagNamesForModal = [];
@@ -895,7 +895,7 @@ use App\Http\Controllers\Controller;
 										<input type="text" id="tag_input" class="tag-input-inline" placeholder="Type and press comma or Enter to add" autocomplete="off">
 									</div>
 								</div>
-								<input type="hidden" id="tags_validation" data-valid="required" value="{{ count($tagNamesForModal) > 0 ? '1' : '' }}">
+								<input type="hidden" id="tags_validation" value="{{ count($tagNamesForModal) > 0 ? '1' : '' }}" aria-hidden="true">
 								<small class="form-text text-muted">Separate tags with commas or press Enter to add.</small>
 							</div>
 						</div>
