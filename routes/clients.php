@@ -267,6 +267,9 @@ Route::post('/validate_receipt', [ClientAccountsController::class, 'validate_rec
 Route::post('/delete_receipt', [ClientAccountsController::class, 'delete_receipt']);
 
 Route::get('/clients/genClientFundReceipt/{id}', [ClientAccountsController::class, 'genClientFundReceipt']);
+/** Fix CFL receipt matter + regenerate PDF (auth:admin). Matter: matter=PSA_1 or client_matter_id (id or short code). */
+Route::get('/clients/fix-client-fund-receipt-matter/{id}', [ClientAccountsController::class, 'fixClientFundReceiptMatterAndRegenerate'])->whereNumber('id');
+Route::get('/clients/fix-client-fund-receipt-matter', [ClientAccountsController::class, 'fixClientFundReceiptMatterAndRegenerate']);
 Route::get('/clients/genOfficeReceipt/{id}', [ClientAccountsController::class, 'genofficereceiptInvoice']);
 
 // Send to client routes

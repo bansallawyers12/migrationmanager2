@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -19,8 +20,8 @@ use App\Models\Note;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\FinancialStatsService;
 use App\Services\FCMService;
-use Auth;
-use PDF;
+use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 
 /**
@@ -41,6 +42,17 @@ class ClientAccountsController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    /**
+     * Public URL for a path on the S3 disk (IDE-friendly wrapper; Storage::disk returns a contract without url() in typings).
+     */
+    protected function s3PublicUrl(string $filePath): string
+    {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+        return $disk->url($filePath);
     }
 
     /**
@@ -189,7 +201,7 @@ class ClientAccountsController extends Controller
                 $obj->file_name = $nameWithoutExtension;
                 $obj->filetype = $fileExtension;
                 $obj->user_id = Auth::user()->id;
-                $obj->myfile = Storage::disk('s3')->url($filePath);
+                $obj->myfile = $this->s3PublicUrl($filePath);
                 $obj->myfile_key = $name;
                 $obj->client_id = $requestData['client_id'];
                 $obj->type = $request->type;
@@ -712,7 +724,7 @@ class ClientAccountsController extends Controller
    
         return response()->json($response, 200);
         } catch (\Exception $e) {
-            \Log::error('Error in saveaccountreport: ' . $e->getMessage(), [
+            Log::error('Error in saveaccountreport: ' . $e->getMessage(), [
                 'request_data' => $request->except(['document_upload']),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -885,7 +897,7 @@ class ClientAccountsController extends Controller
         }
         return response()->json($response);
         } catch (\Exception $e) {
-            \Log::error('Error in saveadjustinvoicereport: ' . $e->getMessage(), [
+            Log::error('Error in saveadjustinvoicereport: ' . $e->getMessage(), [
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1209,7 +1221,7 @@ class ClientAccountsController extends Controller
                         $lastEntryData['created_at'] = $currentTimestamp;
                         $lastEntryData['validate_receipt'] = 0;
                         $lastEntryData['void_invoice'] = 0;
-                        $lastEntryData['invoice_status'] = isset($lastEntryData['invoice_status']) ? $lastEntryData['invoice_status'] : $invoice_status;
+                        $lastEntryData['invoice_status'] = $lastEntryData['invoice_status'] ?? 0;
                         $lastEntryData['save_type'] = isset($lastEntryData['save_type']) ? $lastEntryData['save_type'] : $requestData['save_type'];
                         $lastEntryData['hubdoc_sent'] = 0;
                         DB::table('account_client_receipts')->insert($lastEntryData);
@@ -1238,7 +1250,7 @@ class ClientAccountsController extends Controller
         }
         return response()->json($response);
         } catch (\Exception $e) {
-            \Log::error('Error in saveinvoicereport: ' . $e->getMessage(), [
+            Log::error('Error in saveinvoicereport: ' . $e->getMessage(), [
                 'request_data' => $request->except(['document_upload']),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1477,7 +1489,7 @@ class ClientAccountsController extends Controller
            $obj->file_name = $nameWithoutExtension;
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
-           $obj->myfile = Storage::disk('s3')->url($filePath);
+           $obj->myfile = $this->s3PublicUrl($filePath);
            $obj->myfile_key = $name;
            $obj->client_id = $requestData['client_id'];
            $obj->type = $request->type;
@@ -1515,7 +1527,7 @@ class ClientAccountsController extends Controller
       for ($i = 0; $i < count($requestData['trans_date']); $i++) {
           // Validate required fields for this transaction
           if (empty($requestData['trans_date'][$i]) || empty($requestData['deposit_amount'][$i])) {
-              \Log::warning('Skipping office receipt entry due to missing required fields', [
+              Log::warning('Skipping office receipt entry due to missing required fields', [
                   'index' => $i,
                   'trans_date' => $requestData['trans_date'][$i] ?? 'missing',
                   'deposit_amount' => $requestData['deposit_amount'][$i] ?? 'missing'
@@ -1577,7 +1589,7 @@ class ClientAccountsController extends Controller
                   }
               }
           } catch (\Exception $e) {
-              \Log::error('Error inserting office receipt entry', [
+              Log::error('Error inserting office receipt entry', [
                   'index' => $i,
                   'error' => $e->getMessage(),
                   'trace' => $e->getTraceAsString()
@@ -1610,7 +1622,7 @@ class ClientAccountsController extends Controller
                       if ($invoice) {
                           // Check if invoice is voided - skip if voided
                           if (!empty($invoice->void_invoice) && $invoice->void_invoice == 1) {
-                              \Log::warning('Attempted to match receipt to voided invoice', [
+                              Log::warning('Attempted to match receipt to voided invoice', [
                                   'invoice_no' => $invoiceNo,
                                   'client_id' => $requestData['client_id']
                               ]);
@@ -1671,7 +1683,7 @@ class ClientAccountsController extends Controller
                                   'updated_at' => now(),
                               ]);
 
-                          \Log::info('Invoice status updated after office receipt creation', [
+                          Log::info('Invoice status updated after office receipt creation', [
                               'invoice_no' => $invoiceNo,
                               'total_paid' => $totalPaid,
                               'new_balance' => $newBalance,
@@ -1679,13 +1691,13 @@ class ClientAccountsController extends Controller
                               'client_id' => $requestData['client_id']
                           ]);
                       } else {
-                          \Log::warning('Invoice not found for receipt matching', [
+                          Log::warning('Invoice not found for receipt matching', [
                               'invoice_no' => $invoiceNo,
                               'client_id' => $requestData['client_id']
                           ]);
                       }
                   } catch (\Exception $e) {
-                      \Log::error('Error updating invoice status in saveofficereport', [
+                      Log::error('Error updating invoice status in saveofficereport', [
                           'invoice_no' => $invoiceNo,
                           'error' => $e->getMessage(),
                           'trace' => $e->getTraceAsString()
@@ -1769,7 +1781,7 @@ class ClientAccountsController extends Controller
 
       return response()->json($response, 200);
       } catch (\Exception $e) {
-          \Log::error('Error in saveofficereport: ' . $e->getMessage(), [
+          Log::error('Error in saveofficereport: ' . $e->getMessage(), [
               'request_data' => $request->except(['document_upload']),
               'trace' => $e->getTraceAsString()
           ]);
@@ -1833,7 +1845,7 @@ class ClientAccountsController extends Controller
            $obj->file_name = $nameWithoutExtension;
            $obj->filetype = $fileExtension;
            $obj->user_id = Auth::user()->id;
-           $obj->myfile = Storage::disk('s3')->url($filePath);
+           $obj->myfile = $this->s3PublicUrl($filePath);
            $obj->myfile_key = $name;
            $obj->client_id = $requestData['client_id'];
            $obj->type = $request->type;
@@ -2687,7 +2699,7 @@ class ClientAccountsController extends Controller
       }
         return response()->json($response);
       } catch (\Exception $e) {
-          \Log::error('Error in savejournalreport: ' . $e->getMessage(), [
+          Log::error('Error in savejournalreport: ' . $e->getMessage(), [
               'request_data' => $request->except(['document_upload']),
               'trace' => $e->getTraceAsString()
           ]);
@@ -3006,7 +3018,7 @@ class ClientAccountsController extends Controller
           
           // Upload to S3
           Storage::disk('s3')->put($filePath, $pdfContent);
-          $s3Url = Storage::disk('s3')->url($filePath);
+          $s3Url = $this->s3PublicUrl($filePath);
           
           // Get authenticated user ID
           $userId = Auth::check() ? Auth::user()->id : 1;
@@ -3201,7 +3213,7 @@ class ClientAccountsController extends Controller
                DB::rollBack();
                // Clean up S3 file if database operations failed
                Storage::disk('s3')->delete($filePath);
-               \Log::error('Document upload failed', [
+               Log::error('Document upload failed', [
                    'error' => $e->getMessage(),
                    'client_id' => $id,
                    'receipt_id' => $receipt_id
@@ -3260,7 +3272,7 @@ class ClientAccountsController extends Controller
                                $explodeimg = explode('.',$fetch->myfile);
                                if($explodeimg[1] == 'jpg'|| $explodeimg[1] == 'png'|| $explodeimg[1] == 'jpeg'){
                                ?>
-                                   <a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
+                                   <a target="_blank" class="dropdown-item" href="<?php echo URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
                                <?php } ?>
 
                                <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
@@ -3427,7 +3439,7 @@ class ClientAccountsController extends Controller
                DB::rollBack();
                // Clean up S3 file if database operations failed
                Storage::disk('s3')->delete($filePath);
-               \Log::error('Office receipt document upload failed', [
+               Log::error('Office receipt document upload failed', [
                    'error' => $e->getMessage(),
                    'client_id' => $id,
                    'receipt_id' => $receipt_id
@@ -3486,7 +3498,7 @@ class ClientAccountsController extends Controller
                                $explodeimg = explode('.',$fetch->myfile);
                                if($explodeimg[1] == 'jpg'|| $explodeimg[1] == 'png'|| $explodeimg[1] == 'jpeg'){
                                ?>
-                                   <a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
+                                   <a target="_blank" class="dropdown-item" href="<?php echo URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
                                <?php } ?>
 
                                <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
@@ -3652,7 +3664,7 @@ class ClientAccountsController extends Controller
                DB::rollBack();
                // Clean up S3 file if database operations failed
                Storage::disk('s3')->delete($filePath);
-               \Log::error('Journal receipt document upload failed', [
+               Log::error('Journal receipt document upload failed', [
                    'error' => $e->getMessage(),
                    'client_id' => $id,
                    'receipt_id' => $receipt_id
@@ -3710,7 +3722,7 @@ class ClientAccountsController extends Controller
                                $explodeimg = explode('.',$fetch->myfile);
                                if($explodeimg[1] == 'jpg'|| $explodeimg[1] == 'png'|| $explodeimg[1] == 'jpeg'){
                                ?>
-                                   <a target="_blank" class="dropdown-item" href="<?php echo \URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
+                                   <a target="_blank" class="dropdown-item" href="<?php echo URL::to('/document/download/pdf'); ?>/<?php echo $fetch->id; ?>">PDF</a>
                                <?php } ?>
 
                                <a download class="dropdown-item" href="<?php echo $url.$client_id.'/'.$doctype.'/'.$fetch->myfile; ?>">Download</a>
@@ -3871,7 +3883,7 @@ class ClientAccountsController extends Controller
   }
 
   public function void_invoice(Request $request){
-      \Log::info('========== VOID_INVOICE CALLED ==========', ['request' => $request->all()]);
+      Log::info('========== VOID_INVOICE CALLED ==========', ['request' => $request->all()]);
       
       $response = array();
       if( isset($request->clickedReceiptIds) && !empty($request->clickedReceiptIds) ){
@@ -3895,7 +3907,7 @@ class ClientAccountsController extends Controller
                    ->first();
                
                // DEBUG: Add to log
-               \Log::info('VOID INVOICE - Got invoice_info', [
+               Log::info('VOID INVOICE - Got invoice_info', [
                    'clicked_receipt_id' => $clickedVal,
                    'invoice_info' => $invoice_info ? $invoice_info->toArray() : 'NULL'
                ]);
@@ -3951,7 +3963,7 @@ class ClientAccountsController extends Controller
                // Find all fee transfers linked to this invoice
                // Try multiple methods to find related fee transfers
                
-               \Log::info('Starting fee transfer search', [
+               Log::info('Starting fee transfer search', [
                    'invoice_info' => [
                        'client_id' => $invoice_info->client_id ?? 'NULL',
                        'client_matter_id' => $invoice_info->client_matter_id ?? 'NULL',
@@ -3984,7 +3996,7 @@ class ClientAccountsController extends Controller
                        ->where('client_id', $invoice_info->client_id)
                        ->get();
                    
-                   \Log::error('Fee transfer NOT found - Debug Info', [
+                   Log::error('Fee transfer NOT found - Debug Info', [
                        'searching_for' => [
                            'invoice_no' => $invoice_info->invoice_no,
                            'client_id' => $invoice_info->client_id,
@@ -3996,7 +4008,7 @@ class ClientAccountsController extends Controller
                
                // Method 2: If no results, search by invoice amount and NOT already voided
                if(count($feeTransfers) == 0){
-                   \Log::info('No fee transfers found by invoice_no, trying by amount and date', [
+                   Log::info('No fee transfers found by invoice_no, trying by amount and date', [
                        'invoice_amount' => $invoiceAmount
                    ]);
                    
@@ -4026,7 +4038,7 @@ class ClientAccountsController extends Controller
                }
 
                // Debug: Log what we found
-               \Log::info('Void Invoice - Fee Transfer Search Results', [
+               Log::info('Void Invoice - Fee Transfer Search Results', [
                    'search_invoice_no' => $invoice_info->invoice_no,
                    'invoice_trans_no' => $invoice_info->trans_no,
                    'client_id' => $invoice_info->client_id,
@@ -4070,7 +4082,7 @@ class ClientAccountsController extends Controller
                            $reversal_activity->pin = 0;
                            $reversal_activity->save();
                            
-                           \Log::info('Fee Transfer marked as voided', [
+                           Log::info('Fee Transfer marked as voided', [
                                'fee_transfer_id' => $feeTransfer->id,
                                'trans_no' => $feeTransfer->trans_no,
                                'amount' => $withdrawAmount
@@ -4105,7 +4117,7 @@ class ClientAccountsController extends Controller
                            ->update(['balance_amount' => $runningBalance]);
                    }
                    
-                   \Log::info('Client Funds Ledger balances recalculated', [
+                   Log::info('Client Funds Ledger balances recalculated', [
                        'client_id' => $invoice_info->client_id,
                        'final_balance' => $runningBalance,
                        'entries_processed' => count($allEntries)
@@ -4482,7 +4494,7 @@ class ClientAccountsController extends Controller
           return response()->json($response);
           
       } catch (\Exception $e) {
-          \Log::error('Error validating receipt: ' . $e->getMessage(), [
+          Log::error('Error validating receipt: ' . $e->getMessage(), [
               'receipt_ids' => $request->clickedReceiptIds ?? null,
               'receipt_type' => $request->receipt_type ?? null,
               'trace' => $e->getTraceAsString()
@@ -4502,8 +4514,8 @@ class ClientAccountsController extends Controller
       if (isset($request->receiptId) && !empty($request->receiptId)) {
           // Ensure the user is a Super Admin (role = 1)
           // Optionally check for specific authorized email from config
-          $authorizedEmail = config('app.super_admin_email', 'celestyparmar.62@gmail.com');
-          if (Auth::user()->role != '1' || (config('app.require_super_admin_email', false) && Auth::user()->email != $authorizedEmail)) {
+          $authorizedEmail = config('app.super_admin_email');
+          if (Auth::user()->role != '1' || (config('app.require_super_admin_email') && Auth::user()->email != $authorizedEmail)) {
            $response['status'] = false;
            $response['message'] = 'Unauthorized access.';
            return response()->json($response);
@@ -4719,7 +4731,7 @@ class ClientAccountsController extends Controller
         
         // Upload to S3
         Storage::disk('s3')->put($filePath, $pdfContent);
-        $s3Url = Storage::disk('s3')->url($filePath);
+        $s3Url = $this->s3PublicUrl($filePath);
         
         // Get authenticated user ID
         $userId = Auth::check() ? Auth::user()->id : 1;
@@ -4756,7 +4768,7 @@ class ClientAccountsController extends Controller
         }
         
     } catch (\Exception $e) {
-        \Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
+        Log::error('PDF Generation/Upload Error: ' . $e->getMessage(), [
          'receipt_id' => $id,
          'trace' => $e->getTraceAsString()
         ]);
@@ -4765,6 +4777,150 @@ class ClientAccountsController extends Controller
         return $pdf->stream('Receipt-' . ($record_get->trans_no ?? $id) . '.pdf');
     }
 }
+
+    /**
+     * Fix wrong matter on a client fund receipt (receipt_type=1): set client_matter_id, then regenerate PDF.
+     * Requires auth:admin. Does not alter genClientFundReceipt logic — redirects with ?regenerate=1.
+     *
+     * Matter (one required): matter=PSA_1 or matter_no=PSA_1 (client_unique_matter_no for this receipt's client),
+     * or client_matter_id as numeric id, or client_matter_id=PSA_1 (same short code).
+     *
+     * Receipt: /clients/fix-client-fund-receipt-matter/{id}?matter=PSA_1
+     * Or: ?trans_no=CFL-5033&client_id={admins.id}&matter=PSA_1
+     * Optional: &download=1
+     *
+     * @param  int|null  $id  Receipt row id when using path form
+     */
+    public function fixClientFundReceiptMatterAndRegenerate(Request $request, $id = null)
+    {
+        $receiptId = null;
+        if ($id !== null && $id !== '') {
+            if (!ctype_digit((string) $id)) {
+                abort(422, 'Receipt id must be numeric.');
+            }
+            $receiptId = (int) $id;
+        } elseif ($request->filled('receipt_id')) {
+            $rid = $request->query('receipt_id');
+            if (!ctype_digit((string) $rid)) {
+                abort(422, 'receipt_id must be a positive integer.');
+            }
+            $receiptId = (int) $rid;
+        } elseif ($request->filled('trans_no') && $request->filled('client_id')) {
+            $transNo = trim((string) $request->query('trans_no'));
+            $clientId = $request->query('client_id');
+            if ($transNo === '' || !ctype_digit((string) $clientId)) {
+                abort(422, 'trans_no and client_id (numeric admins.id) are required when not using receipt id.');
+            }
+            $clientId = (int) $clientId;
+            $matches = DB::table('account_client_receipts')
+                ->where('receipt_type', 1)
+                ->where('client_id', $clientId)
+                ->where('trans_no', $transNo)
+                ->pluck('id');
+            if ($matches->isEmpty()) {
+                abort(404, 'No client fund receipt found for that trans_no and client_id.');
+            }
+            if ($matches->count() > 1) {
+                abort(422, 'Multiple receipts match trans_no and client_id; use receipt id in URL with matter= or client_matter_id=.');
+            }
+            $receiptId = (int) $matches->first();
+        } else {
+            abort(422, 'Provide receipt id in path, or receipt_id=, or trans_no= and client_id=.');
+        }
+
+        $receipt = DB::table('account_client_receipts')
+            ->where('id', $receiptId)
+            ->where('receipt_type', 1)
+            ->first();
+
+        if (!$receipt) {
+            abort(404, 'Client fund receipt not found.');
+        }
+
+        $resolvedClientMatterId = $this->resolveClientMatterIdForReceiptFix($request, $receipt->client_id);
+        if ($resolvedClientMatterId === null) {
+            abort(422, 'Provide the target matter: matter=PSA_1 (or matter_no=), or client_matter_id as numeric id or short code (client_unique_matter_no).');
+        }
+
+        DB::table('account_client_receipts')
+            ->where('id', $receiptId)
+            ->where('receipt_type', 1)
+            ->update(['client_matter_id' => $resolvedClientMatterId]);
+
+        Log::info('Client fund receipt matter fixed and PDF queued for regenerate', [
+            'receipt_id' => $receiptId,
+            'client_matter_id' => $resolvedClientMatterId,
+            'admin_id' => Auth::guard('admin')->id(),
+        ]);
+
+        $query = ['regenerate' => '1'];
+        if ($request->boolean('download')) {
+            $query['download'] = '1';
+        }
+
+        return redirect()->to(url('/clients/genClientFundReceipt/' . $receiptId . '?' . http_build_query($query)));
+    }
+
+    /**
+     * Resolve client_matters.id from matter short code or numeric id (scoped to receipt's client).
+     * Priority: matter / matter_no query → else client_matter_id (digits = id, else = client_unique_matter_no).
+     *
+     * @param  int|string  $receiptClientId  admins.id for the client
+     * @return int|null Missing matter params
+     */
+    private function resolveClientMatterIdForReceiptFix(Request $request, $receiptClientId): ?int
+    {
+        $receiptClientId = (int) $receiptClientId;
+        $shortCode = null;
+        if ($request->filled('matter')) {
+            $shortCode = trim((string) $request->query('matter'));
+        } elseif ($request->filled('matter_no')) {
+            $shortCode = trim((string) $request->query('matter_no'));
+        }
+
+        if ($shortCode !== null && $shortCode !== '') {
+            $matter = DB::table('client_matters')
+                ->where('client_id', $receiptClientId)
+                ->where('client_unique_matter_no', $shortCode)
+                ->first();
+            if (!$matter) {
+                abort(404, 'No matter found for this client with short code (client_unique_matter_no): ' . $shortCode);
+            }
+
+            return (int) $matter->id;
+        }
+
+        if (!$request->filled('client_matter_id')) {
+            return null;
+        }
+
+        $raw = trim((string) $request->query('client_matter_id'));
+        if ($raw === '') {
+            return null;
+        }
+
+        if (ctype_digit($raw) && (int) $raw > 0) {
+            $matter = DB::table('client_matters')
+                ->where('id', (int) $raw)
+                ->where('client_id', $receiptClientId)
+                ->first();
+            if (!$matter) {
+                abort(403, 'client_matter_id must refer to a matter belonging to the same client as this receipt.');
+            }
+
+            return (int) $matter->id;
+        }
+
+        $matter = DB::table('client_matters')
+            ->where('client_id', $receiptClientId)
+            ->where('client_unique_matter_no', $raw)
+            ->first();
+        if (!$matter) {
+            abort(404, 'No matter found for this client with client_unique_matter_no: ' . $raw);
+        }
+
+        return (int) $matter->id;
+    }
 
 public function genofficereceiptInvoice(Request $request, $id){
     $record_get = DB::table('account_client_receipts')->where('receipt_type',2)->where('id',$id)->first();
@@ -4891,7 +5047,7 @@ public function genofficereceiptInvoice(Request $request, $id){
         
         // Upload to S3
         Storage::disk('s3')->put($filePath, $pdfContent);
-        $s3Url = Storage::disk('s3')->url($filePath);
+        $s3Url = $this->s3PublicUrl($filePath);
         
         // Get authenticated user ID
         $userId = Auth::check() ? Auth::user()->id : 1;
@@ -4983,7 +5139,7 @@ public function genofficereceiptInvoice(Request $request, $id){
          $obj->file_name = $nameWithoutExtension;
          $obj->filetype = $fileExtension;
          $obj->user_id = Auth::user()->id;
-         $obj->myfile = Storage::disk('s3')->url($filePath);
+         $obj->myfile = $this->s3PublicUrl($filePath);
          $obj->myfile_key = $name;
          $obj->client_id = $requestData['client_id'];
          $obj->type = $request->type;
@@ -5078,7 +5234,7 @@ public function genofficereceiptInvoice(Request $request, $id){
         $subject = "updated client funds ledger entry. Reference no- {$entry->trans_no}";
         $activity = new \App\Models\ActivitiesLog;
         $activity->client_id = $entry->client_id;
-        $activity->created_by = auth()->user()->id;
+        $activity->created_by = Auth::guard('admin')->id();
         $activity->description = '';
         $activity->subject = $subject;
         $activity->task_status = 0;
@@ -5134,7 +5290,7 @@ public function updateClientFundsLedger(Request $request)
          $obj->file_name = $nameWithoutExtension;
          $obj->filetype = $fileExtension;
          $obj->user_id = Auth::user()->id;
-         $obj->myfile = Storage::disk('s3')->url($filePath);
+         $obj->myfile = $this->s3PublicUrl($filePath);
          $obj->myfile_key = $name;
          $obj->client_id = $requestData['client_id'];
          $obj->type = $request->type;
@@ -5209,7 +5365,9 @@ public function updateClientFundsLedger(Request $request)
         }
 
         // Log activity
-        $userName = auth()->user()->first_name . ' ' . auth()->user()->last_name;
+        /** @var \App\Models\Admin|null $staff */
+        $staff = Auth::guard('admin')->user();
+        $userName = $staff ? trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? '')) : 'Staff';
         $transactionType = $deposit_amount > 0 ? 'Deposit' : 'Withdrawal';
         $amount = $deposit_amount > 0 ? $deposit_amount : $withdraw_amount;
         $formattedAmount = '$' . number_format($amount, 2);
@@ -5237,7 +5395,7 @@ public function updateClientFundsLedger(Request $request)
         
         $activity = new \App\Models\ActivitiesLog;
         $activity->client_id = $entry->client_id;
-        $activity->created_by = auth()->user()->id;
+        $activity->created_by = Auth::guard('admin')->id();
         $activity->description = $descriptionText;
         $activity->subject = $subject;
         $activity->activity_type = 'financial';
@@ -5418,7 +5576,7 @@ public function getInvoiceAmount(Request $request)
          }
 
          // Generate PDF with optimized settings
-         $pdf = \PDF::setOptions([
+         $pdf = PDF::setOptions([
              'isHtml5ParserEnabled' => true, 
              'isRemoteEnabled' => true,
              'logOutputFile' => storage_path('logs/log.htm'),

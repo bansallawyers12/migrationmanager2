@@ -110,6 +110,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Super admin – receipt deletion (CRM)
+    |--------------------------------------------------------------------------
+    |
+    | delete_receipt allows role 1 only; set REQUIRE_SUPER_ADMIN_EMAIL=true to
+    | also require the logged-in admin’s email to match SUPER_ADMIN_EMAIL.
+    |
+    */
+
+    'super_admin_email' => env('SUPER_ADMIN_EMAIL', 'celestyparmar.62@gmail.com'),
+
+    'require_super_admin_email' => filter_var(env('REQUIRE_SUPER_ADMIN_EMAIL', false), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
     | Autoloaded Service Providers
     |--------------------------------------------------------------------------
     |
@@ -211,7 +225,7 @@ return [
         'Arr' => Illuminate\Support\Arr::class,
         'Carbon' => Carbon\Carbon::class,
 		'Html' => Spatie\Html\Facades\Html::class,
-		'PDF' => Barryvdh\DomPDF\Facade::class,
+		'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
 		'Excel' =>  Maatwebsite\Excel\Facades\Excel::class,
 		'Settings' => App\Helpers\Settings::class,
         'Helper' => App\Helpers\Helper::class,
