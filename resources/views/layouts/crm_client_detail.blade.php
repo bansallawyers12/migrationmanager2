@@ -393,7 +393,7 @@
             display: none;
         }
         
-        /* Sidebar Client/Lead Buttons */
+        /* Sidebar Lead Badge (shown only for leads; hidden once converted to client) */
         .sidebar-client-lead-buttons {
             display: flex;
             gap: 10px;
@@ -415,16 +415,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         
-        .status-btn-client {
-            background-color: #e2e8f0;
-            color: #475569;
-        }
-        
-        .status-btn-client.active {
-            background-color: #10b981;
-            color: #ffffff;
-        }
-        
         .status-btn-lead {
             background-color: #e2e8f0;
             color: #475569;
@@ -440,12 +430,12 @@
             opacity: 0.9;
         }
 
-        .status-badge {
+        .lead-status-badge {
             cursor: default;
             pointer-events: none;
         }
 
-        .status-badge:hover {
+        .lead-status-badge:hover {
             transform: none;
             opacity: 1;
         }

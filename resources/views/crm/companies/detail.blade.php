@@ -83,7 +83,7 @@ use App\Http\Controllers\Controller;
             <!-- Lead status badge (conversion action is handled in Checklist tab) -->
             @if(($fetchedData->type ?? '') === 'lead')
             <div class="sidebar-client-lead-buttons">
-                <span class="status-btn status-btn-lead status-badge active">Lead</span>
+                <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
             </div>
             @endif
             
