@@ -2018,22 +2018,9 @@ success: function(response) {
 
                 if( activeTab == 'noteterm' ) {
 
-                    // Apply combined matter and task group filtering
-                    const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
-                    
-                    $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                        const noteType = $(this).data('type');
-                        
-                        let showNote = true;
-                        if (activeTaskGroup !== 'All') {
-                            showNote = (noteType === activeTaskGroup);
-                        }
-                        if (showNote) {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
-                    });
+                    if (typeof window.filterNotes === 'function') {
+                        window.filterNotes();
+                    }
 
                 }
 

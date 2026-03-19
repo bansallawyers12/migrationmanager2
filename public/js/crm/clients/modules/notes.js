@@ -100,6 +100,11 @@
             $('#create_note_d input[name="mailid"]').val(0);
             $('#create_note_d input[name="title"]').val("Matter Discussion");
             $('#create_note_d #appliationModalLabel').html('Create Note');
+
+            // Pre-select the currently active matter so notes are saved under the right matter
+            var activeMatterId = $('#sel_matter_id_client_detail').val() || '';
+            $('#create_note_d select[name="matter_id"]').val(activeMatterId);
+
             if ($(this).attr('datatype') == 'note') {
                 $('.is_not_note').hide();
             } else {
