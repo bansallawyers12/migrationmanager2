@@ -142,28 +142,6 @@ Route::post('/payments/create-payment-intent', function (Request $request) {
 // Blog routes (list is public; detail requires authentication — see auth:sanctum group)
 Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
 
-// PR Point Calculator routes (public)
-Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
-Route::post('/pr-point-calc-result', [OthersController::class, 'calculatePrPointsResult']);
-
-// Student Calculator routes (public)
-Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
-Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
-
-// Occupation Finder (public)
-Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
-
-// Postcode Checker routes (public)
-Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
-Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
-
-// Visa Estimate routes (public - no authentication required)
-// Reference: https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator
-Route::prefix('visa-estimate')->name('visa-estimate.')->group(function () {
-    Route::get('/visa-list', [VisaPricingEstimatorController::class, 'getVisaList']);
-    Route::post('/estimate', [VisaPricingEstimatorController::class, 'getEstimate']);
-});
-
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [ClientPortalController::class, 'logout']);
@@ -175,6 +153,28 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Blog detail (authenticated only; list remains public)
     Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
+
+    // PR Point Calculator (authenticated — client portal Sanctum)
+    Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
+    Route::post('/pr-point-calc-result', [OthersController::class, 'calculatePrPointsResult']);
+
+    // Student Calculator (authenticated)
+    Route::get('/student-calc-lists', [OthersController::class, 'getStudentCalcLists']);
+    Route::post('/student-calc-result', [OthersController::class, 'calculateStudentFinancialRequirements']);
+
+    // Occupation Finder (authenticated)
+    Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
+
+    // Postcode Checker (authenticated)
+    Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
+    Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
+
+    // Visa Estimate (authenticated)
+    // Reference: https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator
+    Route::prefix('visa-estimate')->name('visa-estimate.')->group(function () {
+        Route::get('/visa-list', [VisaPricingEstimatorController::class, 'getVisaList']);
+        Route::post('/estimate', [VisaPricingEstimatorController::class, 'getEstimate']);
+    });
     
     // Dashboard routes
     Route::get('/dashboard', [ClientPortalDashboardController::class, 'dashboard']);

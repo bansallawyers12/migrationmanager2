@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 /**
  * Visa Pricing Estimator API
  *
+ * Routes require client portal authentication (auth:sanctum).
+ *
  * Mirrors the Australian Department of Home Affairs Visa Pricing Estimator:
  * https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator
  */
