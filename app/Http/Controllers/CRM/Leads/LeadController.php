@@ -763,7 +763,7 @@ class LeadController extends Controller
             ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
             ->get() ?? collect();
         $clientTravels = \App\Models\ClientTravelInformation::where('client_id', $id)
-            ->orderByRaw('travel_arrival_date ASC NULLS LAST')
+            ->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')
             ->get() ?? collect();
         $visaTypes = \App\Models\Matter::where('title', 'not like', '%skill assessment%')
             ->where('status', 1)

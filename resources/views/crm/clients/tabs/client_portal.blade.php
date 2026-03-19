@@ -783,7 +783,7 @@
                                                     $visaCountriesForDetails = isset($visaCountries) ? $visaCountries : \App\Models\ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id')->get();
                                                     // Visa: use source + clientportal_details_audit (same as Basic Details / API)
                                                     $visasMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedVisasForClient($clientId);
-                                                    $clientTravelsForDetails = isset($clientTravels) ? $clientTravels : \App\Models\ClientTravelInformation::where('client_id', $clientId)->orderBy('id')->get();
+                                                    $clientTravelsForDetails = isset($clientTravels) ? $clientTravels : \App\Models\ClientTravelInformation::where('client_id', $clientId)->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')->get();
                                                     // Qualifications: use source + clientportal_details_audit (same as Passport section)
                                                     $qualificationsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedQualificationsForClient($clientId);
                                                     // Work Experience: use source + clientportal_details_audit (same as Qualification section)

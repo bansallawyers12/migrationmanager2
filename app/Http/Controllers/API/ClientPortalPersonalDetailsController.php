@@ -2876,7 +2876,7 @@ class ClientPortalPersonalDetailsController extends Controller
         
         $clientTravels = DB::table('client_travel_informations')
             ->where('client_id', $clientId)
-            ->orderBy('id')
+            ->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')
             ->get();
 
         foreach ($clientTravels as $travel) {

@@ -3580,7 +3580,7 @@ class ClientPortalController extends Controller
 		$clientAddresses = ClientAddress::where('client_id', $clientId)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
 		$clientPassports = ClientPassportInformation::where('client_id', $clientId)->orderBy('id')->get();
 		$visaCountries = ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id')->get();
-		$clientTravels = ClientTravelInformation::where('client_id', $clientId)->orderBy('id')->get();
+		$clientTravels = ClientTravelInformation::where('client_id', $clientId)->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')->get();
 		$qualifications = ClientQualification::where('client_id', $clientId)->orderByRaw('finish_date DESC NULLS LAST')->get();
 		$experiences = ClientExperience::where('client_id', $clientId)->orderByRaw('job_finish_date DESC NULLS LAST')->get();
 		$clientOccupations = ClientOccupation::where('client_id', $clientId)->get();
