@@ -321,8 +321,12 @@
                         // Type matching
                         const typeMatch = (type === 'All' || cardType === type);
                         
-                        // Show all client notes regardless of selected matter
-                        const matterMatch = true;
+                        // Matter matching: filter by selected matter
+                        let matterMatch = true;
+                        if (selectedMatter && selectedMatter !== '') {
+                            const cardMatter = card.getAttribute('data-matterid');
+                            matterMatch = (cardMatter == selectedMatter);
+                        }
                         
                         // Text search matching
                         let searchMatch = true;

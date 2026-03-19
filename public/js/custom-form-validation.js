@@ -2199,36 +2199,12 @@ function customValidate(formName, savetype = '')
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
 											$('.note_term_list').html(responses);
-                                            // Read task group from the current form only (avoid duplicate ID collisions)
-                                            const createdTaskGroup = $(`form[name="${formName}"] select[name="task_group"]`).val();
-                                            
-                                            // Auto-switch to the correct task group tab
-                                            if (createdTaskGroup && createdTaskGroup !== '') {
-                                                $('.subtab8-button').removeClass('active');
-                                                $('.subtab8-pane').removeClass('active');
-                                                $(`[data-subtab8="${createdTaskGroup}"]`).addClass('active');
-                                                $(`#${createdTaskGroup}-subtab8`).addClass('active');
-                                            }
-                                            
-                                            const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
-                                            $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                                                const noteType = $(this).data('type');
-                                                let showNote = true;
-                                                if (activeTaskGroup !== 'All') {
-                                                    showNote = (noteType === activeTaskGroup);
-                                                }
-                                                if (showNote) {
-                                                    $(this).show();
-                                                } else {
-                                                    $(this).hide();
-                                                }
-                                            });
+											if (typeof window.filterNotes === 'function') {
+												window.filterNotes();
+											}
 										}
 									});
-									//Fetch All Activities
-									console.log('About to call getallactivities with client_id:', client_id);
-                                    getallactivities(client_id);
-									console.log('getallactivities called');
+									getallactivities(client_id);
 								} else {
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
 								}
@@ -2278,36 +2254,12 @@ function customValidate(formName, savetype = '')
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
 											$('.note_term_list').html(responses);
-                                            // Read task group from the current form only (avoid duplicate ID collisions)
-                                            const createdTaskGroup = $(`form[name="${formName}"] select[name="task_group"]`).val();
-                                            
-                                            // Auto-switch to the correct task group tab
-                                            if (createdTaskGroup && createdTaskGroup !== '') {
-                                                $('.subtab8-button').removeClass('active');
-                                                $('.subtab8-pane').removeClass('active');
-                                                $(`[data-subtab8="${createdTaskGroup}"]`).addClass('active');
-                                                $(`#${createdTaskGroup}-subtab8`).addClass('active');
-                                            }
-                                            
-                                            const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
-                                            $('#noteterm-tab').find('.note-card-redesign').each(function() {
-                                                const noteType = $(this).data('type');
-                                                let showNote = true;
-                                                if (activeTaskGroup !== 'All') {
-                                                    showNote = (noteType === activeTaskGroup);
-                                                }
-                                                if (showNote) {
-                                                    $(this).show();
-                                                } else {
-                                                    $(this).hide();
-                                                }
-                                            });
+											if (typeof window.filterNotes === 'function') {
+												window.filterNotes();
+											}
 										}
 									});
-                                    //Fetch All activities
-									console.log('notetermform_n about to call getallactivities with client_id:', client_id);
                                     getallactivities(client_id);
-									console.log('notetermform_n getallactivities called');
 								}else{
 									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
                                 }

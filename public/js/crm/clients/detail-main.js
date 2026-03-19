@@ -2171,17 +2171,18 @@ success: function(response) {
 
             if( activeTab == 'noteterm' ) {
 
-                // Apply combined matter and task group filtering
                 const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
                 
                 $('#noteterm-tab').find('.note-card-redesign').each(function() {
                     const noteType = $(this).data('type');
-                    
-                    let showNote = true;
-                    if (activeTaskGroup !== 'All') {
-                        showNote = (noteType === activeTaskGroup);
+                    const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
+
+                    let matterMatch = true;
+                    if (selectedMatter && selectedMatter !== '') {
+                        matterMatch = ($(this).data('matterid') == selectedMatter);
                     }
-                    if (showNote) {
+
+                    if (typeMatch && matterMatch) {
                         $(this).show();
                     } else {
                         $(this).hide();

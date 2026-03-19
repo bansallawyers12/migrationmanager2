@@ -257,19 +257,18 @@
     function filterNotesByMatter(matterId) {
         // Get the active task group tab (default to 'All' if none active)
         const activeTaskGroup = $('.subtab8-button.active').data('subtab8') || 'All';
-        
+
         $('#noteterm-tab').find('.note-card-redesign').each(function() {
             const $note = $(this);
             const noteType = $note.data('type');
-            
-            // Check type match (All tab shows all types)
+
             const typeMatch = (activeTaskGroup === 'All' || noteType === activeTaskGroup);
-            
-            // Notes tab: show every note for this client (ignore matter filter).
-            // Matter is for URL/context; notes remain visible across all matters.
-            const matterMatch = true;
-            
-            // Show/hide based on both type and matter match
+
+            let matterMatch = true;
+            if (matterId && matterId !== '') {
+                matterMatch = ($note.data('matterid') == matterId);
+            }
+
             if (typeMatch && matterMatch) {
                 $note.show();
             } else {
