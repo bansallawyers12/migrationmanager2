@@ -309,7 +309,7 @@
                                                     <td>
                                                         <div class="action-buttons">
                                                             @if($list->task_group != 'Personal Action')
-                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary update_task" data-container="body" data-role="popover" data-placement="bottom" data-html="true" data-content="<div id='popover-content'>
+                                                                <button type="button" data-noteid="{{ $list->description }}" data-taskid="{{ $list->id }}" data-taskgroupid="{{ $list->task_group }}" data-actiondate="{{ $list->action_date }}" data-bs-toggle="tooltip" title="Update Task" class="btn btn-primary update_task" data-bs-container="body" data-role="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content="<div id='popover-content'>
                                                                     <h4 class='text-center'>Update Task</h4>
                                                                     <div class='clearfix'></div>
                                                                     <div class='box-header with-border'>
