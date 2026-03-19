@@ -2199,8 +2199,8 @@ function customValidate(formName, savetype = '')
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
 											$('.note_term_list').html(responses);
-                                            // Get the task group that was selected when creating the note
-                                            const createdTaskGroup = $('#noteType').val();
+                                            // Read task group from the current form only (avoid duplicate ID collisions)
+                                            const createdTaskGroup = $(`form[name="${formName}"] select[name="task_group"]`).val();
                                             
                                             // Auto-switch to the correct task group tab
                                             if (createdTaskGroup && createdTaskGroup !== '') {
@@ -2278,8 +2278,8 @@ function customValidate(formName, savetype = '')
 										data:{clientid:client_id,type:'client'},
 										success: function(responses){
 											$('.note_term_list').html(responses);
-                                            // Get the task group that was selected when creating the note
-                                            const createdTaskGroup = $('#noteType').val();
+                                            // Read task group from the current form only (avoid duplicate ID collisions)
+                                            const createdTaskGroup = $(`form[name="${formName}"] select[name="task_group"]`).val();
                                             
                                             // Auto-switch to the correct task group tab
                                             if (createdTaskGroup && createdTaskGroup !== '') {

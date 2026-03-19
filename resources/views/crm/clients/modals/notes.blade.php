@@ -25,7 +25,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="task_group">Type <span class="span_req">*</span></label>
-								<select name="task_group" class="form-control" data-valid="required" id="noteType">
+								<select name="task_group" class="form-control" data-valid="required" id="noteTypeSimple">
 								    <option value="">Please Select Note</option>
 								    <option value="Call">Call</option>
 								    <option value="Email">Email</option>
@@ -34,7 +34,7 @@
 								    <option value="Attention">Attention</option>
 								</select>
 								<!-- Container for additional inputs -->
-						        <div id="additionalFields"></div>
+						        <div id="additionalFieldsSimple" class="additional-fields-container"></div>
 								<span class="custom-error task_group_error" role="alert">
 									<strong></strong>
 								</span>
@@ -152,7 +152,7 @@
 									<div class="input-group-prepend">
 										<span class="input-group-text"><i class="fas fa-list"></i></span>
 									</div>
-									<select name="task_group" class="form-control enhanced-select" data-valid="required" id="noteType">
+									<select name="task_group" class="form-control enhanced-select" data-valid="required" id="noteTypeEnhanced">
                                     <option value="">Please Select</option>
 	                                    <option value="Call">📞 Call</option>
 	                                    <option value="Email">📧 Email</option>
@@ -162,7 +162,7 @@
                                 </select>
 								</div>
                                 <!-- Container for additional inputs -->
-						        <div id="additionalFields"></div>
+						        <div id="additionalFieldsEnhanced" class="additional-fields-container"></div>
 
 								<span class="custom-error title_error" role="alert">
 									<strong></strong>

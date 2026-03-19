@@ -5233,11 +5233,11 @@ Bansal Immigration`;
 
 
 
-        $('#noteType').on('change', function() {
+        $(document).on('change', '#noteTypeSimple, #noteTypeEnhanced', function() {
 
             var selectedValue = $(this).val();
 
-            var additionalFields = $("#additionalFields");
+            var additionalFields = $(this).closest('form').find('.additional-fields-container').first();
 
 
 
