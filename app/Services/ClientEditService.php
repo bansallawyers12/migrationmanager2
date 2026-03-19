@@ -151,7 +151,7 @@ class ClientEditService
     protected function getClientAddresses(int $clientId)
     {
         return ClientAddress::where('client_id', $clientId)
-            ->orderBy('created_at', 'desc')
+            ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
             ->get() ?? [];
     }
 

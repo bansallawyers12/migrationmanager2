@@ -760,7 +760,7 @@ class LeadController extends Controller
             ->get() ?? collect();
         $clientPassports = \App\Models\ClientPassportInformation::where('client_id', $id)->get() ?? collect();
         $clientAddresses = \App\Models\ClientAddress::where('client_id', $id)
-            ->orderBy('created_at', 'desc')
+            ->orderByRaw('start_date DESC NULLS LAST, created_at DESC')
             ->get() ?? collect();
         $clientTravels = \App\Models\ClientTravelInformation::where('client_id', $id)
             ->orderByRaw('travel_arrival_date ASC NULLS LAST')
