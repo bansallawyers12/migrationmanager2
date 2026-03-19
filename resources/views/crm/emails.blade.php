@@ -19,7 +19,7 @@
     }
 @endphp
 @php
-    $canDeleteEmail = Auth::user() && Auth::user()->role == 1;
+    $canDeleteEmail = Auth::user() && in_array((int) Auth::user()->role, [1, 12, 16], true);
 @endphp
 <div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->

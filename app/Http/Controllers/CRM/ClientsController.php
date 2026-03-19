@@ -2006,7 +2006,7 @@ class ClientsController extends Controller
             // so that every downstream view receives a clean null $id1.
             $knownTabNames = [
                 'personaldetails', 'noteterm', 'personaldocuments', 'visadocuments',
-                'eoiroi', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal',
+                'eoiroi', 'emails', 'client_portal',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
             ];
             if ($id1 && in_array(strtolower($id1), $knownTabNames)) {
@@ -3676,15 +3676,16 @@ class ClientsController extends Controller
     }
 
     /**
-     * Delete an email log (email). Admin only (role === 1).
+     * Delete an email log (email).
+     * Allowed roles: Super Admin (1), Admin (12), Migration Agent (16).
      */
     public function deleteEmailLog(Request $request, $id)
     {
-        // Restrict to Super Admin only (role 1)
-        if (Auth::user()->role != 1) {
+        // Restrict to Super Admin/Admin/Migration Agent
+        if (!in_array((int) Auth::user()->role, [1, 12, 16], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized: Only admins can delete emails.',
+                'message' => 'Unauthorized: Only admin or migration agent can delete emails.',
             ], 403);
         }
 
