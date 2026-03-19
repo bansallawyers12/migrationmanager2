@@ -562,7 +562,7 @@
                     @csrf
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Instructions:</strong> Upload a JSON file from the client intake form. A new lead will be created and the Notes field will be added as an activity note.
+                        <strong>Instructions:</strong> Upload a JSON file from the lead form. A new lead will be created and the Notes field will be added as an activity note.
                     </div>
 
                     <div class="form-group">
@@ -571,7 +571,7 @@
                             <input type="file" class="custom-file-input" id="import_lead_file" name="import_file" accept=".json" required>
                             <label class="custom-file-label" for="import_lead_file">Choose file...</label>
                         </div>
-                        <small class="form-text text-muted">JSON file from client intake form or exported from CRM.</small>
+                        <small class="form-text text-muted">JSON file from lead form or exported from CRM.</small>
                     </div>
 
                     <div class="form-group">

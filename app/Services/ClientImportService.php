@@ -12,6 +12,8 @@ use App\Models\ClientCharacter;
 use App\Models\ClientVisaCountry;
 use App\Models\ClientTestScore;
 use App\Models\ClientOccupation;
+use App\Models\ClientQualification;
+use App\Models\ClientExperience;
 use App\Models\ActivitiesLog;
 use App\Models\Matter;
 use App\Services\ClientReferenceService;
@@ -60,9 +62,17 @@ class ClientImportService
                 if (!isset($clientData['marital_status']) && isset($clientData['maritalStatus'])) {
                     $clientData['marital_status'] = $clientData['maritalStatus'];
                 }
-                // assessing_authority -> skill_assessment alias
+                // assessing_authority alias:
+                // - if value is Yes/No-like, treat as skill_assessment
+                // - otherwise treat as assessing authority list value
                 if (!isset($clientData['skill_assessment']) && isset($clientData['assessing_authority'])) {
-                    $clientData['skill_assessment'] = $clientData['assessing_authority'];
+                    $aaRaw = trim((string) $clientData['assessing_authority']);
+                    $aaLower = mb_strtolower($aaRaw);
+                    if (in_array($aaLower, ['yes', 'y', 'true', '1', 'no', 'n', 'false', '0'], true)) {
+                        $clientData['skill_assessment'] = $clientData['assessing_authority'];
+                    } elseif (!isset($clientData['list'])) {
+                        $clientData['list'] = $clientData['assessing_authority'];
+                    }
                 }
                 // test_scores: overall -> overall_score alias
                 if (isset($importData['test_scores']) && is_array($importData['test_scores'])) {
@@ -204,18 +214,95 @@ class ClientImportService
             $client->save();
             $newClientId = $client->id;
 
-            // Create occupation record from client-level occupation fields (office_visit_form_v1 and standard import)
-            $nomiOccupation   = $clientData['nomi_occupation'] ?? null;
-            $occupationCode   = $clientData['occupation_code'] ?? null;
-            $skillAssessment  = $clientData['skill_assessment'] ?? ($clientData['assessing_authority'] ?? null);
-            if (!empty($nomiOccupation) || !empty($occupationCode) || !empty($skillAssessment)) {
-                ClientOccupation::create([
-                    'client_id'        => $newClientId,
-                    'admin_id'         => Auth::id(),
-                    'nomi_occupation'  => $nomiOccupation,
-                    'occupation_code'  => $occupationCode,
-                    'skill_assessment' => $skillAssessment,
-                ]);
+            // Import occupations. Prefer top-level "occupations" array for multiple entries.
+            // Backwards-compatible fallback: single client-level occupation fields.
+            $occupationsProvided = isset($importData['occupations']) && is_array($importData['occupations']) && count($importData['occupations']) > 0;
+            if ($occupationsProvided) {
+                foreach ($importData['occupations'] as $occupationData) {
+                    if (!is_array($occupationData)) {
+                        continue;
+                    }
+
+                    $nomiOccupation = $occupationData['nomi_occupation']
+                        ?? $occupationData['nomination_occupation']
+                        ?? $occupationData['nominated_occupation']
+                        ?? null;
+                    $occupationCode = $occupationData['occupation_code'] ?? null;
+                    $skillAssessmentRaw = $occupationData['skill_assessment'] ?? $occupationData['skill_assessment_yes_no'] ?? null;
+                    $skillAssessment = $this->normalizeYesNoValue($skillAssessmentRaw);
+                    if ($skillAssessment === null && is_string($skillAssessmentRaw) && trim($skillAssessmentRaw) !== '') {
+                        $skillAssessment = trim($skillAssessmentRaw);
+                    }
+
+                    $assessingAuthority = $occupationData['list'] ?? $occupationData['assessing_authority'] ?? null;
+                    $visaSubclass = $occupationData['visa_subclass'] ?? null;
+                    $assessmentDate = $this->parseDate($occupationData['dates'] ?? $occupationData['assessment_date'] ?? null);
+                    $expiryDate = $this->parseDate($occupationData['expiry_dates'] ?? $occupationData['expiry_date'] ?? null);
+                    $relevantOccupation = $this->parseBooleanFlag($occupationData['relevant_occupation'] ?? null, 0);
+                    $referenceNo = $occupationData['occ_reference_no'] ?? $occupationData['reference_no'] ?? null;
+                    $anzscoOccupationId = $occupationData['anzsco_occupation_id'] ?? null;
+
+                    $hasOccupationData =
+                        !empty($nomiOccupation) ||
+                        !empty($occupationCode) ||
+                        !empty($skillAssessment) ||
+                        !empty($assessingAuthority) ||
+                        !empty($visaSubclass) ||
+                        !empty($assessmentDate) ||
+                        !empty($expiryDate) ||
+                        $relevantOccupation === 1 ||
+                        !empty($referenceNo) ||
+                        !empty($anzscoOccupationId);
+
+                    if (!$hasOccupationData) {
+                        continue;
+                    }
+
+                    ClientOccupation::create([
+                        'client_id'            => $newClientId,
+                        'admin_id'             => Auth::id(),
+                        'skill_assessment'     => $skillAssessment,
+                        'nomi_occupation'      => $nomiOccupation,
+                        'occupation_code'      => $occupationCode,
+                        'list'                 => $assessingAuthority,
+                        'visa_subclass'        => $visaSubclass,
+                        'dates'                => $assessmentDate,
+                        'expiry_dates'         => $expiryDate,
+                        'relevant_occupation'  => $relevantOccupation,
+                        'occ_reference_no'     => $referenceNo,
+                        'anzsco_occupation_id' => (is_numeric($anzscoOccupationId) ? (int) $anzscoOccupationId : null),
+                    ]);
+                }
+            } else {
+                // Fallback: single occupation from client-level fields (legacy format).
+                $nomiOccupation = $clientData['nomi_occupation']
+                    ?? $clientData['nomination_occupation']
+                    ?? $clientData['nominated_occupation']
+                    ?? null;
+                $occupationCode = $clientData['occupation_code'] ?? null;
+                $skillAssessmentRaw = $clientData['skill_assessment'] ?? null;
+                $skillAssessment = $this->normalizeYesNoValue($skillAssessmentRaw);
+                if ($skillAssessment === null && is_string($skillAssessmentRaw) && trim($skillAssessmentRaw) !== '') {
+                    $skillAssessment = trim($skillAssessmentRaw);
+                }
+                $assessingAuthority = $clientData['list'] ?? $clientData['assessing_authority'] ?? null;
+                $assessmentDate = $this->parseDate($clientData['dates'] ?? null);
+                $expiryDate = $this->parseDate($clientData['expiry_dates'] ?? null);
+                $relevantOccupation = $this->parseBooleanFlag($clientData['relevant_occupation'] ?? null, 0);
+
+                if (!empty($nomiOccupation) || !empty($occupationCode) || !empty($skillAssessment) || !empty($assessingAuthority) || !empty($assessmentDate) || !empty($expiryDate) || $relevantOccupation === 1) {
+                    ClientOccupation::create([
+                        'client_id'           => $newClientId,
+                        'admin_id'            => Auth::id(),
+                        'nomi_occupation'     => $nomiOccupation,
+                        'occupation_code'     => $occupationCode,
+                        'skill_assessment'    => $skillAssessment,
+                        'list'                => $assessingAuthority,
+                        'dates'               => $assessmentDate,
+                        'expiry_dates'        => $expiryDate,
+                        'relevant_occupation' => $relevantOccupation,
+                    ]);
+                }
             }
 
             // Import addresses
@@ -235,6 +322,108 @@ class ClientImportService
                         'start_date' => $this->parseDate($addressData['start_date'] ?? null),
                         'end_date' => $this->parseDate($addressData['end_date'] ?? null),
                         'is_current' => $addressData['is_current'] ?? 0,
+                    ]);
+                }
+            }
+
+            // Import qualifications (education history)
+            // Saved into client_qualifications so they appear in Skills & Education on edit page.
+            if (isset($importData['qualifications']) && is_array($importData['qualifications'])) {
+                foreach ($importData['qualifications'] as $qualificationData) {
+                    if (!is_array($qualificationData)) {
+                        continue;
+                    }
+
+                    $level = $qualificationData['level'] ?? $qualificationData['qualification_level'] ?? null;
+                    $name = $qualificationData['name'] ?? $qualificationData['qualification_name'] ?? null;
+                    $college = $qualificationData['qual_college_name'] ?? $qualificationData['college_name'] ?? null;
+                    $campus = $qualificationData['qual_campus'] ?? $qualificationData['campus'] ?? null;
+                    $country = $qualificationData['country'] ?? $qualificationData['qual_country'] ?? null;
+                    $state = $qualificationData['qual_state'] ?? $qualificationData['state'] ?? null;
+                    $startDate = $this->parseDate($qualificationData['start_date'] ?? $qualificationData['qualification_start_date'] ?? null);
+                    $finishDate = $this->parseDate($qualificationData['finish_date'] ?? $qualificationData['qualification_finish_date'] ?? null);
+                    $relevant = $this->parseBooleanFlag($qualificationData['relevant_qualification'] ?? null, 0);
+
+                    // Avoid inserting blank qualification rows.
+                    $hasQualificationData =
+                        !empty($level) ||
+                        !empty($name) ||
+                        !empty($college) ||
+                        !empty($campus) ||
+                        !empty($country) ||
+                        !empty($state) ||
+                        !empty($startDate) ||
+                        !empty($finishDate) ||
+                        $relevant === 1;
+
+                    if (!$hasQualificationData) {
+                        continue;
+                    }
+
+                    ClientQualification::create([
+                        'client_id' => $newClientId,
+                        'admin_id' => Auth::id(),
+                        'level' => $level,
+                        'name' => $name,
+                        'qual_college_name' => $college,
+                        'qual_campus' => $campus,
+                        'country' => $country,
+                        'qual_state' => $state,
+                        'start_date' => $startDate,
+                        'finish_date' => $finishDate,
+                        'relevant_qualification' => $relevant,
+                    ]);
+                }
+            }
+
+            // Import work experiences (employment history)
+            // Saved into client_experiences so they appear in Work Experience on edit page.
+            if (isset($importData['experiences']) && is_array($importData['experiences'])) {
+                foreach ($importData['experiences'] as $experienceData) {
+                    if (!is_array($experienceData)) {
+                        continue;
+                    }
+
+                    $jobTitle = $experienceData['job_title'] ?? $experienceData['title'] ?? null;
+                    $jobCode = $experienceData['job_code'] ?? $experienceData['anzsco_code'] ?? null;
+                    $employerName = $experienceData['job_emp_name'] ?? $experienceData['employer_name'] ?? null;
+                    $jobCountry = $experienceData['job_country'] ?? $experienceData['country'] ?? null;
+                    $jobState = $experienceData['job_state'] ?? $experienceData['address'] ?? null;
+                    $jobType = $experienceData['job_type'] ?? null;
+                    $jobStartDate = $this->parseDate($experienceData['job_start_date'] ?? $experienceData['start_date'] ?? null);
+                    $jobFinishDate = $this->parseDate($experienceData['job_finish_date'] ?? $experienceData['finish_date'] ?? $experienceData['end_date'] ?? null);
+                    $relevantExperience = $this->parseBooleanFlag($experienceData['relevant_experience'] ?? null, 0);
+                    $fteMultiplier = $experienceData['fte_multiplier'] ?? null;
+
+                    $hasExperienceData =
+                        !empty($jobTitle) ||
+                        !empty($jobCode) ||
+                        !empty($employerName) ||
+                        !empty($jobCountry) ||
+                        !empty($jobState) ||
+                        !empty($jobType) ||
+                        !empty($jobStartDate) ||
+                        !empty($jobFinishDate) ||
+                        $relevantExperience === 1 ||
+                        !empty($fteMultiplier);
+
+                    if (!$hasExperienceData) {
+                        continue;
+                    }
+
+                    ClientExperience::create([
+                        'client_id' => $newClientId,
+                        'admin_id' => Auth::id(),
+                        'job_title' => $jobTitle,
+                        'job_code' => $jobCode,
+                        'job_emp_name' => $employerName,
+                        'job_country' => $jobCountry,
+                        'job_state' => $jobState,
+                        'job_type' => $jobType,
+                        'job_start_date' => $jobStartDate,
+                        'job_finish_date' => $jobFinishDate,
+                        'relevant_experience' => $relevantExperience,
+                        'fte_multiplier' => $fteMultiplier,
                     ]);
                 }
             }
@@ -464,8 +653,8 @@ class ClientImportService
                 $activitiesImported = true;
             }
 
-            // Root-level "notes" from client intake form → always create an activity note
-            // (independent of $activitiesImported — this field is specifically from the intake form)
+            // Root-level "notes" from lead form → always create an activity note
+            // (independent of $activitiesImported — this field is specifically from the lead form)
             if (isset($importData['notes']) && trim((string) $importData['notes']) !== '') {
                 $notesContent = trim((string) $importData['notes']);
                 $notesAttrs = [
@@ -609,6 +798,66 @@ class ClientImportService
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * Parse boolean-like value to 1/0 integer.
+     */
+    private function parseBooleanFlag($value, $default = 0)
+    {
+        if ($value === null || $value === '') {
+            return (int) $default;
+        }
+
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_int($value) || is_float($value) || (is_string($value) && is_numeric($value))) {
+            return ((int) $value) === 1 ? 1 : 0;
+        }
+
+        if (is_string($value)) {
+            $normalized = mb_strtolower(trim($value));
+            if (in_array($normalized, ['true', 'yes', 'y', 'on'], true)) {
+                return 1;
+            }
+            if (in_array($normalized, ['false', 'no', 'n', 'off'], true)) {
+                return 0;
+            }
+        }
+
+        return (int) $default;
+    }
+
+    /**
+     * Normalize yes/no values for fields stored as strings.
+     */
+    private function normalizeYesNoValue($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'Yes' : 'No';
+        }
+
+        if (is_int($value) || is_float($value) || (is_string($value) && is_numeric($value))) {
+            return ((int) $value) === 1 ? 'Yes' : 'No';
+        }
+
+        if (is_string($value)) {
+            $normalized = mb_strtolower(trim($value));
+            if (in_array($normalized, ['yes', 'y', 'true', 'on'], true)) {
+                return 'Yes';
+            }
+            if (in_array($normalized, ['no', 'n', 'false', 'off'], true)) {
+                return 'No';
+            }
+        }
+
+        return null;
     }
 
     /**
