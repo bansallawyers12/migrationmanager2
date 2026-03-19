@@ -772,7 +772,7 @@
                                                     <?php
                                                     // Email: use source + clientportal_details_audit (same as Visa section)
                                                     $emailsMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedEmailsForClient($clientId);
-                                                    $clientAddressesForDetails = isset($clientAddresses) ? $clientAddresses : \App\Models\ClientAddress::where('client_id', $clientId)->orderBy('created_at', 'desc')->get();
+                                                    $clientAddressesForDetails = isset($clientAddresses) ? $clientAddresses : \App\Models\ClientAddress::where('client_id', $clientId)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
                                                     // Address: use source + clientportal_details_audit (same as Passport section)
                                                     $addressesMergedForDetails = (new \App\Http\Controllers\API\ClientPortalPersonalDetailsController())->getMergedAddressesForClient($clientId);
                                                     // Travel: use source + clientportal_details_audit (same as Passport section)
