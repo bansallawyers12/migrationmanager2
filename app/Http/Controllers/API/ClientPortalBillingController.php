@@ -123,14 +123,14 @@ class ClientPortalBillingController extends Controller
     }
 
     /**
-     * Billing invoice Update (Google Pay / Apple Pay)
+     * Billing invoice Update (Google Pay / Apple Pay / Stripe)
      * POST /api/billing/invoice-update
      *
      * Input (JSON body):
      * - billing_invoice_id: receipt_id from account_client_receipts
      * - client_matter_id: client matter ID (required)
-     * - payment_type: "google_pay" or "apple_pay"
-     * - payment_token: unique token value
+     * - payment_type: "google_pay", "apple_pay", or "stripe"
+     * - payment_token: unique token value (e.g. Stripe PaymentIntent id pi_...)
      * - payment_status: "completed" or "failed"
      *
      * Lookup by receipt_id and client_matter_id. When payment_status is "completed": updates invoice_status to 1 and saves payment_token (and payment_type).
@@ -145,7 +145,7 @@ class ClientPortalBillingController extends Controller
             $validated = $request->validate([
                 'billing_invoice_id' => 'required|integer|min:1',
                 'client_matter_id' => 'required|integer|min:1',
-                'payment_type' => 'required|string|in:google_pay,apple_pay',
+                'payment_type' => 'required|string|in:google_pay,apple_pay,stripe',
                 'payment_token' => 'required|string|max:500',
                 'payment_status' => 'required|string|in:completed,failed',
             ]);

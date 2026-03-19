@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * Adds client portal payment fields for Billing invoice Update API (Google Pay / Apple Pay).
+     * Adds client portal payment fields for Billing invoice Update API (Google Pay / Apple Pay / Stripe).
      */
     public function up(): void
     {
@@ -17,7 +17,7 @@ return new class extends Migration
                 $table->string('client_portal_payment_token', 500)->nullable();
             }
             if (!Schema::hasColumn('account_client_receipts', 'client_portal_payment_type')) {
-                $table->string('client_portal_payment_type', 50)->nullable()->comment('google_pay or apple_pay');
+                $table->string('client_portal_payment_type', 50)->nullable()->comment('google_pay, apple_pay, or stripe');
             }
         });
     }

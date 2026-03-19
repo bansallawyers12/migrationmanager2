@@ -1033,7 +1033,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"billing_invoice_id\": 123,\n    \"client_matter_id\": 2435,\n    \"payment_type\": \"google_pay\",\n    \"payment_token\": \"unique_token_value\",\n    \"payment_status\": \"completed\"\n}"
+							"raw": "{\n    \"billing_invoice_id\": 123,\n    \"client_matter_id\": 2435,\n    \"payment_type\": \"stripe\",\n    \"payment_token\": \"pi_xxxxxxxxxxxxxxxxxxxxxxxx\",\n    \"payment_status\": \"completed\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/billing/invoice-update",
@@ -1045,7 +1045,7 @@
 								"invoice-update"
 							]
 						},
-						"description": "Update billing invoice with mobile payment (Google Pay / Apple Pay). Input: billing_invoice_id (receipt_id), client_matter_id (required), payment_type (google_pay or apple_pay), payment_token (unique token), payment_status (completed or failed). Lookup by receipt_id and client_matter_id. If payment_status is completed, invoice_status is set to 1 and payment_token is saved; if failed, no update."
+						"description": "Update billing invoice after payment (Google Pay, Apple Pay, or Stripe). Input: billing_invoice_id (receipt_id), client_matter_id (required), payment_type (google_pay, apple_pay, or stripe), payment_token (e.g. Stripe PaymentIntent id for stripe), payment_status (completed or failed). Lookup by receipt_id and client_matter_id. If payment_status is completed, invoice_status is set to 1 and payment_token is saved; if failed, no update."
 					},
 					"response": []
 				}
