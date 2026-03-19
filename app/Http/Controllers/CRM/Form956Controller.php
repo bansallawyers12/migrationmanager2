@@ -5,8 +5,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreForm956Request;
 //use App\Models\AgentDetails;
 use App\Models\Admin;
+use App\Models\ClientVisaCountry;
 use App\Models\Document;
 use App\Models\Form956;
+use App\Models\Matter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -190,15 +192,7 @@ class Form956Controller extends Controller
                 }
             }
 
-            $dobFormated = 'NA';
-            if($form->client->dob != ''){
-                $dobArr = explode('-',$form->client->dob);
-                if(!empty($dobArr)){
-                    $dobFormated = $dobArr[2].'/'.$dobArr[1].'/'.$dobArr[0];
-                } else{
-                    $dobFormated = 'NA';
-                }
-            }
+            $dobFormated = $this->formatClientDobForForm956($form->client->dob ?? null);
 
             $agentDeclarationDateFormated = 'NA';
             if($form->agent_declaration_date != ''){
@@ -246,6 +240,8 @@ class Form956Controller extends Controller
             }
             //dd($date_lodged_arr_formated);
 
+            $visaSubclassLabel = $this->resolveClientVisaTypeLabelForForm956((int) $form->client_id);
+
             $formData = [
                 // Client details
                 'cc.name fam' => $form->client->last_name,
@@ -257,8 +253,9 @@ class Form956Controller extends Controller
                 'cc.resadd cntry' => $client_address_parts_line3,
                 'cc.resadd pc' => $client_address_parts_postcode,
 
-                'cc.mob' => $form->client->phone ?? $form->client->phone ?? '',
-                'cc.diac id' => $form->client->client_id ?? '',
+                'cc.mob' => $this->formatClientMobileForForm956($form->client),
+                // Intentionally blank: internal CRM client reference must not appear as Home Affairs Client ID
+                'cc.diac id' => '',
                 'cc.org name' => $form->client->company_name ? $form->client->company_name : 'NA',
 
                 // Agent details
@@ -303,6 +300,9 @@ class Form956Controller extends Controller
                  // Question 15: Application Date lodged,Not yet lodged
                 'ta.lodged' => $date_lodged_arr_formated ?? '',
                 'ta.not yet' => $form->not_lodged == '1' ? 'IAAAS' : 'Off',
+                // Q15 Subclass of visa (application + cancellation blocks) — matches Personal Details visa type
+                'ta.type' => $visaSubclassLabel,
+                'ta.typecancel' => $visaSubclassLabel,
 
                 // Assistance type
                 'ta.assist' => $form->assistance_visa_application ? 'Application' : ($form->assistance_cancellation ? 'Cancellation' : ($form->assistance_other ? 'Specific' : 'Off')),
@@ -367,137 +367,367 @@ class Form956Controller extends Controller
         }
     }
 
-
-    //Split Agent address
-    public function formatAddressForPDFAgent($fullAddress) {
-        if (empty($fullAddress)) {
-            return [
-                'line1' => '',
-                'line2' => '',
-                'line3' => '',
-                'postcode' => ''
-            ];
+    /**
+     * Form 956 question 13 — PDF field cc.dob is one box under DAY / MONTH / YEAR labels; use spaces only (no slashes).
+     *
+     * @param  string|null  $dob  Client date of birth (typically Y-m-d)
+     */
+    protected function formatClientDobForForm956(?string $dob): string
+    {
+        if ($dob === null || trim($dob) === '') {
+            return 'NA';
         }
 
-        // Clean the address - remove extra whitespace
-        $fullAddress = trim(preg_replace('/\s+/', ' ', $fullAddress));
-
-        // Extract postcode (4-digit at the end, possibly with spaces)
-        preg_match('/\s*(\d{4})\s*$/', $fullAddress, $matches);
-        $postcode = $matches[1] ?? '';
-
-        // Remove postcode from address
-        $withoutPostcode = trim(preg_replace('/\s*\d{4}\s*$/', '', $fullAddress));
-
-        $line1 = $line2 = $line3 = '';
-
-        // Split by comma
-        if (strpos($withoutPostcode, ',') !== false) {
-            $parts = array_map('trim', explode(',', $withoutPostcode));
-            
-            // Remove empty parts
-            $parts = array_filter($parts, function($part) {
-                return !empty($part);
-            });
-            $parts = array_values($parts);
-
-            // First part is always street address
-            $line1 = $parts[0] ?? '';
-
-            // Handle remaining parts (city, state, etc.)
-            if (isset($parts[1])) {
-                $remaining = trim($parts[1]);
-                
-                // Try to split city and state
-                // Common Australian state abbreviations
-                $statePattern = '/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\b/i';
-                
-                if (preg_match($statePattern, $remaining, $stateMatches)) {
-                    // State found - split at state
-                    $statePos = strpos(strtoupper($remaining), strtoupper($stateMatches[0]));
-                    $line2 = trim(substr($remaining, 0, $statePos)); // City
-                    $line3 = trim(substr($remaining, $statePos)); // State
-                } else {
-                    // No state abbreviation found, try to split by space
-                    $words = preg_split('/\s+/', $remaining);
-                    if (count($words) > 1) {
-                        // Last word might be state, rest is city
-                        $line2 = implode(' ', array_slice($words, 0, -1)); // City
-                        $line3 = end($words); // State (might not be abbreviation)
-                    } else {
-                        // Single word - assume it's city
-                        $line2 = $remaining;
-                    }
-                }
-            }
-        } else {
-            // No comma found - try to parse as single line
-            // Look for state abbreviation
-            $statePattern = '/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\b/i';
-            if (preg_match($statePattern, $withoutPostcode, $stateMatches, PREG_OFFSET_CAPTURE)) {
-                $statePos = $stateMatches[0][1];
-                $line1 = trim(substr($withoutPostcode, 0, $statePos)); // Street
-                $remaining = trim(substr($withoutPostcode, $statePos));
-                $words = preg_split('/\s+/', $remaining);
-                if (count($words) > 1) {
-                    $line2 = implode(' ', array_slice($words, 0, -1)); // City
-                    $line3 = end($words); // State
-                } else {
-                    $line3 = $remaining; // Just state
-                }
-            } else {
-                // No state found - put everything in line1
-                $line1 = $withoutPostcode;
-            }
+        $dobArr = explode('-', $dob);
+        if (count($dobArr) < 3 || trim($dobArr[0]) === '' || trim($dobArr[1]) === '' || trim($dobArr[2]) === '') {
+            return 'NA';
         }
 
-        return [
-            'line1' => $line1,   // Street address
-            'line2' => $line2,   // City/Suburb
-            'line3' => $line3,   // State
-            'postcode' => $postcode // Postcode
-        ];
+        // Database order Y-m-d → display day month year
+        $year = trim($dobArr[0]);
+        $month = trim($dobArr[1]);
+        $day = trim($dobArr[2]);
+
+        return $day . ' ' . $month . ' ' . $year;
     }
 
-
-    //Split client address
-    public function formatAddressForPDFClient($fullAddress) {
-        // Extract postcode (4 digits at any position)
-        preg_match('/\b(\d{4})\b/', $fullAddress, $matches);
-        $postcode = $matches[1] ?? '';
-
-        // Remove postcode from original address
-        $cleaned = trim(preg_replace('/\b\d{4}\b/', '', $fullAddress));
-
-        // Split by comma
-        $parts = array_map('trim', explode(',', $cleaned));
-
-        // Remove any empty or irrelevant parts (like country, if it exists)
-        $parts = array_filter($parts, function ($part) {
-            return !empty($part) && !preg_match('/\b(?:Australia|AU)\b/i', $part);
-        });
-        $parts = array_values($parts); // re-index after filter
-
-        // Initialize
-        $line1 = $line2 = $line3 = '';
-
-        if (isset($parts[0])) {
-            $line1 = $parts[0]; // Street address
+    /**
+     * Form 956 question 13 — Mobile/cell: include country calling code (admins.country_code, e.g. +61) with the number.
+     *
+     * @param  \App\Models\Admin|object|null  $client
+     */
+    protected function formatClientMobileForForm956($client): string
+    {
+        if ($client === null) {
+            return '';
         }
 
-        if (isset($parts[1])) {
-            // Try to split into city and state
-            $subParts = preg_split('/\s+/', trim($parts[1]));
-            $line2 = $subParts[0] ?? ''; // City
-            $line3 = isset($subParts[1]) ? implode(' ', array_slice($subParts, 1)) : ''; // State
+        $code = trim((string) ($client->country_code ?? ''));
+        $phone = trim((string) ($client->phone ?? ''));
+        if ($phone === '') {
+            return '';
+        }
+        if ($code === '') {
+            return $phone;
+        }
+        if (str_starts_with($phone, '+')) {
+            return $phone;
+        }
+        $codeDigits = ltrim($code, '+');
+        if (
+            str_starts_with($phone, $code)
+            || str_starts_with($phone, '+' . $codeDigits)
+            || str_starts_with($phone, $codeDigits)
+        ) {
+            return $phone;
+        }
+
+        return trim($code . ' ' . $phone);
+    }
+
+    /**
+     * Visa subclass label for Form 956 Q15 — same source as Personal Details → Visa Type
+     * (client_visa_countries + matters.title / nick_name).
+     */
+    protected function resolveClientVisaTypeLabelForForm956(int $clientId): string
+    {
+        if ($clientId <= 0) {
+            return '';
+        }
+
+        $withExpiry = ClientVisaCountry::query()
+            ->select('visa_type')
+            ->where('client_id', $clientId)
+            ->whereNotNull('visa_expiry_date')
+            ->orderByDesc('visa_expiry_date')
+            ->first();
+
+        $row = $withExpiry;
+        if (! $row) {
+            $row = ClientVisaCountry::query()
+                ->select('visa_type')
+                ->where('client_id', $clientId)
+                ->whereNull('visa_expiry_date')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        if (! $row || $row->visa_type === null || $row->visa_type === '') {
+            return '';
+        }
+
+        $matter = Matter::query()
+            ->select('id', 'title', 'nick_name')
+            ->where('id', $row->visa_type)
+            ->first();
+
+        if (! $matter) {
+            return '';
+        }
+
+        $title = trim((string) ($matter->title ?? ''));
+        $nick = trim((string) ($matter->nick_name ?? ''));
+        if ($title === '') {
+            return '';
+        }
+
+        return $nick !== '' ? $title . '(' . $nick . ')' : $title;
+    }
+
+    /**
+     * Split a full address into PDF lines (street, suburb/city, country) + separate postcode.
+     * Form 956 *resadd pc* must hold only the postcode; *resadd cntry* is the country row (e.g. Australia).
+     *
+     * @param  string  $fullAddress  Raw address string
+     * @param  bool  $stripAustralia  Client addresses: normalize country row and merge state into line 2 when country was trailing
+     */
+    protected function splitAddressForForm956Pdf(string $fullAddress, bool $stripAustralia = false): array
+    {
+        $empty = ['line1' => '', 'line2' => '', 'line3' => '', 'postcode' => ''];
+
+        if ($fullAddress === null || trim($fullAddress) === '') {
+            return $empty;
+        }
+
+        $fullAddress = trim(preg_replace('/\s+/', ' ', $fullAddress));
+
+        // Trailing ", Australia" / " Australia" stops postcode-at-end matching; strip country first for parsing only
+        $hadTrailingCountry = false;
+        if (preg_match('/,?\s*(Australia|AU)\s*$/i', $fullAddress)) {
+            $hadTrailingCountry = true;
+            $fullAddress = trim(preg_replace('/,?\s*(Australia|AU)\s*$/i', '', $fullAddress));
+        }
+
+        // Australian 4-digit postcode at end of (possibly country-stripped) string
+        preg_match('/\s*(\d{4})\s*$/', $fullAddress, $postcodeMatch);
+        $postcode = $postcodeMatch[1] ?? '';
+        $withoutPostcode = trim(preg_replace('/\s*\d{4}\s*$/', '', $fullAddress));
+
+        if ($stripAustralia) {
+            $withoutPostcode = trim(preg_replace('/\b(?:Australia|AU)\b/i', '', $withoutPostcode));
+            $withoutPostcode = trim(preg_replace('/\s+/', ' ', $withoutPostcode));
+        }
+
+        $statePattern = '/\b(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)\b/i';
+
+        $result = null;
+
+        // Comma-separated
+        if (strpos($withoutPostcode, ',') !== false) {
+            $parts = array_map('trim', explode(',', $withoutPostcode));
+            $parts = array_values(array_filter($parts, fn ($p) => $p !== ''));
+
+            if ($stripAustralia) {
+                $parts = array_values(array_filter(
+                    $parts,
+                    fn ($p) => ! preg_match('/\b(?:Australia|AU)\b/i', $p)
+                ));
+            }
+
+            // Postcode in its own comma segment (e.g. "..., VIC, v4v3" or intl codes) — not AU state/country
+            [$parts, $segmentPostcode] = $this->extractTrailingPostcodeFromCommaParts($parts);
+            if ($segmentPostcode !== '' && $postcode === '') {
+                $postcode = $segmentPostcode;
+            }
+
+            $n = count($parts);
+            if ($n === 0) {
+                $result = array_merge($empty, ['postcode' => $postcode]);
+            } elseif ($n === 1) {
+                $result = $this->splitAddressSingleBlockNoComma($parts[0], $postcode, $statePattern);
+            } elseif ($n === 2) {
+                $result = $this->splitAddressTwoCommaParts($parts[0], $parts[1], $postcode, $statePattern);
+            } else {
+                // 3+ segments: e.g. "Unit 5", "55 Gawler Pl Adelaide", "SA"
+                $line1 = $parts[0];
+                $line3 = $parts[$n - 1];
+                $line2 = trim(implode(', ', array_slice($parts, 1, $n - 2)));
+
+                $result = [
+                    'line1' => $line1,
+                    'line2' => $line2,
+                    'line3' => $line3,
+                    'postcode' => $postcode,
+                ];
+            }
+        } else {
+            $result = $this->splitAddressSingleBlockNoComma($withoutPostcode, $postcode, $statePattern);
+        }
+
+        // PDF *resadd cntry* = country; suburb + state on line 2; *resadd pc* = postcode only
+        $line3Trim = trim($result['line3'] ?? '');
+        $isAuStateOnly = $line3Trim !== '' && (bool) preg_match('/^(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)$/i', $line3Trim);
+        if ($hadTrailingCountry || ($stripAustralia && $isAuStateOnly)) {
+            $result = $this->mergeStateIntoLine2AndSetCountryAustralia($result, $statePattern);
+        }
+
+        return $this->stripTrailingPostcodeFromLine2($result);
+    }
+
+    /**
+     * If the last comma-separated segment is a postcode (not AU state / country), pop it and return it.
+     * Handles alphanumeric postcodes (e.g. some intl formats) and 4-digit-only segments.
+     *
+     * @return array{0: array<int, string>, 1: string}
+     */
+    protected function extractTrailingPostcodeFromCommaParts(array $parts): array
+    {
+        if (count($parts) < 2) {
+            return [$parts, ''];
+        }
+
+        $last = trim($parts[count($parts) - 1]);
+        if ($last === '') {
+            return [$parts, ''];
+        }
+
+        if (preg_match('/^(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)$/i', $last)) {
+            return [$parts, ''];
+        }
+
+        if (preg_match('/^(Australia|AU)$/i', $last)) {
+            return [$parts, ''];
+        }
+
+        if (preg_match('/^\d{4}$/', $last)) {
+            array_pop($parts);
+
+            return [array_values($parts), $last];
+        }
+
+        // Alphanumeric postcode token (no spaces), contains a digit, reasonable length (e.g. v4v3, UK-style compact)
+        if (
+            strlen($last) >= 3 && strlen($last) <= 12
+            && preg_match('/^[A-Za-z0-9\-]+$/', $last)
+            && preg_match('/\d/', $last)
+        ) {
+            array_pop($parts);
+
+            return [array_values($parts), $last];
+        }
+
+        return [$parts, ''];
+    }
+
+    /**
+     * Ensure postcode does not remain on line 2 (e.g. "… SA 5000") when *pc* is set.
+     *
+     * @param  array{line1:string,line2:string,line3:string,postcode:string}  $result
+     * @return array{line1:string,line2:string,line3:string,postcode:string}
+     */
+    protected function stripTrailingPostcodeFromLine2(array $result): array
+    {
+        $pc = trim($result['postcode'] ?? '');
+        if ($pc === '') {
+            return $result;
+        }
+
+        $line2 = $result['line2'] ?? '';
+        if ($line2 === '') {
+            return $result;
+        }
+
+        $quoted = preg_quote($pc, '/');
+        if (preg_match('/\s+' . $quoted . '\s*$/', $line2)) {
+            $result['line2'] = trim(preg_replace('/\s+' . $quoted . '\s*$/', '', $line2));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array{line1:string,line2:string,line3:string,postcode:string}  $result
+     * @return array{line1:string,line2:string,line3:string,postcode:string}
+     */
+    protected function mergeStateIntoLine2AndSetCountryAustralia(array $result, string $statePattern): array
+    {
+        $line3 = trim($result['line3'] ?? '');
+        if ($line3 !== '' && preg_match($statePattern, $line3) && ! preg_match('/\b(?:Australia|AU)\b/i', $line3)) {
+            $result['line2'] = trim(($result['line2'] ?? '') . ' ' . $line3);
+        }
+        $result['line3'] = 'Australia';
+
+        return $result;
+    }
+
+    /**
+     * One comma-free block after postcode removal (street + suburb + state in one line).
+     */
+    protected function splitAddressSingleBlockNoComma(string $block, string $postcode, string $statePattern): array
+    {
+        $line1 = $line2 = $line3 = '';
+
+        if (preg_match($statePattern, $block, $stateMatches, PREG_OFFSET_CAPTURE)) {
+            $statePos = $stateMatches[0][1];
+            $line1 = trim(substr($block, 0, $statePos));
+            $remaining = trim(substr($block, $statePos));
+            $words = preg_split('/\s+/', $remaining);
+            if (count($words) > 1) {
+                $line2 = implode(' ', array_slice($words, 0, -1));
+                $line3 = end($words);
+            } else {
+                $line3 = $remaining;
+            }
+        } else {
+            $line1 = $block;
         }
 
         return [
             'line1' => $line1,
             'line2' => $line2,
             'line3' => $line3,
-            'postcode' => $postcode
+            'postcode' => $postcode,
         ];
+    }
+
+    /**
+     * Exactly two comma-separated segments after postcode removal.
+     */
+    protected function splitAddressTwoCommaParts(string $first, string $second, string $postcode, string $statePattern): array
+    {
+        $line1 = $first;
+
+        if (preg_match($statePattern, $second, $stateMatches, PREG_OFFSET_CAPTURE)) {
+            $statePos = $stateMatches[0][1];
+            $line2 = trim(substr($second, 0, $statePos));
+            $line3 = trim(substr($second, $statePos));
+
+            return [
+                'line1' => $line1,
+                'line2' => $line2,
+                'line3' => $line3,
+                'postcode' => $postcode,
+            ];
+        }
+
+        $words = preg_split('/\s+/', $second);
+        if (count($words) > 1) {
+            return [
+                'line1' => $line1,
+                'line2' => implode(' ', array_slice($words, 0, -1)),
+                'line3' => end($words),
+                'postcode' => $postcode,
+            ];
+        }
+
+        return [
+            'line1' => $line1,
+            'line2' => $second,
+            'line3' => '',
+            'postcode' => $postcode,
+        ];
+    }
+
+    // Split agent business address (Form 956 question 4 / agent block)
+    public function formatAddressForPDFAgent($fullAddress)
+    {
+        return $this->splitAddressForForm956Pdf((string) $fullAddress, false);
+    }
+
+    // Split client residential address
+    public function formatAddressForPDFClient($fullAddress)
+    {
+        return $this->splitAddressForForm956Pdf((string) $fullAddress, true);
     }
 
 
@@ -539,15 +769,7 @@ class Form956Controller extends Controller
 
 
 
-            $dobFormated = 'NA';
-            if($form->client->dob != ''){
-                $dobArr = explode('-',$form->client->dob);
-                if(!empty($dobArr)){
-                    $dobFormated = $dobArr[2].'/'.$dobArr[1].'/'.$dobArr[0];
-                } else{
-                    $dobFormated = 'NA';
-                }
-            }
+            $dobFormated = $this->formatClientDobForForm956($form->client->dob ?? null);
 
             $agentDeclarationDateFormated = 'NA';
             if($form->agent_declaration_date != ''){
@@ -595,6 +817,8 @@ class Form956Controller extends Controller
             }
             //dd($date_lodged_arr_formated);
             // Pass to PDF/blade
+            $visaSubclassLabel = $this->resolveClientVisaTypeLabelForForm956((int) $form->client_id);
+
             $formData = [
                 // Client details
                 'cc.name fam' => $form->client->last_name, //$form->client->family_name
@@ -606,8 +830,9 @@ class Form956Controller extends Controller
                 'cc.resadd cntry' => $client_address_parts_line3,
                 'cc.resadd pc' => $client_address_parts_postcode,
 
-                'cc.mob' => $form->client->phone ?? $form->client->phone ?? '',
-                'cc.diac id' => $form->client->client_id ?? '',
+                'cc.mob' => $this->formatClientMobileForForm956($form->client),
+                // Intentionally blank: internal CRM client reference must not appear as Home Affairs Client ID
+                'cc.diac id' => '',
                 'cc.org name' => $form->client->company_name ? $form->client->company_name : 'NA',
 
                 // Agent details
@@ -651,6 +876,9 @@ class Form956Controller extends Controller
                  // Question 15: Application Date lodged,Not yet lodged
                 'ta.lodged' => $date_lodged_arr_formated ?? '',
                 'ta.not yet' => $form->not_lodged == '1' ? 'IAAAS' : 'Off',
+                // Q15 Subclass of visa (application + cancellation blocks) — matches Personal Details visa type
+                'ta.type' => $visaSubclassLabel,
+                'ta.typecancel' => $visaSubclassLabel,
 
                 // Assistance type
                 'ta.assist' => $form->assistance_visa_application ? 'Application' : ($form->assistance_cancellation ? 'Cancellation' : ($form->assistance_other ? 'Specific' : 'Off')),
