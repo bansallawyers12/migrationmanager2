@@ -352,6 +352,11 @@
             tabId = 'emails';
         }
         
+        // Legacy support: Form Generation tab removed — redirect to checklists
+        if (tabId === 'formgenerations' || tabId === 'formgenerationsL') {
+            tabId = 'checklists';
+        }
+        
         if (tabId !== 'personaldetails') {
             // Trigger click on the button for non-default tabs
             const $button = $(`.client-nav-button[data-tab="${tabId}"]`);

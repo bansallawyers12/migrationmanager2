@@ -4338,52 +4338,9 @@ Bansal Immigration`;
 
 
 
-        // Populate agent details when the modal opens
-
-        $(document).delegate('.costAssignmentCreateForm', 'click', function() {
-
-            $('#cost_assignment_client_id').val(window.ClientDetailConfig.clientId);
-
-            var hidden_client_matter_id_assignment = $('#sel_matter_id_client_detail').val();
-
-            $('#cost_assignment_client_matter_id').val(hidden_client_matter_id_assignment);
-
-            // Switch to Create Cost Assignment subtab
-            $('.subtab3-button').removeClass('active');
-            $('.subtab3-pane').removeClass('active');
-            $('.subtab3-button[data-subtab="createcostform"]').addClass('active');
-            $('#createcostform-subtab').addClass('active');
-
-            // Load agent details
-            // Use window function if available
-            if (typeof window.getCostAssignmentMigrationAgentDetail === 'function') {
-                window.getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
-            } else {
-                // Fallback: try to call it directly (in case it's in the same scope)
-                if (typeof getCostAssignmentMigrationAgentDetail === 'function') {
-                    getCostAssignmentMigrationAgentDetail(window.ClientDetailConfig.clientId, hidden_client_matter_id_assignment);
-                } else {
-                    console.error('getCostAssignmentMigrationAgentDetail function not found. Please refresh the page.');
-                }
-            }
-
-            // Note: initializeCostAssignmentCalculations() will be called after data loads
-            // in getCostAssignmentMigrationAgentDetail() success callback
-
-        });
-
-
-
-        // Helper function to switch back to Cost Assignment list
-        function switchToCostAssignmentList() {
-            $('.subtab3-button').removeClass('active');
-            $('.subtab3-pane').removeClass('active');
-            $('.subtab3-button[data-subtab="costform"]').addClass('active');
-            $('#costform-subtab').addClass('active');
-        }
-
-        // Make function available globally
-        window.switchToCostAssignmentList = switchToCostAssignmentList;
+        // Note: costAssignmentCreateForm click handler and switchToCostAssignmentList
+        // removed — Form Generation tab no longer exists. Cost assignment create/amend
+        // now happens exclusively via the modal in the Checklists tab.
 
 
 
@@ -4746,12 +4703,8 @@ Bansal Immigration`;
                             $modal.modal('hide');
                             localStorage.setItem('activeTab', 'checklists');
                         } else {
-                            // Switch back to Cost Assignment list subtab (create from Form Generation)
-                            $('.subtab3-button').removeClass('active');
-                            $('.subtab3-pane').removeClass('active');
-                            $('.subtab3-button[data-subtab="costform"]').addClass('active');
-                            $('#costform-subtab').addClass('active');
-                            localStorage.setItem('activeTab', 'formgenerations');
+                            // Form Generation tab removed; stay on checklists
+                            localStorage.setItem('activeTab', 'checklists');
                         }
 
                         // Reload the page to reflect the new data
