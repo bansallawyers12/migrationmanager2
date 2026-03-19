@@ -69,11 +69,12 @@ use App\Http\Controllers\Controller;
                 </div>
             </div>
             
-            <!-- Client/Lead Toggle Buttons -->
+            <!-- Lead status badge (conversion action is handled in Checklist tab) -->
+            @if(($fetchedData->type ?? '') === 'lead')
             <div class="sidebar-client-lead-buttons">
-                <a class="status-btn status-btn-client convertLeadToClient <?php if($fetchedData->type == 'client'){ echo 'active'; }?>" href="javascript:;" role="button" data-bs-toggle="modal" data-bs-target="#convertLeadToClientModal">Client</a>
-                <a href="javascript:;" class="status-btn status-btn-lead <?php if($fetchedData->type == 'lead'){ echo 'active'; } ?>" role="button" data-bs-toggle="modal" data-bs-target="#convertLeadToClientModal">Lead</a>
+                <span class="status-btn status-btn-lead status-badge active">Lead</span>
             </div>
+            @endif
             
             <!-- Matter Selection Dropdown in Sidebar -->
             <div class="sidebar-matter-selection">
@@ -315,10 +316,12 @@ use App\Http\Controllers\Controller;
             // Valid tab names that should NOT be treated as matter IDs
             $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
+                              // Legacy removed tab slugs
+                              'formgenerations', 'formgenerationsl',
                               'client_portal', 'application', 'workflow', 'checklists'];
             
             // Check if $id1 is a valid matter ID (not a tab name)
-            $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array($id1, $validTabNames);
+            $isMatterIdInUrl = isset($id1) && $id1 != "" && !in_array(strtolower($id1), array_map('strtolower', $validTabNames));
             
             // Show client menu if: valid matter ID in URL OR client has any matters
             if( $isMatterIdInUrl || $matter_cnt > 0 )

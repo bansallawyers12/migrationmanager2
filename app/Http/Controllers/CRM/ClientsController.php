@@ -2007,6 +2007,8 @@ class ClientsController extends Controller
             $knownTabNames = [
                 'personaldetails', 'noteterm', 'personaldocuments', 'visadocuments',
                 'eoiroi', 'emails', 'client_portal',
+                // Legacy removed tab slugs - keep as reserved so they are not treated as matter IDs
+                'formgenerations', 'formgenerationsl',
                 'workflow', 'checklists', 'account', 'notuseddocuments',
             ];
             if ($id1 && in_array(strtolower($id1), $knownTabNames)) {

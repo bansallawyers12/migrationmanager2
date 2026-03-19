@@ -439,6 +439,16 @@
             transform: translateY(-1px);
             opacity: 0.9;
         }
+
+        .status-badge {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .status-badge:hover {
+            transform: none;
+            opacity: 1;
+        }
         
         /* Sidebar Matter Selection */
         .sidebar-matter-selection {

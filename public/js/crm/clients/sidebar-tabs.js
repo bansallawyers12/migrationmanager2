@@ -353,7 +353,8 @@
         }
         
         // Legacy support: Form Generation tab removed — redirect to checklists
-        if (tabId === 'formgenerations' || tabId === 'formgenerationsL') {
+        const normalizedTabId = (tabId || '').toLowerCase();
+        if (normalizedTabId === 'formgenerations' || normalizedTabId === 'formgenerationsl') {
             tabId = 'checklists';
         }
         
