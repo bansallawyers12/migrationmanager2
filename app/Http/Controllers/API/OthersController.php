@@ -140,7 +140,7 @@ class OthersController extends Controller
     }
 
     /**
-     * Get Blog Detail
+     * Get Blog Detail (requires Sanctum Bearer token — route: auth:sanctum)
      * GET /api/blogs/detail/{id}
      */
     public function getBlogDetail(Request $request, $id)

@@ -139,9 +139,8 @@ Route::post('/payments/create-payment-intent', function (Request $request) {
     }
 });
 
-// Blog routes (public)
+// Blog routes (list is public; detail requires authentication — see auth:sanctum group)
 Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
-Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
 
 // PR Point Calculator routes (public)
 Route::get('/pr-point-calc-lists', [OthersController::class, 'getPrPointCalcLists']);
@@ -173,6 +172,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ClientPortalController::class, 'getProfile']);
     Route::post('/profile', [ClientPortalController::class, 'updateProfile']);
     Route::post('/update-password', [ClientPortalController::class, 'updatePassword']);
+
+    // Blog detail (authenticated only; list remains public)
+    Route::get('/blogs/detail/{id}', [OthersController::class, 'getBlogDetail']);
     
     // Dashboard routes
     Route::get('/dashboard', [ClientPortalDashboardController::class, 'dashboard']);
