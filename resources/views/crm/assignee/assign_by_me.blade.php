@@ -342,24 +342,16 @@
             $('#assign_note_id').val(task_id);
         });
 
-        // Update task - set fields when button is clicked
-        $(document).on('click', '.listing-container .update_task', function() {
-            var note_id = $(this).attr('data-noteid');
-            $('#assignnote').val(note_id);
-            var task_id = $(this).attr('data-taskid');
-            $('#assign_note_id').val(task_id);
-            var taskgroup_id = $(this).attr('data-taskgroupid');
-            $('#task_group').val(taskgroup_id);
-            var followupdate_id = $(this).attr('data-actiondate');
-            $('#popoverdatetime').val(followupdate_id);
-        });
-
-        // Set date when popover is actually shown (content is in DOM by then)
+        // Update task - set all fields when popover is shown (content must be in DOM first)
         $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
+            var $popover = $('.popover.show .popover-body');
+            $popover.find('#assignnote').val($(this).attr('data-noteid') || '');
+            $popover.find('#assign_note_id').val($(this).attr('data-taskid') || '');
+            var taskgroup_id = $(this).attr('data-taskgroupid');
+            $popover.find('#task_group').val(taskgroup_id || '').trigger('change');
             var followupdate_id = $(this).attr('data-actiondate');
             if (followupdate_id) {
-                var dateVal = followupdate_id.split(' ')[0]; // yyyy-mm-dd if datetime
-                $('.popover-body #popoverdatetime').val(dateVal);
+                $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
             }
         });
 

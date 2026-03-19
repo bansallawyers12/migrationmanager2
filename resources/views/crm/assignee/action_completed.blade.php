@@ -434,16 +434,17 @@ jQuery(document).ready(function($){
         $('#assign_note_id').val(task_id);
     });
 
-    // Update task
-    $(document).delegate('.listing-container .update_task', 'click', function(){
-        var note_id = $(this).attr('data-noteid');
-        $('#assignnote').val(note_id);
-        var task_id = $(this).attr('data-taskid');
-        $('#assign_note_id').val(task_id);
+    // Update task - set all fields when popover is shown (content must be in DOM first)
+    $(document).on('shown.bs.popover', '.listing-container .update_task', function() {
+        var $popover = $('.popover.show .popover-body');
+        $popover.find('#assignnote').val($(this).attr('data-noteid') || '');
+        $popover.find('#assign_note_id').val($(this).attr('data-taskid') || '');
         var taskgroup_id = $(this).attr('data-taskgroupid');
-        $('#task_group').val(taskgroup_id);
+        $popover.find('#task_group').val(taskgroup_id || '').trigger('change');
         var followupdate_id = $(this).attr('data-actiondate');
-        $('#popoverdatetime').val(followupdate_id);
+        if (followupdate_id) {
+            $popover.find('#popoverdatetime').val(followupdate_id.split(' ')[0]);
+        }
     });
 
     // Mark task as incomplete
