@@ -1064,8 +1064,13 @@ public function getChapters(Request $request)
 			}
 		}
 
+		// visa_apply must always come from matter title (matters table), not cost_assignment_forms
+		if ($clientMatter->sel_matter_id) {
+			$matterTitleRow = DB::table('matters')->select('title')->where('id', $clientMatter->sel_matter_id)->first();
+			$values['visa_apply'] = $matterTitleRow->title ?? '';
+		}
+
 		if ($matterInfo) {
-			$values['visa_apply'] = $matterInfo->title ?? '';
 
 			$block1 = floatval($matterInfo->Block_1_Ex_Tax ?? 0);
 			$block2 = floatval($matterInfo->Block_2_Ex_Tax ?? 0);
