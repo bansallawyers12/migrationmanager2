@@ -392,7 +392,8 @@ class Form956Controller extends Controller
     }
 
     /**
-     * Prefix country calling code (e.g. +61) when the number is not already international.
+     * E.164-style compact number: country code + national digits, no space (e.g. +61400434884).
+     * For Australia (+61), strips a leading 0 from the national part (04… → 4…).
      */
     protected function combineCountryCodeWithPhone(string $countryCode, string $phone): string
     {
@@ -404,19 +405,43 @@ class Form956Controller extends Controller
         if ($code === '') {
             return $phone;
         }
+
+        // Already international: compact whitespace
         if (str_starts_with($phone, '+')) {
-            return $phone;
+            return preg_replace('/\s+/', '', $phone);
         }
-        $codeDigits = ltrim($code, '+');
-        if (
-            str_starts_with($phone, $code)
-            || str_starts_with($phone, '+' . $codeDigits)
-            || str_starts_with($phone, $codeDigits)
-        ) {
+
+        $codeDigits = preg_replace('/\D+/', '', ltrim($code, '+'));
+        if ($codeDigits === '') {
             return $phone;
         }
 
-        return trim($code . ' ' . $phone);
+        $digitsOnly = preg_replace('/\D+/', '', $phone);
+        if ($digitsOnly === '') {
+            return (str_starts_with($code, '+') ? $code : '+' . $codeDigits) . $phone;
+        }
+
+        // National number already includes country code (e.g. 61400… without +)
+        if (str_starts_with($digitsOnly, $codeDigits) && strlen($digitsOnly) > strlen($codeDigits)) {
+            return '+' . $digitsOnly;
+        }
+
+        // Duplicate-prefix guard (raw string started with +country or country)
+        if (
+            str_starts_with($phone, $code)
+            || str_starts_with($phone, '+' . $codeDigits)
+        ) {
+            return '+' . $digitsOnly;
+        }
+
+        $national = $digitsOnly;
+
+        // Australia: drop trunk 0 (0400… → 400…)
+        if ($codeDigits === '61' && str_starts_with($national, '0') && strlen($national) > 1) {
+            $national = substr($national, 1);
+        }
+
+        return '+' . $codeDigits . $national;
     }
 
     /**
