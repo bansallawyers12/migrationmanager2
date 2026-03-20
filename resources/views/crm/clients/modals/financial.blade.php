@@ -253,7 +253,7 @@
 							</div>
 						</div>
 
-                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
+                        <div style="margin-bottom: 15px;" class="accordion-header">
                             <h4>Department Fee</h4>
 							<div class="col-3">
 								<label for="surcharge">Surcharge</label>
@@ -626,7 +626,7 @@
 							</div>
 						</div>
 
-                        <div style="margin-bottom: 15px;" class="accordion-header" role="button" data-bs-toggle="collapse" data-bs-target="#primary_info" aria-expanded="true">
+                        <div style="margin-bottom: 15px;" class="accordion-header">
                             <h4>Department Fee</h4>
 							<div class="col-3">
 								<label for="surcharge">Surcharge</label>
