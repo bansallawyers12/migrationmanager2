@@ -3,8 +3,8 @@
 
 @section('content')
 <style>
-    /* Filter Panel Styling */
-    .filter_panel {
+    /* Scoped to this page only — avoids breaking sidebar/header dropdowns and global .table styles */
+    .matter-index-page .filter_panel {
         margin-bottom: 30px;
         padding: 20px;
         background: #fff;
@@ -13,50 +13,57 @@
         display: none;
     }
 
-    .filter_panel h4 {
+    .matter-index-page .filter_panel h4 {
         color: #4a5568 !important;
         font-size: 1.1rem;
         margin-bottom: 20px;
         font-weight: 600;
     }
-    
-    /* Fix table header and text visibility */
-    .table thead th {
+
+    .matter-index-page .table thead th {
         background-color: #f8f9fa !important;
         color: #343a40 !important;
         font-weight: 600 !important;
         border-bottom: 2px solid #dee2e6 !important;
         padding: 12px 15px !important;
     }
-    
-    .table tbody td {
+
+    .matter-index-page .table tbody td {
         color: #495057 !important;
         padding: 12px 15px !important;
         border-bottom: 1px solid #dee2e6 !important;
     }
-    
-    /* Fix form label visibility */
-    .form-group label {
+
+    .matter-index-page .form-group label {
         color: #495057 !important;
         font-weight: 500 !important;
         margin-bottom: 8px !important;
     }
-    
-    /* Card header styling */
-    .card-header h4 {
+
+    .matter-index-page .card-header h4 {
         color: #343a40 !important;
         font-weight: 600 !important;
         margin: 0 !important;
     }
-    
-    /* Fix dropdown menu width and item sizing */
-    .dropdown-menu {
-        min-width: 200px !important;
-        max-width: 220px !important;
-        width: auto !important;
+
+    .matter-index-page .dropdown {
+        position: relative;
     }
-    
-    .dropdown-item {
+
+    .matter-index-page .dropdown-menu {
+        min-width: 200px !important;
+        max-width: 280px !important;
+        width: auto !important;
+        z-index: 1060 !important;
+        background-color: #fff !important;
+        border: 1px solid #e9ecef !important;
+        border-radius: 6px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        max-height: min(85vh, 520px) !important;
+        overflow-y: auto !important;
+    }
+
+    .matter-index-page .dropdown-item {
         padding: 8px 12px !important;
         font-size: 0.9rem !important;
         white-space: nowrap !important;
@@ -64,36 +71,14 @@
         text-overflow: ellipsis !important;
         max-width: 100% !important;
     }
-    
-    .dropdown-item i {
+
+    .matter-index-page .dropdown-item i {
         margin-right: 6px !important;
         width: 14px !important;
         text-align: center !important;
     }
-    
-    /* Ensure dropdown fits within viewport */
-    .dropdown-menu {
-        position: absolute !important;
-        top: auto !important;
-        bottom: 100% !important;
-        z-index: 9999 !important;
-        background-color: #fff !important;
-        border: 1px solid #e9ecef !important;
-        border-radius: 6px !important;
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15) !important;
-        margin-bottom: 2px !important;
-        max-height: 400px !important;
-        overflow-y: auto !important;
-        display: none !important;
-    }
-    
-    .dropdown-menu.show {
-        display: block !important;
-    }
-    
-    
-    /* Ensure all icons and text are aligned consistently */
-    .dropdown-item.has-icon {
+
+    .matter-index-page .dropdown-item.has-icon {
         display: flex !important;
         align-items: center !important;
         padding: 8px 12px !important;
@@ -101,9 +86,13 @@
         line-height: 1.2 !important;
         position: relative !important;
         min-height: 32px !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
     }
-    
-    .dropdown-item.has-icon i {
+
+    .matter-index-page .dropdown-item.has-icon i {
         width: 14px !important;
         height: 14px !important;
         flex-shrink: 0 !important;
@@ -112,61 +101,46 @@
         margin-right: 8px !important;
         position: static !important;
     }
-    
-    /* Ensure text starts at consistent position */
-    .dropdown-item.has-icon {
-        padding-left: 12px !important;
-    }
-    
-    /* Handle long text with ellipsis */
-    .dropdown-item.has-icon {
-        max-width: 180px !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-        white-space: nowrap !important;
-    }
-    
-    /* Ensure all dropdown items are visible */
-    .dropdown-menu .dropdown-item {
-        display: block !important;
+
+    .matter-index-page .dropdown-menu .dropdown-item {
         visibility: visible !important;
         opacity: 1 !important;
-        position: relative !important;
-        z-index: 1 !important;
     }
-    
-    /* Fix table overflow issues */
-    .table-responsive {
+
+    .matter-index-page .table-responsive.common_table {
         overflow: visible !important;
     }
-    
-    .table tbody tr {
+
+    .matter-index-page .table tbody tr {
         position: relative !important;
     }
-    
-    .table tbody tr td:last-child {
+
+    .matter-index-page .table tbody tr td:last-child {
         overflow: visible !important;
         position: relative !important;
     }
-    
-    /* Ensure text doesn't wrap and fits properly */
-    .dropdown-item span,
-    .dropdown-item {
+
+    .matter-index-page .dropdown-item span,
+    .matter-index-page .dropdown-item {
         white-space: nowrap !important;
         overflow: visible !important;
         text-overflow: clip !important;
     }
-    
-    /* Ensure only one dropdown is visible at a time */
-    .dropdown-menu:not(.show) {
-        display: none !important;
+
+    /*
+     * Matter list only: allow menus to paint past .main-content { overflow: hidden }
+     * and past the card body / footer (grey bar) without affecting other CRM pages.
+     */
+    .matter-index-layout > .main-content {
+        overflow: visible !important;
     }
-    
-    .dropdown-menu.show {
-        display: block !important;
+
+    .matter-index-layout .matter-index-page .card,
+    .matter-index-layout .matter-index-page .card-body {
+        overflow: visible !important;
     }
 </style>
-<div class="crm-container">
+<div class="crm-container matter-index-layout">
 	<div class="main-content">
 		<div class="server-error">
 			@include('../Elements/flash-message')
@@ -178,6 +152,7 @@
 		        	@include('../Elements/CRM/setting')
 	        </div>
 			<div class="col-9 col-md-9 col-lg-9">
+				<div class="matter-index-page">
 					<div class="card">
 						<div class="card-header">
 							<h4>All Matters</h4>
@@ -220,7 +195,7 @@
 										<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
 										<td>
 											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
+												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
 													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matter.edit', base64_encode(convert_uuencode(@$list->id)))}}"><i class="far fa-edit"></i> Edit</a>
 													<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'matters')"><i class="fas fa-trash"></i> Delete</a>
@@ -260,6 +235,7 @@
 							{!! $lists->appends(\Request::except('page'))->render() !!}
 						</div>
 					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -269,9 +245,18 @@
 @push('scripts')
 <script>
 jQuery(document).ready(function($){
-    $('.filter_btn').on('click', function(){
-		$('.filter_panel').toggle();
+    $('.matter-index-page .filter_btn').on('click', function(){
+		$('.matter-index-page .filter_panel').toggle();
 	});
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+        document.querySelectorAll('.matter-index-page .matter-action-dropdown-toggle').forEach(function (el) {
+            bootstrap.Dropdown.getOrCreateInstance(el, {
+                /* Escapes .main-content / card overflow so the full menu clears the footer */
+                popperConfig: { strategy: 'fixed' }
+            });
+        });
+    }
 
 	$('.cb-element').change(function () {
         if ($('.cb-element:checked').length == $('.cb-element').length){
@@ -279,68 +264,6 @@ jQuery(document).ready(function($){
         } else {
             $('#checkbox-all').prop('checked',false);
         }
-    });
-    
-    // Fix dropdown to open upward - Enhanced version
-    $('.dropdown-toggle').off('click').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        var $this = $(this);
-        var $dropdown = $this.next('.dropdown-menu');
-        var isOpen = $dropdown.hasClass('show');
-        
-        // Force close ALL dropdowns first (more aggressive)
-        $('.dropdown-menu').removeClass('show').css('display', 'none');
-        $('.dropdown-toggle').attr('aria-expanded', 'false');
-        
-        // Small delay to ensure other dropdowns are closed
-        setTimeout(function() {
-            if (!isOpen) {
-                // Open current dropdown
-                $dropdown.addClass('show');
-                $this.attr('aria-expanded', 'true');
-                
-                // Force upward positioning
-                $dropdown.css({
-                    'position': 'absolute',
-                    'top': 'auto',
-                    'bottom': '100%',
-                    'left': '0',
-                    'z-index': '9999',
-                    'display': 'block',
-                    'margin-bottom': '2px'
-                });
-                
-                // Ensure all dropdown items are visible
-                $dropdown.find('.dropdown-item').each(function() {
-                    $(this).css({
-                        'display': 'block',
-                        'visibility': 'visible',
-                        'opacity': '1',
-                        'position': 'relative',
-                        'z-index': '1'
-                    });
-                });
-                
-                // Debug: Log the number of dropdown items found
-                console.log('Dropdown items found:', $dropdown.find('.dropdown-item').length);
-            }
-        }, 10);
-    });
-    
-    // Close dropdowns when clicking outside - Enhanced version
-    $(document).off('click.dropdown').on('click.dropdown', function(e) {
-        if (!$(e.target).closest('.dropdown').length) {
-            $('.dropdown-menu').removeClass('show').css('display', 'none');
-            $('.dropdown-toggle').attr('aria-expanded', 'false');
-        }
-    });
-    
-    // Additional safety - close dropdowns on window resize
-    $(window).on('resize', function() {
-        $('.dropdown-menu').removeClass('show').css('display', 'none');
-        $('.dropdown-toggle').attr('aria-expanded', 'false');
     });
 });
 </script>
