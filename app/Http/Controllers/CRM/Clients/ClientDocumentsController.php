@@ -1888,6 +1888,13 @@ class ClientDocumentsController extends Controller
             if (!isset($parsed['path'])) {
                 return abort(400, 'Invalid S3 URL format');
             }
+
+            // Personal documents only: if a legacy key starts with a unique numeric prefix,
+            // move that number to the end for download filename display.
+            $path = (string) $parsed['path'];
+            if (strpos($path, '/personal/') !== false) {
+                $filename = $this->normalizePersonalDownloadFilename($filename);
+            }
             
             $s3Key = ltrim(urldecode($parsed['path']), '/');
             
@@ -1913,6 +1920,45 @@ class ClientDocumentsController extends Controller
             Log::error('S3 download error: ' . $e->getMessage());
             return abort(500, 'Error generating download link');
         }
+    }
+
+    /**
+     * Convert legacy personal download filename format from:
+     *   1234567890_original_name.ext
+     * to:
+     *   original_name_1234567890.ext
+     *
+     * Leaves current/valid filenames unchanged.
+     */
+    private function normalizePersonalDownloadFilename(string $filename): string
+    {
+        $filename = trim($filename);
+        if ($filename === '') {
+            return $filename;
+        }
+
+        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+        $base = pathinfo($filename, PATHINFO_FILENAME);
+
+        // Match leading numeric token with optional separator: 123..., 123_..., 123-..., 123 ...
+        if (!preg_match('/^(\d{8,})(?:[_\-\s]+)?(.+)$/', $base, $matches)) {
+            return $filename;
+        }
+
+        $unique = trim($matches[1]);
+        $rest = trim($matches[2] ?? '');
+        if ($rest === '') {
+            return $filename;
+        }
+
+        // Avoid duplicate suffix if already present.
+        if (preg_match('/(?:_|-|\s)' . preg_quote($unique, '/') . '$/', $rest)) {
+            $newBase = $rest;
+        } else {
+            $newBase = $rest . '_' . $unique;
+        }
+
+        return $ext !== '' ? ($newBase . '.' . $ext) : $newBase;
     }
 
     /**
