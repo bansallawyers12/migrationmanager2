@@ -275,7 +275,7 @@ class Form956Controller extends Controller
 
                 'mg.postal str' => 'AS ABOVE',
 
-                'mg.mob' => $form->agent->business_mobile ?? $form->agent->business_phone ?? '',
+                'mg.mob' => $this->formatAgentMobileForForm956($form->agent),
 
                  // Form type
                 'mg.app' => $form->form_type === 'appointment' ? 'No' : 'Yes',
@@ -392,18 +392,12 @@ class Form956Controller extends Controller
     }
 
     /**
-     * Form 956 question 13 — Mobile/cell: include country calling code (admins.country_code, e.g. +61) with the number.
-     *
-     * @param  \App\Models\Admin|object|null  $client
+     * Prefix country calling code (e.g. +61) when the number is not already international.
      */
-    protected function formatClientMobileForForm956($client): string
+    protected function combineCountryCodeWithPhone(string $countryCode, string $phone): string
     {
-        if ($client === null) {
-            return '';
-        }
-
-        $code = trim((string) ($client->country_code ?? ''));
-        $phone = trim((string) ($client->phone ?? ''));
+        $code = trim($countryCode);
+        $phone = trim($phone);
         if ($phone === '') {
             return '';
         }
@@ -423,6 +417,43 @@ class Form956Controller extends Controller
         }
 
         return trim($code . ' ' . $phone);
+    }
+
+    /**
+     * Form 956 question 13 — client Mobile/cell: country_code + phone.
+     *
+     * @param  \App\Models\Admin|object|null  $client
+     */
+    protected function formatClientMobileForForm956($client): string
+    {
+        if ($client === null) {
+            return '';
+        }
+
+        return $this->combineCountryCodeWithPhone(
+            (string) ($client->country_code ?? ''),
+            (string) ($client->phone ?? '')
+        );
+    }
+
+    /**
+     * Form 956 question 6 — migration agent Mobile/cell: staff.country_code + business_mobile (or business_phone).
+     *
+     * @param  \App\Models\Staff|object|null  $agent
+     */
+    protected function formatAgentMobileForForm956($agent): string
+    {
+        if ($agent === null) {
+            return '';
+        }
+
+        $mobile = trim((string) ($agent->business_mobile ?? ''));
+        $phone = $mobile !== '' ? $mobile : trim((string) ($agent->business_phone ?? ''));
+
+        return $this->combineCountryCodeWithPhone(
+            (string) ($agent->country_code ?? ''),
+            $phone
+        );
     }
 
     /**
@@ -491,11 +522,14 @@ class Form956Controller extends Controller
 
         $fullAddress = trim(preg_replace('/\s+/', ' ', $fullAddress));
 
-        // Trailing ", Australia" / " Australia" stops postcode-at-end matching; strip country first for parsing only
-        $hadTrailingCountry = false;
+        // Trailing country stops postcode-at-end matching; strip first so postcodes like "V3V5K8" before "Canada" parse correctly
+        $trailingCountryLabel = null;
         if (preg_match('/,?\s*(Australia|AU)\s*$/i', $fullAddress)) {
-            $hadTrailingCountry = true;
+            $trailingCountryLabel = 'Australia';
             $fullAddress = trim(preg_replace('/,?\s*(Australia|AU)\s*$/i', '', $fullAddress));
+        } elseif (preg_match('/,?\s*Canada\s*$/i', $fullAddress)) {
+            $trailingCountryLabel = 'Canada';
+            $fullAddress = trim(preg_replace('/,?\s*Canada\s*$/i', '', $fullAddress));
         }
 
         // Australian 4-digit postcode at end of (possibly country-stripped) string
@@ -522,6 +556,12 @@ class Form956Controller extends Controller
                     $parts,
                     fn ($p) => ! preg_match('/\b(?:Australia|AU)\b/i', $p)
                 ));
+            }
+
+            // If country was not stripped from string (spacing/typos), drop trailing country segment before postcode detection
+            [$parts, $partsCountryLabel] = $this->popTrailingCountrySegmentFromParts($parts);
+            if ($trailingCountryLabel === null && $partsCountryLabel !== null) {
+                $trailingCountryLabel = $partsCountryLabel;
             }
 
             // Postcode in its own comma segment (e.g. "..., VIC, v4v3" or intl codes) — not AU state/country
@@ -557,11 +597,39 @@ class Form956Controller extends Controller
         // PDF *resadd cntry* = country; suburb + state on line 2; *resadd pc* = postcode only
         $line3Trim = trim($result['line3'] ?? '');
         $isAuStateOnly = $line3Trim !== '' && (bool) preg_match('/^(NSW|VIC|QLD|SA|WA|TAS|NT|ACT)$/i', $line3Trim);
-        if ($hadTrailingCountry || ($stripAustralia && $isAuStateOnly)) {
-            $result = $this->mergeStateIntoLine2AndSetCountryAustralia($result, $statePattern);
+        if ($trailingCountryLabel !== null) {
+            $result = $this->mergeStateIntoLine2AndSetCountry($result, $statePattern, $trailingCountryLabel);
+        } elseif ($stripAustralia && $isAuStateOnly) {
+            $result = $this->mergeStateIntoLine2AndSetCountry($result, $statePattern, 'Australia');
         }
 
         return $this->stripTrailingPostcodeFromLine2($result);
+    }
+
+    /**
+     * Remove a trailing "Australia" / "Canada" segment from comma parts when not already stripped from the string.
+     *
+     * @return array{0: array<int, string>, 1: string|null}
+     */
+    protected function popTrailingCountrySegmentFromParts(array $parts): array
+    {
+        if ($parts === []) {
+            return [$parts, null];
+        }
+
+        $last = trim($parts[count($parts) - 1]);
+        if (preg_match('/^(Australia|AU)$/i', $last)) {
+            array_pop($parts);
+
+            return [array_values(array_filter($parts, fn ($p) => $p !== '')), 'Australia'];
+        }
+        if (preg_match('/^Canada$/i', $last)) {
+            array_pop($parts);
+
+            return [array_values(array_filter($parts, fn ($p) => $p !== '')), 'Canada'];
+        }
+
+        return [$parts, null];
     }
 
     /**
@@ -585,7 +653,7 @@ class Form956Controller extends Controller
             return [$parts, ''];
         }
 
-        if (preg_match('/^(Australia|AU)$/i', $last)) {
+        if (preg_match('/^(Australia|AU|Canada)$/i', $last)) {
             return [$parts, ''];
         }
 
@@ -628,8 +696,9 @@ class Form956Controller extends Controller
         }
 
         $quoted = preg_quote($pc, '/');
-        if (preg_match('/\s+' . $quoted . '\s*$/', $line2)) {
-            $result['line2'] = trim(preg_replace('/\s+' . $quoted . '\s*$/', '', $line2));
+        // "Suburb, VIC, V3V5K8" or "Suburb VIC V3V5K8"
+        if (preg_match('/(?:,\s*|\s+)' . $quoted . '\s*$/', $line2)) {
+            $result['line2'] = trim(preg_replace('/(?:,\s*|\s+)' . $quoted . '\s*$/', '', $line2));
         }
 
         return $result;
@@ -639,13 +708,13 @@ class Form956Controller extends Controller
      * @param  array{line1:string,line2:string,line3:string,postcode:string}  $result
      * @return array{line1:string,line2:string,line3:string,postcode:string}
      */
-    protected function mergeStateIntoLine2AndSetCountryAustralia(array $result, string $statePattern): array
+    protected function mergeStateIntoLine2AndSetCountry(array $result, string $statePattern, string $countryName): array
     {
         $line3 = trim($result['line3'] ?? '');
         if ($line3 !== '' && preg_match($statePattern, $line3) && ! preg_match('/\b(?:Australia|AU)\b/i', $line3)) {
             $result['line2'] = trim(($result['line2'] ?? '') . ' ' . $line3);
         }
-        $result['line3'] = 'Australia';
+        $result['line3'] = $countryName;
 
         return $result;
     }
@@ -851,7 +920,7 @@ class Form956Controller extends Controller
                 'mg.resadd pc' =>  $agent_address_parts_postcode,
 
                 'mg.postal str' => 'AS ABOVE',
-                'mg.mob' => $form->agent->business_mobile ?? $form->agent->business_phone ?? '',
+                'mg.mob' => $this->formatAgentMobileForForm956($form->agent),
 
                 // Form type
                 'mg.app' => $form->form_type === 'appointment' ? 'No' : 'Yes',
