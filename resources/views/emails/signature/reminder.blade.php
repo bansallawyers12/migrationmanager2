@@ -190,6 +190,12 @@
                     Sign Now
                 </a>
             </div>
+            <p class="message" style="margin-top: 10px;">
+                Or copy this link:
+                <a href="{{ $signingUrl }}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">
+                    {{ $signingUrl }}
+                </a>
+            </p>
 
             <p class="message">
                 <strong>Why is this important?</strong><br>
