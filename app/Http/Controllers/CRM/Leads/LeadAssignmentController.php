@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Staff;
 use App\Models\Lead;
+use App\Support\StaffClientVisibility;
 
 class LeadAssignmentController extends Controller
 {
@@ -39,7 +40,13 @@ class LeadAssignmentController extends Controller
         
         if ($leadId) {
             $lead = Lead::find($leadId);
-            if (!$lead || $lead->user_id != Auth::user()->id) {
+            if (! $lead) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+            $role = (int) Auth::user()->role;
+            $fullAccess = in_array($role, StaffClientVisibility::leadFullAccessRoleIds(), true);
+            $isOwner = (int) ($lead->user_id ?? 0) === (int) Auth::user()->id;
+            if (! $fullAccess && ! $isOwner) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
         }

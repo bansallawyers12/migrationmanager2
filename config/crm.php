@@ -33,4 +33,19 @@ return [
         explode(',', (string) env('CRM_PERSON_ASSISTING_ROLE_IDS', '13'))
     ), static fn (int $id) => $id > 0)),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Lead list / lead record full access (staff.role)
+    |--------------------------------------------------------------------------
+    |
+    | These staff roles see every lead (Lead List and lead detail/edit). All other
+    | staff only see leads where admins.user_id matches their staff id.
+    | Override via CRM_LEAD_FULL_ACCESS_ROLE_IDS e.g. "1,12".
+    |
+    */
+    'lead_full_access_role_ids' => array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_LEAD_FULL_ACCESS_ROLE_IDS', '1,12,17'))
+    ), static fn (int $id) => $id > 0)),
+
 ];

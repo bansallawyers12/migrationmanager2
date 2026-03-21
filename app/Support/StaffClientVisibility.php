@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Row-level visibility for CRM staff whose role is "Person Assisting".
+ * Row-level visibility for CRM staff.
  *
- * Access is allowed when either:
- * - any client_matters row for that admins.id has sel_person_assisting = staff id, or
- * - admins.user_id = staff id (typical lead assignment).
+ * Clients (admins.type=client): "Person Assisting" roles are limited to matters they assist
+ * on or admins.user_id = staff id. Super admin (staff role 1) bypasses. Other roles see all clients.
  *
- * Super admin (staff role 1) bypasses. Other roles are unchanged.
+ * Leads (admins.type=lead): roles in lead_full_access_role_ids (default 1, 12) see all leads;
+ * everyone else only sees leads where admins.user_id = staff id.
  *
  * Note: Controllers that accept client_id in AJAX (documents, activities, etc.) must call
  * canAccessClientOrLead() — listing/detail alone is not enough.
@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
 final class StaffClientVisibility
 {
     private const DEFAULT_PERSON_ASSISTING_ROLE_IDS = [13];
+
+    private const DEFAULT_LEAD_FULL_ACCESS_ROLE_IDS = [1, 12];
 
     public static function personAssistingRoleIds(): array
     {
@@ -33,6 +35,22 @@ final class StaffClientVisibility
         ));
 
         return $filtered !== [] ? $filtered : self::DEFAULT_PERSON_ASSISTING_ROLE_IDS;
+    }
+
+    /**
+     * Staff roles that see every lead (list + detail). Default: Super Admin (1), Admin (12).
+     *
+     * @return list<int>
+     */
+    public static function leadFullAccessRoleIds(): array
+    {
+        $ids = config('crm.lead_full_access_role_ids', self::DEFAULT_LEAD_FULL_ACCESS_ROLE_IDS);
+        $filtered = array_values(array_filter(
+            array_map('intval', (array) $ids),
+            static fn (int $id) => $id > 0
+        ));
+
+        return $filtered !== [] ? $filtered : self::DEFAULT_LEAD_FULL_ACCESS_ROLE_IDS;
     }
 
     /**
@@ -66,6 +84,26 @@ final class StaffClientVisibility
     }
 
     /**
+     * Lead list queries: full-access roles see all leads; others only assigned leads (admins.user_id).
+     * Does not change client listing — use restrictAdminEloquentQuery for clients.
+     *
+     * @param  Builder<\App\Models\Lead>  $query
+     */
+    public static function restrictLeadListQuery(Builder $query): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return;
+        }
+
+        if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
+            return;
+        }
+
+        $query->where('admins.user_id', (int) $user->id);
+    }
+
+    /**
      * @param  Builder<\App\Models\Admin>  $query
      */
     public static function restrictAdminEloquentQuery(Builder $query): void
@@ -95,6 +133,19 @@ final class StaffClientVisibility
             return true;
         }
 
+        $row = Admin::query()
+            ->where('id', $adminId)
+            ->whereIn('type', ['client', 'lead'])
+            ->first(['id', 'type', 'user_id']);
+
+        if (!$row) {
+            return false;
+        }
+
+        if (($row->type ?? '') === 'lead') {
+            return self::canStaffAccessLeadRow($user, $row);
+        }
+
         if (!self::isRestrictedPersonAssisting($user)) {
             return true;
         }
@@ -108,11 +159,18 @@ final class StaffClientVisibility
             return true;
         }
 
-        $row = Admin::query()
-            ->where('id', $adminId)
-            ->whereIn('type', ['client', 'lead'])
-            ->first(['id', 'user_id']);
+        return (int) ($row->user_id ?? 0) === $staffId;
+    }
 
-        return $row && (int) ($row->user_id ?? 0) === $staffId;
+    /**
+     * @param  \Illuminate\Database\Eloquent\Model|object  $leadRow  admins row with user_id
+     */
+    private static function canStaffAccessLeadRow(Authenticatable $user, object $leadRow): bool
+    {
+        if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
+            return true;
+        }
+
+        return (int) ($leadRow->user_id ?? 0) === (int) $user->id;
     }
 }

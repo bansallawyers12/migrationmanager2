@@ -50,7 +50,7 @@ class LeadController extends Controller
         if (array_key_exists('20', $module_access)) {
             // Using Lead model - automatically filters by type='lead' and is_deleted=null
             $query = Lead::where('is_archived', 0);
-            StaffClientVisibility::restrictAdminEloquentQuery($query);
+            StaffClientVisibility::restrictLeadListQuery($query);
 
             // Apply filters using modern syntax
             $query->when($request->filled('client_id'), function ($q) use ($request) {
@@ -113,7 +113,7 @@ class LeadController extends Controller
             }
 
             $statusOptionsQuery = Lead::query()->where('is_archived', 0);
-            StaffClientVisibility::restrictAdminEloquentQuery($statusOptionsQuery);
+            StaffClientVisibility::restrictLeadListQuery($statusOptionsQuery);
             $statusOptions = $statusOptionsQuery
                 ->select('status')
                 ->distinct()
@@ -1135,6 +1135,10 @@ class LeadController extends Controller
             if (!$id) {
                 return Redirect::to('/leads')->with('error', config('constants.decode_string'));
             }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
+            }
             
             // Using Lead model with withArchived scope to include archived leads
             $fetchedData = Lead::withArchived()->where('id', $id)->first();
@@ -1353,6 +1357,11 @@ class LeadController extends Controller
             if (!$decodedId) {
                 return redirect()->route('leads.index')
                     ->with('error', config('constants.decode_string') ?? 'Invalid lead ID.');
+            }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $decodedId, Auth::user())) {
+                return redirect()->route('leads.index')
+                    ->with('error', config('constants.unauthorized'));
             }
             
             // Find the lead (using withArchived to include archived leads)

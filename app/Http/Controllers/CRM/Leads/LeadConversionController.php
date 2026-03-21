@@ -10,6 +10,7 @@ use App\Models\Admin;
 use App\Models\Lead;
 use App\Models\ClientMatter;
 use App\Models\Matter;
+use App\Support\StaffClientVisibility;
 
 class LeadConversionController extends Controller
 {
@@ -65,6 +66,10 @@ class LeadConversionController extends Controller
         
         if(!$lead) {
             return redirect()->back()->with('error', 'Lead not found');
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $lead->id, Auth::user())) {
+            return redirect()->back()->with('error', config('constants.unauthorized'));
         }
 
         // Start transaction
