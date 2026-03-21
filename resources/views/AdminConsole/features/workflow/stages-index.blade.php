@@ -47,7 +47,7 @@
 							</div>
 						</div>
 						<div class="card-body">
-							<p class="text-muted small mb-3">Stages labelled <span class="badge badge-secondary">Frozen</span> are required for the system (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) and cannot be edited or deleted.</p>
+							<p class="text-muted small mb-3">Stages labelled <span class="badge badge-secondary">Protected</span> are required by the system (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) and cannot be renamed or deleted.</p>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap workflow-stages-table">
 									<thead>
@@ -66,7 +66,7 @@
 										<td>
 											{{ $list->name ?: config('constants.empty', '—') }}
 											@if($stageFrozen)
-											<span class="badge badge-secondary ml-1 align-middle" title="This stage cannot be renamed or deleted">Frozen</span>
+											<span class="badge badge-secondary ml-1 align-middle" title="This stage cannot be renamed or deleted">Protected</span>
 											@endif
 										</td>
 										<td>{{ $countmatters }}</td>

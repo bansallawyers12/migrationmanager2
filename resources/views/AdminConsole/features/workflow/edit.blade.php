@@ -36,7 +36,7 @@
 											@php $stageFrozen = $fetchedData->isFrozen(); @endphp
 											@if($stageFrozen)
 											<div class="alert alert-warning" role="alert">
-												<strong>Frozen stage.</strong> This stage cannot be renamed or deleted. It is required for consistent matter workflow behaviour.
+												<strong>Protected stage.</strong> This stage cannot be renamed or deleted. It is required for consistent matter workflow behaviour.
 											</div>
 											@endif
 											<div class="row">

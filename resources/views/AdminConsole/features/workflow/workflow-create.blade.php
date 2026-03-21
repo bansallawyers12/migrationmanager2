@@ -42,8 +42,8 @@
 								<div class="alert alert-info mb-3" role="alert">
 									<i class="fas fa-info-circle"></i>
 									The new workflow will be pre-populated with all stages from the <strong>General</strong> workflow.
-									Once created you will land on the stages page where you can add new stages or rename/delete any non-frozen ones.
-									Frozen stages (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) are locked by the system and cannot be changed.
+									Once created you will land on the stages page where you can add new stages or rename/delete any non-protected ones.
+									Protected stages (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) are required by the system and cannot be changed.
 								</div>
 								<button type="submit" class="btn btn-primary">Create Workflow</button>
 							</div>
