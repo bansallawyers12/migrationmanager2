@@ -96,9 +96,14 @@
 
     $(document).ready(function() {
         $(document).delegate('.create_note_d', 'click', function() {
+            // Reset type select and clear any leftover phone/extra fields from a previous edit
+            $('#create_note_d select[name="task_group"]').val('');
+            $('#create_note_d .additional-fields-container').html('');
+
             $('#create_note_d').modal('show');
             $('#create_note_d input[name="mailid"]').val(0);
             $('#create_note_d input[name="title"]').val("Matter Discussion");
+            $('#create_note_d input[name="noteid"]').val('');
             $('#create_note_d #appliationModalLabel').html('Create Note');
 
             // Pre-select the currently active matter so notes are saved under the right matter
@@ -117,6 +122,10 @@
         });
 
         $(document).delegate('.create_note', 'click', function() {
+            // Reset type select and clear any leftover phone/extra fields from a previous edit
+            $('#create_note select[name="task_group"]').val('');
+            $('#create_note .additional-fields-container').html('');
+
             $('#create_note').modal('show');
             $('#create_note input[name="mailid"]').val(0);
             $('#create_note input[name="title"]').val('');

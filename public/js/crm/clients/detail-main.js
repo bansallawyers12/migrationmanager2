@@ -5178,7 +5178,9 @@ Bansal Immigration`;
 
             var selectedValue = $(this).val();
 
-            var additionalFields = $(this).closest('form').find('.additional-fields-container').first();
+            var $form = $(this).closest('form');
+
+            var additionalFields = $form.find('.additional-fields-container').first();
 
 
 
@@ -5208,7 +5210,7 @@ Bansal Immigration`;
 
                 //Fetch all contact list of any client at create note popup
 
-                var client_id = $('#client_id').val();
+                var client_id = $form.find('input[name="client_id"]').val() || $('#client_id').val() || (window.ClientDetailConfig && window.ClientDetailConfig.clientId);
 
                 $('.popuploader').show();
 

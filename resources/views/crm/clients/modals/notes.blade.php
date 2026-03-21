@@ -15,9 +15,9 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<form method="post" action="{{URL::to('/create-note')}}" name="notetermform" autocomplete="off" id="notetermform" enctype="multipart/form-data">
-				@csrf
-				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
+			<form method="post" action="{{URL::to('/create-note')}}" name="notetermform" autocomplete="off" id="notetermform" enctype="multipart/form-data">
+			@csrf
+			<input type="hidden" name="client_id" id="note_simple_client_id" value="{{$fetchedData->id}}">
 				<input type="hidden" name="noteid" value="">
 				<input type="hidden" name="mailid" value="0">
 				<input type="hidden" name="vtype" value="client">
