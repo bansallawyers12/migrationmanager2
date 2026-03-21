@@ -127,7 +127,16 @@ class WorkflowController extends Controller
         $lists = WorkflowStage::where('workflow_id', $workflow->id)
             ->orderByRaw('COALESCE(sort_order, id) ASC')
             ->paginate(config('constants.limit', 50));
-        return view('AdminConsole.features.workflow.stages-index', compact('workflow', 'lists'));
+
+        // Single query for all matter counts rather than one per row.
+        $stageIds = $lists->pluck('id')->toArray();
+        $matterCounts = ClientMatter::where('workflow_id', $workflow->id)
+            ->whereIn('workflow_stage_id', $stageIds)
+            ->selectRaw('workflow_stage_id, COUNT(*) as cnt')
+            ->groupBy('workflow_stage_id')
+            ->pluck('cnt', 'workflow_stage_id');
+
+        return view('AdminConsole.features.workflow.stages-index', compact('workflow', 'lists', 'matterCounts'));
     }
 
     /**

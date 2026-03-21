@@ -40,68 +40,20 @@
 											</div>
 											@endif
 											<div class="row">
-												<!--<div class="col-12 col-md-4 col-lg-4">
-													<div class="form-group">
-														<label for="name">Name <span class="span_req">*</span></label>
-														{{-- <input type="text" name="name" value="{{ @$fetchedData->name }}" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Name"> --}}
-														{{--@if ($errors->has('name'))--}}
-															<span class="custom-error" role="alert">
-																<strong>{{--@$errors->first('name')--}}</strong>
-															</span>
-														{{--@endif--}}
-													</div>
-												</div>-->
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
-														<label for="stages">Workflow Stages <span class="span_req">*</span></label>
-														<div class="workflow_stges">
-															<table class="table">
-															<?php
-															$stagesquery = \App\Models\WorkflowStage::where('id', @$fetchedData->id);
-															$stagescount = $stagesquery->count();
-															$stages = $stagesquery->get();
-															$i = 0;
-															if($stagescount !== 0){
-																foreach($stages as $stage){
-															    ?>
-																<tr>
-																	<td>
-																		<input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control" value="{{@$stage->name}}" @if($stageFrozen) readonly @endif >
-																	</td>
-																	<td>
-                                                                        <?php
-                                                                        if($i == 0 || $i == 1){
-                                                                        } else { ?>
-                                                                            <a href="javascript:;" class="remove_stage"><i class="fa fa-trash"></i></a>
-                                                                        <?php } ?>
-																	</td>
-																	<td></td>
-																</tr>
-																<?php $i++;
-                                                                }
-															} else {
-                                                                ?>
-                                                                <tr>
-                                                                    <td>
-                                                                        <input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control">
-                                                                    </td>
-                                                                    <td></td>
-                                                                    <td></td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>
-                                                                        <input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control">
-                                                                    </td>
-                                                                    <td></td>
-                                                                    <td></td>
-                                                                </tr>
-                                                                <?php
-                                                            } ?>
-															</table>
-														</div>
-														<!--<div class="">
-															<a href="javascript:;" class="add_stage btn btn-info">Add Stage</a>
-														</div>-->
+														<label for="stage_name">Stage Name <span class="span_req">*</span></label>
+														<input
+															type="text"
+															id="stage_name"
+															name="stage_name[]"
+															placeholder="Stage Name"
+															class="form-control"
+															value="{{ $fetchedData->name }}"
+															@if($stageFrozen) readonly @endif
+															required
+															maxlength="255"
+														>
 													</div>
 												</div>
 											</div>
@@ -123,22 +75,3 @@
 </div>
 
 @endsection
-@push('scripts')
-<script>
-jQuery(document).ready(function($){
-	$('.add_stage').on('click', function(){
-		var html = '<tr>'+
-				'<td><input type="text" name="stage_name[]" placeholder="Stage Name" class="form-control"></td>'+
-				'<td><a href="javascript:;" class="remove_stage"><i class="fa fa-trash"></i></a></td>'+
-				'<td></td>'+
-			'</tr>';
-
-		$('.workflow_stges table').append(html);
-	});
-
-	$(document).delegate('.remove_stage', 'click', function(){
-		$(this).parent().parent().remove();
-	});
-});
-</script>
-@endpush

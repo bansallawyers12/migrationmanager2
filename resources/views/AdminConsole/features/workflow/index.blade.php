@@ -44,7 +44,7 @@
 									$legacyStageFrozen = \App\Support\WorkflowStageFreeze::isFrozen($list->name ?? '');
 									?>
 									<tr id="id_{{@$list->id}}">
-                                        <td>{{ @$list->name == "" ? config('constants.empty') : $list->name }}@if($legacyStageFrozen) <span class="badge bg-secondary">Frozen</span>@endif</td>
+                                        <td>{{ @$list->name == "" ? config('constants.empty') : $list->name }}@if($legacyStageFrozen) <span class="badge badge-secondary ml-1">Frozen</span>@endif</td>
 										<td>{{$countmatters}}</td>
 										<!--<td>{{--@if($list->status == 1) Active @else Inactive @endif--}}</td>-->
 										<td>

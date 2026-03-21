@@ -47,7 +47,7 @@
 							</div>
 						</div>
 						<div class="card-body">
-							<p class="text-muted small mb-3">Stages labelled <span class="badge bg-secondary">Frozen</span> are required for the system (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) and cannot be edited or deleted.</p>
+							<p class="text-muted small mb-3">Stages labelled <span class="badge badge-secondary">Frozen</span> are required for the system (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) and cannot be edited or deleted.</p>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap workflow-stages-table">
 									<thead>
@@ -60,13 +60,13 @@
 									@if($lists->count() > 0)
 									<tbody>
 									@foreach ($lists as $list)
-									<?php $countmatters = \App\Models\ClientMatter::where('workflow_stage_id', $list->id)->where('workflow_id', $workflow->id)->count(); ?>
+									<?php $countmatters = $matterCounts[$list->id] ?? 0; ?>
 									<?php $stageFrozen = $list->isFrozen(); ?>
 									<tr>
 										<td>
 											{{ $list->name ?: config('constants.empty', '—') }}
 											@if($stageFrozen)
-											<span class="badge bg-secondary ms-1 align-middle" title="This stage cannot be renamed or deleted">Frozen</span>
+											<span class="badge badge-secondary ml-1 align-middle" title="This stage cannot be renamed or deleted">Frozen</span>
 											@endif
 										</td>
 										<td>{{ $countmatters }}</td>
