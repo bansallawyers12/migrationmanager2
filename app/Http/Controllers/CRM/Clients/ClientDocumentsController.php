@@ -21,6 +21,8 @@ use App\Models\VisaDocumentType;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
+use App\Support\StaffClientVisibility;
+use Illuminate\Http\JsonResponse;
 
 class ClientDocumentsController extends Controller
 {
@@ -40,6 +42,38 @@ class ClientDocumentsController extends Controller
         return Storage::disk('s3');
     }
 
+    private function denyJsonUnlessStaffClientAccess(int $clientId): ?JsonResponse
+    {
+        if (! StaffClientVisibility::isRestrictedPersonAssisting(Auth::user())) {
+            return null;
+        }
+
+        if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
+            return response()->json(StaffClientVisibility::unauthorizedPayload(), 403);
+        }
+
+        return null;
+    }
+
+    /**
+     * For legacy handlers that echo JSON instead of returning JsonResponse.
+     */
+    private function blockEchoUnlessStaffClientAccess(int $clientId): bool
+    {
+        if (! StaffClientVisibility::isRestrictedPersonAssisting(Auth::user())) {
+            return false;
+        }
+
+        if ($clientId <= 0 || ! StaffClientVisibility::canAccessClientOrLead($clientId)) {
+            header('Content-Type: application/json');
+            echo json_encode(StaffClientVisibility::unauthorizedPayload());
+
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Add Personal/Education Document Checklist
      */
@@ -51,6 +85,10 @@ class ClientDocumentsController extends Controller
             if(empty($clientid)) {
                 $response['message'] = 'Client ID is required';
                 return response()->json($response);
+            }
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
+                return $deny;
             }
             
             $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
@@ -318,6 +356,10 @@ class ClientDocumentsController extends Controller
     
         $response = ['status' => false, 'message' => 'Please try again', 'data' => '', 'griddata' => ''];
         $clientid = $request->clientid;
+        if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
+            ob_end_clean();
+            exit;
+        }
         $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
         $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
@@ -517,6 +559,9 @@ class ClientDocumentsController extends Controller
         
         try {
             $clientid = $request->clientid;
+            if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
+                return;
+            }
             $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
             if(!empty($admin_info1)){
                 $client_unique_id = $admin_info1->client_id;
@@ -742,6 +787,10 @@ class ClientDocumentsController extends Controller
         
         $response = ['status' => false, 'message' => 'Please try again', 'data' => '', 'griddata' => ''];
         $clientid = $request->clientid;
+        if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
+            ob_end_clean();
+            exit;
+        }
         $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
         $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
@@ -1083,6 +1132,9 @@ class ClientDocumentsController extends Controller
 
             $doc = \App\Models\Document::where('id', $id)->first();
             $client_id = $doc->client_id;
+            if ($this->blockEchoUnlessStaffClientAccess((int) $client_id)) {
+                return;
+            }
             $doc_type = $doc->doc_type ?? '';
 
             // Step 3: Check if this is a checklist-only document (no file uploaded)
@@ -1323,6 +1375,9 @@ class ClientDocumentsController extends Controller
             $note_id = $request->note_id;
             if(\App\Models\Document::where('id',$note_id)->exists()){
             $data = DB::table('documents')->where('id', @$note_id)->first();
+            if ($this->blockEchoUnlessStaffClientAccess((int) ($data->client_id ?? 0))) {
+                return;
+            }
             $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
             $res = DB::table('documents')->where('id', @$note_id)->delete();
             //$this->s3Disk()->delete('documents/' . $data->myfile);
@@ -1412,6 +1467,10 @@ class ClientDocumentsController extends Controller
             if (!$document) {
                 $response['message'] = 'Document not found';
                 return response()->json($response);
+            }
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $document->client_id)) {
+                return $deny;
             }
             
             // Check user permission (basic check - user must be authenticated)
@@ -1530,6 +1589,10 @@ class ClientDocumentsController extends Controller
             if (!$clientId || !$matterId) {
                 return response()->json([]);
             }
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
+                return $deny;
+            }
             
             // Get visa document categories for this client and matter
             $categories = \App\Models\VisaDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
@@ -1592,9 +1655,12 @@ class ClientDocumentsController extends Controller
             $doc_id = $request->doc_id;
             $doc_type = $request->doc_type;
             if(\App\Models\Document::where('id',$doc_id)->exists()){
+            $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
+            if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
+                return;
+            }
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => 1));
             if($upd){
-                $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "moved {$doc_type} Document to Not Used - {$matterRef}"
@@ -1679,6 +1745,9 @@ class ClientDocumentsController extends Controller
             $checklist = $request->checklist;
             if(\App\Models\Document::where('id',$id)->exists()){
             $doc = \App\Models\Document::where('id',$id)->first();
+            if ($this->blockEchoUnlessStaffClientAccess((int) ($doc->client_id ?? 0))) {
+                return;
+            }
             $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
             if($res){
                 // Build complete HTML structure to restore UI state
@@ -1727,9 +1796,12 @@ class ClientDocumentsController extends Controller
             $doc_id = $request->doc_id;
             $doc_type = $request->doc_type;
             if(\App\Models\Document::where('id',$doc_id)->exists()){
+            $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
+            if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
+                return;
+            }
             $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
             if($upd){
-                $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
                 $matterRef = $this->getMatterReference($docInfo->client_id);
                 $subject = !empty($matterRef) 
                     ? "restored {$doc_type} Document - {$matterRef}"
@@ -1816,6 +1888,10 @@ class ClientDocumentsController extends Controller
             if (!$document) {
                 $response['message'] = 'Checklist not found';
                 return response()->json($response);
+            }
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $document->client_id)) {
+                return $deny;
             }
             
             // Only allow deletion if no file has been uploaded
@@ -1982,6 +2058,12 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
+        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
+                return $deny;
+            }
+        }
+
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
         $existsForNullClient = PersonalDocumentType::where('title', $categoryTitle)
             ->where('status', 1)
@@ -2038,6 +2120,12 @@ class ClientDocumentsController extends Controller
 
         $category = PersonalDocumentType::findOrFail($request->id);
         $clientId = $category->client_id; // Get the client_id of the category being updated
+
+        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
+                return $deny;
+            }
+        }
 
         // Check if the category is client-generated
         if ($category->client_id === null) {
@@ -2105,6 +2193,12 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
+        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
+                return $deny;
+            }
+        }
+
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
         $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
             ->where('status', 1)
@@ -2167,6 +2261,12 @@ class ClientDocumentsController extends Controller
         // Check if the category is client-generated
         if ($category->client_matter_id === null) {
             return response()->json(['success' => false, 'message' => 'Only client-matter-generated categories can be updated.']);
+        }
+
+        if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $category->client_id)) {
+                return $deny;
+            }
         }
 
         $categoryTitle = trim($request->input('title'));
@@ -2531,6 +2631,10 @@ class ClientDocumentsController extends Controller
             $categoryid = $request->categoryid;
             $doctype = $request->doctype ?? 'personal';
             $type = $request->type ?? 'client';
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
+                return $deny;
+            }
             
             $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
@@ -2709,6 +2813,10 @@ class ClientDocumentsController extends Controller
             $matterid = $request->matterid ?? null;
             $doctype = $request->doctype ?? 'visa';
             $type = $request->type ?? 'client';
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
+                return $deny;
+            }
             
             $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";

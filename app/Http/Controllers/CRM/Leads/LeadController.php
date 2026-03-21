@@ -19,6 +19,7 @@ use App\Models\Matter;
 use Carbon\Carbon;
 use App\Traits\ClientHelpers;
 use App\Services\ClientReferenceService;
+use App\Support\StaffClientVisibility;
 
 class LeadController extends Controller
 {
@@ -49,9 +50,8 @@ class LeadController extends Controller
         if (array_key_exists('20', $module_access)) {
             // Using Lead model - automatically filters by type='lead' and is_deleted=null
             $query = Lead::where('is_archived', 0);
+            StaffClientVisibility::restrictAdminEloquentQuery($query);
 
-            $totalData = $query->count();
-            
             // Apply filters using modern syntax
             $query->when($request->filled('client_id'), function ($q) use ($request) {
                 return $q->where('client_id', $request->input('client_id'));
@@ -104,13 +104,18 @@ class LeadController extends Controller
                 }
             }
 
+            $totalData = (clone $query)->count();
+
             $allowedPerPage = [10, 20, 50, 100, 200];
             $perPage = (int) $request->get('per_page', 20);
             if (!in_array($perPage, $allowedPerPage, true)) {
                 $perPage = 20;
             }
 
-            $statusOptions = Lead::select('status')
+            $statusOptionsQuery = Lead::query()->where('is_archived', 0);
+            StaffClientVisibility::restrictAdminEloquentQuery($statusOptionsQuery);
+            $statusOptions = $statusOptionsQuery
+                ->select('status')
                 ->distinct()
                 ->whereNotNull('status')
                 ->orderBy('status')
@@ -234,6 +239,10 @@ class LeadController extends Controller
             
             if (!$id) {
                 return Redirect::to('/leads')->with('error', config('constants.decode_string'));
+            }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
             }
             
             // Using Lead model with withArchived scope to include archived leads
@@ -739,6 +748,10 @@ class LeadController extends Controller
         if (!$id) {
             return Redirect::to('/leads')->with('error', config('constants.decode_string'));
         }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+            return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
+        }
         
         // Using Lead model - automatically handles filtering
         $fetchedData = Lead::find($id);
@@ -791,6 +804,10 @@ class LeadController extends Controller
         
         if (!$id) {
             return Redirect::to('/leads')->with('error', config('constants.decode_string'));
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+            return Redirect::to('/leads')->with('error', config('constants.unauthorized'));
         }
 
         $requestData = $request->all();

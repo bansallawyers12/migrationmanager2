@@ -1732,6 +1732,13 @@ class ClientPersonalDetailsController extends Controller
                 ], 404);
             }
 
+            if (! \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
             switch ($section) {
                 case 'basicInfo':
                     return $this->saveBasicInfoSection($request, $client);

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Admin;
+use App\Support\StaffClientVisibility;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -15,9 +16,13 @@ trait ClientQueries
      */
     protected function getBaseClientQuery()
     {
-        return Admin::where('is_archived', '=', '0')
+        $query = Admin::where('is_archived', '=', '0')
             ->where('type', '=', 'client')
             ->whereNull('is_deleted');
+
+        StaffClientVisibility::restrictAdminEloquentQuery($query);
+
+        return $query;
     }
 
     /**

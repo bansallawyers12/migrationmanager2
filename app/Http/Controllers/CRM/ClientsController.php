@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use App\Services\ClientReferenceService;
 use App\Support\NoteDescriptionHtml;
+use App\Support\StaffClientVisibility;
 
 use Hfig\MAPI;
 use Hfig\MAPI\OLE\Pear;
@@ -172,6 +173,10 @@ class ClientsController extends Controller
                     ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
             });
 
+            if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
+                $query->where('cm.sel_person_assisting', '=', $paId);
+            }
+
             if ($request->has('sel_matter_id')) {
                 $sel_matter_id = $request->input('sel_matter_id');
                 if(trim($sel_matter_id) != '') {
@@ -299,6 +304,10 @@ class ClientsController extends Controller
                     $q->where('cm.matter_status', '=', '0')
                         ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
                 });
+
+            if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
+                $query->where('cm.sel_person_assisting', '=', $paId);
+            }
 
             if ($request->has('sel_matter_id')) {
                 $sel_matter_id = $request->input('sel_matter_id');
@@ -535,8 +544,9 @@ class ClientsController extends Controller
                 ->where('type', '=', 'client')
                 ->whereNotNull('email')
                 ->where('email', '!=', '')
-                ->whereNull('is_deleted')
-                ->orderBy($sortField, $sortDirection);
+                ->whereNull('is_deleted');
+            StaffClientVisibility::restrictAdminEloquentQuery($query);
+            $query->orderBy($sortField, $sortDirection);
 
             $totalData = $query->count();
 
@@ -579,6 +589,7 @@ class ClientsController extends Controller
     public function archived(Request $request)
 	{
 		$query 		= Admin::where('is_archived', '=', '1')->whereIn('type', ['client', 'lead']);
+        StaffClientVisibility::restrictAdminEloquentQuery($query);
         $totalData 	= $query->count();	//for all data
         $lists		= $query->sortable(['id' => 'desc'])->paginate(20);
         return view('crm.archived.index', compact(['lists', 'totalData']));
@@ -611,6 +622,11 @@ class ClientsController extends Controller
             if (!$client) {
                 return redirect()->route('clients.index')
                     ->with('error', 'Client not found.');
+            }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $decodedId, Auth::user())) {
+                return redirect()->route('clients.index')
+                    ->with('error', config('constants.unauthorized'));
             }
             
             // Check if already archived
@@ -655,6 +671,15 @@ class ClientsController extends Controller
                 $message = 'Client not found.';
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json(['status' => 0, 'message' => $message], 404);
+                }
+                return redirect()->route('clients.archived')
+                    ->with('error', $message);
+            }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                $message = config('constants.unauthorized');
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 0, 'message' => $message], 403);
                 }
                 return redirect()->route('clients.archived')
                     ->with('error', $message);
@@ -1828,6 +1853,9 @@ class ClientsController extends Controller
         // Check authorization (assumed to be handled elsewhere)
         if (isset($id) && !empty($id)) {
             $id = $this->decodeString($id);
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
+            }
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
                 $fetchedData = Admin::with('company.contactPerson')->find($id);
                 
@@ -2000,6 +2028,10 @@ class ClientsController extends Controller
         if (isset($id) && !empty($id)) {
             $encodeId = $id;
             $id = $this->decodeString($id);
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
+            }
 
             // If $id1 holds a tab name rather than a matter reference (happens when the URL
             // only has two segments, e.g. /clients/detail/{client}/{tab}), move it to $tab
@@ -2177,8 +2209,9 @@ class ClientsController extends Controller
                     ->orWhereHas('company', function($q) use ($squeryLower) {
                         $q->whereRaw('LOWER(company_name) LIKE ?', ['%'.$squeryLower.'%']);
                     });
-            })
-            ->get();
+            });
+            StaffClientVisibility::restrictAdminEloquentQuery($clients);
+            $clients = $clients->get();
 
             /* $leads = \App\Models\Lead::where('converted', '=', 0)
 			->where(
@@ -2236,8 +2269,9 @@ class ClientsController extends Controller
                     ->orWhereHas('company', function($q) use ($squeryLower) {
                         $q->whereRaw('LOWER(company_name) LIKE ?', ['%'.$squeryLower.'%']);
                     });
-            })
-            ->get();
+            });
+            StaffClientVisibility::restrictAdminEloquentQuery($clients);
+            $clients = $clients->get();
 
 			// Exclude contact persons when their company is already in results (avoid duplicates)
 			$companyIdsInResults = $clients->where('is_company', true)->pluck('id')->toArray();
@@ -2428,6 +2462,7 @@ class ClientsController extends Controller
         $squery = $request->q;
         if ($squery != '') {
             $results = [];
+            $paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user());
             
             // Log the search query for debugging
             Log::info('Header search query: ' . $squery);
@@ -2454,6 +2489,9 @@ class ClientsController extends Controller
                         ->where('client_matters.matter_status', 1)
                         ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
+                        ->when($paId, function ($q) use ($paId) {
+                            $q->where('client_matters.sel_person_assisting', $paId);
+                        })
                         ->select(
                             'admins.id as client_id',
                             'admins.first_name',
@@ -2494,6 +2532,9 @@ class ClientsController extends Controller
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
                 ->where('client_matters.matter_status', 1)
+                ->when($paId, function ($q) use ($paId) {
+                    $q->where('client_matters.sel_person_assisting', $paId);
+                })
                 ->where(function($query) use ($squery) {
                     $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
                           ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
@@ -2614,7 +2655,9 @@ class ClientsController extends Controller
                     if ($d != "") {
                         $query->orWhere('admins.dob', '=', $d);
                     }
-                })
+                });
+            StaffClientVisibility::restrictAdminEloquentQuery($clientsQuery);
+            $clientsQuery = $clientsQuery
                 ->select(
                     'admins.*'
                 )
@@ -2781,6 +2824,14 @@ class ClientsController extends Controller
 			// Check if client exists - role must be integer for PostgreSQL compatibility
 			$clientExists = Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists();
 			
+			if($clientExists && ! StaffClientVisibility::canAccessClientOrLead((int) $request->id, Auth::user())){
+				$response['message'] = config('constants.unauthorized');
+				header('Content-Type: application/json');
+				echo json_encode($response);
+				ob_end_flush();
+				exit;
+			}
+			
 			if($clientExists){
 				$activities = ActivitiesLog::where('client_id', $request->id)
 					->orderby('created_at', 'DESC')
@@ -2850,6 +2901,12 @@ class ClientsController extends Controller
 
 	public function updateclientstatus(Request $request){
 		if(Admin::whereIn('type', ['client', 'lead'])->where('id', $request->id)->exists()){
+			if (! StaffClientVisibility::canAccessClientOrLead((int) $request->id, Auth::user())) {
+				$response['status'] = false;
+				$response['message'] = config('constants.unauthorized');
+				echo json_encode($response);
+				return;
+			}
 			// rating column dropped Phase 4 - no-op
 			$response['status'] 	= 	true;
 			$response['message']	=	'You\'ve successfully updated your client\'s information.';
@@ -7377,6 +7434,11 @@ class ClientsController extends Controller
             if (!$client) {
                 return redirect()->route('clients.index')
                     ->with('error', 'Client not found.');
+            }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
+                return redirect()->route('clients.index')
+                    ->with('error', config('constants.unauthorized'));
             }
 
             // Export client data
