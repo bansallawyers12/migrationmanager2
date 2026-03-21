@@ -2421,9 +2421,11 @@ success: function(response) {
 
             var $newRow = $('<tr class="product_field_clone">' + clonedval + '</tr>');
 
-            // Hide the invoice input inside the cloned row
+            // Reset invoice column (placeholder visible until Fee Transfer)
 
-            $newRow.find('.invoice_no_cls').hide();
+            $newRow.find('.invoice_no_cls').hide().removeAttr('data-valid').val('');
+
+            $newRow.find('.ledger-invoice-placeholder').show();
 
             $('.productitem').append($newRow);
 
@@ -2873,12 +2875,15 @@ success: function(response) {
 
             if (ledgerType === 'Fee Transfer') {
 
+                $row.find('.ledger-invoice-placeholder').hide();
+
                 $invoiceInput.show().attr('data-valid', 'required');
-                
-                // **FIX: Call listOfInvoice() to populate the dropdown**
+
                 listOfInvoice();
 
             } else {
+
+                $row.find('.ledger-invoice-placeholder').show();
 
                 $invoiceInput.hide().removeAttr('data-valid').val('');
 

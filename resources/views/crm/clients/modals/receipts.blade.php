@@ -143,7 +143,7 @@
 
 {{-- 1. Create Receipt Modal (Multi-Type: Client Funds Ledger, Invoice, Office Receipt) --}}
 <div class="modal fade custom_modal" id="createreceiptmodal" tabindex="-1" role="dialog" aria-labelledby="receiptModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg" role="document">
+	<div class="modal-dialog modal-xl" role="document">
 		<div class="modal-content">
 		  	<div class="modal-header">
 				<h5 class="modal-title">Create Receipt</h5>
@@ -193,11 +193,12 @@
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:11%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:11%;color: #34395e;">Entry Date</th>
-                                            <th style="width:11%;color: #34395e;">Type</th>
-                                            <th style="width:11%;color: #34395e;">Payment method</th>
-                                            <th style="width:24%;color: #34395e;">Description</th>
+                                            <th style="width:10%;color: #34395e;">Trans. Date</th>
+                                            <th style="width:10%;color: #34395e;">Entry Date</th>
+                                            <th style="width:10%;color: #34395e;">Type</th>
+                                            <th style="width:11%;color: #34395e;" title="Required when Type is Fee Transfer">Invoice</th>
+                                            <th style="width:10%;color: #34395e;">Payment method</th>
+                                            <th style="width:22%;color: #34395e;">Description</th>
                                             <th style="width:10%;color: #34395e;">Funds In (+)</th>
 											<th style="width:10%;color: #34395e;">Funds Out (-)</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -219,8 +220,10 @@
                                                     <option value="Disbursement">Disbursement</option>
 													<option value="Refund">Refund</option>
                                                 </select>
-
-                                                <select class="form-control invoice_no_cls"  name="invoice_no[]" style="display:none;margin-top: 5px;">
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <span class="ledger-invoice-placeholder text-muted">—</span>
+                                                <select class="form-control invoice_no_cls" name="invoice_no[]" style="display:none;">
                                                 </select>
                                             </td>
                                             <td>
@@ -260,7 +263,7 @@
                                 <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <tbody>
                                         <tr>
-                                            <td colspan="5" style="width:72.5%;text-align:right;color: #34395e;">Totals</td>
+                                            <td colspan="6" style="text-align:right;color: #34395e;">Totals</td>
                                             <td>
                                                 <span class="total_deposit_amount_all_rows" style="color: #34395e;"></span>
                                             </td>
