@@ -141,6 +141,10 @@ class ClientNotesController extends Controller
                         
                         // Format subject line with action word
                         $entityType = $request->vtype == 'client' ? 'Client' : 'Lead';
+                        $callNumber = trim((string) ($request->mobileNumber ?? ''));
+                        $activityPhonePrefix = $callNumber !== ''
+                            ? '<p class="activity-note-call-number"><strong>Number:</strong> ' . htmlspecialchars($callNumber, ENT_QUOTES, 'UTF-8') . '</p>'
+                            : '';
                         if($isUpdate) {
                             // "updated Call Notes - TGV_1" or "updated Lead Call Notes"
                             $subjectLine = !empty($matterReference) 
@@ -153,11 +157,12 @@ class ClientNotesController extends Controller
                                     $entityId,
                                     $subjectLine,
                                     $changedFields,
-                                    'note'
+                                    'note',
+                                    $activityPhonePrefix
                                 );
                             } else {
                                 // Log full description without truncation
-                                $description = $request->description;
+                                $description = $activityPhonePrefix . $request->description;
                                 $this->logClientActivity(
                                     $entityId,
                                     $subjectLine,
@@ -172,7 +177,7 @@ class ClientNotesController extends Controller
                                 : "added {$entityType} {$noteTypeFormatted} Notes";
                                 
                             // Enhanced create logging - Log full description without truncation
-                            $description = $request->description;
+                            $description = $activityPhonePrefix . $request->description;
                             $this->logClientActivity(
                                 $entityId,
                                 $subjectLine,
@@ -282,7 +287,7 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id; //dd($note_id);
 		if(Note::where('id',$note_id)->exists()){
-			$data = Note::select('title','description','task_group')->where('id',$note_id)->first();
+			$data = Note::select('title','description','task_group','mobile_number')->where('id',$note_id)->first();
 			$response['status'] 	= 	true;
 			$response['data']	=	$data;
 		}else{
@@ -411,6 +416,14 @@ class ClientNotesController extends Controller
                 <div class="note-card-info">
                     <span class="author-name-created"><?php echo htmlspecialchars($authorFirstName); ?> <?php echo htmlspecialchars($authorLastName); ?> added the</span><span class="note-type-inline <?php echo $typeInlineClass;?>"><?php echo $typeLabel; ?> notes</span>
                 </div>
+                <?php
+                $notePhone = trim((string) ($list->mobile_number ?? ''));
+                if ($notePhone !== '') { ?>
+                <div class="note-meta-redesign" style="margin-bottom: 10px;">
+                    <i class="fas fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
+                    <strong style="margin-left: 6px;">Number:</strong> <?php echo htmlspecialchars($notePhone); ?>
+                </div>
+                <?php } ?>
 
                 <div class="note-content-redesign">
                     <?php
@@ -433,7 +446,7 @@ class ClientNotesController extends Controller
     {
 		$note_id = $request->note_id;
 		if(Note::where('id',$note_id)->exists()){
-			$data = Note::select('client_id','title','description','task_group','type')->where('id',$note_id)->first();
+			$data = Note::select('client_id','title','description','task_group','type','mobile_number')->where('id',$note_id)->first();
 			$res = DB::table('notes')->where('id', @$note_id)->delete();
 			if($res){
 				if($data->type == 'client'){
@@ -441,8 +454,11 @@ class ClientNotesController extends Controller
                     $taskGroup = $data->task_group ?? 'General';
                     $noteTypeFormatted = ucfirst(strtolower($taskGroup));
                     
-                    // Log full description without truncation
-                    $description = $data->description;
+                    $mnDel = trim((string) ($data->mobile_number ?? ''));
+                    $deletePhonePrefix = $mnDel !== ''
+                        ? '<p class="activity-note-call-number"><strong>Number:</strong> ' . htmlspecialchars($mnDel, ENT_QUOTES, 'UTF-8') . '</p>'
+                        : '';
+                    $description = $deletePhonePrefix . $data->description;
                     
                     // Format as "deleted Call Notes"
                     $this->logClientActivity(

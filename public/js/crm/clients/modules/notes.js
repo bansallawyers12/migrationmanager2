@@ -175,10 +175,35 @@
                     $('.popuploader').hide();
                     var res = safeParse(response);
                     if (!res || !res.status) return;
-                    $('#create_note select[name="task_group"]').val(res.data.task_group);
+                    var taskGroup = res.data.task_group || '';
+                    var savedPhone = (res.data.mobile_number != null ? String(res.data.mobile_number) : '').trim();
+
+                    $('#create_note select[name="task_group"]').val(taskGroup);
                     $("#create_note .summernote-simple").val(res.data.description);
                     if (typeof setEditorContent === 'function') {
                         setEditorContent("#create_note .summernote-simple", res.data.description);
+                    }
+
+                    $('#create_note select[name="task_group"]').trigger('change');
+
+                    if (taskGroup === 'Call' && savedPhone) {
+                        var tries = 0;
+                        var maxTries = 80;
+                        var interval = setInterval(function() {
+                            tries++;
+                            var $sel = $('#create_note #mobileNumber');
+                            if ($sel.length && $sel.find('option').length > 1) {
+                                $sel.val(savedPhone);
+                                if ($sel.val() !== savedPhone) {
+                                    var esc = $('<div/>').text(savedPhone).html();
+                                    $sel.append('<option value="' + esc + '">' + esc + '</option>');
+                                    $sel.val(savedPhone);
+                                }
+                                clearInterval(interval);
+                            } else if (tries >= maxTries) {
+                                clearInterval(interval);
+                            }
+                        }, 50);
                     }
                 },
                 error: function(xhr, status, error) {

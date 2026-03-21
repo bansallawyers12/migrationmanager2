@@ -283,6 +283,12 @@
                             <div class="note-card-info">
                                 <span class="author-name-created">{{ $admin->first_name ?? 'NA' }} {{ $admin->last_name ?? 'NA' }} added the</span><span class="note-type-inline {{ $typeInlineClass }}">{{ $typeLabel }} notes</span>
                             </div>
+                            @if(!empty(trim((string) ($list->mobile_number ?? ''))))
+                                <div class="note-meta-redesign" style="margin-bottom: 10px;">
+                                    <i class="fas fa-phone" style="color: #2563eb;" aria-hidden="true"></i>
+                                    <strong style="margin-left: 6px;">Number:</strong> {{ $list->mobile_number }}
+                                </div>
+                            @endif
 
                             <!--<div class="note-content-redesign">{--!! nl2br(e($desc)) !!--}</div>-->
                             <div class="note-content-redesign">

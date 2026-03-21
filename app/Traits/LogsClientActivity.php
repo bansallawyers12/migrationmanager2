@@ -36,9 +36,10 @@ trait LogsClientActivity
      * @param string $subject The activity subject
      * @param array $changedFields Array of changed field names or field changes with old/new values
      * @param string $activityType The activity type (default: 'activity')
+     * @param string $descriptionPrefix Optional HTML/text prepended to the built description (e.g. call note phone)
      * @return ActivitiesLog
      */
-    protected function logClientActivityWithChanges($clientId, $subject, array $changedFields = [], $activityType = 'activity')
+    protected function logClientActivityWithChanges($clientId, $subject, array $changedFields = [], $activityType = 'activity', string $descriptionPrefix = '')
     {
         $description = '';
         if (!empty($changedFields)) {
@@ -72,6 +73,10 @@ trait LogsClientActivity
                                   '</strong> and <strong>' . end($changedFields) . '</strong></p>';
                 }
             }
+        }
+
+        if ($descriptionPrefix !== '') {
+            $description = $descriptionPrefix . $description;
         }
 
         return $this->logClientActivity($clientId, $subject, $description, $activityType);
