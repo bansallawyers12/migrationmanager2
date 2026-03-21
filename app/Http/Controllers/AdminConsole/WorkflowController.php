@@ -4,7 +4,6 @@ namespace App\Http\Controllers\AdminConsole;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
 
 use App\Models\Workflow;
 use App\Models\WorkflowStage;
@@ -75,6 +74,10 @@ class WorkflowController extends Controller
                 $stage->save();
             }
         });
+
+        if (!$wf || !$wf->id) {
+            return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow could not be created. Please try again.');
+        }
 
         return redirect()
             ->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id)))
@@ -277,9 +280,9 @@ class WorkflowController extends Controller
             $workflow = $stage->workflow;
             if ($workflow) {
                 return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id)))
-                    ->with('error', 'This workflow stage is frozen and cannot be renamed.');
+                    ->with('error', 'This workflow stage is protected and cannot be renamed.');
             }
-            return redirect()->route('adminconsole.features.workflow.index')->with('error', 'This workflow stage is frozen and cannot be renamed.');
+            return redirect()->route('adminconsole.features.workflow.index')->with('error', 'This workflow stage is protected and cannot be renamed.');
         }
         $stage->name = $request->stage_name[0];
         $stage->save();

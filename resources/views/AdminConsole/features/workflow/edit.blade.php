@@ -17,9 +17,6 @@
 								<h4>Edit Workflow Stage</h4>
 							<div class="card-header-action">
 									<a href="{{ isset($workflow) && $workflow ? route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) : route('adminconsole.features.workflow.index') }}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
-									@if(isset($workflow) && $workflow)
-									<a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}?after={{ rawurlencode(base64_encode(convert_uuencode($fetchedData->id))) }}" class="btn btn-info"><i class="fa fa-plus"></i> Add stage after this one</a>
-									@endif
 							</div>
 							</div>
 						</div>

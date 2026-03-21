@@ -8,7 +8,7 @@
 		white-space: normal !important;
 		vertical-align: middle;
 		width: 1%;
-		min-width: 5.5rem;
+		min-width: 7rem;
 	}
 	.workflow-stage-cell-actions {
 		display: flex;
@@ -72,7 +72,8 @@
 										<td>{{ $countmatters }}</td>
 										<td class="workflow-stage-actions-col">
 											<div class="workflow-stage-cell-actions">
-												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}" title="{{ $stageFrozen ? 'View / protected — name cannot be changed' : 'Edit stage name' }}"><i class="far fa-edit"></i> Edit</a>
+												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}" title="{{ $stageFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name' }}"><i class="far fa-edit"></i> Edit</a>
+												<a class="btn btn-sm btn-info" href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}?after={{ rawurlencode(base64_encode(convert_uuencode($list->id))) }}" title="Insert a new stage immediately after this one"><i class="fa fa-plus"></i> Add After</a>
 												@if($stageFrozen)
 												<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted"><i class="fas fa-trash"></i> Delete</button>
 												@else

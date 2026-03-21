@@ -43,17 +43,6 @@
 											</div>
 											@endif
 											<div class="row">
-												<!--<div class="col-12 col-md-4 col-lg-4">
-													<div class="form-group">
-														<label for="name">Name <span class="span_req">*</span></label>
-														{{-- <input type="text" name="name" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="Enter Name"> --}}
-														{{--@if ($errors->has('name'))--}}
-															<span class="custom-error" role="alert">
-																<strong>{{--@$errors->first('name')--}}</strong>
-															</span>
-														{{--@endif--}}
-													</div>
-												</div>-->
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
 														<!--<label for="stages">Workflow Stages <span class="span_req">*</span></label>-->
