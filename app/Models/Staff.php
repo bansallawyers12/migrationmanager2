@@ -236,7 +236,7 @@ class Staff extends Authenticatable
      */
     public function allowsCrmSheet(string $sheetKey): bool
     {
-        if ((int) ($this->role ?? 0) === 1) {
+        if (in_array((int) ($this->role ?? 0), [1, 12], true)) {
             return true;
         }
 
