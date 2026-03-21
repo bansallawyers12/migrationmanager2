@@ -39,6 +39,11 @@
 									</select>
 									<small class="form-text text-muted">When set, new client matters of this type will default to this workflow.</small>
 								</div>
+								<div class="alert alert-info mb-3" role="alert">
+									<i class="fas fa-info-circle"></i>
+									The new workflow will be pre-populated with all stages from the <strong>General</strong> workflow.
+									Once created you will be taken directly to the stages page where you can add, edit or remove any stage.
+								</div>
 								<button type="submit" class="btn btn-primary">Create Workflow</button>
 							</div>
 						</div>

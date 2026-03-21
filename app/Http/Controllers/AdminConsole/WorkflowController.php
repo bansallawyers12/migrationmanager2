@@ -44,22 +44,40 @@ class WorkflowController extends Controller
             'name' => 'required|string|max:255',
             'matter_id' => 'nullable|exists:matters,id',
         ]);
-        $wf = new Workflow();
-        $wf->name = $request->name;
-        $wf->matter_id = $request->matter_id ?: null;
-        $wf->save();
+        $wf = null;
+        DB::transaction(function () use ($request, &$wf) {
+            $wf = new Workflow();
+            $wf->name = $request->name;
+            $wf->matter_id = $request->matter_id ?: null;
+            $wf->save();
 
-        // Every workflow must have at least 3 default stages: first, checklist, and last two
-        $defaultStages = ['Application Received', 'Checklist', 'Ready to Close', 'File Closed'];
-        foreach ($defaultStages as $i => $stageName) {
-            $stage = new WorkflowStage();
-            $stage->name = $stageName;
-            $stage->workflow_id = $wf->id;
-            $stage->sort_order = $i + 1;
-            $stage->save();
-        }
+            // Copy stages from the General workflow so the new workflow is pre-populated.
+            $generalWorkflow = Workflow::whereRaw('LOWER(name) = ?', ['general'])->first();
+            $defaultStages = [];
+            if ($generalWorkflow) {
+                $defaultStages = WorkflowStage::where('workflow_id', $generalWorkflow->id)
+                    ->orderByRaw('COALESCE(sort_order, id) ASC')
+                    ->pluck('name')
+                    ->toArray();
+            }
 
-        return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Created Successfully with default stages.');
+            // Fallback when General workflow does not exist yet.
+            if (empty($defaultStages)) {
+                $defaultStages = ['Application Received', 'Checklist', 'Ready to Close', 'File Closed'];
+            }
+
+            foreach ($defaultStages as $i => $stageName) {
+                $stage = new WorkflowStage();
+                $stage->name = $stageName;
+                $stage->workflow_id = $wf->id;
+                $stage->sort_order = $i + 1;
+                $stage->save();
+            }
+        });
+
+        return redirect()
+            ->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id)))
+            ->with('success', 'Workflow created. Default stages copied from General — amend, remove or add as needed.');
     }
 
     /**
@@ -139,11 +157,14 @@ class WorkflowController extends Controller
             $workflowId = $general ? $general->id : null;
         }
         $stages = $request->stage_name;
-        $baseQuery = WorkflowStage::query();
+        $sortQuery = WorkflowStage::query();
         if ($workflowId) {
-            $baseQuery->where('workflow_id', $workflowId);
+            $sortQuery->where('workflow_id', $workflowId);
+        } else {
+            // No workflow resolved — scope to stages with no workflow_id to avoid cross-contamination.
+            $sortQuery->whereNull('workflow_id');
         }
-        $maxSortOrder = (int) ($baseQuery->max('sort_order') ?? $baseQuery->max('id') ?? 0);
+        $maxSortOrder = (int) ($sortQuery->max('sort_order') ?? $sortQuery->max('id') ?? 0);
         foreach ($stages as $stageName) {
             $o = new WorkflowStage();
             $o->name = $stageName;

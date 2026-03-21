@@ -7,7 +7,7 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{ route('adminconsole.features.workflow.update', $fetchedData->id) }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data" method="POST">
+			<form action="{{ route('adminconsole.features.workflow.update', base64_encode(convert_uuencode($fetchedData->id))) }}" name="add-visatype" autocomplete="off" enctype="multipart/form-data" method="POST">
 				@csrf
 				@method('PUT')
 				<div class="row">
