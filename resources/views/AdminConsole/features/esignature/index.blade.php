@@ -3,22 +3,37 @@
 
 @section('styles')
 <style>
-    .analytics-dashboard {
-        padding: 20px;
-    }
-    
-    .analytics-header {
+    /* Same role as .crm-container in client-detail.css (that file is not loaded on this layout) */
+    .esignature-analytics-layout {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
+        flex-direction: column;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .esignature-analytics-layout > .main-content {
+        flex: 1;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .esignature-analytics-card {
+        background: #fff;
+        border-radius: 12px;
+    }
+
+    .esignature-analytics-page {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .analytics-dashboard {
+        padding: 0;
     }
     
-    .analytics-header h1 {
-        font-size: 24px;
-        font-weight: 600;
-        color: #2c3e50;
-    }
     
     .date-filter {
         display: flex;
@@ -49,9 +64,9 @@
     
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
     }
     
     .kpi-card {
@@ -83,16 +98,26 @@
     
     .charts-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
     
     .chart-container {
-        background: white;
+        background: #f8f9fb;
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e9ecef;
+        min-width: 0;
+    }
+
+    /* Chart.js needs a sized box when maintainAspectRatio is false */
+    .chart-canvas-wrap {
+        position: relative;
+        width: 100%;
+        height: 280px;
+        min-height: 240px;
     }
     
     .chart-container h3 {
@@ -117,9 +142,16 @@
         margin-bottom: 20px;
     }
     
+    .data-table .table-responsive {
+        margin-top: 4px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
     .data-table table {
         width: 100%;
         border-collapse: collapse;
+        margin-bottom: 0;
     }
     
     .data-table th {
@@ -169,18 +201,19 @@
         color: #2e7d32;
     }
     
-    .progress-bar {
+    .esig-progress-track {
         height: 8px;
         background: #e9ecef;
         border-radius: 4px;
         overflow: hidden;
-        margin-top: 5px;
+        margin-top: 6px;
     }
     
-    .progress-fill {
+    .esig-progress-fill {
         height: 100%;
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         transition: width 0.3s ease;
+        border-radius: 4px;
     }
     
     .overdue-badge {
@@ -193,66 +226,54 @@
         font-weight: 600;
     }
     
-    .nav-analytics {
-        margin-bottom: 20px;
-    }
-    
-    .nav-analytics a {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 500;
-        margin-right: 10px;
-    }
-    
-    .nav-analytics a:hover {
-        text-decoration: underline;
+    @media (max-width: 767.98px) {
+        .date-filter {
+            flex-wrap: wrap;
+        }
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 </style>
 @endsection
 
 @section('content')
 
-<!-- Main Content -->
-<div class="main-content">
-	<section class="section">
+<div class="crm-container esignature-analytics-layout">
+	<div class="main-content">
+		<section class="section">
 		<div class="section-body">
-			<div class="server-error">
-				@include('../Elements/flash-message')
-			</div>
-			<div class="custom-error-msg">
-			</div>
-			<div class="row">
-				<div class="col-3 col-md-3 col-lg-3">
-		        	@include('../Elements/CRM/setting')
-		        </div>       
-				<div class="col-9 col-md-9 col-lg-9">
-					<div class="analytics-dashboard">
-						<!-- Navigation -->
-						<div class="nav-analytics">
-							<a href="{{ route('signatures.index') }}">← Back to Dashboard</a>
+		<div class="server-error">
+			@include('../Elements/flash-message')
+		</div>
+		<div class="custom-error-msg"></div>
+		<div class="row">
+			<div class="col-12 col-lg-3">
+	        	@include('../Elements/CRM/setting')
+	        </div>
+			<div class="col-12 col-lg-9">
+				<div class="card esignature-analytics-card border-0 shadow-sm">
+					<div class="card-header d-flex justify-content-between align-items-center flex-wrap" style="gap: 1rem;">
+						<div>
+							<h4 class="mb-0">Signature Analytics</h4>
+							<small class="text-white-50">Performance insights &amp; metrics</small>
 						</div>
-
-						<!-- Header with Date Filter -->
-						<div class="analytics-header">
-							<div>
-								<h1>📊 Signature Analytics</h1>
-								<p style="color: #6c757d; margin-top: 5px;">Performance insights and metrics</p>
-							</div>
-							<div style="display: flex; gap: 15px; align-items: center;">
-								<form method="GET" action="{{ route('adminconsole.features.esignature.index') }}" class="date-filter">
-									<label style="font-size: 14px; color: #6c757d;">From:</label>
-									<input type="date" name="start_date" value="{{ $startDate }}">
-									<label style="font-size: 14px; color: #6c757d;">To:</label>
-									<input type="date" name="end_date" value="{{ $endDate }}">
-									<button type="submit">Update</button>
-								</form>
-								<div style="display: flex; gap: 10px;">
-									<a href="{{ route('adminconsole.features.esignature.export', ['format' => 'csv', 'start_date' => $startDate, 'end_date' => $endDate]) }}" 
-									   class="btn btn-success" style="padding: 8px 16px; text-decoration: none; border-radius: 6px; font-weight: 500;">
-										<i class="fas fa-download"></i> Export CSV
-									</a>
-								</div>
-							</div>
+						<a href="{{ route('adminconsole.features.esignature.export', ['format' => 'csv', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+						   class="btn btn-sm" style="background: rgba(255,255,255,0.2); color:#fff; border: 1px solid rgba(255,255,255,0.35); font-weight:500;">
+							<i class="fas fa-download mr-1"></i> Export CSV
+						</a>
+					</div>
+					<div class="card-body esignature-analytics-page">
+					<div class="analytics-dashboard">
+						<!-- Date Filter -->
+						<div class="mb-4">
+							<form method="GET" action="{{ route('adminconsole.features.esignature.index') }}" class="date-filter">
+								<label style="font-size: 14px; color: #6c757d;">From:</label>
+								<input type="date" name="start_date" value="{{ $startDate }}">
+								<label style="font-size: 14px; color: #6c757d;">To:</label>
+								<input type="date" name="end_date" value="{{ $endDate }}">
+								<button type="submit">Update</button>
+							</form>
 						</div>
 
 						<!-- KPI Cards -->
@@ -284,19 +305,24 @@
 							<!-- Signature Trend Chart -->
 							<div class="chart-container">
 								<h3>📈 Signature Trends</h3>
-								<canvas id="signatureTrendChart" height="250"></canvas>
+								<div class="chart-canvas-wrap">
+									<canvas id="signatureTrendChart"></canvas>
+								</div>
 							</div>
 
 							<!-- Document Type Chart -->
 							<div class="chart-container">
 								<h3>📄 Documents by Type</h3>
-								<canvas id="documentTypeChart" height="250"></canvas>
+								<div class="chart-canvas-wrap">
+									<canvas id="documentTypeChart"></canvas>
+								</div>
 							</div>
 						</div>
 
 						<!-- Document Type Statistics Table -->
 						<div class="data-table">
 							<h3>📋 Document Type Performance</h3>
+							<div class="table-responsive">
 							<table>
 								<thead>
 									<tr>
@@ -321,8 +347,8 @@
 										<td>{{ $stat->pending }}</td>
 										<td>
 											{{ $stat->completion_rate }}%
-											<div class="progress-bar">
-												<div class="progress-fill" style="width: {{ $stat->completion_rate }}%"></div>
+											<div class="esig-progress-track">
+												<div class="esig-progress-fill" style="width: {{ $stat->completion_rate }}%"></div>
 											</div>
 										</td>
 										<td>{{ $stat->avg_time_hours ?? 'N/A' }}</td>
@@ -334,11 +360,13 @@
 									@endforelse
 								</tbody>
 							</table>
+							</div>
 						</div>
 
 						<!-- Top Signers Table -->
 						<div class="data-table">
 							<h3>🏆 Top Signers (Most Active)</h3>
+							<div class="table-responsive">
 							<table>
 								<thead>
 									<tr>
@@ -367,12 +395,14 @@
 									@endforelse
 								</tbody>
 							</table>
+							</div>
 						</div>
 
 						<!-- Overdue Documents -->
 						@if($overdueDocuments->count() > 0)
 						<div class="data-table">
 							<h3>⚠️ Overdue Documents</h3>
+							<div class="table-responsive">
 							<table>
 								<thead>
 									<tr>
@@ -407,6 +437,7 @@
 									@endforeach
 								</tbody>
 							</table>
+							</div>
 						</div>
 						@endif
 
@@ -414,6 +445,7 @@
 						@if($user->role === 1 && $userPerformance)
 						<div class="data-table">
 							<h3>👥 User Performance Comparison</h3>
+							<div class="table-responsive">
 							<table>
 								<thead>
 									<tr>
@@ -437,8 +469,8 @@
 										<td>{{ $perf['pending'] }}</td>
 										<td>
 											{{ $perf['completion_rate'] }}%
-											<div class="progress-bar">
-												<div class="progress-fill" style="width: {{ $perf['completion_rate'] }}%"></div>
+											<div class="esig-progress-track">
+												<div class="esig-progress-fill" style="width: {{ $perf['completion_rate'] }}%"></div>
 											</div>
 										</td>
 										<td>{{ $perf['median_time_hours'] }}</td>
@@ -446,13 +478,17 @@
 									@endforeach
 								</tbody>
 							</table>
+							</div>
 						</div>
 						@endif
+					</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</section>
+		</div>
+		</section>
+	</div>
 </div>
 @endsection
 

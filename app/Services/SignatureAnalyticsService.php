@@ -73,7 +73,7 @@ class SignatureAnalyticsService
      */
     public function getDocumentTypeStats()
     {
-        return Document::selectRaw('"general" as document_type')
+        return Document::selectRaw("'general' as document_type")
             ->selectRaw('COUNT(*) as total')
             ->selectRaw('SUM(CASE WHEN status = \'signed\' THEN 1 ELSE 0 END) as signed')
             ->selectRaw('SUM(CASE WHEN status = \'sent\' THEN 1 ELSE 0 END) as pending')

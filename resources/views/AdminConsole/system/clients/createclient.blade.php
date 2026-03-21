@@ -7,6 +7,16 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
+			<div class="custom-error-msg">
+			</div>
+			<div class="row">
+				<div class="col-3 col-md-3 col-lg-3">
+					@include('../Elements/CRM/setting')
+				</div>
+				<div class="col-9 col-md-9 col-lg-9">
 			<form action="{{ route('adminconsole.system.clients.storeclient') }}" name="add-client" autocomplete="off" enctype="multipart/form-data" method="POST">
 			@csrf
 				<div class="row">
@@ -124,6 +134,8 @@
 					</div>
 				</div>
 			</form>
+				</div>
+			</div>
 		</div>
 	</section>
 </div>

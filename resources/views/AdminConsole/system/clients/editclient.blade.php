@@ -6,7 +6,17 @@
 <!-- Main Content -->
 <div class="main-content">
 	<section class="section">
-		<div class="section-body"> 
+		<div class="section-body">
+			<div class="server-error">
+				@include('../Elements/flash-message')
+			</div>
+			<div class="custom-error-msg">
+			</div>
+			<div class="row">
+				<div class="col-3 col-md-3 col-lg-3">
+					@include('../Elements/CRM/setting')
+				</div>
+				<div class="col-9 col-md-9 col-lg-9">
 			<form action="{{ route('adminconsole.system.clients.updateclient', $fetchedData->id) }}" method="POST" name="edit-client" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				@method('PUT')
@@ -132,6 +142,8 @@
 					</div>
 				</div>
 			</form>
+				</div>
+			</div>
 		</div>
 	</section>
 </div>
