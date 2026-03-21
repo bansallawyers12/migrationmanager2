@@ -231,6 +231,10 @@
                                                     <option value="EFTPOS">EFTPOS</option>
                                                     <option value="Refund">Refund</option>
                                                 </select>
+                                                <div class="ledger-eftpos-surcharge-block" style="display:none;margin-top:6px;">
+                                                    <label class="text-muted" style="font-size:11px;margin:0;display:block;">Card surcharge ($)</label>
+                                                    <input type="text" class="form-control ledger-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:4px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
+                                                </div>
                                             </td>
                                             <td>
                                                 <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
@@ -488,13 +492,17 @@
                                                 </select>
                                             </td>
                                             <td>
-                                                <select class="form-control" name="payment_method[]" data-valid="required" >
+                                                <select class="form-control office-receipt-payment-method" name="payment_method[]" data-valid="required" >
                                                     <option value="">Select</option>
 													<option value="Cash">Cash</option>
                                                     <option value="Bank transfer">Bank transfer</option>
                                                     <option value="EFTPOS">EFTPOS</option>
                                                     <option value="Refund">Refund</option>
                                                 </select>
+                                                <div class="office-eftpos-surcharge-block" style="display:none;margin-top:6px;">
+                                                    <label class="text-muted" style="font-size:11px;margin:0;display:block;">Card surcharge ($)</label>
+                                                    <input type="text" class="form-control office-eftpos-surcharge-input" name="eftpos_surcharge_amount[]" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:12px;padding:4px 8px;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="">
+                                                </div>
                                             </td>
                                             <td>
                                                 <input data-valid="required" class="form-control" name="description[]" type="text" value="" />

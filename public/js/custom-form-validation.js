@@ -1088,8 +1088,11 @@ function customValidate(formName, savetype = '')
 					// Office Receipt Form Validation
                     else if (formName == 'office_receipt_form') {
                         // Step 1: Perform the invoice amount validation before submitting the form
-                        let invoiceNos = document.getElementsByName('invoice_no[]');
-                        let receivedAmounts = document.getElementsByName('deposit_amount[]');
+                        let officeFormEl = document.getElementById('office_receipt_form');
+                        let invoiceNos = officeFormEl ? officeFormEl.querySelectorAll('[name="invoice_no[]"]') : [];
+                        let receivedAmounts = officeFormEl ? officeFormEl.querySelectorAll('[name="deposit_amount[]"]') : [];
+                        let surchargeInputs = officeFormEl ? officeFormEl.querySelectorAll('[name="eftpos_surcharge_amount[]"]') : [];
+                        let paymentMethodSelects = officeFormEl ? officeFormEl.querySelectorAll('[name="payment_method[]"]') : [];
                         let shouldProceed = true;
 
                         // Group received amounts by invoice number
@@ -1097,7 +1100,10 @@ function customValidate(formName, savetype = '')
 
                         for (let i = 0; i < invoiceNos.length; i++) {
                             let invoiceNo = invoiceNos[i].value; // e.g., INV-005
-                            let receivedAmount = parseFloat(receivedAmounts[i].value) || 0;
+                            let principal = parseFloat(receivedAmounts[i] ? receivedAmounts[i].value : 0) || 0;
+                            let pm = paymentMethodSelects[i] ? paymentMethodSelects[i].value : '';
+                            let sur = (pm === 'EFTPOS' && surchargeInputs[i]) ? (parseFloat(surchargeInputs[i].value) || 0) : 0;
+                            let receivedAmount = principal + sur;
 
                             if (invoiceNo) { // Only process if invoiceNo is not empty
                                 if (!invoiceTotals[invoiceNo]) {

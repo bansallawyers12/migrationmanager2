@@ -224,6 +224,18 @@ class ClientAccountsController extends Controller
                 return trim((string) ($requestData['payment_method'][$index] ?? ''));
             };
 
+            $ledgerSurchargeAt = function (int $index) use ($requestData, $ledgerPaymentMethodAt): float {
+                $type = trim((string) ($requestData['client_fund_ledger_type'][$index] ?? ''));
+                if ($type !== 'Deposit' || $ledgerPaymentMethodAt($index) !== 'EFTPOS') {
+                    return 0.0;
+                }
+                if (empty($requestData['eftpos_surcharge_amount']) || ! is_array($requestData['eftpos_surcharge_amount'])) {
+                    return 0.0;
+                }
+
+                return round(max(0, floatval($requestData['eftpos_surcharge_amount'][$index] ?? 0)), 2);
+            };
+
             // Generate unique receipt id
             $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 1)->orderBy('receipt_id', 'desc')->first();
             $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
@@ -387,6 +399,7 @@ class ClientAccountsController extends Controller
                             'withdraw_amount' => $amountToUse,
                             'balance_amount' => $running_balance,
                             'payment_method' => $ledgerPaymentMethodAt($feeTransfer['index']),
+                            'eftpos_surcharge_amount' => null,
                             'uploaded_doc_id' => $insertedDocId,
                             'validate_receipt' => 0,
                             'void_invoice' => 0,
@@ -408,6 +421,7 @@ class ClientAccountsController extends Controller
                             'withdraw_amount' => $amountToUse,
                             'balance_amount' => $running_balance,
                             'payment_method' => $ledgerPaymentMethodAt($feeTransfer['index']),
+                            'eftpos_surcharge_amount' => null,
                         ];
 
                         $remainingWithdraw -= $amountToUse;
@@ -449,6 +463,7 @@ class ClientAccountsController extends Controller
                                     'withdraw_amount' => $withdraw,
                                     'balance_amount' => $running_balance,
                                     'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
+                                    'eftpos_surcharge_amount' => null,
                                     'uploaded_doc_id' => $insertedDocId,
                                     'validate_receipt' => 0,
                                     'void_invoice' => 0,
@@ -470,6 +485,7 @@ class ClientAccountsController extends Controller
                                     'withdraw_amount' => $withdraw,
                                     'balance_amount' => $running_balance,
                                     'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
+                                    'eftpos_surcharge_amount' => null,
                                 ];
                             }
                         }
@@ -502,6 +518,7 @@ class ClientAccountsController extends Controller
                                 'withdraw_amount' => 0,
                                 'balance_amount' => $running_balance,
                                 'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
+                                'eftpos_surcharge_amount' => null,
                                 'uploaded_doc_id' => $insertedDocId,
                                 'extra_amount_receipt' => 'residual',
                                 'validate_receipt' => 0,
@@ -525,6 +542,7 @@ class ClientAccountsController extends Controller
                                 'balance_amount' => $running_balance,
                                 'extra_amount_receipt' => 'residual',
                                 'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
+                                'eftpos_surcharge_amount' => null,
                             ];
 
                             Log::info('Residual client fund deposit created from fee transfer', [
@@ -609,7 +627,9 @@ class ClientAccountsController extends Controller
                 }
    
                 $trans_no = $this->createTransactionNumber($clientFundLedgerType);
-                $deposit = floatval($requestData['deposit_amount'][$i] ?? 0);
+                $principal = floatval($requestData['deposit_amount'][$i] ?? 0);
+                $eftposSurcharge = $ledgerSurchargeAt($i);
+                $deposit = ($clientFundLedgerType === 'Deposit') ? round($principal + $eftposSurcharge, 2) : $principal;
                 $withdraw = floatval($requestData['withdraw_amount'][$i] ?? 0);
    
                 // Validate Fee Transfer amount against Current Funds Held (for Fee Transfer without invoice)
@@ -665,6 +685,7 @@ class ClientAccountsController extends Controller
                     'withdraw_amount' => $withdraw,
                     'balance_amount' => $running_balance,
                     'payment_method' => $ledgerPaymentMethodAt($i),
+                    'eftpos_surcharge_amount' => ($eftposSurcharge > 0 ? $eftposSurcharge : null),
                     'uploaded_doc_id' => $insertedDocId,
                     'validate_receipt' => 0,
                     'void_invoice' => 0,
@@ -686,6 +707,7 @@ class ClientAccountsController extends Controller
                     'withdraw_amount' => $withdraw,
                     'balance_amount' => $running_balance,
                     'payment_method' => $ledgerPaymentMethodAt($i),
+                    'eftpos_surcharge_amount' => ($eftposSurcharge > 0 ? $eftposSurcharge : null),
                 ];
             }
    
@@ -1553,6 +1575,13 @@ class ClientAccountsController extends Controller
 
           $trans_no = $this->generateTransNo();
           $invoiceNo = isset($requestData['invoice_no'][$i]) && $requestData['invoice_no'][$i] !== '' ? $requestData['invoice_no'][$i] : null;
+          $pmOffice = trim((string) ($requestData['payment_method'][$i] ?? ''));
+          $principalOffice = floatval($requestData['deposit_amount'][$i] ?? 0);
+          $surchargeOffice = 0.0;
+          if ($pmOffice === 'EFTPOS' && ! empty($requestData['eftpos_surcharge_amount']) && is_array($requestData['eftpos_surcharge_amount'])) {
+              $surchargeOffice = round(max(0, floatval($requestData['eftpos_surcharge_amount'][$i] ?? 0)), 2);
+          }
+          $totalDepositOffice = round($principalOffice + $surchargeOffice, 2);
 
           try {
               $insertedId = DB::table('account_client_receipts')->insertGetId([
@@ -1565,9 +1594,10 @@ class ClientAccountsController extends Controller
                   'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
                   'trans_no' => $trans_no,
                   'invoice_no' => $invoiceNo,
-                  'payment_method' => $requestData['payment_method'][$i] ?? '',
+                  'payment_method' => $pmOffice,
                   'description' => $requestData['description'][$i] ?? '',
-                  'deposit_amount' => $requestData['deposit_amount'][$i],
+                  'deposit_amount' => $totalDepositOffice,
+                  'eftpos_surcharge_amount' => $surchargeOffice > 0 ? $surchargeOffice : null,
                   'uploaded_doc_id' => $insertedDocId,
                   'save_type' => $saveType, // Track if draft or final
                   'validate_receipt' => 0,
@@ -1588,9 +1618,10 @@ class ClientAccountsController extends Controller
                       'entry_date' => $requestData['entry_date'][$i] ?? $requestData['trans_date'][$i],
                       'trans_no' => $trans_no,
                       'invoice_no' => $invoiceNo,
-                      'payment_method' => $requestData['payment_method'][$i] ?? '',
+                      'payment_method' => $pmOffice,
                       'description' => $requestData['description'][$i] ?? '',
-                      'deposit_amount' => $requestData['deposit_amount'][$i],
+                      'deposit_amount' => $totalDepositOffice,
+                      'eftpos_surcharge_amount' => $surchargeOffice > 0 ? $surchargeOffice : null,
                   ];
 
                   // Track invoices that need status updates (only for final receipts with invoice_no)
@@ -1600,7 +1631,7 @@ class ClientAccountsController extends Controller
                       }
                       $processedInvoices[$invoiceNo][] = [
                           'receipt_id' => $insertedId,
-                          'amount' => floatval($requestData['deposit_amount'][$i])
+                          'amount' => $totalDepositOffice
                       ];
                   }
               }
@@ -1888,8 +1919,23 @@ class ClientAccountsController extends Controller
       if ($request->has('description')) {
           $updateData['description'] = $request->input('description');
       }
+      // Get the original receipt data BEFORE updating (needed for overpayment check and surcharge calc)
+      $originalReceipt = DB::table('account_client_receipts')->where('id', $id)->first();
+
       if ($request->has('deposit_amount')) {
-          $updateData['deposit_amount'] = $request->input('deposit_amount');
+          $principal = floatval($request->input('deposit_amount'));
+          $pm = trim((string) ($request->input('payment_method', $originalReceipt->payment_method ?? '')));
+          $surcharge = ($pm === 'EFTPOS') ? max(0, floatval($request->input('eftpos_surcharge_amount', 0))) : 0.0;
+          $updateData['deposit_amount'] = round($principal + $surcharge, 2);
+          $updateData['eftpos_surcharge_amount'] = $surcharge > 0 ? round($surcharge, 2) : null;
+      } elseif ($request->has('payment_method') && $originalReceipt) {
+          $pm = trim((string) $request->input('payment_method'));
+          $total = floatval($originalReceipt->deposit_amount);
+          $oldSur = floatval($originalReceipt->eftpos_surcharge_amount ?? 0);
+          $principal = max(0, round($total - $oldSur, 2));
+          $surcharge = ($pm === 'EFTPOS') ? $oldSur : 0.0;
+          $updateData['deposit_amount'] = round($principal + $surcharge, 2);
+          $updateData['eftpos_surcharge_amount'] = $surcharge > 0 ? round($surcharge, 2) : null;
       }
       if ($request->has('invoice_no')) {
           $updateData['invoice_no'] = $request->input('invoice_no', '');
@@ -1903,9 +1949,6 @@ class ClientAccountsController extends Controller
       if ($insertedDocId !== null) {
           $updateData['uploaded_doc_id'] = $insertedDocId;
       }
-      
-      // Get the original receipt data BEFORE updating (needed for overpayment check)
-      $originalReceipt = DB::table('account_client_receipts')->where('id', $id)->first();
       
       // Update the record
       $updated = DB::table('account_client_receipts')
@@ -5279,8 +5322,6 @@ public function updateClientFundsLedger(Request $request)
     $entry_date = $request->input('entry_date');
     $client_fund_ledger_type = $request->input('client_fund_ledger_type');
     $description = $request->input('description');
-    $deposit_amount = floatval($request->input('deposit_amount', 0));
-    $withdraw_amount = floatval($request->input('withdraw_amount', 0));
     $payment_method = trim((string) $request->input('payment_method', ''));
 
     // Handle document upload
@@ -5339,6 +5380,12 @@ public function updateClientFundsLedger(Request $request)
         ], 403);
     }
 
+    $principal = floatval($request->input('deposit_amount', 0));
+    $withdraw_amount = floatval($request->input('withdraw_amount', 0));
+    $surchargeInput = max(0, floatval($request->input('eftpos_surcharge_amount', 0)));
+    $eftposSurcharge = ($client_fund_ledger_type === 'Deposit' && $payment_method === 'EFTPOS') ? round($surchargeInput, 2) : 0.0;
+    $deposit_amount = ($client_fund_ledger_type === 'Deposit') ? round($principal + $eftposSurcharge, 2) : $principal;
+
     // Prepare the update data for account_client_receipts
     $updateData = [
         'trans_date' => $trans_date,
@@ -5348,6 +5395,7 @@ public function updateClientFundsLedger(Request $request)
         'deposit_amount' => $deposit_amount,
         'withdraw_amount' => $withdraw_amount,
         'payment_method' => $payment_method,
+        'eftpos_surcharge_amount' => $eftposSurcharge > 0 ? $eftposSurcharge : null,
         'updated_at' => now(),
     ];
 

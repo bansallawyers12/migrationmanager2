@@ -37,12 +37,16 @@
                             <option value="Refund">Refund</option>
                         </select>
                     </div>
+                    <div class="form-group" id="edit_ledger_eftpos_surcharge_group" style="display:none;">
+                        <label for="edit_ledger_eftpos_surcharge">Card surcharge ($)</label>
+                        <input type="number" class="form-control" name="eftpos_surcharge_amount" id="edit_ledger_eftpos_surcharge" step="0.01" min="0" value="">
+                    </div>
                     <div class="form-group">
                         <label for="description">Description</label>
                         <input type="text" class="form-control" name="description">
                     </div>
                     <div class="form-group">
-                        <label for="deposit_amount">Funds In (+)</label>
+                        <label for="deposit_amount">Funds In (+) <span class="text-muted" style="font-weight:normal;font-size:12px;">(excl. surcharge)</span></label>
                         <input type="number" class="form-control" name="deposit_amount" step="0.01" value="0.00">
                     </div>
                     <div class="form-group">
@@ -115,8 +119,17 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_office_deposit_amount">Amount Received <span class="text-danger">*</span></label>
+                                <label for="edit_office_deposit_amount">Amount received <span class="text-danger">*</span> <span class="text-muted" style="font-weight:normal;font-size:12px;">(excl. surcharge)</span></label>
                                 <input type="number" class="form-control" name="deposit_amount" id="edit_office_deposit_amount" step="0.01" value="0.00" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="edit_office_eftpos_surcharge_row" style="display:none;">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_office_eftpos_surcharge">Card surcharge ($)</label>
+                                <input type="number" class="form-control" name="eftpos_surcharge_amount" id="edit_office_eftpos_surcharge" step="0.01" min="0" value="">
                             </div>
                         </div>
                     </div>

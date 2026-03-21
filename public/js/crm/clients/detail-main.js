@@ -2430,6 +2430,8 @@ success: function(response) {
             // Initialize Flatpickr for new date fields
             initFlatpickrForClass('.report_date_fields,.report_entry_date_fields');
 
+            toggleLedgerEftposSurchargeRow($newRow);
+
             //$('.report_entry_date_fields').last().datepicker({ format: 'dd/mm/yyyy',todayHighlight: true,autoclose: true }).datepicker('setDate', new Date());
 
         });
@@ -2918,6 +2920,92 @@ success: function(response) {
 
             }
 
+            toggleLedgerEftposSurchargeRow($row);
+
+        });
+
+
+
+
+
+        function toggleLedgerEftposSurchargeRow($row) {
+
+            var pm = $row.find('.ledger-payment-method').val();
+
+            var ledgerType = $row.find('.client_fund_ledger_type').val();
+
+            var $block = $row.find('.ledger-eftpos-surcharge-block');
+
+            if (pm === 'EFTPOS' && ledgerType === 'Deposit') {
+
+                $block.show();
+
+            } else {
+
+                $block.hide();
+
+                $row.find('.ledger-eftpos-surcharge-input').val('');
+
+            }
+
+        }
+
+
+
+        function toggleOfficeEftposSurchargeRow($row) {
+
+            var pm = $row.find('.office-receipt-payment-method').val();
+
+            var $block = $row.find('.office-eftpos-surcharge-block');
+
+            if (pm === 'EFTPOS') {
+
+                $block.show();
+
+            } else {
+
+                $block.hide();
+
+                $row.find('.office-eftpos-surcharge-input').val('');
+
+            }
+
+        }
+
+
+
+        $(document).on('change', '.ledger-payment-method', function() {
+
+            toggleLedgerEftposSurchargeRow($(this).closest('tr'));
+
+            grandtotalAccountTab();
+
+        });
+
+
+
+        $(document).on('change', '.office-receipt-payment-method', function() {
+
+            toggleOfficeEftposSurchargeRow($(this).closest('tr'));
+
+            grandtotalAccountTab_office();
+
+        });
+
+
+
+        $(document).on('keyup input', '.ledger-eftpos-surcharge-input', function() {
+
+            grandtotalAccountTab();
+
+        });
+
+
+
+        $(document).on('keyup input', '.office-eftpos-surcharge-input', function() {
+
+            grandtotalAccountTab_office();
+
         });
 
 
@@ -2944,7 +3032,17 @@ success: function(response) {
 
                 var depositAmount = parseFloat(depositVal) || 0; // fallback to 0 if NaN
 
-                total_deposit_amount_all_rows += depositAmount;
+                if ($row.find('.ledger-eftpos-surcharge-block').is(':visible')) {
+
+                    var sur = parseFloat($row.find('.ledger-eftpos-surcharge-input').val()) || 0;
+
+                    total_deposit_amount_all_rows += depositAmount + sur;
+
+                } else {
+
+                    total_deposit_amount_all_rows += depositAmount;
+
+                }
 
 
 
@@ -3198,13 +3296,17 @@ success: function(response) {
 
             var clonedval_office = $('.clonedrow_office').html();
 
-            $('.productitem_office').append('<tr class="product_field_clone_office">'+clonedval_office+'</tr>');
+            var $newOfficeRow = $('<tr class="product_field_clone_office">' + clonedval_office + '</tr>');
+
+            $('.productitem_office').append($newOfficeRow);
 
             // Initialize Flatpickr for office receipt date fields
             initFlatpickrForClass('.report_date_fields_office,.report_entry_date_fields_office');
             initFlatpickrForClass('.report_entry_date_fields_office:last', {
                 defaultDate: new Date()
             });
+
+            toggleOfficeEftposSurchargeRow($newOfficeRow);
 
         });
 
@@ -3252,7 +3354,17 @@ success: function(response) {
 
                 var depositAmount = parseFloat(depositVal) || 0; // fallback to 0 if NaN
 
-                total_deposit_amount_all_rows += depositAmount;
+                if ($row.find('.office-eftpos-surcharge-block').is(':visible')) {
+
+                    var surO = parseFloat($row.find('.office-eftpos-surcharge-input').val()) || 0;
+
+                    total_deposit_amount_all_rows += depositAmount + surO;
+
+                } else {
+
+                    total_deposit_amount_all_rows += depositAmount;
+
+                }
 
             });
 
