@@ -1,6 +1,31 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Workflow Stages: ' . ($workflow->name ?? ''))
 
+@section('styles')
+<style>
+	/* Stacked compact actions — avoids dropdown clipping / side-by-side overflow in narrow cells */
+	.workflow-stages-table td.workflow-stage-actions-col {
+		white-space: normal !important;
+		vertical-align: middle;
+		width: 1%;
+		min-width: 5.5rem;
+	}
+	.workflow-stage-cell-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+	}
+	.workflow-stage-cell-actions .btn {
+		font-size: 0.75rem;
+		padding: 0.2rem 0.45rem;
+		line-height: 1.25;
+		white-space: nowrap;
+		text-align: center;
+	}
+</style>
+@endsection
+
 @section('content')
 <div class="main-content">
 	<section class="section">
@@ -23,7 +48,7 @@
 						</div>
 						<div class="card-body">
 							<div class="table-responsive common_table">
-								<table class="table text_wrap">
+								<table class="table text_wrap workflow-stages-table">
 									<thead>
 										<tr>
 											<th>Stage</th>
@@ -38,13 +63,10 @@
 									<tr>
 										<td>{{ $list->name ?: config('constants.empty', '—') }}</td>
 										<td>{{ $countmatters }}</td>
-										<td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}"><i class="far fa-edit"></i> Edit</a>
-													<a class="dropdown-item" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>
-												</div>
+										<td class="workflow-stage-actions-col">
+											<div class="workflow-stage-cell-actions">
+												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}"><i class="far fa-edit"></i> Edit</a>
+												<a class="btn btn-sm btn-outline-danger" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>
 											</div>
 										</td>
 									</tr>
