@@ -1171,6 +1171,7 @@ function addPhoneNumber() {
                         <div class="country_code">
                             <select name="country_code[${index}]" class="country-code-input">
                                 <option value="+61">🇦🇺 +61</option>
+                                <option value="+64">🇳🇿 +64</option>
                                 <option value="+91">🇮🇳 +91</option>
                                 <option value="+1">🇺🇸 +1</option>
                                 <option value="+44">🇬🇧 +44</option>

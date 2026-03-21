@@ -36,6 +36,7 @@
                 <div class="country_code">
                     <select name="country_code[{{ $index }}]" class="country-code-input">
                         <option value="+61" {{ $contact->country_code == '+61' ? 'selected' : '' }}>🇦🇺 +61</option>
+                        <option value="+64" {{ $contact->country_code == '+64' ? 'selected' : '' }}>🇳🇿 +64</option>
                         <option value="+91" {{ $contact->country_code == '+91' ? 'selected' : '' }}>🇮🇳 +91</option>
                         <option value="+1" {{ $contact->country_code == '+1' ? 'selected' : '' }}>🇺🇸 +1</option>
                         <option value="+44" {{ $contact->country_code == '+44' ? 'selected' : '' }}>🇬🇧 +44</option>
