@@ -1190,6 +1190,8 @@ class ClientsController extends Controller
             $client->py_date = $validated['py_date'] ? date('Y-m-d', strtotime(str_replace('/', '-', $validated['py_date']))) : null;
             $client->source = $validated['source'] ?? null;
             $client->type = $validated['type'];
+            // Staff id for lead list visibility (restrictLeadListQuery) and assignment; same for clients
+            $client->user_id = $currentUserId;
 
             $client->dob_verify_document = $requestData['dob_verify_document'];
 

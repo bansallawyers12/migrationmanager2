@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\DB;
  * Clients (admins.type=client): "Person Assisting" roles are limited to matters they assist
  * on or admins.user_id = staff id. Super admin (staff role 1) bypasses. Other roles see all clients.
  *
- * Leads (admins.type=lead): roles in lead_full_access_role_ids (default 1, 12) see all leads;
- * everyone else only sees leads where admins.user_id = staff id.
+ * Leads (admins.type=lead): roles in lead_full_access_role_ids (default 1 Super Admin, 17 Admin, 12 PR)
+ * see all leads; everyone else only sees rows where admins.user_id = staff.id (assigned staff).
  *
  * Note: Controllers that accept client_id in AJAX (documents, activities, etc.) must call
  * canAccessClientOrLead() — listing/detail alone is not enough.
@@ -24,7 +24,8 @@ final class StaffClientVisibility
 {
     private const DEFAULT_PERSON_ASSISTING_ROLE_IDS = [13];
 
-    private const DEFAULT_LEAD_FULL_ACCESS_ROLE_IDS = [1, 12];
+    /** Super Admin (1), PR (12), Admin (17) — must stay aligned with config/crm.php */
+    private const DEFAULT_LEAD_FULL_ACCESS_ROLE_IDS = [1, 12, 17];
 
     public static function personAssistingRoleIds(): array
     {
@@ -38,7 +39,7 @@ final class StaffClientVisibility
     }
 
     /**
-     * Staff roles that see every lead (list + detail). Default: Super Admin (1), Admin (12).
+     * Staff roles that see every lead (list + detail). Default: Super Admin (1), Admin (17), PR (12).
      *
      * @return list<int>
      */
@@ -100,7 +101,8 @@ final class StaffClientVisibility
             return;
         }
 
-        $query->where('admins.user_id', (int) $user->id);
+        $column = $query->getModel()->qualifyColumn('user_id');
+        $query->where($column, (int) $user->id);
     }
 
     /**
@@ -171,6 +173,8 @@ final class StaffClientVisibility
             return true;
         }
 
-        return (int) ($leadRow->user_id ?? 0) === (int) $user->id;
+        $assignedStaffId = (int) ($leadRow->user_id ?? 0);
+
+        return $assignedStaffId > 0 && $assignedStaffId === (int) $user->id;
     }
 }

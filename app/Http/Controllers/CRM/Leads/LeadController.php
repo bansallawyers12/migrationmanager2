@@ -41,13 +41,13 @@ class LeadController extends Controller
      */
     public function index(Request $request)
     {
-        $roles = \App\Models\UserRole::find(Auth::user()->role);
-        $module_access = (array) json_decode($roles->module_access ?? '[]');
+        $roles = \App\Models\UserRole::find(Auth::user()->role); 
+        $module_access = $this->decodeRoleModuleAccess($roles?->module_access); //dd(Auth::user()->role);
         
         $statusOptions = collect();
         $qualityOptions = collect();
         $perPage = 20;
-        if (array_key_exists('20', $module_access)) {
+        if ($this->staffRoleCanOpenLeadList($module_access)) { //dd('yes');
             // Using Lead model - automatically filters by type='lead' and is_deleted=null
             $query = Lead::where('is_archived', 0);
             StaffClientVisibility::restrictLeadListQuery($query);
@@ -124,12 +124,110 @@ class LeadController extends Controller
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
                 ->appends($request->except('page'));
-        } else {
+        } else { //dd('no');
             $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
         }
         
         return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'statusOptions'));
+    }
+
+    /**
+     * Parse user_roles.module_access into an array (handles int vs string JSON keys).
+     *
+     * @return array<int|string, mixed>
+     */
+    protected function decodeRoleModuleAccess(?string $json): array
+    {
+        if ($json === null || $json === '') {
+            return [];
+        }
+        $decoded = json_decode($json, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+        $obj = json_decode($json);
+        if (is_object($obj)) {
+            return (array) $obj;
+        }
+
+        return [];
+    }
+
+    /**
+     * Whether the staff role may load the lead list query.
+     * Full-access roles; optional extras; assigned-only roles (PA, Calling, etc.);
+     * or client module keys (20–23). Row-level rules: StaffClientVisibility::restrictLeadListQuery.
+     *
+     * @param  array<int|string, mixed>  $module_access
+     */
+    protected function staffRoleCanOpenLeadList(array $module_access): bool
+    {
+        $user = Auth::user();
+        if (! $user instanceof \App\Models\Staff) {
+            return false;
+        }
+
+        $roleId = (int) ($user->role ?? 0);
+
+        if (in_array($roleId, StaffClientVisibility::leadFullAccessRoleIds(), true)) {
+            return true;
+        }
+
+        $extraRoleIds = config('crm.lead_list_extra_role_ids', []);
+        if ($extraRoleIds !== [] && in_array($roleId, $extraRoleIds, true)) {
+            return true;
+        }
+
+        $assignedOnlyRoleIds = config('crm.lead_list_assigned_only_role_ids', [13, 14, 15, 16]);
+        if ($assignedOnlyRoleIds !== [] && in_array($roleId, $assignedOnlyRoleIds, true)) {
+            return true;
+        }
+
+        $keys = config('crm.lead_list_module_access_keys', ['20', '21', '22', '23']);
+        if ($keys === []) {
+            $keys = ['20', '21', '22', '23'];
+        }
+        foreach ($keys as $key) {
+            $k = trim((string) $key);
+            if ($k === '') {
+                continue;
+            }
+            if ($this->moduleAccessHasKey($module_access, $k)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $module_access
+     */
+    protected function moduleAccessHasKey(array $module_access, string $key): bool
+    {
+        if (array_key_exists($key, $module_access)) {
+            return true;
+        }
+        if (ctype_digit($key)) {
+            $intKey = (int) $key;
+            if (array_key_exists($intKey, $module_access)) {
+                return true;
+            }
+            foreach ($module_access as $mk => $_) {
+                if (is_int($mk) && $mk === $intKey) {
+                    return true;
+                }
+                if (is_string($mk) && ctype_digit($mk) && (int) $mk === $intKey) {
+                    return true;
+                }
+                if (trim((string) $mk) === $key) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
