@@ -1922,7 +1922,7 @@ class ClientAccountsController extends Controller
       // Get the original receipt data BEFORE updating (needed for overpayment check and surcharge calc)
       $originalReceipt = DB::table('account_client_receipts')->where('id', $id)->first();
 
-      if ($request->has('deposit_amount')) {
+      if ($request->has('deposit_amount') && $originalReceipt) {
           $principal = floatval($request->input('deposit_amount'));
           $pm = trim((string) ($request->input('payment_method', $originalReceipt->payment_method ?? '')));
           $surcharge = ($pm === 'EFTPOS') ? max(0, floatval($request->input('eftpos_surcharge_amount', 0))) : 0.0;

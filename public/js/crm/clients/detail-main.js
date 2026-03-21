@@ -2972,6 +2972,10 @@ success: function(response) {
 
         }
 
+        window.toggleOfficeEftposSurchargeRow = toggleOfficeEftposSurchargeRow;
+
+        window.toggleLedgerEftposSurchargeRow = toggleLedgerEftposSurchargeRow;
+
 
 
         $(document).on('change', '.ledger-payment-method', function() {
@@ -3373,6 +3377,8 @@ success: function(response) {
             $('.total_deposit_amount_all_rows_office').html("$" + total_deposit_amount_all_rows.toFixed(2));
 
         }
+
+        window.grandtotalAccountTab_office = grandtotalAccountTab_office;
 
         //create office receipt changes end
 

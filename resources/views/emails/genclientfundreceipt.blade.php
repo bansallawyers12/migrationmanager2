@@ -260,6 +260,9 @@
                                                     @if(!empty($record_get->payment_method))
                                                         <div style="margin-top: 6px; font-size: 12px; color: #555;"><strong>Payment method:</strong> {{ $record_get->payment_method }}</div>
                                                     @endif
+                                                    @if(!empty($record_get->eftpos_surcharge_amount) && floatval($record_get->eftpos_surcharge_amount) > 0)
+                                                        <div style="margin-top: 4px; font-size: 12px; color: #555;"><strong>Card surcharge:</strong> ${{ number_format((float) $record_get->eftpos_surcharge_amount, 2) }}</div>
+                                                    @endif
                                                 </td>
                                                 <td style="text-align: right; font-weight: 700; font-size: 16px; color: #2e7d32;">
                                                     ${{number_format($record_get->deposit_amount,2)}}

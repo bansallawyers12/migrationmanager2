@@ -188,7 +188,13 @@
                                     }
                                 } ?>
                             </td>
-                            <td style="text-align: left; vertical-align: middle; font-size: 0.9em; color: #495057;"><?php echo !empty($rec_val->payment_method) ? htmlspecialchars($rec_val->payment_method, ENT_QUOTES, 'UTF-8') : '—'; ?></td>
+                            <td style="text-align: left; vertical-align: middle; font-size: 0.9em; color: #495057;"><?php
+                                $methodHtml = !empty($rec_val->payment_method) ? htmlspecialchars($rec_val->payment_method, ENT_QUOTES, 'UTF-8') : '—';
+                                if (!empty($rec_val->eftpos_surcharge_amount) && floatval($rec_val->eftpos_surcharge_amount) > 0) {
+                                    $methodHtml .= '<br/><span style="font-size:11px;color:#6c757d;">+$' . number_format((float) $rec_val->eftpos_surcharge_amount, 2) . ' surcharge</span>';
+                                }
+                                echo $methodHtml;
+                            ?></td>
 
                             <td class="description" style="text-align: left; vertical-align: middle;"><?php echo $rec_val->description;?></td>
 
@@ -256,7 +262,8 @@
                                             data-description="<?php echo htmlspecialchars($rec_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             data-deposit="<?php echo htmlspecialchars($rec_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-withdraw="<?php echo htmlspecialchars($rec_val->withdraw_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
-                                            data-payment-method="<?php echo htmlspecialchars($rec_val->payment_method ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                            data-payment-method="<?php echo htmlspecialchars($rec_val->payment_method ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-eftpos-surcharge="<?php echo htmlspecialchars($rec_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                                             <i class="fas fa-edit"></i> Edit Entry
                                         </a>
                                         <?php } ?>
@@ -633,7 +640,7 @@
                                 ];
                                 ?>
                                 <td class="type-cell" style="text-align: left; vertical-align: middle;">
-                                   <i class="fas  <?php echo $payClassMap[$off_val->payment_method]; ?> type-icon"></i>
+                                   <i class="fas  <?php echo $payClassMap[$off_val->payment_method] ?? 'fa-money-bill'; ?> type-icon"></i>
                                    <span>
                                     {{$off_val->payment_method}}
                                     
@@ -649,7 +656,13 @@
 
                                    </span>
                                 </td>
-                                <td style="text-align: left; vertical-align: middle;"></td>
+                                <td style="text-align: left; vertical-align: middle; font-size: 0.9em; color: #495057;"><?php
+                                    if (!empty($off_val->eftpos_surcharge_amount) && floatval($off_val->eftpos_surcharge_amount) > 0) {
+                                        echo '<span style="font-size:11px;color:#6c757d;">+$' . number_format((float) $off_val->eftpos_surcharge_amount, 2) . ' surcharge</span>';
+                                    } else {
+                                        echo '—';
+                                    }
+                                ?></td>
 
                                 <td class="description" style="text-align: left; vertical-align: middle;"><?php echo $off_val->description;?></td>
                                 
@@ -715,6 +728,7 @@
                                                 data-payment-method="<?php echo htmlspecialchars($off_val->payment_method, ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-description="<?php echo htmlspecialchars($off_val->description ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-deposit="<?php echo htmlspecialchars($off_val->deposit_amount ?? 0, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-eftpos-surcharge="<?php echo htmlspecialchars($off_val->eftpos_surcharge_amount ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-invoice-no="<?php echo htmlspecialchars($off_val->invoice_no ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-matter-id="<?php echo $off_val->client_matter_id; ?>"
                                                 data-uploaded-doc-id="<?php echo $off_val->uploaded_doc_id ?? ''; ?>"
@@ -1260,7 +1274,8 @@ document.addEventListener('DOMContentLoaded', function() {
         lastOfficeReceiptEntry = {
             payment_method: $firstRow.find('select[name="payment_method[]"]').val(),
             description: $firstRow.find('input[name="description[]"]').val(),
-            deposit_amount: $firstRow.find('input[name="deposit_amount[]"]').val()
+            deposit_amount: $firstRow.find('input[name="deposit_amount[]"]').val(),
+            eftpos_surcharge_amount: $firstRow.find('.office-eftpos-surcharge-input').val() || ''
         };
         
         // Store in localStorage for persistence
@@ -1309,6 +1324,15 @@ document.addEventListener('DOMContentLoaded', function() {
         $firstRow.find('select[name="payment_method[]"]').val(lastOfficeReceiptEntry.payment_method);
         $firstRow.find('input[name="description[]"]').val(lastOfficeReceiptEntry.description);
         $firstRow.find('input[name="deposit_amount[]"]').val(lastOfficeReceiptEntry.deposit_amount);
+        if (lastOfficeReceiptEntry.eftpos_surcharge_amount) {
+            $firstRow.find('.office-eftpos-surcharge-input').val(lastOfficeReceiptEntry.eftpos_surcharge_amount);
+        }
+        if (typeof window.toggleOfficeEftposSurchargeRow === 'function') {
+            window.toggleOfficeEftposSurchargeRow($firstRow);
+        }
+        if (typeof window.grandtotalAccountTab_office === 'function') {
+            window.grandtotalAccountTab_office();
+        }
         
         // Visual feedback
         $firstRow.find('input, select').each(function() {
@@ -2692,11 +2716,17 @@ $(document).ready(function() {
             var paymentMethod = $(this).data('payment-method');
             var description = $(this).data('description');
             var deposit = $(this).data('deposit');
+            var eftposSurcharge = $(this).data('eftpos-surcharge');
             var invoiceNo = $(this).data('invoice-no');
             var matterId = $(this).data('matter-id');
             var uploadedDocId = $(this).data('uploaded-doc-id');
             
             console.log('✏️ Editing Office Receipt:', {id, receiptId, transDate, paymentMethod, deposit, invoiceNo});
+            
+            var totalDep = parseFloat(deposit) || 0;
+            var sur = (eftposSurcharge !== undefined && eftposSurcharge !== null && eftposSurcharge !== '') ? parseFloat(eftposSurcharge) : 0;
+            if (isNaN(sur)) sur = 0;
+            var principalOffice = (paymentMethod === 'EFTPOS' && sur > 0) ? Math.max(0, totalDep - sur) : totalDep;
             
             // Populate modal fields
             $('#editOfficeReceiptForm input[name="id"]').val(id);
@@ -2705,7 +2735,13 @@ $(document).ready(function() {
             $('#edit_office_trans_date').val(transDate);
             $('#edit_office_entry_date').val(entryDate);
             $('#edit_office_payment_method').val(paymentMethod);
-            $('#edit_office_deposit_amount').val(deposit);
+            $('#edit_office_deposit_amount').val(principalOffice.toFixed(2));
+            $('#edit_office_eftpos_surcharge').val(sur > 0 ? sur.toFixed(2) : '');
+            if (paymentMethod === 'EFTPOS') {
+                $('#edit_office_eftpos_surcharge_row').show();
+            } else {
+                $('#edit_office_eftpos_surcharge_row').hide();
+            }
             $('#edit_office_description').val(description);
             
             // Initialize Flatpickr for office receipt dates
@@ -2746,6 +2782,19 @@ $(document).ready(function() {
     // Attach handlers on page load
     attachUploadHandlers();
     attachEditOfficeReceiptHandlers();
+    
+    $(document).on('change', '#edit_office_payment_method', function() {
+        var pm = $(this).val();
+        if (pm === 'EFTPOS') {
+            $('#edit_office_eftpos_surcharge_row').show();
+        } else {
+            var p = parseFloat($('#edit_office_deposit_amount').val()) || 0;
+            var s = parseFloat($('#edit_office_eftpos_surcharge').val()) || 0;
+            $('#edit_office_deposit_amount').val((p + s).toFixed(2));
+            $('#edit_office_eftpos_surcharge').val('');
+            $('#edit_office_eftpos_surcharge_row').hide();
+        }
+    });
     
     // Re-attach after any dynamic content updates
     $(document).on('DOMNodeInserted', function(e) {
