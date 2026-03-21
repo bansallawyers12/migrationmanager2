@@ -257,6 +257,9 @@
                                                 <td>{{@$record_get->client_fund_ledger_type}}</td>
                                                 <td>
                                                     {{@$record_get->description}}
+                                                    @if(!empty($record_get->payment_method))
+                                                        <div style="margin-top: 6px; font-size: 12px; color: #555;"><strong>Payment method:</strong> {{ $record_get->payment_method }}</div>
+                                                    @endif
                                                 </td>
                                                 <td style="text-align: right; font-weight: 700; font-size: 16px; color: #2e7d32;">
                                                     ${{number_format($record_get->deposit_amount,2)}}

@@ -193,10 +193,11 @@
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
                                         <tr>
-                                            <th style="width:12%;color: #34395e;">Trans. Date</th>
-                                            <th style="width:12%;color: #34395e;">Entry Date</th>
-                                            <th style="width:12%;color: #34395e;">Type</th>
-                                            <th style="width:30%;color: #34395e;">Description</th>
+                                            <th style="width:11%;color: #34395e;">Trans. Date</th>
+                                            <th style="width:11%;color: #34395e;">Entry Date</th>
+                                            <th style="width:11%;color: #34395e;">Type</th>
+                                            <th style="width:11%;color: #34395e;">Payment method</th>
+                                            <th style="width:24%;color: #34395e;">Description</th>
                                             <th style="width:10%;color: #34395e;">Funds In (+)</th>
 											<th style="width:10%;color: #34395e;">Funds Out (-)</th>
                                             <th style="width:1%;color: #34395e;"></th>
@@ -223,6 +224,15 @@
                                                 </select>
                                             </td>
                                             <td>
+                                                <select class="form-control ledger-payment-method" name="payment_method[]">
+                                                    <option value="">—</option>
+                                                    <option value="Cash">Cash</option>
+                                                    <option value="Bank transfer">Bank transfer</option>
+                                                    <option value="EFTPOS">EFTPOS</option>
+                                                    <option value="Refund">Refund</option>
+                                                </select>
+                                            </td>
+                                            <td>
                                                 <input data-valid="required" class="form-control" name="description[]" type="text" value="" />
                                             </td>
 
@@ -246,7 +256,7 @@
                                 <table border="1" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <tbody>
                                         <tr>
-                                            <td colspan="4" style="width:72.5%;text-align:right;color: #34395e;">Totals</td>
+                                            <td colspan="5" style="width:72.5%;text-align:right;color: #34395e;">Totals</td>
                                             <td>
                                                 <span class="total_deposit_amount_all_rows" style="color: #34395e;"></span>
                                             </td>

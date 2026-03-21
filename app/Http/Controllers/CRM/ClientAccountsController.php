@@ -216,6 +216,14 @@ class ClientAccountsController extends Controller
         }
    
         if (isset($requestData['trans_date'])) {
+            $ledgerPaymentMethodAt = function (int $index) use ($requestData): string {
+                if (empty($requestData['payment_method']) || ! is_array($requestData['payment_method'])) {
+                    return '';
+                }
+
+                return trim((string) ($requestData['payment_method'][$index] ?? ''));
+            };
+
             // Generate unique receipt id
             $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type', 1)->orderBy('receipt_id', 'desc')->first();
             $receipt_id = !$is_record_exist ? 1 : $is_record_exist->receipt_id + 1;
@@ -378,6 +386,7 @@ class ClientAccountsController extends Controller
                             'deposit_amount' => $deposit,
                             'withdraw_amount' => $amountToUse,
                             'balance_amount' => $running_balance,
+                            'payment_method' => $ledgerPaymentMethodAt($feeTransfer['index']),
                             'uploaded_doc_id' => $insertedDocId,
                             'validate_receipt' => 0,
                             'void_invoice' => 0,
@@ -398,6 +407,7 @@ class ClientAccountsController extends Controller
                             'deposit_amount' => $deposit,
                             'withdraw_amount' => $amountToUse,
                             'balance_amount' => $running_balance,
+                            'payment_method' => $ledgerPaymentMethodAt($feeTransfer['index']),
                         ];
 
                         $remainingWithdraw -= $amountToUse;
@@ -438,6 +448,7 @@ class ClientAccountsController extends Controller
                                     'deposit_amount' => 0,
                                     'withdraw_amount' => $withdraw,
                                     'balance_amount' => $running_balance,
+                                    'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
                                     'uploaded_doc_id' => $insertedDocId,
                                     'validate_receipt' => 0,
                                     'void_invoice' => 0,
@@ -458,6 +469,7 @@ class ClientAccountsController extends Controller
                                     'deposit_amount' => 0,
                                     'withdraw_amount' => $withdraw,
                                     'balance_amount' => $running_balance,
+                                    'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
                                 ];
                             }
                         }
@@ -489,6 +501,7 @@ class ClientAccountsController extends Controller
                                 'deposit_amount' => $excessAmount,
                                 'withdraw_amount' => 0,
                                 'balance_amount' => $running_balance,
+                                'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
                                 'uploaded_doc_id' => $insertedDocId,
                                 'extra_amount_receipt' => 'residual',
                                 'validate_receipt' => 0,
@@ -510,7 +523,8 @@ class ClientAccountsController extends Controller
                                 'deposit_amount' => $excessAmount,
                                 'withdraw_amount' => 0,
                                 'balance_amount' => $running_balance,
-                                'extra_amount_receipt' => 'residual'
+                                'extra_amount_receipt' => 'residual',
+                                'payment_method' => $ledgerPaymentMethodAt($feeTransfers[0]['index']),
                             ];
 
                             Log::info('Residual client fund deposit created from fee transfer', [
@@ -650,6 +664,7 @@ class ClientAccountsController extends Controller
                     'deposit_amount' => $deposit,
                     'withdraw_amount' => $withdraw,
                     'balance_amount' => $running_balance,
+                    'payment_method' => $ledgerPaymentMethodAt($i),
                     'uploaded_doc_id' => $insertedDocId,
                     'validate_receipt' => 0,
                     'void_invoice' => 0,
@@ -670,6 +685,7 @@ class ClientAccountsController extends Controller
                     'deposit_amount' => $deposit,
                     'withdraw_amount' => $withdraw,
                     'balance_amount' => $running_balance,
+                    'payment_method' => $ledgerPaymentMethodAt($i),
                 ];
             }
    
@@ -5265,6 +5281,7 @@ public function updateClientFundsLedger(Request $request)
     $description = $request->input('description');
     $deposit_amount = floatval($request->input('deposit_amount', 0));
     $withdraw_amount = floatval($request->input('withdraw_amount', 0));
+    $payment_method = trim((string) $request->input('payment_method', ''));
 
     // Handle document upload
     $insertedDocId = null; // Use null to indicate no document uploaded
@@ -5330,6 +5347,7 @@ public function updateClientFundsLedger(Request $request)
         'description' => $description,
         'deposit_amount' => $deposit_amount,
         'withdraw_amount' => $withdraw_amount,
+        'payment_method' => $payment_method,
         'updated_at' => now(),
     ];
 
@@ -5354,14 +5372,14 @@ public function updateClientFundsLedger(Request $request)
         $running_balance = 0;
         $updatedEntries = [];
 
-        foreach ($entries as $entry) {
-         $running_balance += floatval($entry->deposit_amount) - floatval($entry->withdraw_amount);
+        foreach ($entries as $ledgerRow) {
+         $running_balance += floatval($ledgerRow->deposit_amount) - floatval($ledgerRow->withdraw_amount);
          DB::table('account_client_receipts')
-             ->where('id', $entry->id)
+             ->where('id', $ledgerRow->id)
              ->update(['balance_amount' => $running_balance]);
 
-         $entry->balance_amount = $running_balance;
-         $updatedEntries[] = $entry;
+         $ledgerRow->balance_amount = $running_balance;
+         $updatedEntries[] = $ledgerRow;
         }
 
         // Log activity

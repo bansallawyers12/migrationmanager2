@@ -753,13 +753,14 @@ function customValidate(formName, savetype = '')
 											let withdrawAmount = subArray.withdraw_amount ? "$" + parseFloat(subArray.withdraw_amount).toFixed(2) : '';
 											let balanceAmount = subArray.balance_amount ? "$" + parseFloat(subArray.balance_amount).toFixed(2) : '';
 
+											const pm = (subArray.payment_method && String(subArray.payment_method).trim()) ? subArray.payment_method : '—';
 											trRows += `<tr>
 												<td>${subArray.trans_date} ${awsLink}</td>
 												<td class="type-cell">
 													<i class="fas ${typeIcon} type-icon" title="${subArray.client_fund_ledger_type}"></i>
 													<span>${subArray.client_fund_ledger_type}  ${subArray.invoice_no ? `(${subArray.invoice_no})` : ''}</span>
 												</td>
-												<td></td>
+												<td style="font-size:0.9em;color:#495057;">${pm}</td>
 												<td class="description">${subArray.description}</td>
 												<td><a href="#" title="View Receipt ${subArray.trans_no}">${subArray.trans_no}</a></td>
 												<td class="currency text-success">${depositAmount}</td>

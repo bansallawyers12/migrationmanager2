@@ -37,12 +37,14 @@
             var depositAmount = entry.deposit_amount ? '$' + parseFloat(entry.deposit_amount).toFixed(2) : '$0.00';
             var withdrawAmount = entry.withdraw_amount ? '$' + parseFloat(entry.withdraw_amount).toFixed(2) : '$0.00';
             var balanceAmount = entry.balance_amount ? '$' + parseFloat(entry.balance_amount).toFixed(2) : '$0.00';
+            var payM = entry.payment_method != null && String(entry.payment_method).trim() !== '' ? String(entry.payment_method) : '—';
             var editIcon = entry.client_fund_ledger_type !== 'Fee Transfer' ?
-                '<a href="#" class="edit-ledger-entry" data-id="' + entry.id + '" data-trans-date="' + entry.trans_date + '" data-entry-date="' + entry.entry_date + '" data-type="' + entry.client_fund_ledger_type + '" data-description="' + (entry.description || '') + '" data-deposit="' + (entry.deposit_amount || '') + '" data-withdraw="' + (entry.withdraw_amount || '') + '"><i class="fas fa-pencil-alt"></i></a>' : '';
+                '<a href="#" class="edit-ledger-entry" data-id="' + entry.id + '" data-trans-date="' + entry.trans_date + '" data-entry-date="' + entry.entry_date + '" data-type="' + entry.client_fund_ledger_type + '" data-description="' + (entry.description || '') + '" data-deposit="' + (entry.deposit_amount || '') + '" data-withdraw="' + (entry.withdraw_amount || '') + '" data-payment-method="' + (entry.payment_method || '').replace(/"/g, '&quot;') + '"><i class="fas fa-pencil-alt"></i></a>' : '';
             trRows += '<tr data-id="' + entry.id + '">' +
                 '<td>' + entry.trans_date + ' ' + editIcon + '</td>' +
                 '<td class="type-cell"><i class="fas ' + typeIcon + ' type-icon ' + typeClass + '"></i>' +
                 '<span>' + entry.client_fund_ledger_type + (entry.invoice_no ? '<br/>(' + entry.invoice_no + ')' : '') + '</span></td>' +
+                '<td style="font-size:0.9em;color:#495057;">' + payM + '</td>' +
                 '<td class="description">' + (entry.description || '') + '</td>' +
                 '<td><a href="#" title="View Receipt ' + (entry.trans_no || '') + '">' + (entry.trans_no || '') + '</a></td>' +
                 '<td class="currency text-success">' + depositAmount + '</td>' +
@@ -60,10 +62,15 @@
         var description = $(element).data('description');
         var deposit = $(element).data('deposit');
         var withdraw = $(element).data('withdraw');
+        var paymentMethod = $(element).data('payment-method');
+        if (paymentMethod === undefined || paymentMethod === null) {
+            paymentMethod = '';
+        }
         $('#editLedgerModal input[name="id"]').val(id);
         $('#editLedgerModal input[name="trans_date"]').val(transDate);
         $('#editLedgerModal input[name="entry_date"]').val(entryDate);
         $('#editLedgerModal input[name="client_fund_ledger_type"]').val(type).prop('readonly', true);
+        $('#editLedgerModal select[name="payment_method"]').val(String(paymentMethod));
         $('#editLedgerModal input[name="description"]').val(description);
         if (parseFloat(deposit) === 0) {
             $('#editLedgerModal input[name="deposit_amount"]').val(deposit).prop('readonly', true);

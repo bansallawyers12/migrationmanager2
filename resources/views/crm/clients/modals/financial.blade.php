@@ -28,6 +28,16 @@
                         <input type="text" class="form-control" name="client_fund_ledger_type" readonly>
                     </div>
                     <div class="form-group">
+                        <label for="edit_ledger_payment_method">Payment method</label>
+                        <select class="form-control" name="payment_method" id="edit_ledger_payment_method">
+                            <option value="">—</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank transfer">Bank transfer</option>
+                            <option value="EFTPOS">EFTPOS</option>
+                            <option value="Refund">Refund</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="description">Description</label>
                         <input type="text" class="form-control" name="description">
                     </div>
