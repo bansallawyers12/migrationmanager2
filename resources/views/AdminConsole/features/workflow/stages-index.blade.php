@@ -43,18 +43,18 @@
 							<h4>Workflow Stages: {{ $workflow->name }}</h4>
 							<div class="card-header-action">
 								<a href="{{ route('adminconsole.features.workflow.index') }}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Back to Workflows</a>
-								<a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}" class="btn btn-primary">Add Stage</a>
+								<a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}" class="btn btn-primary"><i class="fa fa-plus"></i> Add Stage</a>
 							</div>
 						</div>
 						<div class="card-body">
-							<p class="text-muted small mb-3">Stages labelled <span class="badge badge-secondary">Protected</span> are required by the system (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) and cannot be renamed or deleted.</p>
+							<p class="small mb-3 text-muted"><strong>Manage stages</strong> for this workflow below. Use <strong>Add Stage</strong> (top right) to add rows. Stages marked <span class="badge badge-secondary">Protected</span> cannot be renamed or removed — <strong>Edit</strong> still opens the stage (read-only); <strong>Delete</strong> is disabled.</p>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap workflow-stages-table">
 									<thead>
 										<tr>
 											<th>Stage</th>
 											<th>Total Matters</th>
-											<th></th>
+											<th class="text-nowrap">Actions</th>
 										</tr>
 									</thead>
 									@if($lists->count() > 0)
@@ -71,16 +71,14 @@
 										</td>
 										<td>{{ $countmatters }}</td>
 										<td class="workflow-stage-actions-col">
-											@if($stageFrozen)
 											<div class="workflow-stage-cell-actions">
-												<span class="text-muted small text-center py-1">Locked</span>
-											</div>
-											@else
-											<div class="workflow-stage-cell-actions">
-												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}"><i class="far fa-edit"></i> Edit</a>
+												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}" title="{{ $stageFrozen ? 'View / protected — name cannot be changed' : 'Edit stage name' }}"><i class="far fa-edit"></i> Edit</a>
+												@if($stageFrozen)
+												<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted"><i class="fas fa-trash"></i> Delete</button>
+												@else
 												<a class="btn btn-sm btn-outline-danger" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>
+												@endif
 											</div>
-											@endif
 										</td>
 									</tr>
 									@endforeach

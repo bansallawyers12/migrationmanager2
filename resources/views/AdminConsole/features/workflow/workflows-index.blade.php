@@ -41,6 +41,21 @@
         opacity: 1 !important;
         visibility: visible !important;
     }
+
+    /* Always-visible workflow row actions (no hidden dropdown-only menu) */
+    .workflows-index-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        min-width: 7.5rem;
+    }
+    .workflows-index-actions .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        text-align: center;
+        white-space: nowrap;
+    }
 </style>
 @endsection
 
@@ -71,7 +86,7 @@
 											<th>Workflow Name</th>
 											<th>Linked Matter</th>
 											<th>Stages</th>
-											<th></th>
+											<th class="text-nowrap">Actions</th>
 										</tr>
 									</thead>
 									@if($lists->count() > 0)
@@ -82,12 +97,9 @@
 										<td>{{ $wf->matter ? $wf->matter->title : '—' }}</td>
 										<td>{{ $wf->stages->count() }}</td>
 										<td>
-											<div class="dropdown d-inline">
-												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Action</button>
-												<div class="dropdown-menu">
-													<a class="dropdown-item" href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id))) }}"><i class="fas fa-list"></i> Manage Stages</a>
-													<a class="dropdown-item" href="{{ route('adminconsole.features.workflow.editWorkflow', base64_encode(convert_uuencode($wf->id))) }}"><i class="far fa-edit"></i> Edit</a>
-												</div>
+											<div class="workflows-index-actions">
+												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id))) }}"><i class="fas fa-list"></i> Manage Stages</a>
+												<a class="btn btn-sm btn-secondary" href="{{ route('adminconsole.features.workflow.editWorkflow', base64_encode(convert_uuencode($wf->id))) }}"><i class="far fa-edit"></i> Edit Workflow</a>
 											</div>
 										</td>
 									</tr>

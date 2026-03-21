@@ -141,15 +141,25 @@ class WorkflowController extends Controller
 
     /**
      * Create stage form (for a specific workflow).
+     * Optional query ?after={encodedStageId} — new stages insert immediately after that stage.
      */
-    public function createStage($workflowId)
+    public function createStage(Request $request, $workflowId)
     {
         $workflowId = $this->decodeString($workflowId);
         $workflow = Workflow::find($workflowId);
         if (!$workflow) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
         }
-        return view('AdminConsole.features.workflow.create', compact('workflow'));
+        $insertAfterStage = null;
+        if ($request->filled('after')) {
+            $afterId = $this->decodeString($request->query('after'));
+            if ($afterId) {
+                $insertAfterStage = WorkflowStage::where('id', $afterId)
+                    ->where('workflow_id', $workflow->id)
+                    ->first();
+            }
+        }
+        return view('AdminConsole.features.workflow.create', compact('workflow', 'insertAfterStage'));
     }
 
     /**
@@ -160,6 +170,7 @@ class WorkflowController extends Controller
         $this->validate($request, [
             'stage_name' => 'required|array',
             'stage_name.*' => 'required|string|max:255',
+            'after_stage_id' => 'nullable|integer|exists:workflow_stages,id',
         ]);
         $workflowId = $request->workflow_id;
         if (!$workflowId) {
@@ -167,24 +178,69 @@ class WorkflowController extends Controller
             $workflowId = $general ? $general->id : null;
         }
         $stages = $request->stage_name;
-        $sortQuery = WorkflowStage::query();
-        if ($workflowId) {
-            $sortQuery->where('workflow_id', $workflowId);
-        } else {
-            // No workflow resolved — scope to stages with no workflow_id to avoid cross-contamination.
-            $sortQuery->whereNull('workflow_id');
+        $afterStageId = $request->input('after_stage_id');
+
+        if ($afterStageId && !$workflowId) {
+            return redirect()->back()->withInput()->with('error', 'Cannot insert after a stage without a workflow context.');
         }
-        $maxSortOrder = (int) ($sortQuery->max('sort_order') ?? $sortQuery->max('id') ?? 0);
-        foreach ($stages as $stageName) {
-            $o = new WorkflowStage();
-            $o->name = $stageName;
-            $o->workflow_id = $workflowId;
-            $o->sort_order = ++$maxSortOrder;
-            $o->save();
+
+        if ($afterStageId) {
+            $afterStage = WorkflowStage::where('id', $afterStageId)->first();
+            if (!$afterStage || (int) $afterStage->workflow_id !== (int) $workflowId) {
+                return redirect()->back()->withInput()->with('error', 'Invalid “insert after” stage for this workflow.');
+            }
         }
+
+        DB::transaction(function () use ($stages, $workflowId, $afterStageId) {
+            if ($afterStageId) {
+                $afterStage = WorkflowStage::where('id', $afterStageId)->lockForUpdate()->first();
+                $effectiveAfter = (int) ($afterStage->sort_order ?? $afterStage->id);
+                $n = count($stages);
+                $toShift = WorkflowStage::where('workflow_id', $workflowId)
+                    ->where('id', '!=', $afterStage->id)
+                    ->whereRaw('COALESCE(sort_order, id) > ?', [$effectiveAfter])
+                    ->orderByRaw('COALESCE(sort_order, id) DESC')
+                    ->lockForUpdate()
+                    ->get();
+                foreach ($toShift as $row) {
+                    $curr = (int) ($row->sort_order ?? $row->id);
+                    $row->sort_order = $curr + $n;
+                    $row->save();
+                }
+                $pos = 0;
+                foreach ($stages as $stageName) {
+                    $o = new WorkflowStage();
+                    $o->name = $stageName;
+                    $o->workflow_id = $workflowId;
+                    $o->sort_order = $effectiveAfter + 1 + $pos;
+                    $o->save();
+                    $pos++;
+                }
+                return;
+            }
+
+            $sortQuery = WorkflowStage::query();
+            if ($workflowId) {
+                $sortQuery->where('workflow_id', $workflowId);
+            } else {
+                $sortQuery->whereNull('workflow_id');
+            }
+            $maxSortOrder = (int) ($sortQuery->max('sort_order') ?? $sortQuery->max('id') ?? 0);
+            foreach ($stages as $stageName) {
+                $o = new WorkflowStage();
+                $o->name = $stageName;
+                $o->workflow_id = $workflowId;
+                $o->sort_order = ++$maxSortOrder;
+                $o->save();
+            }
+        });
+
         if ($workflowId) {
+            $msg = $afterStageId
+                ? 'Stage(s) inserted after the selected stage.'
+                : 'Workflow Stages Added Successfully';
             return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflowId)))
-                ->with('success', 'Workflow Stages Added Successfully');
+                ->with('success', $msg);
         }
         return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Stages Added Successfully');
     }
