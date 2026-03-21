@@ -11,7 +11,7 @@ class Workflow extends Model
 	protected $table = 'workflows';
 	
 	protected $fillable = [
-        'id', 'name', 'matter_id', 'created_at', 'updated_at'
+        'id', 'name', 'matter_id', 'status', 'created_at', 'updated_at'
     ];
   
 	public $sortable = ['id', 'name', 'created_at', 'updated_at'];

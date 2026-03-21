@@ -49,6 +49,7 @@ class WorkflowController extends Controller
             $wf = new Workflow();
             $wf->name = $request->name;
             $wf->matter_id = $request->matter_id ?: null;
+            $wf->status = 1;
             $wf->save();
 
             // Copy stages from the General workflow so the new workflow is pre-populated.
