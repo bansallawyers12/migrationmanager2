@@ -12,8 +12,14 @@
 				<div class="row">
 					<div class="col-12 col-md-12 col-lg-12">
 						<div class="card">
-							<div class="card-header">
-							<h4>Add Workflow Stage@if(isset($workflow)) to {{ $workflow->name }}@endif @if(!empty($insertAfterStage))<small class="text-muted font-weight-normal">(after &ldquo;{{ \Illuminate\Support\Str::limit($insertAfterStage->name, 60) }}&rdquo;)</small>@endif</h4>
+						<div class="card-header">
+						<h4>
+							Add Workflow Stage
+							@if(isset($workflow)) to {{ $workflow->name }}@endif
+							@if(!empty($insertAfterStage))
+							<small class="text-muted font-weight-normal">(after &ldquo;{{ \Illuminate\Support\Str::limit($insertAfterStage->name, 60) }}&rdquo;)</small>
+							@endif
+						</h4>
 							<div class="card-header-action">
 									<a href="{{ isset($workflow) ? route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) : route('adminconsole.features.workflow.index') }}" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Back</a>
 							</div>
