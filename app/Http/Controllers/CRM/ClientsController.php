@@ -3679,15 +3679,21 @@ class ClientsController extends Controller
 
     /**
      * Delete an email log (email).
-     * Allowed roles: Super Admin (1), Admin (12), Migration Agent (16).
+     * Allowed roles: configurable (config/crm.php / CRM_EMAIL_LOG_DELETE_ROLE_IDS); default 1, 12, 16.
+     * Accepts DELETE or POST /email-logs/{id}/delete (POST recommended where DELETE is blocked).
      */
     public function deleteEmailLog(Request $request, $id)
     {
-        // Restrict to Super Admin/Admin/Migration Agent
-        if (!in_array((int) Auth::user()->role, [1, 12, 16], true)) {
+        $allowedRoles = config('crm.email_log_delete_role_ids', [1, 12, 16]);
+        if (!is_array($allowedRoles) || count($allowedRoles) === 0) {
+            $allowedRoles = [1, 12, 16];
+        }
+        $allowedRoles = array_map('intval', $allowedRoles);
+
+        if (!in_array((int) Auth::user()->role, $allowedRoles, true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized: Only admin or migration agent can delete emails.',
+                'message' => 'Unauthorized: Your role cannot delete emails.',
             ], 403);
         }
 
@@ -3698,6 +3704,24 @@ class ClientsController extends Controller
                     'success' => false,
                     'message' => 'Email not found.',
                 ], 404);
+            }
+
+            $matterId = $request->input('client_matter_id');
+            $clientId = $request->input('client_id');
+            if ($matterId !== null && $matterId !== '') {
+                if ((int) $emailLog->client_matter_id !== (int) $matterId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This email does not belong to the open matter.',
+                    ], 403);
+                }
+            } elseif ($clientId !== null && $clientId !== '') {
+                if ((int) $emailLog->client_id !== (int) $clientId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This email does not belong to the open client or lead.',
+                    ], 403);
+                }
             }
 
             // Delete pivot records (email labels)

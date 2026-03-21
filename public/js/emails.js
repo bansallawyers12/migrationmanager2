@@ -1244,8 +1244,8 @@
                 attachment = cidMap[cidValue.toLowerCase()];
             }
             
-            // If attachment found and it's an image, replace with preview URL
-            if (attachment && attachment.id) {
+            // Only rewrite when file exists in storage (avoids console 404 spam)
+            if (attachment && attachment.id && attachment.s3_key) {
                 const previewUrl = `/mail-attachments/${attachment.id}/preview`;
                 return `src="${previewUrl}"`;
             }
@@ -1259,7 +1259,7 @@
             const normalizedCid = cidValue.replace(/^<|>$/g, '').trim().toLowerCase();
             let attachment = cidMap[normalizedCid] || cidMap[cidValue.toLowerCase()];
             
-            if (attachment && attachment.id) {
+            if (attachment && attachment.id && attachment.s3_key) {
                 const previewUrl = `/mail-attachments/${attachment.id}/preview`;
                 return `background-image: url("${previewUrl}")`;
             }
@@ -1627,13 +1627,25 @@
         }
 
         try {
-            const response = await fetch(`/email-logs/${email.id}`, {
-                method: 'DELETE',
+            const payload = {};
+            const matterId = getMatterId();
+            const clientId = getClientId();
+            if (matterId) {
+                payload.client_matter_id = matterId;
+            }
+            if (clientId) {
+                payload.client_id = clientId;
+            }
+
+            // POST avoids 403 from some proxies/WAFs that block HTTP DELETE.
+            const response = await fetch(`/email-logs/${email.id}/delete`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': getCsrfToken()
-                }
+                },
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json().catch(() => ({}));

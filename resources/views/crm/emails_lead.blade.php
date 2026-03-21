@@ -1,7 +1,11 @@
 <!-- Emails Interface for Leads (no matter context) -->
 @php
     $leadData = $fetchedData ?? null;
-    $canDeleteEmail = Auth::user() && in_array((int) Auth::user()->role, [1, 12, 16], true);
+    $canDeleteEmail = Auth::user() && in_array(
+        (int) Auth::user()->role,
+        config('crm.email_log_delete_role_ids', [1, 12, 16]) ?: [1, 12, 16],
+        true
+    );
 @endphp
 <div class="email-interface-container" data-context="lead" data-client-id="{{ $leadData->id ?? '' }}" data-matter-id="" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->

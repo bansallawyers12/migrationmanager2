@@ -122,6 +122,8 @@ Route::post('/clients/filter-emails', [ClientsController::class, 'filterEmails']
 Route::post('/clients/filter-sentemails', [ClientsController::class, 'filterSentEmails'])->name('clients.filter.sentmails');
 Route::post('/clients/filter-lead-emails', [ClientsController::class, 'filterLeadEmails'])->name('clients.filter.leademails');
 Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete');
+// POST alias: some hosts/WAFs block HTTP DELETE; UI uses this route.
+Route::post('/email-logs/{id}/delete', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete-post');
 Route::post('/mail/enhance', [ClientsController::class, 'enhanceMessage'])->name('mail.enhance');
 
 /*---------- Email Labels Management ----------*/
