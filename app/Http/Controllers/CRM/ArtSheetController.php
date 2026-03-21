@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\ClientArtReference;
 use App\Models\ActivitiesLog;
+use App\Support\StaffClientVisibility;
 use App\Traits\ClientAuthorization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -147,8 +148,14 @@ class ArtSheetController extends Controller
                     ->on('art.client_matter_id', '=', 'latest_art_matter.matter_id');
             })
             ->join('admins', 'latest_art_matter.client_id', '=', 'admins.id')
-            ->leftJoin('staff as agents', 'latest_art_matter.sel_migration_agent', '=', 'agents.id')
-            ->select(
+            ->leftJoin('staff as agents', 'latest_art_matter.sel_migration_agent', '=', 'agents.id');
+
+        // Person Assisting: only rows where this staff is sel_person_assisting
+        if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
+            $query->where('latest_art_matter.sel_person_assisting', $paId);
+        }
+
+        $query->select(
                 'art.id as art_id',
                 'art.is_pinned',
                 'art.submission_last_date',

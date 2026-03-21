@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Support\StaffClientVisibility;
 use App\Traits\ClientAuthorization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -300,8 +301,14 @@ class VisaTypeSheetController extends Controller
             ->whereNull('admins.is_deleted')
             ->where(function ($q) {
                 $q->whereNull('admins.type')->orWhere('admins.type', '!=', 'lead');
-            })
-            ->select(
+            });
+
+        // Person Assisting: restrict client matters to where they are assigned
+        if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
+            $clientQuery->where('cm.sel_person_assisting', $paId);
+        }
+
+        $clientQuery->select(
                 'cm.id as matter_internal_id',
                 'cm.client_id',
                 'admins.client_id as crm_ref',
@@ -368,6 +375,11 @@ class VisaTypeSheetController extends Controller
                         DB::raw("'active' as tr_checklist_status"),
                         DB::raw('1 as is_lead')
                     );
+                // Person Assisting: restrict leads to those assigned to them
+                if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
+                    $leadQuery->where('a.user_id', $paId);
+                }
+
                 if ($request->filled('search')) {
                     $search = '%' . strtolower($request->input('search')) . '%';
                     $leadQuery->where(function ($q) use ($search) {
@@ -514,6 +526,11 @@ class VisaTypeSheetController extends Controller
             ->where('admins.is_archived', 0)
             ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted');
+
+        // Person Assisting: restrict to matters where they are assigned
+        if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
+            $query->where('latest_matter.sel_person_assisting', $paId);
+        }
 
         $this->applyTabFilter($query, $tab, $config);
 

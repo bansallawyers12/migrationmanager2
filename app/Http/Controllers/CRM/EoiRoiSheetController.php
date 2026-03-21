@@ -10,6 +10,7 @@ use App\Models\VisaDocumentType;
 use App\Models\ActivitiesLog;
 use App\Services\PointsService;
 use App\Services\EmailConfigService;
+use App\Support\StaffClientVisibility;
 use App\Traits\ClientAuthorization;
 use App\Mail\EoiConfirmationMail;
 use Illuminate\Http\Request;
@@ -222,6 +223,18 @@ class EoiRoiSheetController extends Controller
             ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted')
             ->whereNotNull('latest_eoi_matter.matter_id');
+
+        // Person Assisting: restrict to clients where they are assigned on the matter
+        if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(\Illuminate\Support\Facades\Auth::user())) {
+            $query->where(function ($q) use ($paId) {
+                $q->whereExists(function ($sub) use ($paId) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_matters')
+                        ->whereColumn('client_matters.client_id', 'admins.id')
+                        ->where('client_matters.sel_person_assisting', $paId);
+                })->orWhere('admins.user_id', $paId);
+            });
+        }
 
         return $query;
     }
