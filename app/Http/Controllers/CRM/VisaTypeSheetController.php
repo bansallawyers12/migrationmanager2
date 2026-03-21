@@ -37,7 +37,7 @@ class VisaTypeSheetController extends Controller
             abort(404, "Visa type sheet '{$visaType}' not configured.");
         }
 
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet($visaType)) {
             abort(403, 'Unauthorized');
         }
 
@@ -759,6 +759,10 @@ class VisaTypeSheetController extends Controller
      */
     public function togglePin(Request $request, string $visaType)
     {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet($visaType)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
         $config = $this->getVisaTypeConfig($visaType);
         if (!$config) {
             return response()->json(['success' => false, 'message' => 'Invalid visa type'], 404);

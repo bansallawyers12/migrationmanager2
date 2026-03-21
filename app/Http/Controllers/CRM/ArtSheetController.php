@@ -28,7 +28,7 @@ class ArtSheetController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('art')) {
             abort(403, 'Unauthorized');
         }
 
@@ -72,7 +72,7 @@ class ArtSheetController extends Controller
             return redirect()->back()->with('error', 'Only admin and super admin can view insights.');
         }
 
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('art')) {
             abort(403, 'Unauthorized');
         }
 
@@ -437,6 +437,10 @@ class ArtSheetController extends Controller
      */
     public function togglePin(Request $request)
     {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('art')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
         $clientId = $request->input('client_id');
         $matterInternalId = $request->input('matter_internal_id');
 

@@ -39,6 +39,7 @@ class Staff extends Authenticatable
         'position',
         'team',
         'permission',
+        'sheet_access',
         'office_id',
         'show_dashboard_per',
         'time_zone',
@@ -189,6 +190,24 @@ class Staff extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('status', 1);
+    }
+
+    /**
+     * Whether this staff member may open a CRM sheet (whitelist in sheet_access JSON).
+     * Null or empty column means unrestricted (all sheets), for backward compatibility.
+     */
+    public function allowsCrmSheet(string $sheetKey): bool
+    {
+        $raw = $this->attributes['sheet_access'] ?? null;
+        if ($raw === null || $raw === '') {
+            return true;
+        }
+        $list = json_decode($raw, true);
+        if (! is_array($list)) {
+            return true;
+        }
+
+        return in_array($sheetKey, $list, true);
     }
 
 }

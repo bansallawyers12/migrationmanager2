@@ -86,16 +86,27 @@
                     <a class="dropdown-item" href="{{route('reports.visaexpires')}}"><i class="fas fa-calendar-times mr-2"></i> Visa Expiry Report</a>
                 </div>
             </div>
+            @php
+                $visibleCrmSheets = [];
+                if (Auth::user()) {
+                    foreach (\App\Support\CrmSheets::definitions() as $_sk => $_sl) {
+                        if (Auth::user()->allowsCrmSheet($_sk)) {
+                            $visibleCrmSheets[$_sk] = $_sl;
+                        }
+                    }
+                }
+                $firstSheetKey = array_key_first($visibleCrmSheets);
+            @endphp
+            @if($firstSheetKey !== null)
             <div class="icon-dropdown js-dropdown">
-                <a href="{{ route('clients.sheets.eoi-roi') }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
+                <a href="{{ \App\Support\CrmSheets::urlForKey($firstSheetKey) }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
                 <div class="icon-dropdown-menu">
-                    <a class="dropdown-item" href="{{ route('clients.sheets.eoi-roi') }}"><i class="fas fa-passport mr-2"></i> EOI/ROI Sheet</a>
-                    <a class="dropdown-item" href="{{ route('clients.sheets.art') }}"><i class="fas fa-gavel mr-2"></i> ART Submission and Hearing Files</a>
-                    @foreach(config('sheets.visa_types', []) as $vt => $vc)
-                    <a class="dropdown-item" href="{{ route('clients.sheets.visa-type', ['visaType' => $vt]) }}"><i class="fas fa-clipboard-list mr-2"></i> {{ $vc['title'] ?? ucfirst($vt) }}</a>
+                    @foreach($visibleCrmSheets as $vt => $vc)
+                    <a class="dropdown-item" href="{{ \App\Support\CrmSheets::urlForKey($vt) }}"><i class="fas fa-{{ $vt === 'eoi-roi' ? 'passport' : ($vt === 'art' ? 'gavel' : 'clipboard-list') }} mr-2"></i> {{ $vc }}</a>
                     @endforeach
                 </div>
             </div>
+            @endif
         </div>
     </div>
     <div class="topbar-center">

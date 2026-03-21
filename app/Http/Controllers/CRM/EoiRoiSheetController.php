@@ -50,8 +50,7 @@ class EoiRoiSheetController extends Controller
      */
     public function index(Request $request)
     {
-        // Check authorization
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
             abort(403, 'Unauthorized');
         }
 
@@ -108,8 +107,7 @@ class EoiRoiSheetController extends Controller
             return redirect()->back()->with('error', 'Only admin and super admin can view insights.');
         }
 
-        // Check authorization
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
             abort(403, 'Unauthorized');
         }
 
@@ -571,8 +569,7 @@ class EoiRoiSheetController extends Controller
      */
     public function verifyByStaff(Request $request, $eoiId)
     {
-        // Check authorization
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -619,8 +616,7 @@ class EoiRoiSheetController extends Controller
      */
     public function sendConfirmationEmail(Request $request, $eoiId)
     {
-        // Check authorization
-        if (!$this->hasModuleAccess('20')) {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -944,6 +940,10 @@ class EoiRoiSheetController extends Controller
      */
     public function togglePin(Request $request, $eoiId)
     {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
         $eoiId = (int) $eoiId;
         if (!$eoiId) {
             return response()->json(['success' => false, 'message' => 'Missing EOI ID'], 400);

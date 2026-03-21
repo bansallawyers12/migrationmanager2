@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdminConsole;
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\UserRole;
+use App\Support\CrmSheets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -88,7 +89,10 @@ class StaffController extends Controller
         }
 
         $usertype = UserRole::all();
-        return view('AdminConsole.staff.create', compact(['usertype']));
+        $sheetDefinitions = CrmSheets::definitions();
+        $selectedSheetKeys = array_keys($sheetDefinitions);
+
+        return view('AdminConsole.staff.create', compact(['usertype', 'sheetDefinitions', 'selectedSheetKeys']));
     }
 
     /**
@@ -129,6 +133,7 @@ class StaffController extends Controller
             $obj->permission = (isset($requestData['permission']) && is_array($requestData['permission']))
                 ? implode(',', $requestData['permission'])
                 : '';
+            $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
             $obj->is_migration_agent = isset($requestData['is_migration_agent']) ? 1 : 0;
 
             if (isset($requestData['is_migration_agent'])) {
@@ -178,7 +183,19 @@ class StaffController extends Controller
             return redirect()->route('adminconsole.staff.active')->with('error', 'Staff not found.');
         }
 
-        return view('AdminConsole.staff.edit', compact(['fetchedData', 'usertype']));
+        $sheetDefinitions = CrmSheets::definitions();
+        $allSheetKeys = array_keys($sheetDefinitions);
+        $rawSheets = $fetchedData->sheet_access ?? null;
+        if ($rawSheets === null || $rawSheets === '') {
+            $selectedSheetKeys = $allSheetKeys;
+        } else {
+            $decoded = json_decode($rawSheets, true);
+            $selectedSheetKeys = is_array($decoded)
+                ? array_values(array_intersect($decoded, $allSheetKeys))
+                : $allSheetKeys;
+        }
+
+        return view('AdminConsole.staff.edit', compact(['fetchedData', 'usertype', 'sheetDefinitions', 'selectedSheetKeys']));
     }
 
     /**
@@ -219,9 +236,10 @@ class StaffController extends Controller
             $obj->role = @$requestData['role'];
             $obj->office_id = @$requestData['office'];
             $obj->team = @$requestData['team'];
-            $obj->permission = (isset($requestData['permission']) && $requestData['permission'] != '')
+            $obj->permission = (isset($requestData['permission']) && is_array($requestData['permission']))
                 ? implode(',', $requestData['permission'])
                 : '';
+            $obj->sheet_access = $this->normalizeStaffSheetAccess($requestData['sheet_access'] ?? null);
             $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
             $obj->is_migration_agent = isset($requestData['is_migration_agent']) ? 1 : 0;
 
@@ -307,5 +325,25 @@ class StaffController extends Controller
         }
 
         return view('AdminConsole.staff.view', compact(['fetchedData']));
+    }
+
+    /**
+     * null = all sheets (legacy / full access). JSON array = whitelist.
+     *
+     * @param  mixed  $input
+     */
+    private function normalizeStaffSheetAccess($input): ?string
+    {
+        $allowed = CrmSheets::keys();
+        $selected = is_array($input) ? $input : [];
+        $selected = array_values(array_unique(array_intersect(array_map('strval', $selected), $allowed)));
+        sort($selected);
+        $allSorted = $allowed;
+        sort($allSorted);
+        if ($selected === $allSorted) {
+            return null;
+        }
+
+        return json_encode($selected);
     }
 }
