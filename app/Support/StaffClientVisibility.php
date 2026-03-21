@@ -14,8 +14,9 @@ use Illuminate\Support\Facades\DB;
  * Clients (admins.type=client): "Person Assisting" roles are limited to matters they assist
  * on or admins.user_id = staff id. Super admin (staff role 1) bypasses. Other roles see all clients.
  *
- * Leads (admins.type=lead): roles in lead_full_access_role_ids (default 1 Super Admin, 17 Admin, 12 PR)
- * see all leads; everyone else only sees rows where admins.user_id = staff.id (assigned staff).
+ * Leads (admins.type=lead): same as clients for detail/header search — non–Person-Assisting staff may open any
+ * lead. Person Assisting roles are limited to assigned (admins.user_id), person-assisting on a matter, or
+ * lead_full_access_role_ids. Lead *list* still uses restrictLeadListQuery (assigned-only for many roles).
  *
  * Note: Controllers that accept client_id in AJAX (documents, activities, etc.) must call
  * canAccessClientOrLead() — listing/detail alone is not enough.
@@ -145,7 +146,24 @@ final class StaffClientVisibility
         }
 
         if (($row->type ?? '') === 'lead') {
-            return self::canStaffAccessLeadRow($user, $row);
+            if (!self::isRestrictedPersonAssisting($user)) {
+                return true;
+            }
+
+            $staffId = (int) $user->id;
+
+            if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
+                return true;
+            }
+
+            if (DB::table('client_matters')
+                ->where('client_id', $adminId)
+                ->where('sel_person_assisting', $staffId)
+                ->exists()) {
+                return true;
+            }
+
+            return (int) ($row->user_id ?? 0) === $staffId;
         }
 
         if (!self::isRestrictedPersonAssisting($user)) {
@@ -162,19 +180,5 @@ final class StaffClientVisibility
         }
 
         return (int) ($row->user_id ?? 0) === $staffId;
-    }
-
-    /**
-     * @param  \Illuminate\Database\Eloquent\Model|object  $leadRow  admins row with user_id
-     */
-    private static function canStaffAccessLeadRow(Authenticatable $user, object $leadRow): bool
-    {
-        if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
-            return true;
-        }
-
-        $assignedStaffId = (int) ($leadRow->user_id ?? 0);
-
-        return $assignedStaffId > 0 && $assignedStaffId === (int) $user->id;
     }
 }
