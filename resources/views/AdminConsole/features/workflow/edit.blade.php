@@ -33,6 +33,12 @@
 											<h4>Edit Workflow Stage</h4>
 										</div>
 										<div class="accordion-body collapse show" id="primary_info" data-parent="#accordion">
+											@php $stageFrozen = $fetchedData->isFrozen(); @endphp
+											@if($stageFrozen)
+											<div class="alert alert-warning" role="alert">
+												<strong>Frozen stage.</strong> This stage cannot be renamed or deleted. It is required for consistent matter workflow behaviour.
+											</div>
+											@endif
 											<div class="row">
 												<!--<div class="col-12 col-md-4 col-lg-4">
 													<div class="form-group">
@@ -60,7 +66,7 @@
 															    ?>
 																<tr>
 																	<td>
-																		<input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control" value="{{@$stage->name}}" >
+																		<input data-valid="required" type="text" name="stage_name[]" placeholder="Stage Name" class="form-control" value="{{@$stage->name}}" @if($stageFrozen) readonly @endif >
 																	</td>
 																	<td>
                                                                         <?php
@@ -103,7 +109,9 @@
 									</div>
 								</div>
 								<div class="form-group float-right">
+									@if(!$stageFrozen)
 									<button type="submit" class="btn btn-primary">Save Workflow Stage</button>
+									@endif
 								</div>
 							</div>
 						</div>

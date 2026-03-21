@@ -23,6 +23,7 @@ use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
+use App\Support\WorkflowStageFreeze;
 
 class CRMUtilityController extends Controller
 {
@@ -799,6 +800,20 @@ class CRMUtilityController extends Controller
                                     }
                                 }else{
                                     $message = 'ID does not exist, please check it once again.';
+                                }
+                            }
+                        }
+                        else if ($requestData['table'] == 'workflow_stages') {
+                            $row = DB::table('workflow_stages')->where('id', $requestData['id'])->first();
+                            if ($row && WorkflowStageFreeze::isFrozen($row->name)) {
+                                $message = 'This workflow stage is frozen and cannot be deleted.';
+                            } else {
+                                $response = DB::table($requestData['table'])->where('id', @$requestData['id'])->delete();
+                                if ($response) {
+                                    $status = 1;
+                                    $message = 'Record has been deleted successfully.';
+                                } else {
+                                    $message = config('constants.server_error');
                                 }
                             }
                         }

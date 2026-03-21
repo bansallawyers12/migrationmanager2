@@ -208,6 +208,14 @@ class WorkflowController extends Controller
             'stage_name' => 'required|array',
             'stage_name.*' => 'required|string|max:255',
         ]);
+        if ($stage->isFrozen()) {
+            $workflow = $stage->workflow;
+            if ($workflow) {
+                return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id)))
+                    ->with('error', 'This workflow stage is frozen and cannot be renamed.');
+            }
+            return redirect()->route('adminconsole.features.workflow.index')->with('error', 'This workflow stage is frozen and cannot be renamed.');
+        }
         $stage->name = $request->stage_name[0];
         $stage->save();
         $workflow = $stage->workflow;

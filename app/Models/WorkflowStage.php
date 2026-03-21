@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\WorkflowStageFreeze;
 use Illuminate\Database\Eloquent\Model;
 use Kyslik\ColumnSortable\Sortable;
 
@@ -22,5 +23,13 @@ class WorkflowStage extends Model
 	public function workflow()
 	{
 		return $this->belongsTo(Workflow::class, 'workflow_id');
+	}
+
+	/**
+	 * Whether this stage is locked (cannot rename/delete in Admin Console).
+	 */
+	public function isFrozen(): bool
+	{
+		return WorkflowStageFreeze::isFrozen($this->name);
 	}
 }

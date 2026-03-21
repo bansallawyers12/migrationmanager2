@@ -41,12 +41,16 @@
 								@foreach (@$lists as $list)
 									<?php
 									$countmatters = \App\Models\ClientMatter::where('workflow_stage_id', $list->id)->count();
+									$legacyStageFrozen = \App\Support\WorkflowStageFreeze::isFrozen($list->name ?? '');
 									?>
 									<tr id="id_{{@$list->id}}">
-                                        <td>{{ @$list->name == "" ? config('constants.empty') : $list->name }}</td>
+                                        <td>{{ @$list->name == "" ? config('constants.empty') : $list->name }}@if($legacyStageFrozen) <span class="badge bg-secondary">Frozen</span>@endif</td>
 										<td>{{$countmatters}}</td>
 										<!--<td>{{--@if($list->status == 1) Active @else Inactive @endif--}}</td>-->
 										<td>
+											@if($legacyStageFrozen)
+											<span class="text-muted small">Locked</span>
+											@else
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
 												<div class="dropdown-menu">
@@ -59,6 +63,7 @@
 												<a class="dropdown-item has-icon" href="javascript:;" onClick="deleteAction({{@$list->id}}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>
 												</div>
 											</div>
+											@endif
 										</td>
 									</tr>
 								@endforeach

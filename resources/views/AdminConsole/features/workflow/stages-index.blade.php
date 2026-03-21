@@ -47,6 +47,7 @@
 							</div>
 						</div>
 						<div class="card-body">
+							<p class="text-muted small mb-3">Stages labelled <span class="badge bg-secondary">Frozen</span> are required for the system (e.g. Checklist, Verification, Decision Received, Ready to Close, File Closed) and cannot be edited or deleted.</p>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap workflow-stages-table">
 									<thead>
@@ -60,14 +61,26 @@
 									<tbody>
 									@foreach ($lists as $list)
 									<?php $countmatters = \App\Models\ClientMatter::where('workflow_stage_id', $list->id)->where('workflow_id', $workflow->id)->count(); ?>
+									<?php $stageFrozen = $list->isFrozen(); ?>
 									<tr>
-										<td>{{ $list->name ?: config('constants.empty', '—') }}</td>
+										<td>
+											{{ $list->name ?: config('constants.empty', '—') }}
+											@if($stageFrozen)
+											<span class="badge bg-secondary ms-1 align-middle" title="This stage cannot be renamed or deleted">Frozen</span>
+											@endif
+										</td>
 										<td>{{ $countmatters }}</td>
 										<td class="workflow-stage-actions-col">
+											@if($stageFrozen)
+											<div class="workflow-stage-cell-actions">
+												<span class="text-muted small text-center py-1">Locked</span>
+											</div>
+											@else
 											<div class="workflow-stage-cell-actions">
 												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}"><i class="far fa-edit"></i> Edit</a>
 												<a class="btn btn-sm btn-outline-danger" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')"><i class="fas fa-trash"></i> Delete</a>
 											</div>
+											@endif
 										</td>
 									</tr>
 									@endforeach
