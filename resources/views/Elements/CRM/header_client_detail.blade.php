@@ -87,15 +87,11 @@
                 </div>
             </div>
             @php
-                $visibleCrmSheets = [];
-                if (Auth::user()) {
-                    foreach (\App\Support\CrmSheets::definitions() as $_sk => $_sl) {
-                        if (Auth::user()->allowsCrmSheet($_sk)) {
-                            $visibleCrmSheets[$_sk] = $_sl;
-                        }
-                    }
-                }
-                $firstSheetKey = array_key_first($visibleCrmSheets);
+                $u = Auth::user();
+                $visibleCrmSheets = ($u && $u instanceof \App\Models\Staff)
+                    ? $u->visibleCrmSheetMenuItems()
+                    : [];
+                $firstSheetKey = $visibleCrmSheets === [] ? null : array_key_first($visibleCrmSheets);
             @endphp
             @if($firstSheetKey !== null)
             <div class="icon-dropdown js-dropdown">

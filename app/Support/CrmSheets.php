@@ -37,6 +37,9 @@ class CrmSheets
 
     public static function urlForKey(string $key): string
     {
+        if (! array_key_exists($key, self::definitions())) {
+            return url('/dashboard');
+        }
         if ($key === self::KEY_EOI_ROI) {
             return route('clients.sheets.eoi-roi');
         }

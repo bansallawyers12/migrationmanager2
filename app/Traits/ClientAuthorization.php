@@ -14,10 +14,17 @@ trait ClientAuthorization
      */
     protected function checkClientModuleAccess()
     {
-        $roles = \App\Models\UserRole::find(Auth::user()->role);
+        $user = Auth::guard('admin')->user();
+        if (! $user instanceof \App\Models\Staff) {
+            return [];
+        }
+        $roles = \App\Models\UserRole::find($user->role);
+        if (! $roles || $roles->module_access === null || $roles->module_access === '') {
+            return [];
+        }
         $newarray = json_decode($roles->module_access);
-        $module_access = (array) $newarray;
-        
+        $module_access = is_array($newarray) ? $newarray : (array) $newarray;
+
         return $module_access;
     }
 
@@ -29,8 +36,12 @@ trait ClientAuthorization
      */
     protected function hasModuleAccess($moduleId = '20')
     {
-        $module_access = $this->checkClientModuleAccess();
-        return array_key_exists($moduleId, $module_access);
+        $user = Auth::guard('admin')->user();
+        if ($user instanceof \App\Models\Staff) {
+            return $user->hasCrmModule($moduleId);
+        }
+
+        return false;
     }
 
     /**

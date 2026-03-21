@@ -6,7 +6,7 @@
 @endphp
 <div class="form-group">
     <label>CRM sheets</label>
-    <p class="text-muted small mb-2">Choose which sheets this user can open. Leave all selected for full access (same as before this setting existed).</p>
+    <p class="text-muted small mb-2">Choose which sheets this user can open (requires client module access on their role). All selected means full access, same as legacy behaviour. Super admin (role&nbsp;1) always sees every sheet regardless of this list.</p>
     <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
         @foreach ($sheetDefinitions as $sheetKey => $sheetLabel)
             <div class="custom-control custom-checkbox mb-2">

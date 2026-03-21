@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Document;
+use App\Support\CrmSheets;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -193,18 +194,59 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Whether the staff role grants a CRM module key (e.g. "20" = clients / sheets base access).
+     */
+    public function hasCrmModule(string $moduleId = '20'): bool
+    {
+        $roleModel = UserRole::find($this->role);
+        if (! $roleModel || $roleModel->module_access === null || $roleModel->module_access === '') {
+            return false;
+        }
+        $decoded = json_decode($roleModel->module_access);
+        $moduleAccess = is_array($decoded) ? $decoded : (array) $decoded;
+
+        return array_key_exists($moduleId, $moduleAccess);
+    }
+
+    /**
+     * Sheet menu entries this user may see (module 20 + per-staff sheet whitelist).
+     *
+     * @return array<string, string> sheet_key => label
+     */
+    public function visibleCrmSheetMenuItems(): array
+    {
+        if (! $this->hasCrmModule('20')) {
+            return [];
+        }
+        $out = [];
+        foreach (CrmSheets::definitions() as $key => $label) {
+            if ($this->allowsCrmSheet($key)) {
+                $out[$key] = $label;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Whether this staff member may open a CRM sheet (whitelist in sheet_access JSON).
      * Null or empty column means unrestricted (all sheets), for backward compatibility.
+     * Super admin (role id 1) is never restricted by sheet_access.
+     * Malformed JSON denies access (fail closed).
      */
     public function allowsCrmSheet(string $sheetKey): bool
     {
+        if ((int) ($this->role ?? 0) === 1) {
+            return true;
+        }
+
         $raw = $this->attributes['sheet_access'] ?? null;
         if ($raw === null || $raw === '') {
             return true;
         }
         $list = json_decode($raw, true);
-        if (! is_array($list)) {
-            return true;
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($list)) {
+            return false;
         }
 
         return in_array($sheetKey, $list, true);

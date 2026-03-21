@@ -157,7 +157,7 @@ class StaffController extends Controller
             return redirect()->route('adminconsole.staff.active')->with('success', 'Staff added successfully.');
         }
 
-        return view('AdminConsole.staff.create');
+        return redirect()->route('adminconsole.staff.create');
     }
 
     /**
@@ -190,9 +190,11 @@ class StaffController extends Controller
             $selectedSheetKeys = $allSheetKeys;
         } else {
             $decoded = json_decode($rawSheets, true);
-            $selectedSheetKeys = is_array($decoded)
-                ? array_values(array_intersect($decoded, $allSheetKeys))
-                : $allSheetKeys;
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+                $selectedSheetKeys = [];
+            } else {
+                $selectedSheetKeys = array_values(array_intersect($decoded, $allSheetKeys));
+            }
         }
 
         return view('AdminConsole.staff.edit', compact(['fetchedData', 'usertype', 'sheetDefinitions', 'selectedSheetKeys']));
