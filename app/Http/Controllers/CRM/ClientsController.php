@@ -2031,7 +2031,15 @@ class ClientsController extends Controller
             $encodeId = $id;
             $id = $this->decodeString($id);
 
-            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+            $targetRecord = Admin::query()
+                ->where('id', (int) $id)
+                ->whereIn('type', ['client', 'lead'])
+                ->first(['id', 'type']);
+
+            // Keep existing client authorization behavior intact.
+            // For leads, allow opening detail page from global search.
+            if (($targetRecord->type ?? null) !== 'lead'
+                && ! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
                 return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
             }
 
@@ -2492,7 +2500,11 @@ class ClientsController extends Controller
                         ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
                         ->when($paId, function ($q) use ($paId) {
-                            $q->where('client_matters.sel_person_assisting', $paId);
+                            // PA users: keep client restriction, but allow all leads in global search.
+                            $q->where(function ($visibilityQuery) use ($paId) {
+                                $visibilityQuery->where('admins.type', 'lead')
+                                    ->orWhere('client_matters.sel_person_assisting', $paId);
+                            });
                         })
                         ->select(
                             'admins.id as client_id',
@@ -2535,7 +2547,11 @@ class ClientsController extends Controller
                 ->where('admins.is_archived', 0)
                 ->where('client_matters.matter_status', 1)
                 ->when($paId, function ($q) use ($paId) {
-                    $q->where('client_matters.sel_person_assisting', $paId);
+                    // PA users: keep client restriction, but allow all leads in global search.
+                    $q->where(function ($visibilityQuery) use ($paId) {
+                        $visibilityQuery->where('admins.type', 'lead')
+                            ->orWhere('client_matters.sel_person_assisting', $paId);
+                    });
                 })
                 ->where(function($query) use ($squery) {
                     $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
@@ -2658,7 +2674,23 @@ class ClientsController extends Controller
                         $query->orWhere('admins.dob', '=', $d);
                     }
                 });
-            StaffClientVisibility::restrictAdminEloquentQuery($clientsQuery);
+            if ($paId) {
+                // PA users: unrestricted for leads, existing restriction retained for clients.
+                $clientsQuery->where(function ($visibilityQuery) use ($paId) {
+                    $visibilityQuery->where('admins.type', 'lead')
+                        ->orWhere(function ($clientVisibilityQuery) use ($paId) {
+                            $clientVisibilityQuery->where('admins.type', 'client')
+                                ->where(function ($clientRuleQuery) use ($paId) {
+                                    $clientRuleQuery->whereExists(function ($sub) use ($paId) {
+                                        $sub->select(DB::raw('1'))
+                                            ->from('client_matters')
+                                            ->whereColumn('client_matters.client_id', 'admins.id')
+                                            ->where('client_matters.sel_person_assisting', $paId);
+                                    })->orWhere('admins.user_id', $paId);
+                                });
+                        });
+                });
+            }
             $clientsQuery = $clientsQuery
                 ->select(
                     'admins.*'
