@@ -62,6 +62,7 @@ Route::post('/appointments/get-disabled-slots', [ClientPortalAppointmentControll
 
 // Record Payment Without Login (public - for guests who booked via add-appointment-without-login)
 Route::post('/appointments/record-payment-without-login', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWithoutLogin']);
+Route::post('/appointments/record-payment-without-login-wallet', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWithoutLoginWallet']);
 
 // Create Payment Intent (public - works with or without auth; used by both logged-in users and guests)
 Route::post('/payments/create-payment-intent', function (Request $request) {
@@ -231,8 +232,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages/{id}/read', [ClientPortalMessageController::class, 'markAsRead']);
     Route::get('/messages/{id}', [ClientPortalMessageController::class, 'getMessageDetails']);
 
-    // Notifications routes (client portal)
+    // Notifications routes (client portal) — unread-count must be before /notifications/{id}
     Route::get('/notifications', [ClientPortalNotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [ClientPortalNotificationController::class, 'unreadCount']);
     Route::get('/notifications/{id}', [ClientPortalNotificationController::class, 'show']);
     Route::post('/notifications/{id}/read', [ClientPortalNotificationController::class, 'markAsRead']);
 
@@ -253,6 +255,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/appointments', [ClientPortalAppointmentController::class, 'getAppointmentList']);
     Route::post('/appointments/process-payment', [ClientPortalAppointmentController::class, 'processAppointmentPayment']);
     Route::post('/appointments/record-payment', [ClientPortalAppointmentController::class, 'recordAppointmentPayment']);
+    Route::post('/appointments/record-payment-wallet', [ClientPortalAppointmentController::class, 'recordAppointmentPaymentWallet']);
     Route::get('/appointments/{id}/payment-history', [ClientPortalAppointmentController::class, 'getPaymentHistory']);
     Route::get('/appointments/{id}', [ClientPortalAppointmentController::class, 'getSingleAppointment']);
     Route::post('/appointments', [ClientPortalAppointmentController::class, 'addAppointment']);

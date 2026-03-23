@@ -2400,6 +2400,131 @@ class ClientPortalAppointmentController extends BaseController
     }
 
     /**
+     * Record payment with login for wallet methods (GPay/ApplePay).
+     *
+     * Same as recordAppointmentPayment plus:
+     * - payment_type: gpay | applepay
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function recordAppointmentPaymentWallet(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return $this->sendError('Unauthenticated', [], 401);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'appointment_id' => 'required|integer|exists:booking_appointments,id',
+                'payment_intent_id' => 'required|string',
+                'payment_type' => 'required|string|in:gpay,applepay',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            $appointment = BookingAppointment::where('id', $request->appointment_id)
+                ->where('client_id', $user->id)
+                ->first();
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found or does not belong to you', [], 404);
+            }
+
+            if (!in_array($appointment->service_id, [1, 3])) {
+                return $this->sendError('This appointment does not require payment', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->payment_status === 'completed') {
+                return $this->sendError('This appointment has already been paid', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'cancelled') {
+                return $this->sendError('This appointment has already been cancelled', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'completed') {
+                return $this->sendError('This appointment has already been completed', [], 422);
+            }
+
+            $paymentType = strtolower((string) $request->payment_type);
+            $stripeService = app(StripePaymentService::class);
+            $metadata = [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'payment_type' => $paymentType,
+            ];
+
+            $result = $stripeService->recordPaymentByIntent(
+                $appointment,
+                $request->payment_intent_id,
+                $metadata
+            );
+
+            if (!$result['success']) {
+                return $this->sendError($result['message'], $result['data'] ?? [], 422);
+            }
+
+            $syncError = null;
+            if ($appointment->bansal_appointment_id) {
+                try {
+                    Log::info('Wallet payment successful - should sync with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'bansal_appointment_id' => $appointment->bansal_appointment_id,
+                        'payment_type' => $paymentType,
+                    ]);
+                } catch (\Exception $e) {
+                    $syncError = $e->getMessage();
+                    Log::error('Failed to sync wallet payment status with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'payment_type' => $paymentType,
+                        'error' => $syncError,
+                    ]);
+                }
+            }
+
+            $appointment->refresh();
+
+            $message = $result['message'];
+            if ($syncError) {
+                $message .= ' Note: Payment completed but sync with website failed.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'payment_id' => $result['data']['payment_id'],
+                    'transaction_id' => $result['data']['payment_intent_id'],
+                    'charge_id' => $result['data']['charge_id'],
+                    'amount' => $result['data']['amount'],
+                    'currency' => $result['data']['currency'],
+                    'status' => 'paid',
+                    'payment_type' => $paymentType,
+                    'receipt_url' => $result['data']['receipt_url'] ?? null,
+                    'paid_at' => $result['data']['paid_at'],
+                    'appointment' => $this->formatAppointmentData($appointment),
+                ],
+                'bansal_synced' => !$syncError
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            Log::error('Record Payment Wallet API Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id ?? null,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred while recording payment: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
      * Record payment without login (public API)
      *
      * For guest users who booked via add-appointment-without-login.
@@ -2504,6 +2629,122 @@ class ClientPortalAppointmentController extends BaseController
             return $this->sendError('Validation failed', $e->errors(), 422);
         } catch (\Exception $e) {
             Log::error('Record Payment Without Login API Error: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->sendError('An error occurred while recording payment: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * Record payment without login for wallet methods (public API).
+     *
+     * Uses the same parameters as recordAppointmentPaymentWithoutLogin plus:
+     * - payment_type: gpay | applepay
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function recordAppointmentPaymentWithoutLoginWallet(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'appointment_id' => 'required|integer|exists:booking_appointments,id',
+                'payment_intent_id' => 'required|string',
+                'payment_type' => 'required|string|in:gpay,applepay',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            $appointment = BookingAppointment::find($request->appointment_id);
+
+            if (!$appointment) {
+                return $this->sendError('Appointment not found', [], 404);
+            }
+
+            if (!in_array($appointment->service_id, [1, 3])) {
+                return $this->sendError('This appointment does not require payment', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->payment_status === 'completed') {
+                return $this->sendError('This appointment has already been paid', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'cancelled') {
+                return $this->sendError('This appointment has already been cancelled', [], 422);
+            }
+
+            if ($appointment->is_paid && $appointment->status === 'completed') {
+                return $this->sendError('This appointment has already been completed', [], 422);
+            }
+
+            $paymentType = strtolower((string) $request->payment_type);
+            $stripeService = app(StripePaymentService::class);
+            $metadata = [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'payment_type' => $paymentType,
+            ];
+
+            $result = $stripeService->recordPaymentByIntent(
+                $appointment,
+                $request->payment_intent_id,
+                $metadata
+            );
+
+            if (!$result['success']) {
+                return $this->sendError($result['message'], $result['data'] ?? [], 422);
+            }
+
+            $syncError = null;
+            if ($appointment->bansal_appointment_id) {
+                try {
+                    Log::info('Public wallet payment successful - should sync with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'bansal_appointment_id' => $appointment->bansal_appointment_id,
+                        'payment_type' => $paymentType,
+                    ]);
+                } catch (\Exception $e) {
+                    $syncError = $e->getMessage();
+                    Log::error('Failed to sync wallet payment status with Bansal API', [
+                        'appointment_id' => $appointment->id,
+                        'payment_type' => $paymentType,
+                        'error' => $syncError,
+                    ]);
+                }
+            }
+
+            $appointment->refresh();
+
+            $message = $result['message'];
+            if ($syncError) {
+                $message .= ' Note: Payment completed but sync with website failed.';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'appointment_id' => $appointment->id,
+                    'payment_id' => $result['data']['payment_id'],
+                    'transaction_id' => $result['data']['payment_intent_id'],
+                    'charge_id' => $result['data']['charge_id'],
+                    'amount' => $result['data']['amount'],
+                    'currency' => $result['data']['currency'],
+                    'status' => 'paid',
+                    'payment_type' => $paymentType,
+                    'receipt_url' => $result['data']['receipt_url'] ?? null,
+                    'paid_at' => $result['data']['paid_at'],
+                    'appointment' => $this->formatAppointmentData($appointment),
+                ],
+                'bansal_synced' => !$syncError
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation failed', $e->errors(), 422);
+        } catch (\Exception $e) {
+            Log::error('Record Payment Without Login Wallet API Error: ' . $e->getMessage(), [
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);

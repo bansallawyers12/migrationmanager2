@@ -17,6 +17,42 @@ class ClientPortalNotificationController extends Controller
     private const CLIENT_PORTAL_NOTIFICATION_TYPES = ['message', 'stage_change', 'matter_discontinued', 'matter_reopened', 'checklist', 'checklist_added', 'document_approved', 'document_rejected', 'document_deleted', 'document_downloaded', 'detail_approved', 'detail_rejected', 'invoice_sent_to_client_app', 'action_completed', 'lead_converted_to_client'];
 
     /**
+     * Get unread notifications count for authenticated user (not matter specific).
+     *
+     * GET /api/notifications/unread-count (auth:sanctum)
+     */
+    public function unreadCount(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $unreadCount = DB::table('notifications')
+                ->where('receiver_id', $user->id)
+                ->whereIn('notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
+                ->where('receiver_status', 0)
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'unread_count' => $unreadCount,
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('ClientPortal Notification UnreadCount Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()?->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch unread notification count',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * List all notifications for the authenticated client (client-portal related only).
      * Optionally filter by client_matter_id (matter).
      *

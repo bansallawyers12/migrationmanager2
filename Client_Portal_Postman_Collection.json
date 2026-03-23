@@ -10063,6 +10063,49 @@
 					]
 				},
 				{
+					"name": "Record Payment withLogin with Gpay Applepay",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Use token from login response"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\",\n    \"payment_type\": \"gpay\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/record-payment-wallet",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"record-payment-wallet"
+							]
+						},
+						"description": "Record payment for a logged-in user's appointment via wallet methods (GPay/ApplePay).\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The appointment ID\n- `payment_intent_id` (required, string): Stripe PaymentIntent ID (pi_...)\n- `payment_type` (required, string): Allowed values: `gpay`, `applepay`"
+					},
+					"response": []
+				},
+				{
 					"name": "Get Appointment Payment History",
 					"request": {
 						"method": "GET",
@@ -10286,6 +10329,43 @@
 							]
 						},
 						"description": "**Public API - No authentication required.**\n\nRecord payment for a guest appointment (created via Add Appointment without Login). Call after the frontend has confirmed the Stripe PaymentIntent. Client is identified from appointment's client_id.\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The appointment ID\n- `payment_intent_id` (required, string): Stripe PaymentIntent ID (pi_...)\n\n**Flow:**\n1. Create appointment via POST /appointments/add-appointment-without-login\n2. Frontend creates and confirms Stripe PaymentIntent\n3. Call this API with appointment_id, payment_intent_id"
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment without Login with Gpay Applepay",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointment_id\": 123,\n    \"payment_intent_id\": \"pi_xxxxxxxxxxxxx\",\n    \"payment_type\": \"gpay\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/appointments/record-payment-without-login-wallet",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"appointments",
+								"record-payment-without-login-wallet"
+							]
+						},
+						"description": "**Public API - No authentication required.**\n\nRecord payment for a guest appointment via wallet methods (GPay/ApplePay).\n\n**Input Parameters:**\n- `appointment_id` (required, integer): The appointment ID\n- `payment_intent_id` (required, string): Stripe PaymentIntent ID (pi_...)\n- `payment_type` (required, string): Allowed values: `gpay`, `applepay`"
 					},
 					"response": []
 				}
@@ -10532,6 +10612,111 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"success\": true,\n    \"message\": \"Notification marked as read\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Unread Notification Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Use token from login response"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/unread-count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"unread-count"
+							]
+						},
+						"description": "Get unread notification count for the authenticated user (not matter specific). **Requires** `Authorization: Bearer {{auth_token}}` (Sanctum). Without a valid token the API returns 401 (handled by auth:sanctum middleware)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/notifications/unread-count",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"notifications",
+										"unread-count"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"unread_count\": 5\n    }\n}"
+						},
+						{
+							"name": "Unauthorized Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/notifications/unread-count",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"notifications",
+										"unread-count"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
 						}
 					]
 				}
