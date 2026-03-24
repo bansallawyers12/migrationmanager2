@@ -487,7 +487,7 @@ class Document extends Model
             return 'pdf';
         }
 
-        if (str_contains($raw, '/')) {
+        if (strpos($raw, '/') !== false) {
             try {
                 $exts = MimeTypes::getDefault()->getExtensions($raw);
                 if (isset($exts[0]) && $exts[0] !== '') {

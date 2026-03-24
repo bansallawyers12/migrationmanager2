@@ -131,7 +131,7 @@ class PublicDocumentController extends Controller
             } else {
                 // Try to build S3 key from DB fields as fallback
                 if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                    $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $pdfPath = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
                         
@@ -299,7 +299,7 @@ class PublicDocumentController extends Controller
                 if (!$tmpPdfPath) {
                     $clientId = null;
                     if ($document->client_id) {
-                        $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                        $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                         if ($admin && $admin->client_id) {
                             $clientId = $admin->client_id;
                         }
@@ -352,7 +352,7 @@ class PublicDocumentController extends Controller
                 $docType = $document->doc_type ?? '';
                 
                 if ($document->client_id) {
-                    $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $clientId = $admin->client_id;
                     } else {
@@ -403,9 +403,11 @@ class PublicDocumentController extends Controller
                             // Upload to S3 if we have the necessary info
                             try {
                                 $s3SignaturePath = $clientId . '/' . $docType . '/signatures/' . $filename;
-                                Storage::disk('s3')->put($s3SignaturePath, $imageData);
+                                /** @var \Illuminate\Filesystem\FilesystemAdapter $s3Disk */
+                                $s3Disk = Storage::disk('s3');
+                                $s3Disk->put($s3SignaturePath, $imageData);
                                 $signaturePath = $s3SignaturePath;
-                                $signatureUrl = Storage::disk('s3')->url($s3SignaturePath);
+                                $signatureUrl = $s3Disk->url($s3SignaturePath);
                                 Log::info('Signature uploaded to S3', ['path' => $s3SignaturePath]);
                             } catch (\Exception $e) {
                                 Log::warning('Failed to upload signature to S3, using local storage', ['error' => $e->getMessage()]);
@@ -536,8 +538,10 @@ class PublicDocumentController extends Controller
                 if ($clientId && $docType) {
                     try {
                         $s3SignedPath = $clientId . '/' . $docType . '/signed/' . $document->id . '_signed.pdf';
-                        Storage::disk('s3')->put($s3SignedPath, fopen($outputTmpPath, 'r'));
-                        $signedPdfUrl = Storage::disk('s3')->url($s3SignedPath);
+                        /** @var \Illuminate\Filesystem\FilesystemAdapter $s3Disk */
+                        $s3Disk = Storage::disk('s3');
+                        $s3Disk->put($s3SignedPath, fopen($outputTmpPath, 'r'));
+                        $signedPdfUrl = $s3Disk->url($s3SignedPath);
                         $signedPdfPath = $s3SignedPath;
                         Log::info('Signed PDF uploaded to S3', ['path' => $s3SignedPath]);
                     } catch (\Exception $e) {
@@ -805,7 +809,7 @@ class PublicDocumentController extends Controller
             } else {
                 // Try to build S3 key from DB fields as fallback
                 if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                    $admin = \DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $pdfPath = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
                         
@@ -982,6 +986,7 @@ class PublicDocumentController extends Controller
                 // Try S3 storage
                 if (isset($parsed['path'])) {
                     $s3Key = ltrim($parsed['path'], '/');
+                    /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                     $disk = Storage::disk('s3');
                     
                     if ($disk->exists($s3Key)) {
@@ -1042,6 +1047,7 @@ class PublicDocumentController extends Controller
                     // Try S3 storage
                     if (isset($parsed['path'])) {
                         $s3Key = ltrim($parsed['path'], '/');
+                        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                         $disk = Storage::disk('s3');
                         
                         if ($disk->exists($s3Key)) {
@@ -1097,6 +1103,7 @@ class PublicDocumentController extends Controller
                 $parsed = parse_url($document->signed_doc_link);
                 if (isset($parsed['path'])) {
                     $s3Key = ltrim($parsed['path'], '/');
+                    /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
                     $disk = Storage::disk('s3');
                     if ($disk->exists($s3Key)) {
                         $dlName = $document->getSignedDownloadFilename();
