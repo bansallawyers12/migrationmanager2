@@ -2278,7 +2278,7 @@ class DocumentController extends Controller
                             $docSignerClientId = 'NA';
                         }
                         $clientMatterReference = $docSignerClientId.'-'.$clientMatterInfo->client_unique_matter_no;
-                        $signedDocName = $document->file_name.'.'.$document->filetype;
+                        $signedDocName = $document->getFilenameWithExtensionForDisplay();
                         $subject = $docSignerFullName.' signed cost agreement for matter ref no - '.$clientMatterReference.' at document '.$signedDocName;
                         $objs = new ActivitiesLog;
                         $objs->client_id = $document->client_id;

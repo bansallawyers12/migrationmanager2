@@ -263,10 +263,12 @@ class SignatureDashboardController extends Controller
             $fileName = time() . '_' . $file->getClientOriginalName();
             $filePath = $file->storeAs('documents', $fileName, 'public');
 
+            $storedExtension = strtolower((string) ($file->getClientOriginalExtension() ?: $file->extension() ?: 'pdf'));
+
             // Create document
             $document = Document::create([
                 'file_name' => $fileName,
-                'filetype' => $file->getClientMimeType(),
+                'filetype' => $storedExtension,
                 'myfile' => $filePath,
                 'status' => 'draft',
                 'client_id' => Auth::guard('admin')->id(),

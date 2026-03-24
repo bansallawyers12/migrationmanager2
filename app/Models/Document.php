@@ -11,6 +11,7 @@ use App\Models\Admin;
 use App\Models\Lead;
 use App\Models\Staff;
 use App\Support\StaffClientVisibility;
+use Symfony\Component\Mime\MimeTypes;
 
 class Document extends Model
 {
@@ -432,14 +433,11 @@ class Document extends Model
 
     /**
      * Filename for signed PDF downloads (Content-Disposition).
-     * Uses checklist-based file_name when set; otherwise derives from myfile_key; falls back to {id}_signed.pdf.
+     * Signed artifacts are always PDF; use .pdf even when filetype stores a MIME type (e.g. application/pdf).
      */
     public function getSignedDownloadFilename(): string
     {
-        $ext = strtolower((string) ($this->filetype ?? 'pdf'));
-        if ($ext === '') {
-            $ext = 'pdf';
-        }
+        $ext = 'pdf';
 
         $base = trim((string) ($this->file_name ?? ''));
         if ($base !== '') {
@@ -459,6 +457,54 @@ class Document extends Model
         }
 
         return (string) $this->id . '_signed.pdf';
+    }
+
+    /**
+     * Human-readable filename with one extension. filetype may be a MIME string or a real extension.
+     */
+    public function getFilenameWithExtensionForDisplay(): string
+    {
+        $name = trim((string) ($this->file_name ?? ''));
+        if ($name === '') {
+            return 'document.' . $this->resolveStoredFileExtension();
+        }
+
+        $existing = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+        if ($existing !== '' && preg_match('/^[a-z0-9]{1,10}$/', $existing)) {
+            return $name;
+        }
+
+        return $name . '.' . $this->resolveStoredFileExtension();
+    }
+
+    /**
+     * @internal Prefer getFilenameWithExtensionForDisplay() for UI strings.
+     */
+    private function resolveStoredFileExtension(): string
+    {
+        $raw = strtolower(trim((string) ($this->filetype ?? '')));
+        if ($raw === '') {
+            return 'pdf';
+        }
+
+        if (str_contains($raw, '/')) {
+            try {
+                $exts = MimeTypes::getDefault()->getExtensions($raw);
+                if (isset($exts[0]) && $exts[0] !== '') {
+                    return $exts[0];
+                }
+            } catch (\Throwable) {
+                // fall through
+            }
+
+            return 'pdf';
+        }
+
+        if (preg_match('/^[a-z0-9]{1,10}$/', $raw)) {
+            return $raw;
+        }
+
+        return 'pdf';
     }
 
     private function sanitizeSignedDownloadFilename(string $name): string

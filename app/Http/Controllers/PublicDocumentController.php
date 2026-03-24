@@ -644,7 +644,7 @@ class PublicDocumentController extends Controller
                                 $docSignerFullName = $docSignerInfo ? trim(($docSignerInfo->first_name ?? '') . ' ' . ($docSignerInfo->last_name ?? '')) : 'NA';
                                 $docSignerClientId = $docSignerInfo?->client_id ?? 'NA';
                                 $clientMatterReference = $docSignerClientId . '-' . ($clientMatterInfo->client_unique_matter_no ?? '');
-                                $signedDocName = ($document->file_name ?? 'document') . '.' . ($document->filetype ?? 'pdf');
+                                $signedDocName = $document->getFilenameWithExtensionForDisplay();
                                 $subject = $docSignerFullName . ' signed cost agreement for matter ref no - ' . $clientMatterReference . ' at document ' . $signedDocName;
                                 ActivitiesLog::create([
                                     'client_id' => $document->client_id,
