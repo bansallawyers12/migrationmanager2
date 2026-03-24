@@ -62,7 +62,6 @@ These use `Admin::where('role', 7)` or `where('type','client')` to fetch **clien
 ### ✅ Intentional (keep as-is)
 
 - **Migrations** (`copy_staff_from_admins_to_staff`, etc.): Historical; copy logic uses `role != 7`.
-- **verify_staff_migration.php**, **verify_staff_data.php**: Comparison scripts; intentionally query admins for staff count.
 - **BroadcastNotificationService** line 505: Comment only; implementation already uses Staff.
 
 ### Summary

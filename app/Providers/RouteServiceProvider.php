@@ -77,8 +77,6 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapSmsRoutes();
 
-        $this->mapTestRoutes();
-
         //
     }
 
@@ -125,21 +123,5 @@ class RouteServiceProvider extends ServiceProvider
         Route::middleware('web')
              ->namespace($this->namespace)
              ->group(base_path('routes/sms.php'));
-    }
-
-    /**
-     * Define the "test" routes for the application.
-     *
-     * These routes are only loaded when APP_DEBUG is true.
-     *
-     * @return void
-     */
-    protected function mapTestRoutes()
-    {
-        if (config('app.debug')) {
-            Route::middleware('web')
-                 ->namespace($this->namespace)
-                 ->group(base_path('routes/test.php'));
-        }
     }
 }

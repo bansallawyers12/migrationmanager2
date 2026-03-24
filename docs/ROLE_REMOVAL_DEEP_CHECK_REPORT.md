@@ -65,10 +65,6 @@ All `Auth::user()->role` usages in CRM/AdminConsole refer to **Staff** (admin gu
 - For clients with `role = null`, `usertype()` returns null
 - `offices/viewclient.blade.php` loads `with(['usertype'])` but does not display it – safe
 
-### 3. `verify_staff_migration.php`
-- Compares admins.role with staff.role – legacy verification script
-- Clients in admins may have null role – script may report mismatches; not critical for app
-
 ---
 
 ## Files Not Changed (No Role for Clients)

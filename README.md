@@ -96,7 +96,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
    DB_USERNAME=postgres
    DB_PASSWORD=
    ```
-   - Ensure PHP has the `pdo_pgsql` extension enabled (check `public/check_pgsql.php` if available)
+   - Ensure PHP has the `pdo_pgsql` extension enabled (e.g. `php -m` and confirm `pdo_pgsql` is listed, or enable it in `php.ini`)
    - Run migrations and seeders:
    ```bash
    php artisan migrate --seed
@@ -615,7 +615,7 @@ For cross-access product rules, routes, and rollout status, see **`docs/CROSS_AC
 
 ### Database Issues
 - **Connection refused**: Ensure PostgreSQL is running (XAMPP does not include PostgreSQL; install separately)
-- **pdo_pgsql not loaded**: Enable the `pdo_pgsql` extension in `php.ini`; use `public/check_pgsql.php` to verify
+- **pdo_pgsql not loaded**: Enable the `pdo_pgsql` extension in `php.ini`; run `php -m` and confirm `pdo_pgsql` appears in the list
 - **Access denied**: Verify database credentials in `.env` file
 - **Table not found**: Run `php artisan migrate --seed` to create tables
 
