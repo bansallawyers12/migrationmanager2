@@ -2,6 +2,25 @@
     $crossAccessLeadBase = $crossAccessLeadBase ?? url('/history');
 @endphp
 
+<style>
+    /* Layout sets .btn { border: none }, which breaks outline-style CTAs; keep footer actions readable */
+    #crmCrossAccessModal .modal-footer .btn-primary {
+        background-color: #3498db;
+        color: #fff;
+        border: 1px solid #2980b9;
+    }
+    #crmCrossAccessModal .modal-footer .btn-primary:hover {
+        background-color: #2980b9;
+        color: #fff;
+        border-color: #21618c;
+    }
+    #crmCrossAccessModal .modal-footer .btn-secondary {
+        color: #fff;
+        background-color: #6c757d;
+        border: 1px solid #5a6268;
+    }
+</style>
+
 <div class="modal fade" id="crmCrossAccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -18,14 +37,8 @@
                     <label for="crmCrossAccessOffice">Office</label>
                     <select id="crmCrossAccessOffice" class="form-control"></select>
                 </div>
-                <div class="form-group">
-                    <label for="crmCrossAccessTeam">Team (optional)</label>
-                    <select id="crmCrossAccessTeam" class="form-control">
-                        <option value="">—</option>
-                    </select>
-                </div>
                 <div class="form-group" id="crmCrossAccessReasonWrap">
-                    <label for="crmCrossAccessReason">Reason (quick access)</label>
+                    <label for="crmCrossAccessReason">Reason for request</label>
                     <select id="crmCrossAccessReason" class="form-control"></select>
                 </div>
                 <div class="form-group d-none" id="crmCrossAccessNoteWrap">
@@ -34,10 +47,10 @@
                 </div>
                 <div class="alert d-none" id="crmCrossAccessMsg" role="alert"></div>
             </div>
-            <div class="modal-footer d-flex flex-wrap gap-2">
+            <div class="modal-footer d-flex flex-wrap gap-2 justify-content-end" id="crmCrossAccessModalFooter">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary d-none" id="crmCrossAccessBtnQuick">Quick access ({{ config('crm_access.quick_grant_minutes', 15) }} min)</button>
-                <button type="button" class="btn btn-outline-primary d-none" id="crmCrossAccessBtnSupervisor">Request supervisor access</button>
+                <button type="button" class="btn btn-primary d-none" id="crmCrossAccessBtnSupervisor">Request supervisor access</button>
             </div>
         </div>
     </div>
@@ -80,7 +93,6 @@
             .then(function (r) { return r.json(); })
             .then(function (meta) {
                 var off = document.getElementById('crmCrossAccessOffice');
-                var team = document.getElementById('crmCrossAccessTeam');
                 var reason = document.getElementById('crmCrossAccessReason');
                 off.innerHTML = '';
                 (meta.branches || []).forEach(function (b) {
@@ -91,16 +103,6 @@
                 });
                 if (meta.staff_office_id) {
                     off.value = String(meta.staff_office_id);
-                }
-                team.innerHTML = '<option value="">—</option>';
-                (meta.teams || []).forEach(function (t) {
-                    var o = document.createElement('option');
-                    o.value = t.id;
-                    o.textContent = t.name;
-                    team.appendChild(o);
-                });
-                if (meta.staff_team_id) {
-                    team.value = String(meta.staff_team_id);
                 }
                 reason.innerHTML = '';
                 (meta.quick_reasons || []).forEach(function (r) {
@@ -114,7 +116,8 @@
                 var btnS = document.getElementById('crmCrossAccessBtnSupervisor');
                 btnQ.classList.toggle('d-none', !ui.show_quick);
                 btnS.classList.toggle('d-none', !ui.show_supervisor);
-                document.getElementById('crmCrossAccessReasonWrap').classList.toggle('d-none', !ui.show_quick);
+                var showReason = !!(ui.show_quick || ui.show_supervisor);
+                document.getElementById('crmCrossAccessReasonWrap').classList.toggle('d-none', !showReason);
                 document.getElementById('crmCrossAccessNoteWrap').classList.toggle('d-none', ui.quick_only_role || !ui.show_supervisor);
                 if (cb) cb(meta);
             })
@@ -161,14 +164,11 @@
                 var adminId = parseInt(document.getElementById('crmCrossAccessAdminId').value, 10);
                 var recordType = document.getElementById('crmCrossAccessRecordType').value;
                 var officeId = parseInt(document.getElementById('crmCrossAccessOffice').value, 10);
-                var teamVal = document.getElementById('crmCrossAccessTeam').value;
-                var teamId = teamVal ? parseInt(teamVal, 10) : null;
                 var reason = document.getElementById('crmCrossAccessReason').value;
                 postJson(window.crmAccessQuickUrl, {
                     admin_id: adminId,
                     record_type: recordType,
                     office_id: officeId,
-                    team_id: teamId,
                     reason_code: reason
                 }, function (x) {
                     if (!x.ok) { showModalMsg(x.j.message || 'Failed', true); return; }
@@ -182,14 +182,13 @@
                 var adminId = parseInt(document.getElementById('crmCrossAccessAdminId').value, 10);
                 var recordType = document.getElementById('crmCrossAccessRecordType').value;
                 var officeId = parseInt(document.getElementById('crmCrossAccessOffice').value, 10);
-                var teamVal = document.getElementById('crmCrossAccessTeam').value;
-                var teamId = teamVal ? parseInt(teamVal, 10) : null;
+                var reasonCode = document.getElementById('crmCrossAccessReason').value;
                 var note = document.getElementById('crmCrossAccessNote').value;
                 postJson(window.crmAccessSupervisorUrl, {
                     admin_id: adminId,
                     record_type: recordType,
                     office_id: officeId,
-                    team_id: teamId,
+                    reason_code: reasonCode,
                     note: note
                 }, function (x) {
                     if (!x.ok) { showModalMsg(x.j.message || 'Failed', true); return; }

@@ -1,5 +1,8 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Access requests')
+@php
+    $crmAccessReasonLabels = config('crm_access.quick_reason_options', []);
+@endphp
 @section('content')
 <div class="main-content">
     <section class="section">
@@ -21,7 +24,7 @@
                                     <th>Requested</th>
                                     <th>Requester</th>
                                     <th>Record</th>
-                                    <th>Note</th>
+                                    <th>Reason / note</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -38,6 +41,7 @@
 <script>
 (function () {
     var dataUrl = @json($dataUrl);
+    var reasonLabels = @json($crmAccessReasonLabels);
     var approveTpl = @json(str_replace('999999999', '__ID__', route('crm.access.approve', ['grant' => 999999999])));
     var rejectTpl = @json(str_replace('999999999', '__ID__', route('crm.access.reject', ['grant' => 999999999])));
     var token = document.querySelector('meta[name="csrf-token"]');
@@ -53,13 +57,24 @@
     function rowHtml(g) {
         var req = g.staff ? (g.staff.first_name + ' ' + g.staff.last_name).trim() : ('#' + g.staff_id);
         var rec = g.admin ? (g.admin.first_name + ' ' + g.admin.last_name).trim() : ('#' + g.admin_id);
+        var reasonCode = g.quick_reason_code || '';
+        var reasonText = reasonCode && reasonLabels[reasonCode] ? String(reasonLabels[reasonCode]) : reasonCode;
+        reasonText = reasonText ? String(reasonText).replace(/</g, '&lt;') : '';
         var note = g.requester_note ? String(g.requester_note).replace(/</g, '&lt;') : '';
+        var reasonNote = '';
+        if (reasonText && note) {
+            reasonNote = '<span class="text-muted">Reason:</span> ' + reasonText + '<br><span class="text-muted">Note:</span> ' + note;
+        } else if (reasonText) {
+            reasonNote = reasonText;
+        } else {
+            reasonNote = note;
+        }
         var rid = g.id;
         return '<tr data-grant-id="' + rid + '">' +
             '<td>' + (g.requested_at || '') + '</td>' +
             '<td>' + req + '</td>' +
             '<td>' + rec + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
-            '<td>' + note + '</td>' +
+            '<td>' + reasonNote + '</td>' +
             '<td class="text-nowrap">' +
             '<button type="button" class="btn btn-sm btn-success js-cag-approve" data-id="' + rid + '">Approve</button> ' +
             '<button type="button" class="btn btn-sm btn-outline-danger js-cag-reject" data-id="' + rid + '">Reject</button>' +

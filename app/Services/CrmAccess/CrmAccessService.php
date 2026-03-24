@@ -115,11 +115,16 @@ class CrmAccessService
         ]);
     }
 
-    public function requestSupervisorGrant(Staff $user, int $adminId, string $recordType, int $officeId, ?int $teamId, string $note = ''): ClientAccessGrant
+    public function requestSupervisorGrant(Staff $user, int $adminId, string $recordType, int $officeId, string $reasonCode, string $note = ''): ClientAccessGrant
     {
         $quickOnly = config('crm_access.quick_access_only_role_ids', [14]);
         if (in_array((int) ($user->role ?? 0), $quickOnly, true)) {
             throw new CrmAccessDeniedException('Your role only supports quick access.');
+        }
+
+        $reasons = config('crm_access.quick_reason_options', []);
+        if ($reasonCode === '' || ! array_key_exists($reasonCode, $reasons)) {
+            throw new CrmAccessDeniedException('Invalid reason.');
         }
 
         $maxPending = max(1, (int) config('crm_access.max_pending_supervisor_requests', 5));
@@ -137,12 +142,6 @@ class CrmAccessService
             throw new CrmAccessDeniedException('Invalid office.');
         }
 
-        $teamLabel = null;
-        if ($teamId !== null) {
-            $team = Team::query()->find($teamId);
-            $teamLabel = $team ? (string) $team->name : 'Team ' . $teamId;
-        }
-
         $grant = ClientAccessGrant::query()->create([
             'staff_id' => (int) $user->id,
             'admin_id' => $adminId,
@@ -150,11 +149,12 @@ class CrmAccessService
             'grant_type' => 'supervisor_approved',
             'access_type' => 'supervisor_approved',
             'status' => 'pending',
+            'quick_reason_code' => $reasonCode,
             'requester_note' => $note !== '' ? $note : null,
             'office_id' => $officeId,
             'office_label_snapshot' => (string) $office->office_name,
-            'team_id' => $teamId,
-            'team_label_snapshot' => $teamLabel,
+            'team_id' => null,
+            'team_label_snapshot' => null,
             'requested_at' => Carbon::now('UTC'),
         ]);
 

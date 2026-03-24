@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
-use App\Models\Team;
 use App\Services\CrmAccess\CrmAccessDeniedException;
 use App\Services\CrmAccess\CrmAccessService;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,17 +25,12 @@ class AccessGrantController extends Controller
     {
         $user = $this->requireStaff();
 
-        $teamId = $user->team;
-        $teamIdInt = is_numeric($teamId) ? (int) $teamId : null;
-
         return response()->json([
             'branches' => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
-            'teams' => Team::query()->orderBy('name')->get(['id', 'name', 'color']),
             'quick_reasons' => collect(config('crm_access.quick_reason_options', []))
                 ->map(fn (string $label, string $code) => ['code' => $code, 'label' => $label])
                 ->values(),
             'staff_office_id' => $user->office_id,
-            'staff_team_id' => $teamIdInt,
             'ui' => [
                 'show_quick' => \App\Support\StaffClientVisibility::crossAccessUiFlags($user)['show_quick'],
                 'show_supervisor' => \App\Support\StaffClientVisibility::crossAccessUiFlags($user)['show_supervisor'],
@@ -53,7 +47,6 @@ class AccessGrantController extends Controller
             'admin_id' => ['required', 'integer', 'min:1'],
             'record_type' => ['required', Rule::in(['client', 'lead'])],
             'office_id' => ['required', 'integer', 'min:1'],
-            'team_id' => ['nullable', 'integer', 'min:1'],
             'reason_code' => ['required', 'string', 'max:50'],
         ]);
 
@@ -67,7 +60,7 @@ class AccessGrantController extends Controller
                 (int) $data['admin_id'],
                 $data['record_type'],
                 (int) $data['office_id'],
-                isset($data['team_id']) ? (int) $data['team_id'] : null,
+                null,
                 $data['reason_code']
             );
         } catch (CrmAccessDeniedException $e) {
@@ -88,7 +81,7 @@ class AccessGrantController extends Controller
             'admin_id' => ['required', 'integer', 'min:1'],
             'record_type' => ['required', Rule::in(['client', 'lead'])],
             'office_id' => ['required', 'integer', 'min:1'],
-            'team_id' => ['nullable', 'integer', 'min:1'],
+            'reason_code' => ['required', 'string', Rule::in(array_keys(config('crm_access.quick_reason_options', [])))],
             'note' => ['nullable', 'string', 'max:5000'],
         ]);
 
@@ -102,7 +95,7 @@ class AccessGrantController extends Controller
                 (int) $data['admin_id'],
                 $data['record_type'],
                 (int) $data['office_id'],
-                isset($data['team_id']) ? (int) $data['team_id'] : null,
+                (string) $data['reason_code'],
                 (string) ($data['note'] ?? '')
             );
         } catch (CrmAccessDeniedException $e) {

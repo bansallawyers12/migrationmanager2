@@ -21,7 +21,7 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         $this->expectException(CrmAccessDeniedException::class);
         $this->expectExceptionMessage('Your role only supports quick access.');
 
-        $svc->requestSupervisorGrant($staff, 1, 'client', 1, null, '');
+        $svc->requestSupervisorGrant($staff, 1, 'client', 1, 'calling', '');
     }
 
     public function test_non_calling_team_role_may_reach_supervisor_validation(): void
@@ -32,7 +32,7 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         $svc = new CrmAccessService();
 
         try {
-            $svc->requestSupervisorGrant($staff, 999, 'client', 9999, null, '');
+            $svc->requestSupervisorGrant($staff, 999, 'client', 9999, 'calling', '');
         } catch (CrmAccessDeniedException $e) {
             $this->assertStringNotContainsString('quick access', $e->getMessage());
         } catch (\Throwable) {

@@ -150,6 +150,7 @@
             <script>
             (function () {
                 var miniUrl = @json(route('crm.access.queue.mini'));
+                var reasonLabels = @json(config('crm_access.quick_reason_options', []));
                 var approveTpl = @json(str_replace('999999999', '__ID__', route('crm.access.approve', ['grant' => 999999999])));
                 var rejectTpl = @json(str_replace('999999999', '__ID__', route('crm.access.reject', ['grant' => 999999999])));
                 var token = document.querySelector('meta[name="csrf-token"]');
@@ -171,11 +172,19 @@
                             items.forEach(function (g) {
                                 var req = g.staff ? (g.staff.first_name + ' ' + g.staff.last_name).trim() : ('#' + g.staff_id);
                                 var rec = g.admin ? (g.admin.first_name + ' ' + g.admin.last_name).trim() : ('#' + g.admin_id);
+                                var rc = g.quick_reason_code || '';
+                                var reasonTxt = rc && reasonLabels[rc] ? String(reasonLabels[rc]).replace(/</g, '&lt;') : '';
                                 var note = g.requester_note ? String(g.requester_note).replace(/</g, '&lt;').slice(0, 120) : '';
+                                var detail = '';
+                                if (reasonTxt && note) {
+                                    detail = reasonTxt + ' · ' + note;
+                                } else {
+                                    detail = reasonTxt || note;
+                                }
                                 html += '<div class="border rounded p-2 mb-2 bg-light" data-grant-mini="' + g.id + '">' +
                                     '<div class="font-weight-bold">' + rec + ' <span class="text-muted font-weight-normal">(' + g.record_type + ' #' + g.admin_id + ')</span></div>' +
                                     '<div class="text-muted" style="font-size:11px;">' + (g.requested_at || '') + ' · ' + req + '</div>' +
-                                    (note ? '<div class="mt-1" style="font-size:11px;">' + note + '</div>' : '') +
+                                    (detail ? '<div class="mt-1" style="font-size:11px;">' + detail + '</div>' : '') +
                                     '<div class="mt-2">' +
                                     '<button type="button" class="btn btn-sm btn-success py-0 px-2 js-cag-mini-approve" data-id="' + g.id + '">Approve</button> ' +
                                     '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 js-cag-mini-reject" data-id="' + g.id + '">Reject</button>' +

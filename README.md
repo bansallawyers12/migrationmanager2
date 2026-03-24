@@ -28,6 +28,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 - **Client Portal**: Secure portal for clients to view status and submit documents
 - **SMS Notifications**: Integrated SMS via Twilio and Cellcast providers
 - **Broadcast Notifications**: In-app broadcasts to staff/agents with history
+- **Cross-access & row-level visibility**: Staff see clients/leads they are allocated to (or hold a time-bound grant); exempt roles are fully audited; quick (15 min) and supervisor-approved (24 h) access from search; approver queue, grants dashboard, and CSV export (`/crm/access/*`)
 - **Electronic Signatures**: Full signature workflow with templates and dashboard
 - **Task Management**: Assignee/action system for tasks related to cases and clients
 - **Company & Employer Sponsorship**: Full employer sponsorship management with company profiles, directors, trading names, Trust entities, nominations, and sponsorship tracking
@@ -79,9 +80,10 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 4. **Environment setup**
    ```powershell
-   copy .env.example .env
+   copy .env.example .env   # If the repo has no .env.example, create .env manually
    php artisan key:generate
    ```
+   - Optional: add **CRM access** variables (see [Configuration](#configuration) → CRM cross-access) for strict allocation, approvers, and grant TTLs.
 
 5. **Database setup**
    - Create a PostgreSQL database
@@ -219,6 +221,7 @@ Add to `C:\Windows\System32\drivers\etc\hosts`:
 - View lead history, notes, and assignee actions
 
 ### 2) Client Management
+- **Search & access**: Global header search may show records as **locked** if you are not allocated and have no active grant; use **Request access** to open the cross-access modal (quick or supervisor path per role). See `docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md` for product rules.
 - Go to `Clients` to view all active clients
 - Create detailed client profiles with personal information (individual or company)
 - For company clients: use Company Edit for employer sponsorship details (trading names, directors, Trust, nominations)
@@ -323,6 +326,7 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `ClientEoiReference` - EOI (Expression of Interest) references
   - `Note` - Client/lead notes and assignee tasks
   - `EmailLog` - Email correspondence tracking
+  - `ClientAccessGrant` - Cross-access audit trail (quick, supervisor-approved, exempt rows)
   
 - **Controllers**: 
   - `ClientsController` - Client CRUD operations and relationship management
@@ -338,6 +342,7 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `ReportController` - Reports and data export
   - `ClientEoiRoiController` / `EoiRoiSheetController` - EOI/ROI workflows
   - `BroadcastController` / `BroadcastNotificationAjaxController` - Broadcast notifications
+  - `AccessGrantController` - Cross-access meta, quick/supervisor requests, approver queue, mini-queue API, grants dashboard, CSV export
   
 - **Services**:
   - `PythonConverterService` - DOCX to PDF via Python HTTP API
@@ -349,6 +354,10 @@ Staff can be designated as Migration Agents (`is_migration_agent`) with role-bas
   - `ClientEditService` - Client/company section save logic
   - `DashboardService` / `FinancialStatsService` - Dashboard and financial metrics
   - `S3AttachmentStorageService` / `S3EmailStorageService` - S3 file storage
+  - `CrmAccess\CrmAccessService` - Grant lifecycle (request, approve, reject, revoke, expiry), approver notifications
+  
+- **Support / visibility** (`app/Support/`):
+  - `StaffClientVisibility` - `canAccessClientOrLead`, list/query restrictions (clients, leads, documents, bookings), search enrichment for locked rows, exempt daily logging
   
 - **Python Services** (`python_services/`):
   - `docx_converter_service.py` - DOCX to PDF conversion via HTTP API
@@ -398,6 +407,7 @@ Use `data-flatpickr="standard"`, `data-flatpickr="dob"`, `data-flatpickr="dateti
 ### Background Jobs & Scheduling
 
 - Use Laravel's scheduler for automated tasks:
+  - **`access:expire-grants`** (hourly) — marks time-expired active grants and very old pending supervisor requests as expired (`CrmAccessService::expireStaleGrants`)
   - Appointment reminders
   - Visa expiry notifications
   - Follow-up reminders
@@ -451,6 +461,17 @@ The system includes Python-based document conversion via `python_services/`:
   - `GET /leads` - List leads
   - `POST /leads` - Create lead
   - `PUT /leads/{id}/convert` - Convert to client
+
+- **Cross-access (staff)** — prefix `/crm/access/` (see `routes/clients.php`, `auth:admin`):
+  - `GET /crm/access/meta` — branches, teams, quick reasons, UI flags for the request modal
+  - `POST /crm/access/quick` — 15-minute quick grant (throttled)
+  - `POST /crm/access/supervisor` — supervisor approval request (throttled)
+  - `GET /crm/access/queue` — HTML pending queue (approvers / Super Admin)
+  - `GET /crm/access/queue/data` | `GET /crm/access/queue/mini` — JSON pending items (mini for header dropdown)
+  - `POST /crm/access/{grant}/approve` | `reject` — approve or reject (approvers)
+  - `GET /crm/access/my-grants` — staff’s own grants (HTML + JSON data route)
+  - `GET /crm/access/dashboard` — grants dashboard (filters, pending section, table, CSV export link)
+  - `GET /crm/access/dashboard/data` | `dashboard/export` — JSON and CSV for audits
   
 - **Reports:**
   - `GET /reports/clients` - Client reports
@@ -516,6 +537,32 @@ LOG_CHANNEL=stack
 LOG_LEVEL=debug
 ```
 
+#### CRM cross-access (`config/crm_access.php`)
+
+Row-level visibility and temporary access grants are controlled in `config/crm_access.php` (parsed lists tolerate empty `.env` values with safe defaults). Add to `.env` as needed:
+
+```env
+# Comma-separated role IDs that bypass allocation (default: 1,17 — Super Admin, Admin)
+CRM_ACCESS_EXEMPT_ROLE_IDS=1,17
+
+# Comma-separated staff.id values who may approve supervisor requests (plus all active role-1 staff)
+CRM_ACCESS_APPROVER_STAFF_IDS=36834,36524,36692,36483,36484,36718,36523,36836,36830
+
+# Roles that may only use quick access, not supervisor path (default: 14 — Calling Team)
+CRM_ACCESS_QUICK_ONLY_ROLE_IDS=14
+
+# When true, non-exempt staff only see allocated clients/leads (+ active grants)
+CRM_ACCESS_STRICT_ALLOCATION=false
+
+# Grant durations and caps
+CRM_ACCESS_QUICK_GRANT_MINUTES=15
+CRM_ACCESS_SUPERVISOR_GRANT_HOURS=24
+CRM_ACCESS_MAX_PENDING_SUPERVISOR_REQUESTS=5
+CRM_ACCESS_PENDING_TTL_DAYS=14
+```
+
+Full behaviour, HTTP surface, and QA checklist: **`docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`**.
+
 ### Database
 
 The application uses **PostgreSQL** as the primary database (default in `config/database.php`). MySQL is supported for legacy migration from existing MySQL installations. For development, you can use SQLite by changing `DB_CONNECTION` to `sqlite` in `.env`.
@@ -543,8 +590,11 @@ This project is open-sourced software licensed under the [MIT license](https://o
 - **Assignee action view**: Dedicated action page for assigned tasks.
 - **CRM layouts**: Updated `crm_client_detail` and `crm_client_detail_dashboard` with Flatpickr components.
 - **Vite build**: Frontend built with Vite; includes FullCalendar, Flatpickr, Signature Pad, Alpine.js, Tailwind.
+- **Cross-access & allocated visibility**: `StaffClientVisibility`, `CrmAccessService`, `client_access_grants`, header search locked rows + modal, approver bell mini-queue, grants dashboard and CSV, booking/email/document gates when strict allocation is enabled; scheduled `access:expire-grants`.
 
 For detailed Company Employer Sponsorship implementation notes, see `docs/COMPANY_EMPLOYER_SPONSORSHIP_IMPLEMENTATION_PLAN.md`.
+
+For cross-access product rules, routes, and rollout status, see **`docs/CROSS_ACCESS_IMPLEMENTATION_PLAN.md`**.
 
 ## Important Notes
 
@@ -559,6 +609,7 @@ For detailed Company Employer Sponsorship implementation notes, see `docs/COMPAN
 - Payment gateways (Stripe, PayU) need to be configured for online payments
 - SMS providers (Twilio, Cellcast) need to be configured for SMS notifications
 - Client portal provides secure access for clients to track their applications
+- **CRM cross-access**: ensure `php artisan schedule:run` (or cron) runs in production so `access:expire-grants` executes; set `CRM_ACCESS_STRICT_ALLOCATION=true` only after UAT (see implementation plan)
 
 ## Troubleshooting
 
