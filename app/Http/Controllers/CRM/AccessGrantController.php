@@ -214,9 +214,14 @@ class AccessGrantController extends Controller
             abort(403, 'Not authorized.');
         }
 
+        $grantPlaceholder = 999999999;
+
         return view('crm.access.dashboard', [
             'dataUrl' => route('crm.access.dashboard.data'),
             'exportUrl' => route('crm.access.dashboard.export'),
+            'queueUrl' => route('crm.access.queue.data'),
+            'approveUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.approve', ['grant' => $grantPlaceholder])),
+            'rejectUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.reject', ['grant' => $grantPlaceholder])),
             'branches' => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
             'teams' => Team::query()->orderBy('name')->get(['id', 'name']),
         ]);

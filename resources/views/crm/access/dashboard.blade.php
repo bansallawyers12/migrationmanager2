@@ -169,9 +169,9 @@
 (function () {
     var dataUrl    = @json($dataUrl);
     var exportUrl  = @json($exportUrl);
-    var queueUrl   = @json(route('crm.access.queue.data'));
-    var approveTpl = @json(str_replace('999999999', '__ID__', route('crm.access.approve', ['grant' => 999999999])));
-    var rejectTpl  = @json(str_replace('999999999', '__ID__', route('crm.access.reject',  ['grant' => 999999999])));
+    var queueUrl   = @json($queueUrl);
+    var approveTpl = @json($approveUrlTpl);
+    var rejectTpl  = @json($rejectUrlTpl);
     var form       = document.getElementById('crm-access-dash-filters');
     var msg        = document.getElementById('crm-access-dash-msg');
     var exportLink = document.getElementById('crm-access-dash-export');
