@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Services\FCMService;
 use App\Events\NotificationCountUpdated;
+use App\Support\StaffClientVisibility;
 
 class DashboardService
 {
@@ -125,6 +126,12 @@ class DashboardService
             ])
             ->where('matter_status', 1)
             ->where('updated_at', '>=', Carbon::now()->subDays(100));
+
+        if ((int) $user->role !== 1) {
+            $query->whereHas('client', function ($q) use ($user) {
+                StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q, $user);
+            });
+        }
 
         // Apply role-based filtering
         $this->applyRoleBasedFiltering($query, $user);
@@ -267,6 +274,10 @@ class DashboardService
         $query = ClientMatter::join('admins as clients', 'client_matters.client_id', '=', 'clients.id')
             ->where('client_matters.matter_status', 1)
             ->where('client_matters.updated_at', '>=', Carbon::now()->subDays(100));
+
+        if ((int) $user->role !== 1) {
+            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'clients', $user);
+        }
 
         $this->applyRoleBasedFiltering($query, $user);
 
