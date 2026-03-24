@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
  * Clients (admins.type=client): "Person Assisting" roles are limited to matters they assist
  * on or admins.user_id = staff id. Super admin (staff role 1) bypasses. Other roles see all clients.
  *
+ * Super-admin-only file IDs (config crm.super_admin_only_client_file_ids): type=client rows with
+ * matching admins.client_id are hidden from non–super-admins (search, lists, detail, AJAX guards).
+ *
  * Leads (admins.type=lead): same as clients for detail/header search — non–Person-Assisting staff may open any
  * lead. Person Assisting roles are limited to assigned (admins.user_id), person-assisting on a matter, or
  * lead_full_access_role_ids. Lead *list* still uses restrictLeadListQuery (assigned-only for many roles).
@@ -80,6 +83,104 @@ final class StaffClientVisibility
         return in_array((int) $user->role, self::personAssistingRoleIds(), true);
     }
 
+    /**
+     * Client file reference values (admins.client_id) visible only to Super Admin (role 1).
+     *
+     * @return list<string>
+     */
+    public static function superAdminOnlyLockedClientFileIds(): array
+    {
+        return config('crm.super_admin_only_client_file_ids', []);
+    }
+
+    /**
+     * @return list<string> Uppercased trimmed values for case-insensitive SQL matching
+     */
+    public static function normalizedSuperAdminOnlyLockedClientFileIdsUpper(): array
+    {
+        $ids = self::superAdminOnlyLockedClientFileIds();
+        $out = [];
+        foreach ($ids as $id) {
+            $u = strtoupper(trim((string) $id));
+            if ($u !== '') {
+                $out[] = $u;
+            }
+        }
+
+        return array_values(array_unique($out));
+    }
+
+    public static function isSuperAdminOnlyLockedClient(?string $adminType, ?string $clientFileId): bool
+    {
+        if (($adminType ?? '') !== 'client') {
+            return false;
+        }
+        $file = strtoupper(trim((string) $clientFileId));
+        if ($file === '') {
+            return false;
+        }
+
+        return in_array($file, self::normalizedSuperAdminOnlyLockedClientFileIdsUpper(), true);
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Admin>|\Illuminate\Database\Query\Builder  $query
+     */
+    public static function excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, ?Authenticatable $viewer = null): void
+    {
+        $viewer = $viewer ?? Auth::user();
+        if (!$viewer || (int) ($viewer->role ?? 0) === 1) {
+            return;
+        }
+
+        $upperIds = self::normalizedSuperAdminOnlyLockedClientFileIdsUpper();
+        if ($upperIds === []) {
+            return;
+        }
+
+        $table = method_exists($query, 'getModel')
+            ? $query->getModel()->getTable()
+            : 'admins';
+
+        $placeholders = implode(',', array_fill(0, count($upperIds), '?'));
+
+        $query->where(function ($q) use ($table, $upperIds, $placeholders) {
+            $q->where("{$table}.type", '!=', 'client')
+                ->orWhereNull("{$table}.client_id")
+                ->orWhereRaw(
+                    "UPPER(TRIM({$table}.client_id)) NOT IN ({$placeholders})",
+                    $upperIds
+                );
+        });
+    }
+
+    /**
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    public static function applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, string $adminsAlias, ?Authenticatable $viewer = null): void
+    {
+        $viewer = $viewer ?? Auth::user();
+        if (!$viewer || (int) ($viewer->role ?? 0) === 1) {
+            return;
+        }
+
+        $upperIds = self::normalizedSuperAdminOnlyLockedClientFileIdsUpper();
+        if ($upperIds === []) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($upperIds), '?'));
+
+        $query->where(function ($q) use ($adminsAlias, $upperIds, $placeholders) {
+            $q->where("{$adminsAlias}.type", '!=', 'client')
+                ->orWhereNull("{$adminsAlias}.client_id")
+                ->orWhereRaw(
+                    "UPPER(TRIM({$adminsAlias}.client_id)) NOT IN ({$placeholders})",
+                    $upperIds
+                );
+        });
+    }
+
     public static function personAssistingStaffIdOrNull(?Authenticatable $user): ?int
     {
         return self::isRestrictedPersonAssisting($user) ? (int) $user->id : null;
@@ -112,6 +213,8 @@ final class StaffClientVisibility
     public static function restrictAdminEloquentQuery(Builder $query): void
     {
         $user = Auth::user();
+        self::excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, $user);
+
         if (!self::isRestrictedPersonAssisting($user)) {
             return;
         }
@@ -139,9 +242,13 @@ final class StaffClientVisibility
         $row = Admin::query()
             ->where('id', $adminId)
             ->whereIn('type', ['client', 'lead'])
-            ->first(['id', 'type', 'user_id']);
+            ->first(['id', 'type', 'user_id', 'client_id']);
 
         if (!$row) {
+            return false;
+        }
+
+        if (self::isSuperAdminOnlyLockedClient($row->type ?? null, $row->client_id ?? null)) {
             return false;
         }
 

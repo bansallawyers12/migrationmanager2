@@ -95,4 +95,26 @@ return [
         ? $__leadAssignedRoles
         : [13, 14, 15, 16]),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Super-admin-only client file IDs (admins.client_id when type = client)
+    |--------------------------------------------------------------------------
+    |
+    | Staff with role 1 (Super Admin) see these clients everywhere. Other staff
+    | cannot list, search, or open them. Applies only to type=client, not leads.
+    | Override or extend via CRM_SUPER_ADMIN_ONLY_CLIENT_FILE_IDS e.g.
+    | "GURP2502080,OASH2505088".
+    |
+    */
+    'super_admin_only_client_file_ids' => array_values(array_unique(array_filter(
+        array_map(
+            static fn (string $id) => trim($id),
+            explode(',', (string) env(
+                'CRM_SUPER_ADMIN_ONLY_CLIENT_FILE_IDS',
+                'GURP2502080,OASH2505088,PRAB2504834,PALW2502036'
+            ))
+        ),
+        static fn (string $id) => $id !== ''
+    ))),
+
 ];

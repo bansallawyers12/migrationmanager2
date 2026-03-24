@@ -1698,16 +1698,21 @@ class ClientPersonalDetailsController extends Controller
         if(isset($id) && !empty($id))
         {
             $id = $this->decodeString($id); //dd($id);
-            if(Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists())
-            {
+            $targetRecord = Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->first(['id', 'type']);
+            if ($targetRecord) {
+                // Match ClientsController@detail: leads bypass row-level client rules; clients use StaffClientVisibility.
+                if (($targetRecord->type ?? null) !== 'lead'
+                    && ! \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                    return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
+                }
                 // Use service to get all data with optimized queries (prevents N+1)
                 // Now returns complete data set including passports, travels, etc.
                 $data = app(\App\Services\ClientEditService::class)->getClientEditData($id);
-                
+
                 return view('crm.clients.edit', $data);
-            } else {
-                return Redirect::to('/clients')->with('error', 'Clients Not Exist');
             }
+
+            return Redirect::to('/clients')->with('error', 'Clients Not Exist');
         } else {
             return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
         }

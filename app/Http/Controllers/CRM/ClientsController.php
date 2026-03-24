@@ -172,6 +172,7 @@ class ClientsController extends Controller
                 $q->whereNull('ws.name')
                     ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
             });
+            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
 
             if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
                 $query->where('cm.sel_person_assisting', '=', $paId);
@@ -265,8 +266,9 @@ class ClientsController extends Controller
                 $closedStages = ['file closed', 'withdrawn', 'refund', 'discontinued'];
                 $q->whereNull('ws.name')
                     ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
-            })
-            ->orderBy($sortField, $sortDirection);
+            });
+            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
+            $query->orderBy($sortField, $sortDirection);
             $allowedPerPage = [10, 20, 50, 100, 200];
             $perPage = (int) $request->get('per_page', 20);
             if (!in_array($perPage, $allowedPerPage, true)) {
@@ -304,6 +306,7 @@ class ClientsController extends Controller
                     $q->where('cm.matter_status', '=', '0')
                         ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
                 });
+            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
 
             if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
                 $query->where('cm.sel_person_assisting', '=', $paId);
@@ -392,8 +395,9 @@ class ClientsController extends Controller
                 ->where(function ($q) use ($closedStages) {
                     $q->where('cm.matter_status', '=', '0')
                         ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
-                })
-                ->orderBy($sortField, $sortDirection);
+                });
+            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
+            $query->orderBy($sortField, $sortDirection);
             $allowedPerPage = [10, 20, 50, 100, 200];
             $perPage = (int) $request->get('per_page', 20);
             if (!in_array($perPage, $allowedPerPage, true)) {
@@ -2506,6 +2510,9 @@ class ClientsController extends Controller
                                     ->orWhere('client_matters.sel_person_assisting', $paId);
                             });
                         })
+                        ->tap(function ($q) {
+                            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+                        })
                         ->select(
                             'admins.id as client_id',
                             'admins.first_name',
@@ -2552,6 +2559,9 @@ class ClientsController extends Controller
                         $visibilityQuery->where('admins.type', 'lead')
                             ->orWhere('client_matters.sel_person_assisting', $paId);
                     });
+                })
+                ->tap(function ($q) {
+                    StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                 })
                 ->where(function($query) use ($squery) {
                     $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
@@ -2691,6 +2701,9 @@ class ClientsController extends Controller
                         });
                 });
             }
+            $clientsQuery->tap(function ($q) {
+                StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
+            });
             $clientsQuery = $clientsQuery
                 ->select(
                     'admins.*'
