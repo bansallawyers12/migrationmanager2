@@ -135,7 +135,7 @@
                         <span class="badge badge-warning" style="position:absolute;top:-6px;right:-6px;font-size:9px;padding:2px 4px;border-radius:8px;" title="Pending access approvals">{{ $crmAccessPendingSupervisor }}</span>
                     @endif
                 </a>
-                <div class="icon-dropdown-menu" style="min-width:300px;max-width:400px;max-height:420px;overflow:auto;left:auto;right:0;">
+                <div class="icon-dropdown-menu">
                     <div class="px-3 py-2 border-bottom font-weight-bold small">Access approvals</div>
                     <div id="crm-access-mini-queue" class="px-2 py-2 small text-muted">Loading…</div>
                     <div class="dropdown-divider"></div>

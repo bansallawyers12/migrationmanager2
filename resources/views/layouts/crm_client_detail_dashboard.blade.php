@@ -110,6 +110,14 @@
             box-shadow: 0 12px 24px rgba(0,0,0,.08) !important; 
         }
         .icon-dropdown .icon-dropdown-menu.show { display: block !important; }
+        #crm-access-notification-dropdown .icon-dropdown-menu {
+            left: auto !important;
+            right: 0 !important;
+            min-width: 300px !important;
+            max-width: min(400px, calc(100vw - 16px)) !important;
+            max-height: 420px !important;
+            overflow: auto !important;
+        }
         .icon-dropdown-menu .dropdown-item { padding: 8px 12px !important; color: #343a40 !important; }
         .icon-dropdown-menu .dropdown-item:hover { background: #f1f5ff !important; color: #0d6efd !important; }
         /* Profile */
