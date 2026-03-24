@@ -54,6 +54,7 @@ class Staff extends Authenticatable
         'business_mobile',
         'business_email',
         'tax_number',
+        'quick_access_enabled',
     ];
 
     /**
@@ -71,6 +72,7 @@ class Staff extends Authenticatable
         'status' => 'integer',
         'show_dashboard_per' => 'integer',
         'is_migration_agent' => 'integer',
+        'quick_access_enabled' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

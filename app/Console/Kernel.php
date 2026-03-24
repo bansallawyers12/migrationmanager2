@@ -56,6 +56,7 @@ class Kernel extends ConsoleKernel
 
         // Visa Sheet Diagnostics
         '\App\Console\Commands\DiagnoseVisaSheet',
+        '\App\Console\Commands\ExpireCrmAccessGrants',
     ];
 
     /**
@@ -111,6 +112,8 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(30)
             ->appendOutputTo(storage_path('logs/age-updates.log'));
+
+        $schedule->command('access:expire-grants')->hourly();
     }
 
     /**

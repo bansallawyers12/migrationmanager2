@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use App\Models\UserRole;
 use App\Support\CrmSheets;
+use App\Services\CrmAccess\CrmAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -127,6 +128,9 @@ class StaffController extends Controller
             $obj->password = Hash::make(@$requestData['password']);
             $obj->phone = @$requestData['phone'];
             $obj->role = @$requestData['role'];
+            if ((int) $obj->role === 14) {
+                $obj->quick_access_enabled = true;
+            }
             $obj->office_id = @$requestData['office'];
             $obj->team = @$requestData['team'];
             $obj->show_dashboard_per = isset($requestData['show_dashboard_per']) ? 1 : 0;
@@ -229,13 +233,20 @@ class StaffController extends Controller
                 return redirect()->route('adminconsole.staff.active')->with('error', 'Staff not found.');
             }
 
+            $prevQuickEnabled = (bool) ($obj->quick_access_enabled ?? false);
+            $prevStatus = (int) ($obj->status ?? 1);
+
             $obj->first_name = @$requestData['first_name'];
             $obj->last_name = @$requestData['last_name'];
             $obj->email = @$requestData['email'];
             $obj->country_code = @$requestData['country_code'];
             $obj->position = @$requestData['position'];
             $obj->phone = @$requestData['phone'];
+            $prevRole = (int) ($obj->role ?? 0);
             $obj->role = @$requestData['role'];
+            if ((int) $obj->role === 14 && $prevRole !== 14) {
+                $obj->quick_access_enabled = true;
+            }
             $obj->office_id = @$requestData['office'];
             $obj->team = @$requestData['team'];
             $obj->permission = (isset($requestData['permission']) && is_array($requestData['permission']))
@@ -267,7 +278,19 @@ class StaffController extends Controller
                 $obj->password = Hash::make(@$requestData['password']);
             }
 
+            if ((int) Auth::user()->role === 1) {
+                $obj->quick_access_enabled = $request->boolean('quick_access_enabled');
+            }
+
             $saved = $obj->save();
+
+            $crmAccess = app(CrmAccessService::class);
+
+            if ($saved && $prevStatus === 1 && (int) $obj->status === 0) {
+                $crmAccess->revokeGrantsForStaff((int) $obj->id, 'Staff account deactivated');
+            } elseif ($saved && (int) Auth::user()->role === 1 && $prevQuickEnabled && ! $obj->quick_access_enabled) {
+                $crmAccess->revokeGrantsForStaff((int) $obj->id, 'Quick access disabled');
+            }
 
             if (!$saved) {
                 return redirect()->back()->with('error', config('constants.server_error'));

@@ -173,10 +173,7 @@ class ClientsController extends Controller
                     ->orWhereRaw('LOWER(TRIM(ws.name)) NOT IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
             });
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
-
-            if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
-                $query->where('cm.sel_person_assisting', '=', $paId);
-            }
+            StaffClientVisibility::restrictMatterListToAllocatedClients($query, 'cm', 'ad');
 
             if ($request->has('sel_matter_id')) {
                 $sel_matter_id = $request->input('sel_matter_id');
@@ -307,10 +304,7 @@ class ClientsController extends Controller
                         ->orWhereRaw('LOWER(TRIM(ws.name)) IN (' . implode(',', array_fill(0, count($closedStages), '?')) . ')', $closedStages);
                 });
             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, 'ad');
-
-            if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
-                $query->where('cm.sel_person_assisting', '=', $paId);
-            }
+            StaffClientVisibility::restrictMatterListToAllocatedClients($query, 'cm', 'ad');
 
             if ($request->has('sel_matter_id')) {
                 $sel_matter_id = $request->input('sel_matter_id');
@@ -2476,8 +2470,7 @@ class ClientsController extends Controller
         $squery = $request->q;
         if ($squery != '') {
             $results = [];
-            $paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user());
-            
+
             // Log the search query for debugging
             Log::info('Header search query: ' . $squery);
 
@@ -2503,13 +2496,6 @@ class ClientsController extends Controller
                         ->where('client_matters.matter_status', 1)
                         ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
                         ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
-                        ->when($paId, function ($q) use ($paId) {
-                            // PA users: keep client restriction, but allow all leads in global search.
-                            $q->where(function ($visibilityQuery) use ($paId) {
-                                $visibilityQuery->where('admins.type', 'lead')
-                                    ->orWhere('client_matters.sel_person_assisting', $paId);
-                            });
-                        })
                         ->tap(function ($q) {
                             StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                         })
@@ -2530,14 +2516,15 @@ class ClientsController extends Controller
                         $displayName = ($result->is_company && $result->company_name)
                             ? $result->company_name
                             : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
-                        $results[] = [
+                        $results[] = StaffClientVisibility::enrichGlobalSearchItem([
                             'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
                             'name' => $displayName,
                             'email' => $result->email,
                             'status' => $result->is_archived ? 'Archived' : $result->type,
                             'cid' => $result->client_id,
                             'is_company' => (bool) $result->is_company,
-                        ];
+                            'record_type' => $result->type,
+                        ], (string) $result->type);
                     }
                 }
             }
@@ -2553,13 +2540,6 @@ class ClientsController extends Controller
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
                 ->where('client_matters.matter_status', 1)
-                ->when($paId, function ($q) use ($paId) {
-                    // PA users: keep client restriction, but allow all leads in global search.
-                    $q->where(function ($visibilityQuery) use ($paId) {
-                        $visibilityQuery->where('admins.type', 'lead')
-                            ->orWhere('client_matters.sel_person_assisting', $paId);
-                    });
-                })
                 ->tap(function ($q) {
                     StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
                 })
@@ -2588,14 +2568,15 @@ class ClientsController extends Controller
                 $displayName = ($matter->is_company && $matter->company_name)
                     ? $matter->company_name
                     : trim(($matter->first_name ?? '') . ' ' . ($matter->last_name ?? ''));
-                $results[] = [
+                $results[] = StaffClientVisibility::enrichGlobalSearchItem([
                     'id' => base64_encode(convert_uuencode($matter->client_id)) . '/Matter/' . $matter->client_unique_matter_no,
                     'name' => $displayName,
                     'email' => $matter->email,
                     'status' => $matter->is_archived ? 'Archived' : $matter->type,
                     'cid' => $matter->client_id,
                     'is_company' => (bool) $matter->is_company,
-                ];
+                    'record_type' => $matter->type,
+                ], (string) $matter->type);
             }
 
             /**
@@ -2684,23 +2665,6 @@ class ClientsController extends Controller
                         $query->orWhere('admins.dob', '=', $d);
                     }
                 });
-            if ($paId) {
-                // PA users: unrestricted for leads, existing restriction retained for clients.
-                $clientsQuery->where(function ($visibilityQuery) use ($paId) {
-                    $visibilityQuery->where('admins.type', 'lead')
-                        ->orWhere(function ($clientVisibilityQuery) use ($paId) {
-                            $clientVisibilityQuery->where('admins.type', 'client')
-                                ->where(function ($clientRuleQuery) use ($paId) {
-                                    $clientRuleQuery->whereExists(function ($sub) use ($paId) {
-                                        $sub->select(DB::raw('1'))
-                                            ->from('client_matters')
-                                            ->whereColumn('client_matters.client_id', 'admins.id')
-                                            ->where('client_matters.sel_person_assisting', $paId);
-                                    })->orWhere('admins.user_id', $paId);
-                                });
-                        });
-                });
-            }
             $clientsQuery->tap(function ($q) {
                 StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
             });
@@ -2790,7 +2754,7 @@ class ClientsController extends Controller
                         ? base64_encode(convert_uuencode($client->id)) . '/Matter/' . $latestMatterNo
                         : base64_encode(convert_uuencode($client->id)) . '/Client';
 
-                    $results[] = [
+                    $results[] = StaffClientVisibility::enrichGlobalSearchItem([
                         'id' => $resultFinalId,
                         'name' => $client->company_name_or_personal_name,
                         'email' => $client->email,
@@ -2799,9 +2763,21 @@ class ClientsController extends Controller
                         'phones' => $allPhones,
                         'emails' => $allEmails,
                         'is_company' => (bool) $client->is_company,
-                    ];
+                        'record_type' => $client->type,
+                    ], (string) $client->type);
                 }
             }
+
+            // Deduplicate by cid, keeping the first occurrence of each
+            $seenCids = [];
+            $results = array_values(array_filter($results, function ($r) use (&$seenCids) {
+                $cid = $r['cid'] ?? null;
+                if ($cid === null || isset($seenCids[$cid])) {
+                    return false;
+                }
+                $seenCids[$cid] = true;
+                return true;
+            }));
 
             // Exclude contact persons when their company is already in results (avoid duplicates)
             $cidsInResults = array_column($results, 'cid');

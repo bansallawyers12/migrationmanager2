@@ -152,6 +152,18 @@
 									</select>
                                 </div>
 
+                                @if((int) auth()->guard('admin')->user()->role === 1)
+                                <div class="form-group">
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="hidden" name="quick_access_enabled" value="0">
+                                        <input type="checkbox" name="quick_access_enabled" value="1" class="mr-2"
+                                            @if(old('quick_access_enabled', $fetchedData->quick_access_enabled ?? false)) checked @endif>
+                                        <span>Quick access enabled ({{ config('crm_access.quick_grant_minutes', 15) }}-minute cross-access requests)</span>
+                                    </label>
+                                    <small class="text-muted d-block mt-1">Super Admin only. Turning off revokes active quick and pending supervisor grants immediately.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group">
                                     <label for="role">Permission</label>
 							    	<?php

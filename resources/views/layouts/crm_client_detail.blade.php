@@ -1780,6 +1780,17 @@
 
                 $container.find(".select2-result-repository__title").text(repo.name);
                 $container.find(".select2-result-repository__description").text(repo.email);
+                if (repo.locked) {
+                    $container.addClass('opacity-75');
+                    $container.find(".select2-result-repository__title").prepend('<span class="mr-1" title="No access">&#128274;</span> ');
+                    var ui = repo.access_ui || {};
+                    if (ui.show_quick) {
+                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Quick</span> ');
+                    }
+                    if (ui.show_supervisor) {
+                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Supervisor</span> ');
+                    }
+                }
                 if(repo.status == 'Archived'){
                     $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
                 } else {
@@ -1792,24 +1803,25 @@
                 return repo.name || repo.text;
             }
 
-
-
-            $('.js-data-example-ajaxccsearch').on('change', function () {
-                var v = $(this).val(); 
-                var s = v.split('/');
+            $('.js-data-example-ajaxccsearch').on('select2:select', function (e) {
+                var data = e.params.data || {};
+                if (data.locked && typeof window.openCrmAccessModal === 'function') {
+                    $(this).val(null).trigger('change');
+                    window.openCrmAccessModal(data);
+                    return;
+                }
+                var v = data.id;
+                if (!v) { return; }
+                var s = String(v).split('/');
                 if(s[1] == 'Matter' && s[2] != ''){
-                    // Build URL manually since we can't pass dynamic parameters to route() in JavaScript
-                    window.location = '{{ url("/clients/detail") }}/' + s[0] + '/' + s[2]; // redirect
+                    window.location = '{{ url("/clients/detail") }}/' + s[0] + '/' + s[2];
                 } else {
                     if(s[1] == 'Client'){
-                        // Build URL manually since we can't pass dynamic parameters to route() in JavaScript
-                        window.location = '{{ url("/clients/detail") }}/' + s[0]; // redirect
+                        window.location = '{{ url("/clients/detail") }}/' + s[0];
                     }  else{
-                        // Build URL manually since we can't pass dynamic parameters to route() in JavaScript
-                        window.location = '{{ url("/history") }}/' + s[0]; // redirect
+                        window.location = '{{ url("/history") }}/' + s[0];
                     }
                 }
-                return false;
             });
 
 
@@ -2832,6 +2844,7 @@
         <!-- Notifications will be dynamically added here -->
     </div>
 
+    @include('crm.partials.cross-access-modal', ['crossAccessLeadBase' => url('/history')])
     @stack('scripts')
     
     {{-- Define updateNotificationBell before Vite so it's available when Echo/client_portal receive events --}}

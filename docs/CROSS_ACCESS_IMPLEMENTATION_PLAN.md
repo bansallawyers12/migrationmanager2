@@ -1,6 +1,6 @@
 # Cross-access & allocated-only visibility — implementation plan
 
-**v3.0** — all open items resolved; Calling Team rule locked; team field finding added; ready for sprint planning.
+**v4.0** — `teams` table confirmed; all open items fully resolved; plan is implementation-ready.
 
 This document turns agreed product rules into build phases for the Laravel/PostgreSQL CRM.
 
@@ -15,7 +15,7 @@ This document turns agreed product rules into build phases for the Laravel/Postg
 | Extra access | **Quick** (15 min, selectable reason) or **Supervisor-approved** (24 h from approval). Quick-flagged users may **also** request 24 h. |
 | Record types | **Clients and leads** — same cross-access model for both. |
 | Initiation | **Search only** (header/global search + equivalent APIs); other deep links enforce grant check or 403/redirect. |
-| Context | **Office** selected from `branches` (existing `Branch` model, FK confirmed on `staff.office_id` and `client_matters.office_id`); **team** selected from a dropdown populated from distinct `staff.team` values — see §5 below for the finding on this field. |
+| Context | **Office** from `branches` table (FK on `staff.office_id` + `client_matters.office_id`); **team** from `teams` table (`id`, `name`, `color`) — `staff.team` is an integer FK into `teams.id`. Both stored as id + label snapshot on each grant. |
 | Enforcement | **Server-side**, on **every protected action**, using **server UTC** time. |
 | Audit | One reporting stream: grants + exempt access; `access_type` = `quick` / `supervisor_approved` / `exempt`. |
 | Approvers | **Super Admin (role 1)** + fixed staff ids: `36834, 36524, 36692, 36483, 36484, 36718, 36523, 36836, 36830`. |
@@ -117,8 +117,9 @@ CREATE TABLE client_access_grants (
     quick_reason_code     VARCHAR(50),           -- required when grant_type = 'quick'
     requester_note        TEXT,                  -- optional note on supervisor request
     office_id             BIGINT REFERENCES branches(id),
-    office_label_snapshot VARCHAR(255),          -- branch name at time of grant
-    team_snapshot         VARCHAR(255),          -- staff.team value at time of grant
+    office_label_snapshot VARCHAR(255),          -- branches.office_name at time of grant
+    team_id               INTEGER REFERENCES teams(id),
+    team_label_snapshot   VARCHAR(255),          -- teams.name at time of grant (colour optional)
     requested_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     approved_at           TIMESTAMPTZ,
     approved_by_staff_id  BIGINT REFERENCES staff(id),
@@ -145,27 +146,34 @@ Reason options live in config. Add a migration later if you want a DB-managed li
 
 ---
 
-## 5. `staff.team` field — finding and recommendation
+## 5. `staff.team` field — confirmed structure
 
-**What the DB shows:**
+**Confirmed:** `staff.team` is an integer FK into the existing `teams` table (`id`, `name`, `color`, `created_at`, `updated_at`). No new table needed.
 
-- The field holds all-numeric strings (no text labels): values `1–16`, 96 staff have a value, 8 have null/empty.
-- Some values coincide with `user_roles.id` (e.g. 14 = Calling Team, 15 = Accountant, 13 = PA) but many do not (6, 7, 8, 9, 10, 11 have no match in any known table).
-- There is **no FK constraint** and **no `teams` table** found in the codebase.
-- Conclusion: `staff.team` is currently an arbitrary numeric grouping with no display names.
+**16 teams in the DB:**
 
-**Impact on the grant modal "Team" field:**
+| `teams.id` | Name | Staff count |
+|-----------|------|-------------|
+| 1 | JRP | 3 |
+| 2 | PR | 6 |
+| 3 | SKILL ASSESSMENT | 3 |
+| 4 | VISITOR | 2 |
+| 5 | TR | 3 |
+| 6 | HEAD OFFICE | 17 |
+| 7 | Accounts | 8 |
+| 8 | Tourist visa | 6 |
+| 9 | ART | 4 |
+| 10 | Student Visa | 15 |
+| 11 | Nomination | 5 |
+| 12 | 408 Celebrity Visa | 2 |
+| 13 | Misc Migration | 3 |
+| **14** | **Calling Team Melbourne** | **8** |
+| **15** | **Calling Team Adelaide** | **7** |
+| 16 | Education | 4 |
 
-Showing raw numbers ("Team 6", "Team 10") is poor UX. Two options:
+> **Important for Calling Team rule:** "Calling Team" is split into two `teams` records (id 14 = Melbourne, id 15 = Adelaide). Both contain staff with `user_role = 14`. The `quick_access_only` rule applies to **`user_roles.id = 14`**, not `teams.id` — so both city sub-teams are correctly covered.
 
-| Option | What | Effort |
-|--------|------|--------|
-| **A (recommended)** | Create a lightweight `teams` table (`id`, `name`, `office_id?`) and backfill/map the existing numeric values with real names. Add FK on `staff.team`. | ~1 migration + admin screen |
-| **B (interim v1)** | Query `DISTINCT team FROM staff WHERE team IS NOT NULL` at runtime and show as "Team 6", "Team 10", etc. in the dropdown. Replace with Option A later. | Zero extra migration |
-
-**Decision needed from you (one question — see §12).**
-
-If Option A: the team dropdown in the grant modal becomes `branches ↔ teams` (office filters team list). If Option B: just a flat numeric dropdown now, upgraded later.
+**Grant modal "Team" dropdown:** query `SELECT id, name, color FROM teams ORDER BY name`. Pre-fill from `staff.team` of the logged-in user. If `staff.team` is null, leave blank (optional field). Fall back to showing "Team {id}" only if `teams` has no matching row (per your rule).
 
 ---
 
@@ -196,14 +204,14 @@ canAccessClientOrLead(Staff $user, int $adminId): bool
     4. → false
 
 requestQuickGrant(Staff $user, int $adminId, string $recordType,
-                  int $officeId, string $reasonCode): Grant
+                  int $officeId, ?int $teamId, string $reasonCode): Grant
     - assert $user->quick_access_enabled === true
     - assert $reasonCode in config quick_reason_options keys
     - assert no active quick grant for same staff+admin already running
     - create row: status=active, starts_at=now, ends_at=now+15min
 
 requestSupervisorGrant(Staff $user, int $adminId, string $recordType,
-                       int $officeId, string $note = ''): Grant
+                       int $officeId, ?int $teamId, string $note = ''): Grant
     - REJECT if user role is in quick_access_only_role_ids (role 14 = Calling Team)
       → throw AccessDeniedException('Your role only supports quick access.')
     - create row: status=pending
@@ -358,7 +366,7 @@ For records the user cannot open:
 Fields:
 1. **Record** (pre-filled from search — client/lead name + ID, read-only).
 2. **Office** — dropdown from `branches` (pre-fill from `staff.office_id` but editable).
-3. **Team** — if §5 Option A: filtered dropdown by office. If Option B (interim): flat dropdown of distinct numeric values from `staff.team`, displayed as "Team 6", "Team 10" etc. Pre-fill from `staff.team` of the logged-in user.
+3. **Team** — dropdown from `teams` table (`id`, `name`; show colour swatch if useful). Pre-fill from `staff.team` of the logged-in user. Show "Team {id}" only if no matching `teams` row exists.
 4. **Reason** — dropdown from `config quick_reason_options` (required for quick; optional/note for supervisor). **Calling Team (role 14):** only sees quick reasons; supervisor note field is hidden.
 5. **Note** — optional free text (supervisor requests only; hidden for Calling Team).
 6. **Submit button(s):** adapted per role — "Quick Access (15 min)" for Calling Team; dual buttons for others with `quick_access_enabled`.
@@ -459,18 +467,18 @@ Fields:
 
 ---
 
-## 13. Open items (only 1 remaining — all others locked)
+## 13. Open items — all resolved ✅
 
-All v2 open items resolved. One new item surfaced from DB inspection:
+| # | Item | Decision |
+|---|------|---------|
+| 1 | `staff.team` field | `teams` table already exists with 16 named rows + colours. Use FK. No new table needed. |
+| 2 | Search: locked vs hidden | **Show locked + Request Access** |
+| 3 | Lead restriction post-Phase C | **Everyone restricted** (PR role 12 included) |
+| 4 | Calling Team grant path | **Quick access only**; supervisor path hard-blocked for `user_roles.id = 14` |
+| 5 | Exempt logging granularity | **Once per calendar day** per staff + record combo |
+| 6 | Notifications | **Existing broadcast system** only (no email v1) |
 
-| # | Item | Options | Status |
-|---|------|---------|--------|
-| 1 | **`staff.team` names** | A) Create a `teams` table with real names (recommended). B) Show "Team 6", "Team 10" from raw values in v1. | **Your call** |
-| ~~2~~ | Search: locked vs hidden | → **Show locked + Request Access** | ✅ Locked |
-| ~~3~~ | Lead restriction post-Phase C | → **Everyone restricted** (PR role 12 included) | ✅ Locked |
-| ~~4~~ | Calling Team grant path | → **Quick access only**; supervisor path hard-blocked | ✅ Locked |
-| ~~5~~ | Exempt logging granularity | → **Once per calendar day** per staff + record | ✅ Locked |
-| ~~6~~ | Notifications | → **Existing broadcast system** only | ✅ Locked |
+**No open items remain. Plan is implementation-ready.**
 
 ---
 
@@ -516,4 +524,4 @@ All v2 open items resolved. One new item surfaced from DB inspection:
 
 ---
 
-*Document version: 3.0 — all decisions locked except team table; ready for sprint planning.*
+*Document version: 4.0 — all decisions locked; `teams` table confirmed; implementation-ready.*

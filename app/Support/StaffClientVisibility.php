@@ -3,6 +3,10 @@
 namespace App\Support;
 
 use App\Models\Admin;
+use App\Models\ClientAccessGrant;
+use App\Models\Staff;
+use App\Services\CrmAccess\CrmAccessService;
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -11,18 +15,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Row-level visibility for CRM staff.
  *
- * Clients (admins.type=client): "Person Assisting" roles are limited to matters they assist
- * on or admins.user_id = staff id. Super admin (staff role 1) bypasses. Other roles see all clients.
- *
- * Super-admin-only file IDs (config crm.super_admin_only_client_file_ids): type=client rows with
- * matching admins.client_id are hidden from non–super-admins (search, lists, detail, AJAX guards).
- *
- * Leads (admins.type=lead): same as clients for detail/header search — non–Person-Assisting staff may open any
- * lead. Person Assisting roles are limited to assigned (admins.user_id), person-assisting on a matter, or
- * lead_full_access_role_ids. Lead *list* still uses restrictLeadListQuery (assigned-only for many roles).
- *
- * Note: Controllers that accept client_id in AJAX (documents, activities, etc.) must call
- * canAccessClientOrLead() — listing/detail alone is not enough.
+ * Cross-access grants and strict allocation are controlled by config/crm_access.php
+ * (CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
  */
 final class StaffClientVisibility
 {
@@ -43,8 +37,6 @@ final class StaffClientVisibility
     }
 
     /**
-     * Staff roles that see every lead (list + detail). Default: Super Admin (1), Admin (17), PR (12).
-     *
      * @return list<int>
      */
     public static function leadFullAccessRoleIds(): array
@@ -72,7 +64,7 @@ final class StaffClientVisibility
 
     public static function isRestrictedPersonAssisting(?Authenticatable $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -83,9 +75,104 @@ final class StaffClientVisibility
         return in_array((int) $user->role, self::personAssistingRoleIds(), true);
     }
 
+    public static function isExemptFromAllocation(?Authenticatable $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return in_array((int) ($user->role ?? 0), config('crm_access.exempt_role_ids', [1, 17]), true);
+    }
+
+    public static function isQuickAccessOnly(?Authenticatable $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return in_array((int) ($user->role ?? 0), config('crm_access.quick_access_only_role_ids', [14]), true);
+    }
+
     /**
-     * Client file reference values (admins.client_id) visible only to Super Admin (role 1).
-     *
+     * @return array{show_quick: bool, show_supervisor: bool}
+     */
+    public static function crossAccessUiFlags(?Authenticatable $user): array
+    {
+        if (! $user || self::isExemptFromAllocation($user)) {
+            return ['show_quick' => false, 'show_supervisor' => false];
+        }
+
+        if (self::isQuickAccessOnly($user)) {
+            $enabled = (bool) ($user->quick_access_enabled ?? false);
+
+            return ['show_quick' => $enabled, 'show_supervisor' => false];
+        }
+
+        $quick = (bool) ($user->quick_access_enabled ?? false);
+
+        return ['show_quick' => $quick, 'show_supervisor' => true];
+    }
+
+    /**
+     * @param  array<string, mixed>  $item  Must include 'cid'
+     * @return array<string, mixed>
+     */
+    public static function enrichGlobalSearchItem(array $item, string $recordType, ?Authenticatable $user = null): array
+    {
+        $user = $user ?? Auth::user();
+        $cid = (int) ($item['cid'] ?? 0);
+        if ($cid <= 0 || ! $user) {
+            $item['locked'] = false;
+            $item['record_type'] = $recordType;
+            $item['access_ui'] = ['show_quick' => false, 'show_supervisor' => false];
+
+            return $item;
+        }
+
+        $can = self::canAccessClientOrLead($cid, $user);
+        $item['locked'] = ! $can;
+        $item['record_type'] = $recordType;
+        $item['access_ui'] = $can
+            ? ['show_quick' => false, 'show_supervisor' => false]
+            : self::crossAccessUiFlags($user);
+
+        return $item;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
+     */
+    public static function restrictMatterListToAllocatedClients($query, string $cmAlias = 'cm', string $adAlias = 'ad'): void
+    {
+        $user = Auth::user();
+        if (! $user || self::isExemptFromAllocation($user)) {
+            return;
+        }
+        $strict = (bool) config('crm_access.strict_allocation', false);
+        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
+            return;
+        }
+        $staffId = (int) $user->id;
+        $query->where(function ($q) use ($staffId, $cmAlias, $adAlias) {
+            $q->whereExists(function ($sub) use ($staffId, $cmAlias) {
+                $sub->select(DB::raw('1'))
+                    ->from('client_matters')
+                    ->whereColumn('client_matters.client_id', $cmAlias . '.client_id')
+                    ->where('client_matters.sel_person_assisting', $staffId);
+            })->orWhere($adAlias . '.user_id', $staffId)
+              ->orWhereExists(function ($sub) use ($staffId, $cmAlias) {
+                  $sub->select(DB::raw('1'))
+                      ->from('client_access_grants')
+                      ->whereColumn('client_access_grants.admin_id', $cmAlias . '.client_id')
+                      ->where('client_access_grants.staff_id', $staffId)
+                      ->where('client_access_grants.status', 'active')
+                      ->whereNotNull('client_access_grants.ends_at')
+                      ->whereRaw('client_access_grants.ends_at > NOW()');
+              });
+        });
+    }
+
+    /**
      * @return list<string>
      */
     public static function superAdminOnlyLockedClientFileIds(): array
@@ -129,7 +216,7 @@ final class StaffClientVisibility
     public static function excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, ?Authenticatable $viewer = null): void
     {
         $viewer = $viewer ?? Auth::user();
-        if (!$viewer || (int) ($viewer->role ?? 0) === 1) {
+        if (! $viewer || (int) ($viewer->role ?? 0) === 1) {
             return;
         }
 
@@ -160,7 +247,7 @@ final class StaffClientVisibility
     public static function applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($query, string $adminsAlias, ?Authenticatable $viewer = null): void
     {
         $viewer = $viewer ?? Auth::user();
-        if (!$viewer || (int) ($viewer->role ?? 0) === 1) {
+        if (! $viewer || (int) ($viewer->role ?? 0) === 1) {
             return;
         }
 
@@ -187,15 +274,40 @@ final class StaffClientVisibility
     }
 
     /**
-     * Lead list queries: full-access roles see all leads; others only assigned leads (admins.user_id).
-     * Does not change client listing — use restrictAdminEloquentQuery for clients.
-     *
      * @param  Builder<\App\Models\Lead>  $query
      */
     public static function restrictLeadListQuery(Builder $query): void
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
+            return;
+        }
+
+        if (self::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        $staffId = (int) $user->id;
+
+        if ((bool) config('crm_access.strict_allocation', false)) {
+            $query->where(function (Builder $q) use ($staffId) {
+                $q->whereExists(function ($sub) use ($staffId) {
+                    $sub->select(DB::raw('1'))
+                        ->from('client_matters')
+                        ->whereColumn('client_matters.client_id', 'admins.id')
+                        ->where('client_matters.sel_person_assisting', $staffId);
+                })->orWhere('admins.user_id', $staffId)
+                  ->orWhereExists(function ($sub) use ($staffId) {
+                      $sub->select(DB::raw('1'))
+                          ->from('client_access_grants')
+                          ->whereColumn('client_access_grants.admin_id', 'admins.id')
+                          ->where('client_access_grants.staff_id', $staffId)
+                          ->where('client_access_grants.status', 'active')
+                          ->whereNotNull('client_access_grants.ends_at')
+                          ->whereRaw('client_access_grants.ends_at > NOW()');
+                  });
+            });
+
             return;
         }
 
@@ -204,7 +316,18 @@ final class StaffClientVisibility
         }
 
         $column = $query->getModel()->qualifyColumn('user_id');
-        $query->where($column, (int) $user->id);
+        $query->where(function (Builder $q) use ($column, $staffId) {
+            $q->where($column, $staffId)
+              ->orWhereExists(function ($sub) use ($staffId) {
+                  $sub->select(DB::raw('1'))
+                      ->from('client_access_grants')
+                      ->whereColumn('client_access_grants.admin_id', 'admins.id')
+                      ->where('client_access_grants.staff_id', $staffId)
+                      ->where('client_access_grants.status', 'active')
+                      ->whereNotNull('client_access_grants.ends_at')
+                      ->whereRaw('client_access_grants.ends_at > NOW()');
+              });
+        });
     }
 
     /**
@@ -215,19 +338,35 @@ final class StaffClientVisibility
         $user = Auth::user();
         self::excludeSuperAdminOnlyLockedClientsFromAdminQuery($query, $user);
 
-        if (!self::isRestrictedPersonAssisting($user)) {
+        if (! $user || self::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        $strict = (bool) config('crm_access.strict_allocation', false);
+        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
             return;
         }
 
         $staffId = (int) $user->id;
 
         $query->where(function (Builder $q) use ($staffId) {
+            // Allocated by matter or user_id
             $q->whereExists(function ($sub) use ($staffId) {
                 $sub->select(DB::raw('1'))
                     ->from('client_matters')
                     ->whereColumn('client_matters.client_id', 'admins.id')
                     ->where('client_matters.sel_person_assisting', $staffId);
-            })->orWhere('admins.user_id', $staffId);
+            })->orWhere('admins.user_id', $staffId)
+              // OR has an active cross-access grant
+              ->orWhereExists(function ($sub) use ($staffId) {
+                  $sub->select(DB::raw('1'))
+                      ->from('client_access_grants')
+                      ->whereColumn('client_access_grants.admin_id', 'admins.id')
+                      ->where('client_access_grants.staff_id', $staffId)
+                      ->where('client_access_grants.status', 'active')
+                      ->whereNotNull('client_access_grants.ends_at')
+                      ->whereRaw('client_access_grants.ends_at > NOW()');
+              });
         });
     }
 
@@ -235,8 +374,8 @@ final class StaffClientVisibility
     {
         $user = $user ?? Auth::user();
 
-        if (!$user || (int) ($user->role ?? 0) === 1) {
-            return true;
+        if (! $user) {
+            return false;
         }
 
         $row = Admin::query()
@@ -244,25 +383,91 @@ final class StaffClientVisibility
             ->whereIn('type', ['client', 'lead'])
             ->first(['id', 'type', 'user_id', 'client_id']);
 
-        if (!$row) {
+        if (! $row) {
             return false;
         }
 
         if (self::isSuperAdminOnlyLockedClient($row->type ?? null, $row->client_id ?? null)) {
-            return false;
+            return (int) ($user->role ?? 0) === 1;
         }
 
-        if (($row->type ?? '') === 'lead') {
-            if (!self::isRestrictedPersonAssisting($user)) {
+        if (self::isExemptFromAllocation($user)) {
+            if ($user instanceof Staff) {
+                self::logExemptAccessIfNeeded((int) $user->id, $adminId);
+            }
+
+            return true;
+        }
+
+        if ($user instanceof Staff) {
+            $svc = app(CrmAccessService::class);
+            if ($svc->hasActiveGrant($user, $adminId)) {
                 return true;
+            }
+        }
+
+        return self::userMaySeeByAllocation($adminId, $user, $row);
+    }
+
+    /**
+     * Write one exempt audit row per calendar day (UTC) per staff + admin combo.
+     * Silently swallowed on failure to avoid disrupting the main request.
+     */
+    private static function logExemptAccessIfNeeded(int $staffId, int $adminId): void
+    {
+        try {
+            $today = Carbon::now('UTC')->toDateString();
+            $exists = ClientAccessGrant::query()
+                ->where('staff_id', $staffId)
+                ->where('admin_id', $adminId)
+                ->where('grant_type', 'exempt')
+                ->whereDate('created_at', $today)
+                ->exists();
+
+            if (! $exists) {
+                ClientAccessGrant::query()->create([
+                    'staff_id' => $staffId,
+                    'admin_id' => $adminId,
+                    'record_type' => 'client', // refined below if needed — we don't fetch type here
+                    'grant_type' => 'exempt',
+                    'access_type' => 'exempt',
+                    'status' => 'active',
+                    'requested_at' => Carbon::now('UTC'),
+                    'starts_at' => Carbon::now('UTC'),
+                ]);
+            }
+        } catch (\Throwable) {
+            // Never disrupt the main access check
+        }
+    }
+
+    /**
+     * @param  \App\Models\Admin  $row
+     */
+    private static function userMaySeeByAllocation(int $adminId, Authenticatable $user, Admin $row): bool
+    {
+        $strict = (bool) config('crm_access.strict_allocation', false);
+
+        if (($row->type ?? '') === 'lead') {
+            if (! $strict) {
+                if (! self::isRestrictedPersonAssisting($user)) {
+                    return true;
+                }
+                if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
+                    return true;
+                }
+                $staffId = (int) $user->id;
+                if (DB::table('client_matters')
+                    ->where('client_id', $adminId)
+                    ->where('sel_person_assisting', $staffId)
+                    ->exists()) {
+                    return true;
+                }
+
+                return (int) ($row->user_id ?? 0) === $staffId;
             }
 
             $staffId = (int) $user->id;
-
-            if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
-                return true;
-            }
-
             if (DB::table('client_matters')
                 ->where('client_id', $adminId)
                 ->where('sel_person_assisting', $staffId)
@@ -273,12 +478,22 @@ final class StaffClientVisibility
             return (int) ($row->user_id ?? 0) === $staffId;
         }
 
-        if (!self::isRestrictedPersonAssisting($user)) {
-            return true;
+        if (! $strict) {
+            if (! self::isRestrictedPersonAssisting($user)) {
+                return true;
+            }
+            $staffId = (int) $user->id;
+            if (DB::table('client_matters')
+                ->where('client_id', $adminId)
+                ->where('sel_person_assisting', $staffId)
+                ->exists()) {
+                return true;
+            }
+
+            return (int) ($row->user_id ?? 0) === $staffId;
         }
 
         $staffId = (int) $user->id;
-
         if (DB::table('client_matters')
             ->where('client_id', $adminId)
             ->where('sel_person_assisting', $staffId)

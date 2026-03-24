@@ -19,6 +19,7 @@ use App\Http\Controllers\CRM\ClientPortalController;
 use App\Http\Controllers\CRM\Form956Controller;
 use App\Http\Controllers\CRM\UploadChecklistController;
 use App\Http\Controllers\CRM\SendGridSendersController;
+use App\Http\Controllers\CRM\AccessGrantController;
 
 /*
 |--------------------------------------------------------------------------
@@ -404,3 +405,17 @@ Route::get('/api/search-contact-person', [ClientsController::class, 'searchConta
 
 /*---------- Visa Expiry Messages ----------*/
 Route::get('/fetch-visa_expiry_messages', [CRMUtilityController::class, 'fetchvisaexpirymessages']);
+
+/*---------- CRM cross-access grants ----------*/
+Route::prefix('crm/access')->name('crm.access.')->group(function () {
+    Route::get('/meta', [AccessGrantController::class, 'meta'])->name('meta');
+    Route::post('/quick', [AccessGrantController::class, 'quick'])->middleware('throttle:30,1')->name('quick');
+    Route::post('/supervisor', [AccessGrantController::class, 'supervisor'])->middleware('throttle:10,1')->name('supervisor');
+    Route::get('/queue', [AccessGrantController::class, 'queuePage'])->name('queue');
+    Route::get('/queue/data', [AccessGrantController::class, 'queueData'])->name('queue.data');
+    Route::post('/{grant}/approve', [AccessGrantController::class, 'approve'])->whereNumber('grant')->name('approve');
+    Route::post('/{grant}/reject', [AccessGrantController::class, 'reject'])->whereNumber('grant')->name('reject');
+    Route::get('/my-grants', [AccessGrantController::class, 'myGrantsPage'])->name('my-grants');
+    Route::get('/my-grants/data', [AccessGrantController::class, 'myGrantsData'])->name('my-grants.data');
+    Route::get('/dashboard', [AccessGrantController::class, 'dashboard'])->name('dashboard');
+});
