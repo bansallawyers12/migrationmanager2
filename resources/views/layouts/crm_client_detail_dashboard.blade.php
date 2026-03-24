@@ -26,7 +26,8 @@
     <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
     <script src="{{asset('js/jquery_min_latest.js')}}"></script>
-    
+    <script src="{{ asset('js/datetime-display.js') }}"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8f9fa; color: #343a40; line-height: 1.6; }
@@ -1533,7 +1534,7 @@
                             <div class="teams-notification-message">
                                 <strong>Client:</strong> ${notification.client_name}<br>
                                 <strong>Purpose:</strong> ${notification.visit_purpose}<br>
-                                <strong>Time:</strong> ${notification.created_at}
+                                <strong>Time:</strong> ${formatDisplayDateTime(notification.created_at)}
                             </div>
                             <div class="teams-notification-actions">
                                 <button class="teams-notification-action-btn primary" onclick="attendSession(${notification.checkin_id}, ${notification.id})">

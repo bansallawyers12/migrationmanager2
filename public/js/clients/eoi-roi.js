@@ -933,7 +933,7 @@
                         <h5><i class="fas fa-clock"></i> Awaiting Client Response</h5>
                         <div class="workflow-detail">
                             <strong>Email Sent:</strong>
-                            <span>${eoi.email_sent_at || 'N/A'}</span>
+                            <span>${typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(eoi.email_sent_at) : (eoi.email_sent_at || 'N/A')}</span>
                         </div>
                         <div class="workflow-actions">
                             <button type="button" class="btn btn-primary btn-sm" id="btn-resend-email" data-eoi-id="${eoi.id}">
@@ -1213,7 +1213,7 @@
                                    value="${doc.id}" data-size="${doc.file_size_mb}" id="doc-${doc.id}">
                             <label class="form-check-label" for="doc-${doc.id}">
                                 <strong>${doc.file_name}</strong>
-                                <br><small class="text-muted">${doc.category} • ${doc.file_size_mb} MB • ${doc.created_at}</small>
+                                <br><small class="text-muted">${doc.category} • ${doc.file_size_mb} MB • ${typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(doc.created_at) : doc.created_at}</small>
                             </label>
                         </div>`;
                 totalDocs++;
@@ -1234,7 +1234,7 @@
                                    value="${doc.id}" data-size="${doc.file_size_mb}" id="doc-${doc.id}">
                             <label class="form-check-label" for="doc-${doc.id}">
                                 ${doc.file_name}
-                                <br><small class="text-muted">${doc.category} • ${doc.file_size_mb} MB • ${doc.created_at}</small>
+                                <br><small class="text-muted">${doc.category} • ${doc.file_size_mb} MB • ${typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(doc.created_at) : doc.created_at}</small>
                             </label>
                         </div>`;
                 totalDocs++;

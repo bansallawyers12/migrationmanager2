@@ -67,7 +67,7 @@
                     }
                     html += '<div class="cag-grant-card" data-grant-mini="' + g.id + '">' +
                         '<div class="cag-grant-primary">' + rec + ' <span class="cag-grant-record">(' + g.record_type + ' #' + g.admin_id + ')</span></div>' +
-                        '<div class="cag-grant-meta">' + (g.requested_at || '') + ' · ' + req + '</div>' +
+                        '<div class="cag-grant-meta">' + formatGrantWhen(g.requested_at) + ' · ' + req + '</div>' +
                         (detail ? '<div class="cag-grant-detail">' + detail + '</div>' : '') +
                         '<div class="cag-grant-actions">' +
                         '<button type="button" class="btn btn-sm btn-success py-1 px-2 js-cag-mini-approve" data-id="' + g.id + '">Approve</button> ' +

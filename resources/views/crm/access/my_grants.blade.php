@@ -51,9 +51,9 @@
     }
 
     function row(g) {
-        var expires = g.ends_at ? g.ends_at : '—';
+        var expires = g.ends_at ? formatGrantWhen(g.ends_at) : '—';
         return '<tr>' +
-            '<td>' + (g.requested_at || '—') + '</td>' +
+            '<td>' + (g.requested_at ? formatGrantWhen(g.requested_at) : '—') + '</td>' +
             '<td>#' + g.admin_id + '</td>' +
             '<td>' + (g.record_type || '—') + '</td>' +
             '<td>' + (g.grant_type || '—').replace('_', ' ') + '</td>' +

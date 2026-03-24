@@ -397,7 +397,7 @@ function viewActivityDetails(activityId) {
                 html += '<tr><th>Subject:</th><td>' + (response.data.subject || 'N/A') + '</td></tr>';
                 html += '<tr><th>Description:</th><td>' + (response.data.description || 'N/A') + '</td></tr>';
                 html += '<tr><th>Activity Type:</th><td>' + (response.data.activity_type || 'N/A') + '</td></tr>';
-                html += '<tr><th>Created At:</th><td>' + (response.data.created_at || 'N/A') + '</td></tr>';
+                html += '<tr><th>Created At:</th><td>' + (response.data.created_at ? formatDisplayDateTime(response.data.created_at) : 'N/A') + '</td></tr>';
                 html += '</table>';
                 html += '</div>';
                 

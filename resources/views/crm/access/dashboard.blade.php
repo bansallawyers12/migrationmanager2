@@ -236,7 +236,7 @@
                     var tr = document.createElement('tr');
                     tr.setAttribute('data-pending-id', g.id);
                     tr.innerHTML =
-                        '<td class="text-nowrap small">' + (g.requested_at || '') + '</td>' +
+                        '<td class="text-nowrap small">' + formatGrantWhen(g.requested_at) + '</td>' +
                         '<td class="small">' + req + '</td>' +
                         '<td class="small">' + rec + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
                         '<td class="small">' + (ot || '—') + '</td>' +
@@ -340,7 +340,7 @@
                     var tr = document.createElement('tr');
                     tr.innerHTML =
                         '<td class="small">' + g.id + '</td>' +
-                        '<td class="text-nowrap small">' + (g.created_at || '') + '</td>' +
+                        '<td class="text-nowrap small">' + formatGrantWhen(g.created_at) + '</td>' +
                         '<td class="small">' + st + '</td>' +
                         '<td class="small">' + ad + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
                         '<td class="small">' + g.grant_type + '</td>' +

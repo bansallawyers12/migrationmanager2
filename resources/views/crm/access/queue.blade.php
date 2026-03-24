@@ -71,7 +71,7 @@
         }
         var rid = g.id;
         return '<tr data-grant-id="' + rid + '">' +
-            '<td>' + (g.requested_at || '') + '</td>' +
+            '<td>' + formatGrantWhen(g.requested_at) + '</td>' +
             '<td>' + req + '</td>' +
             '<td>' + rec + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
             '<td>' + reasonNote + '</td>' +
