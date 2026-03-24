@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,8 @@ use Carbon\Carbon;
  */
 class ClientAccountsController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     /**
      * Create a new controller instance.
      *
@@ -42,6 +45,13 @@ class ClientAccountsController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    protected function ensureAccountsClientFromRequest(Request $request): void
+    {
+        if ($request->filled('client_id')) {
+            $this->ensureCrmRecordAccess((int) $request->input('client_id'));
+        }
     }
 
     /**
@@ -174,7 +184,9 @@ class ClientAccountsController extends Controller
                     'invoices' => []
                 ], 400);
             }
-       
+
+            $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+
             // Handle document upload
             $insertedDocId = null;
             $doc_saved = false;
@@ -830,6 +842,8 @@ class ClientAccountsController extends Controller
                     'function_type' => $requestData['function_type'] ?? 'add'
                 ], 400);
             }
+
+            $this->ensureCrmRecordAccess((int) $requestData['client_id']);
             
             if( $requestData['function_type'] == 'add')
         {
@@ -993,6 +1007,8 @@ class ClientAccountsController extends Controller
                     'function_type' => $requestData['function_type'] ?? 'add'
                 ], 400);
             }
+
+            $this->ensureCrmRecordAccess((int) $requestData['client_id']);
             
             if( $requestData['function_type'] == 'add')
         {
@@ -1305,6 +1321,9 @@ class ClientAccountsController extends Controller
     public function isAnyInvoiceNoExistInDB(Request $request)
     {
         $requestData         =     $request->all();
+        if (!empty($requestData['client_id'])) {
+            $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+        }
         $record_count = DB::table('account_client_receipts')->where('client_id',$requestData['client_id'])->where('invoice_no','!=' ,'')->count();
         if($record_count) {
             $response['record_count']     = $record_count;
@@ -1321,6 +1340,9 @@ class ClientAccountsController extends Controller
     public function listOfInvoice(Request $request)
     {
         $requestData         =     $request->all();
+        if (!empty($requestData['client_id'])) {
+            $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+        }
         $response            =     [];
         // Get only non-voided invoices that are unpaid or partially paid
         $record_get = DB::table('account_client_receipts')
@@ -1362,6 +1384,9 @@ class ClientAccountsController extends Controller
     public function clientLedgerBalanceAmount(Request $request)
     {
         $requestData         =     $request->all();
+        if (!empty($requestData['client_id'])) {
+            $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+        }
         $response            =     [];
         $latest_balance = DB::table('account_client_receipts')
             ->where('client_matter_id', $requestData['selectedMatter'])
@@ -1391,6 +1416,15 @@ class ClientAccountsController extends Controller
         $requestData = $request->all();
         $response    = [];
         $receiptid = $requestData['receiptid'];
+        if ($receiptid !== null && $receiptid !== '') {
+            $cid = DB::table('account_client_receipts')
+                ->where('receipt_type', 3)
+                ->where('receipt_id', $receiptid)
+                ->value('client_id');
+            if ($cid) {
+                $this->ensureCrmRecordAccess((int) $cid);
+            }
+        }
         $record_get = array();
         $record_get_parent = array();
    
@@ -1500,6 +1534,8 @@ class ClientAccountsController extends Controller
                   'awsUrl' => ""
               ], 400);
           }
+
+          $this->ensureCrmRecordAccess((int) $requestData['client_id']);
 
           // Handle document upload
           $insertedDocId = null;
@@ -1866,6 +1902,9 @@ class ClientAccountsController extends Controller
   public function updateOfficeReceipt(Request $request)
   {
       $requestData = $request->all();
+      if (!empty($requestData['client_id'])) {
+          $this->ensureCrmRecordAccess((int) $requestData['client_id']);
+      }
       $id = $request->input('id');
       $saveType = $request->input('save_type', 'final');
       
@@ -2192,6 +2231,8 @@ class ClientAccountsController extends Controller
                   'invoices' => [],
               ], 400);
           }
+
+          $this->ensureCrmRecordAccess((int) $clientId);
           
           $baseQuery = DB::table('account_client_receipts')
               ->select(
@@ -2284,6 +2325,10 @@ class ClientAccountsController extends Controller
               'invoice_no' => $invoiceNo,
               'client_id' => $clientId
           ]);
+
+          if (!empty($clientId)) {
+              $this->ensureCrmRecordAccess((int) $clientId);
+          }
           
           // Get the deposit ledger entry
           $depositEntry = DB::table('account_client_receipts')
@@ -2632,6 +2677,8 @@ class ClientAccountsController extends Controller
                   'awsUrl' => ''
               ], 400);
           }
+
+          $this->ensureCrmRecordAccess((int) $requestData['client_id']);
           
           if ($request->hasfile('document_upload'))
       {
@@ -2790,6 +2837,8 @@ class ClientAccountsController extends Controller
       if (empty($queryClientId)) {
           abort(404, 'Invoice not found or client_id could not be determined');
       }
+
+      $this->ensureCrmRecordAccess((int) $queryClientId);
       // ============= END BACKWARD COMPATIBILITY =============
       
       $record_get = AccountAllInvoiceReceipt::where('receipt_type', 3)
@@ -3164,6 +3213,9 @@ class ClientAccountsController extends Controller
   public function uploadclientreceiptdocument(Request $request)
   {
       $id = $request->clientid;
+      if (!empty($id)) {
+          $this->ensureCrmRecordAccess((int) $id);
+      }
       $receipt_id = $request->receipt_id; // Get the receipt ID
       $client_matter_id = $request->client_matter_id; // Get the matter ID
       
@@ -3389,6 +3441,9 @@ class ClientAccountsController extends Controller
   public function uploadofficereceiptdocument(Request $request)
   {
       $id = $request->clientid;
+      if (!empty($id)) {
+          $this->ensureCrmRecordAccess((int) $id);
+      }
       $receipt_id = $request->receipt_id; // Get the receipt ID
       $client_matter_id = $request->client_matter_id; // Get the matter ID
       
@@ -3615,6 +3670,9 @@ class ClientAccountsController extends Controller
   public function uploadjournalreceiptdocument(Request $request)
   {
       $id = $request->clientid;
+      if (!empty($id)) {
+          $this->ensureCrmRecordAccess((int) $id);
+      }
       $receipt_id = $request->receipt_id; // Get the receipt ID
       $client_matter_id = $request->client_matter_id; // Get the matter ID
       
@@ -3838,6 +3896,8 @@ class ClientAccountsController extends Controller
 
   public function invoicelist(Request $request)
   {
+      $this->ensureAccountsClientFromRequest($request);
+
       // Get latest record per receipt_id using subquery (PostgreSQL compatible)
       // This replaces groupBy which doesn't work with SELECT * in PostgreSQL
       $query = AccountClientReceipt::whereIn('id', function($subquery) use ($request) {
@@ -3946,6 +4006,12 @@ class ClientAccountsController extends Controller
       
       $response = array();
       if( isset($request->clickedReceiptIds) && !empty($request->clickedReceiptIds) ){
+          foreach ($request->clickedReceiptIds as $clickedVal) {
+              $row = AccountClientReceipt::select('client_id')->where('receipt_type', 3)->where('receipt_id', $clickedVal)->first();
+              if ($row && $row->client_id) {
+                  $this->ensureCrmRecordAccess((int) $row->client_id);
+              }
+          }
           //Update all selected invoice bit to be 1
           $affectedRows = DB::table('account_client_receipts')
           ->where('receipt_type', 3)
@@ -4218,6 +4284,8 @@ class ClientAccountsController extends Controller
 
   public function clientreceiptlist(Request $request)
   {
+      $this->ensureAccountsClientFromRequest($request);
+
       $query = AccountClientReceipt::where('receipt_type', 1);
 
       // Filter: Client ID
@@ -4308,6 +4376,8 @@ class ClientAccountsController extends Controller
 
   public function officereceiptlist(Request $request)
   {
+      $this->ensureAccountsClientFromRequest($request);
+
       $query     = AccountClientReceipt::where('receipt_type',2);
       // Filter: Client ID
       if ($request->has('client_id') && trim($request->input('client_id')) != '') {
@@ -4491,6 +4561,13 @@ class ClientAccountsController extends Controller
               $response['message'] = 'Receipt type is required.';
               return response()->json($response, 400);
           }
+
+          foreach ($request->clickedReceiptIds as $rid) {
+              $row = AccountClientReceipt::select('client_id')->where('id', $rid)->where('receipt_type', $request->receipt_type)->first();
+              if ($row && $row->client_id) {
+                  $this->ensureCrmRecordAccess((int) $row->client_id);
+              }
+          }
           
           //Update all selected receipt bit to be 1
           $affectedRows = DB::table('account_client_receipts')
@@ -4592,6 +4669,8 @@ class ClientAccountsController extends Controller
            return;
           }
 
+          $this->ensureCrmRecordAccess((int) $receipt->client_id);
+
           // Check if the client_fund_ledger_type is 'Fee Transfer'
           if ($receipt->client_fund_ledger_type == 'Fee Transfer') {
            $response['status'] = false;
@@ -4650,6 +4729,9 @@ class ClientAccountsController extends Controller
 
   public function printPreview(Request $request, $id){
       $record_get = DB::table('account_client_receipts')->where('receipt_type',1)->where('id',$id)->get();
+      if ($record_get->isNotEmpty()) {
+          $this->ensureCrmRecordAccess((int) $record_get[0]->client_id);
+      }
       if($record_get){
           $clientname = DB::table('admins')->select('first_name','last_name','address','state','city','zip','country')->where('id',$record_get[0]->client_id)->first();
           $agentname = $record_get[0]->agent_id
@@ -4665,12 +4747,14 @@ class ClientAccountsController extends Controller
       return $pdf->stream('ClientReceipt.pdf');
   }
 
-  public function genClientFundReceipt(Request $request, $id){
+    public function genClientFundReceipt(Request $request, $id){
     $record_get = DB::table('account_client_receipts')->where('receipt_type',1)->where('id',$id)->first();
     // Validate receipt exists
     if (!$record_get) {
         abort(404, 'Receipt not found');
     }
+
+    $this->ensureCrmRecordAccess((int) $record_get->client_id);
     
     $clientname = DB::table('admins')->where('id',$record_get->client_id)->first();
     

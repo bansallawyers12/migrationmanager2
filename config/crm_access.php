@@ -28,4 +28,6 @@ return [
     'supervisor_grant_hours' => (int) env('CRM_ACCESS_SUPERVISOR_GRANT_HOURS', 24),
 
     'strict_allocation' => filter_var(env('CRM_ACCESS_STRICT_ALLOCATION', false), FILTER_VALIDATE_BOOLEAN),
+
+    'max_pending_supervisor_requests' => max(1, (int) env('CRM_ACCESS_MAX_PENDING_SUPERVISOR_REQUESTS', 5)),
 ];

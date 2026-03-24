@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +19,8 @@ use Auth;
 
 class OfficeVisitController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     /**
      * Create a new controller instance.
      *
@@ -102,6 +105,8 @@ class OfficeVisitController extends Controller
 			if (!$clientExists) {
 				return redirect()->back()->with('error', 'Selected contact does not exist.');
 			}
+
+			$this->ensureCrmRecordAccess($contactId);
 
 			// Verify assignee exists (staff table)
 			$assigneeExists = \App\Models\Staff::where('id', $assigneeId)->exists();

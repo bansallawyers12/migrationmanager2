@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,6 +28,8 @@ use App\Support\WorkflowStageFreeze;
 
 class CRMUtilityController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     protected $emailService;
     protected $crmSentEmailS3Service;
 
@@ -1731,6 +1734,8 @@ public function getChapters(Request $request)
         $this->validate($request, [
             'client_id' => 'required|integer'
         ]);
+
+        $this->ensureCrmRecordAccess((int) $request->client_id);
 
         $visaInfo = \App\Models\ClientVisaCountry::where('client_id', $request->client_id)
             ->latest('id')

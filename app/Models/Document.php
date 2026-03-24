@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Admin;
 use App\Models\Lead;
 use App\Models\Staff;
+use App\Support\StaffClientVisibility;
 
 class Document extends Model
 {
@@ -148,7 +149,8 @@ class Document extends Model
      */
     public function scopeVisible($query, $user)
     {
-        // Global access - everyone can see all documents
+        StaffClientVisibility::restrictDocumentEloquentQuery($query, $user);
+
         return $query;
     }
 

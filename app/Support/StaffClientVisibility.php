@@ -393,7 +393,7 @@ final class StaffClientVisibility
 
         if (self::isExemptFromAllocation($user)) {
             if ($user instanceof Staff) {
-                self::logExemptAccessIfNeeded((int) $user->id, $adminId);
+                self::logExemptAccessIfNeeded((int) $user->id, $adminId, (string) ($row->type ?? 'client'));
             }
 
             return true;
@@ -413,7 +413,7 @@ final class StaffClientVisibility
      * Write one exempt audit row per calendar day (UTC) per staff + admin combo.
      * Silently swallowed on failure to avoid disrupting the main request.
      */
-    private static function logExemptAccessIfNeeded(int $staffId, int $adminId): void
+    private static function logExemptAccessIfNeeded(int $staffId, int $adminId, string $recordType): void
     {
         try {
             $today = Carbon::now('UTC')->toDateString();
@@ -425,10 +425,11 @@ final class StaffClientVisibility
                 ->exists();
 
             if (! $exists) {
+                $rt = in_array($recordType, ['client', 'lead'], true) ? $recordType : 'client';
                 ClientAccessGrant::query()->create([
                     'staff_id' => $staffId,
                     'admin_id' => $adminId,
-                    'record_type' => 'client', // refined below if needed — we don't fetch type here
+                    'record_type' => $rt,
                     'grant_type' => 'exempt',
                     'access_type' => 'exempt',
                     'status' => 'active',
@@ -439,6 +440,59 @@ final class StaffClientVisibility
         } catch (\Throwable) {
             // Never disrupt the main access check
         }
+    }
+
+    /**
+     * Limit signature / document listings to records the viewer may access (client_id / lead_id on documents).
+     *
+     * @param  Builder<\App\Models\Document>  $query
+     */
+    public static function restrictDocumentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
+    {
+        $user = $user ?? Auth::user();
+        if (! $user || self::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        $strict = (bool) config('crm_access.strict_allocation', false);
+        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
+            return;
+        }
+
+        $staffId = (int) $user->id;
+
+        $query->where(function (Builder $outer) use ($staffId) {
+            $outer->where(function (Builder $q) {
+                $q->whereNull('documents.client_id')->whereNull('documents.lead_id');
+            });
+
+            foreach (['client_id', 'lead_id'] as $col) {
+                $outer->orWhere(function (Builder $docQ) use ($staffId, $col) {
+                    $docQ->whereNotNull("documents.{$col}")
+                        ->where(function (Builder $accessQ) use ($staffId, $col) {
+                            $accessQ->whereExists(function ($sub) use ($staffId, $col) {
+                                $sub->select(DB::raw('1'))
+                                    ->from('client_matters')
+                                    ->whereColumn('client_matters.client_id', "documents.{$col}")
+                                    ->where('client_matters.sel_person_assisting', $staffId);
+                            })->orWhereExists(function ($sub) use ($staffId, $col) {
+                                $sub->select(DB::raw('1'))
+                                    ->from('admins')
+                                    ->whereColumn('admins.id', "documents.{$col}")
+                                    ->where('admins.user_id', $staffId);
+                            })->orWhereExists(function ($sub) use ($staffId, $col) {
+                                $sub->select(DB::raw('1'))
+                                    ->from('client_access_grants')
+                                    ->whereColumn('client_access_grants.admin_id', "documents.{$col}")
+                                    ->where('client_access_grants.staff_id', $staffId)
+                                    ->where('client_access_grants.status', 'active')
+                                    ->whereNotNull('client_access_grants.ends_at')
+                                    ->whereRaw('client_access_grants.ends_at > NOW()');
+                            });
+                        });
+                });
+            }
+        });
     }
 
     /**

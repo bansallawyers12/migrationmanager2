@@ -1,5 +1,6 @@
 <?php
 namespace App\Http\Controllers\CRM;
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 
 use App\Models\Document;
@@ -22,6 +23,8 @@ use App\Services\PythonService;
 
 class DocumentController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     /**
      * Create a new controller instance.
      *
@@ -30,6 +33,16 @@ class DocumentController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    protected function authorizeDocumentAssociatedAccess(Document $document): void
+    {
+        if ($document->client_id) {
+            $this->ensureCrmRecordAccess((int) $document->client_id);
+        }
+        if ($document->lead_id) {
+            $this->ensureCrmRecordAccess((int) $document->lead_id);
+        }
     }
     /**
      * Standard error handling for controller methods
@@ -562,6 +575,7 @@ class DocumentController extends Controller
 
         try {
             $document = \App\Models\Document::findOrFail($documentId);
+            $this->authorizeDocumentAssociatedAccess($document);
             $url = $document->myfile;
             $pdfPath = null;
             $tmpPdfPath = null;
@@ -733,6 +747,7 @@ class DocumentController extends Controller
 
         try {
             $document = Document::findOrFail($documentId);
+            $this->authorizeDocumentAssociatedAccess($document);
             $url = $document->myfile;
             $tmpPdfPath = null;
             $isLocalFile = false;
@@ -962,7 +977,8 @@ class DocumentController extends Controller
 
         //$document = auth()->user()->documents()->findOrFail($documentId);
         $document = \App\Models\Document::findOrFail($documentId);
-        
+        $this->authorizeDocumentAssociatedAccess($document);
+
         // Debug logging - check document attributes
         Log::info('Document update method called', [
             'document_id' => $document->id,
@@ -1354,6 +1370,7 @@ class DocumentController extends Controller
             return back()->withErrors(['error' => 'Invalid document ID.']);
         }
         $document = \App\Models\Document::findOrFail($documentId);
+        $this->authorizeDocumentAssociatedAccess($document);
 
         // Enhanced validation for email and name
         /*$request->validate([
@@ -1701,6 +1718,7 @@ class DocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
+            $this->authorizeDocumentAssociatedAccess($document);
             $signer = $document->signers()->where('user_id', auth('admin')->id())->first();
 
             if (!$signer || $signer->status === 'signed') {
@@ -1791,6 +1809,7 @@ class DocumentController extends Controller
         
         try {
             $document = Document::findOrFail($id);
+            $this->authorizeDocumentAssociatedAccess($document);
             $url = $document->myfile;
             $pdfPath = null;
             $tmpPdfPath = null;
@@ -2305,7 +2324,8 @@ class DocumentController extends Controller
     {  
         try {
             $document = Document::findOrFail($id);
-            
+            $this->authorizeDocumentAssociatedAccess($document);
+
             $fileUrl = $document->signed_doc_link;
             $filename = $document->getSignedDownloadFilename();
             
@@ -2454,6 +2474,7 @@ class DocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
+            $this->authorizeDocumentAssociatedAccess($document);
             $fileUrl = $document->signed_doc_link;
             if (!$fileUrl && str_ends_with((string) ($document->checklist ?? ''), '_signed')) {
                 $fileUrl = $document->myfile;
@@ -2508,6 +2529,7 @@ class DocumentController extends Controller
     {
         try {
             $document = \App\Models\Document::findOrFail($id);
+            $this->authorizeDocumentAssociatedAccess($document);
             if ($document->signed_doc_link) {
                 $signedDocUrl = $document->signed_doc_link;
                 $downloadUrl = null;
@@ -2578,6 +2600,9 @@ class DocumentController extends Controller
         $downloadUrl = null;
         if ($id) {
             $document = \App\Models\Document::find($id);
+            if ($document) {
+                $this->authorizeDocumentAssociatedAccess($document);
+            }
             if ($document && $document->signed_doc_link) {
                 $parsed = parse_url($document->signed_doc_link);
                 if (isset($parsed['path'])) {
@@ -2621,6 +2646,7 @@ class DocumentController extends Controller
 
         try {
             $document = \App\Models\Document::findOrFail($documentId); //dd($document);
+            $this->authorizeDocumentAssociatedAccess($document);
             $signer = $document->signers()->findOrFail($signerId);
 
             // Verify signer belongs to this document
@@ -2687,6 +2713,7 @@ class DocumentController extends Controller
 
         try {
             $document = Document::findOrFail($documentId);  //dd($document);
+            $this->authorizeDocumentAssociatedAccess($document);
             if( isset($document->doc_type) && $document->doc_type == 'agreement')
             {
                 $isDocumentExistInSignerTbl = $document->signers()->where('document_id', $documentId )->first(); //dd($isDocumentExistInSignerTbl);

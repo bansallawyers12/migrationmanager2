@@ -34,7 +34,14 @@ class CrmAccessService
     /** @return list<int> */
     public function getApproverStaffIds(): array
     {
-        $configured = config('crm_access.approver_staff_ids', []);
+        $configuredRaw = config('crm_access.approver_staff_ids', []);
+        $configured = Staff::query()
+            ->whereIn('id', $configuredRaw)
+            ->where('status', 1)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
         $roleOneIds = Staff::query()
             ->where('role', 1)
             ->where('status', 1)
@@ -115,7 +122,7 @@ class CrmAccessService
             throw new CrmAccessDeniedException('Your role only supports quick access.');
         }
 
-        $maxPending = 5;
+        $maxPending = max(1, (int) config('crm_access.max_pending_supervisor_requests', 5));
         $pendingCount = ClientAccessGrant::query()
             ->where('staff_id', (int) $user->id)
             ->where('grant_type', 'supervisor_approved')

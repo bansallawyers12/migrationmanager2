@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +26,7 @@ use App\Traits\LogsClientActivity;
  */
 class EmailUploadController extends Controller
 {
+    use EnsuresCrmRecordAccess;
     use LogsClientActivity;
 
     /**
@@ -61,6 +63,8 @@ class EmailUploadController extends Controller
                     'errors' => $validator->errors(),
                 ], 422);
             }
+
+            $this->ensureCrmRecordAccess((int) $request->client_id);
 
             $clientId = $request->client_id;
             $clientInfo = Admin::select('client_id')->where('id', $clientId)->first();
@@ -203,6 +207,8 @@ class EmailUploadController extends Controller
                     'errors' => $validator->errors(),
                 ], 422);
             }
+
+            $this->ensureCrmRecordAccess((int) $request->client_id);
 
             $clientId = $request->client_id;
             $clientInfo = Admin::select('client_id')->where('id', $clientId)->first();

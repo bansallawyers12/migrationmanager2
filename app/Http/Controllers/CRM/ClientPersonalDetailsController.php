@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +45,7 @@ use Auth;
  */
 class ClientPersonalDetailsController extends Controller
 {
+    use EnsuresCrmRecordAccess;
     use LogsClientActivity;
     /**
      * Create a new controller instance.
@@ -80,6 +82,7 @@ class ClientPersonalDetailsController extends Controller
 
       //Fetch all contact list of any client at create note popup
       public function fetchClientContactNo(Request $request){ //dd($request->all());
+        $this->ensureCrmRecordAccessFromRequest($request, ['client_id']);
         if( ClientContact::where('client_id', $request->client_id)->exists()){
             //Fetch All client contacts
             $clientContacts = ClientContact::select('phone', 'country_code', 'contact_type')->where('client_id', $request->client_id)->get();
