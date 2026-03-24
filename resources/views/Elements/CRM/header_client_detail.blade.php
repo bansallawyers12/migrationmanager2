@@ -147,11 +147,16 @@
             </div>
             @once
             @push('scripts')
+            @php
+                $miniQueueUrl = route('crm.access.queue.mini');
+                $approveTemplateUrl = str_replace('999999999', '__ID__', route('crm.access.approve', ['grant' => 999999999]));
+                $rejectTemplateUrl = str_replace('999999999', '__ID__', route('crm.access.reject', ['grant' => 999999999]));
+            @endphp
             <script>
             (function () {
-                var miniUrl = @json(route('crm.access.queue.mini'));
-                var approveTpl = @json(str_replace('999999999', '__ID__', route('crm.access.approve', ['grant' => 999999999])));
-                var rejectTpl = @json(str_replace('999999999', '__ID__', route('crm.access.reject', ['grant' => 999999999])));
+                var miniUrl = @json($miniQueueUrl);
+                var approveTpl = @json($approveTemplateUrl);
+                var rejectTpl = @json($rejectTemplateUrl);
                 var token = document.querySelector('meta[name="csrf-token"]');
                 token = token ? token.getAttribute('content') : '';
 
