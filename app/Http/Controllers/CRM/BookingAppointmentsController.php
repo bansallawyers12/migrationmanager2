@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\BookingAppointment;
 use App\Models\AppointmentConsultant;
@@ -18,10 +19,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use Carbon\Carbon;
+use App\Support\StaffClientVisibility;
 use Yajra\DataTables\Facades\DataTables;
 
 class BookingAppointmentsController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     protected AppointmentSyncService $syncService;
     protected BansalApiClient $bansalApiClient;
 
@@ -32,12 +36,20 @@ class BookingAppointmentsController extends Controller
         $this->bansalApiClient = $bansalApiClient;
     }
 
+    protected function assertBookingAppointmentAccess(BookingAppointment $appointment): void
+    {
+        $this->ensureCrmRecordAccessForOptionalClientId(
+            $appointment->client_id ? (int) $appointment->client_id : null
+        );
+    }
+
     /**
      * Display appointment list
      */
     public function index(Request $request)
     {
         $query = BookingAppointment::with(['client', 'consultant']);
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
         
         // Apply filters
         if ($request->filled('status')) {
@@ -101,13 +113,16 @@ class BookingAppointmentsController extends Controller
         // Get consultants for filter
         $consultants = AppointmentConsultant::active()->get();
         
-        // Calculate statistics
+        $statsBase = BookingAppointment::query();
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
+
+        // Calculate statistics (same visibility as list)
         $stats = [
-            'pending' => BookingAppointment::where('status', 'pending')->where('is_paid', 1)->count(),
-            'paid' => BookingAppointment::where('status', 'paid')->where('is_paid', 1)->count(),
-            'confirmed' => BookingAppointment::where('status', 'confirmed')->count(),
-            'today' => BookingAppointment::whereDate('appointment_datetime', today())->count(),
-            'total' => BookingAppointment::count(),
+            'pending' => (clone $statsBase)->where('status', 'pending')->where('is_paid', 1)->count(),
+            'paid' => (clone $statsBase)->where('status', 'paid')->where('is_paid', 1)->count(),
+            'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
+            'today' => (clone $statsBase)->whereDate('appointment_datetime', today())->count(),
+            'total' => (clone $statsBase)->count(),
         ];
         
         return view('crm.booking.appointments.index', compact('appointments', 'consultants', 'stats', 'clientMatterRefs'));
@@ -119,6 +134,7 @@ class BookingAppointmentsController extends Controller
     public function getAppointments(Request $request)
     {
         $query = BookingAppointment::with(['client', 'consultant']);
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
         // Filter by calendar type (consultant type)
         if ($request->filled('type')) {
@@ -263,6 +279,7 @@ class BookingAppointmentsController extends Controller
     public function show($id)
     {
         $appointment = BookingAppointment::with(['client', 'consultant', 'assignedBy'])->findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
         $consultants = AppointmentConsultant::active()->get();
         $latestClientMatter = null;
 
@@ -281,6 +298,7 @@ class BookingAppointmentsController extends Controller
     public function edit($id)
     {
         $appointment = BookingAppointment::with(['client', 'consultant'])->findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
         return view('crm.booking.appointments.edit', compact('appointment'));
     }
 
@@ -295,15 +313,16 @@ class BookingAppointmentsController extends Controller
             abort(404);
         }
 
-        $appointments = BookingAppointment::with(['client', 'consultant'])
+        $appointmentsQuery = BookingAppointment::with(['client', 'consultant'])
             ->where(function ($query) use ($type) {
                 $query->whereHas('consultant', function ($q) use ($type) {
                     $q->where('calendar_type', $type);
                 })->orWhereNull('consultant_id');
             })
             ->where('appointment_datetime', '>', Carbon::now(config('app.timezone')))
-            ->orderBy('appointment_datetime')
-            ->get();
+            ->orderBy('appointment_datetime');
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($appointmentsQuery);
+        $appointments = $appointmentsQuery->get();
 
         $calendarTitle = match($type) {
             'paid' => 'Pr_complex matters',
@@ -315,41 +334,24 @@ class BookingAppointmentsController extends Controller
             'kunal' => 'Kunal Calendar',
             default => ucfirst($type)
         };
-        
-        // Calculate statistics for this calendar type
+
+        $calendarStatsBase = function () use ($type) {
+            $q = BookingAppointment::query()->whereHas('consultant', function ($q2) use ($type) {
+                $q2->where('calendar_type', $type);
+            });
+            StaffClientVisibility::restrictBookingAppointmentEloquentQuery($q);
+
+            return $q;
+        };
+
+        // Calculate statistics for this calendar type (same visibility as calendar events)
         $stats = [
-            'this_month' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
-                    $q->where('calendar_type', $type);
-                })
-                ->whereMonth('appointment_datetime', now()->month)
-                ->count(),
-            'today' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
-                    $q->where('calendar_type', $type);
-                })
-                ->whereDate('appointment_datetime', today())
-                ->count(),
-            'upcoming' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
-                    $q->where('calendar_type', $type);
-                })
-                ->where('appointment_datetime', '>', now())
-                ->count(),
-            'pending' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
-                    $q->where('calendar_type', $type);
-                })
-                ->where('status', 'pending')
-                ->where('is_paid', 1)
-                ->count(),
-            'paid' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
-                    $q->where('calendar_type', $type);
-                })
-                ->where('status', 'paid')
-                ->where('is_paid', 1)
-                ->count(),
-            'no_show' => BookingAppointment::whereHas('consultant', function ($q) use ($type) {
-                    $q->where('calendar_type', $type);
-                })
-                ->where('status', 'no_show')
-                ->count(),
+            'this_month' => (clone $calendarStatsBase())->whereMonth('appointment_datetime', now()->month)->count(),
+            'today' => (clone $calendarStatsBase())->whereDate('appointment_datetime', today())->count(),
+            'upcoming' => (clone $calendarStatsBase())->where('appointment_datetime', '>', now())->count(),
+            'pending' => (clone $calendarStatsBase())->where('status', 'pending')->where('is_paid', 1)->count(),
+            'paid' => (clone $calendarStatsBase())->where('status', 'paid')->where('is_paid', 1)->count(),
+            'no_show' => (clone $calendarStatsBase())->where('status', 'no_show')->count(),
         ];
 
         // Get all active consultants for transfer dropdown (including Ajay calendar for transfers)
@@ -366,7 +368,8 @@ class BookingAppointmentsController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $appointment = BookingAppointment::findOrFail($id);
-        
+        $this->assertBookingAppointmentAccess($appointment);
+
         $request->validate([
             'status' => 'required|in:pending,paid,confirmed,completed,cancelled,no_show,rescheduled',
             'cancellation_reason' => 'required_if:status,cancelled|nullable|string'
@@ -482,7 +485,8 @@ class BookingAppointmentsController extends Controller
     {
         try {
             $appointment = BookingAppointment::findOrFail($id);
-            
+            $this->assertBookingAppointmentAccess($appointment);
+
             $request->validate([
                 'consultant_id' => 'required|exists:appointment_consultants,id'
             ]);
@@ -604,7 +608,8 @@ class BookingAppointmentsController extends Controller
     {
         try {
             $appointment = BookingAppointment::findOrFail($id);
-            
+            $this->assertBookingAppointmentAccess($appointment);
+
             $request->validate([
                 'meeting_type' => 'required|in:in_person,phone,video'
             ]);
@@ -674,7 +679,8 @@ class BookingAppointmentsController extends Controller
      */
     public function update(Request $request, $id)
     {  
-        $appointment = BookingAppointment::findOrFail($id); 
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
 
         $request->validate([
             'appointment_date' => 'required|date',
@@ -1103,7 +1109,8 @@ class BookingAppointmentsController extends Controller
     public function addNote(Request $request, $id)
     {
         $appointment = BookingAppointment::findOrFail($id);
-        
+        $this->assertBookingAppointmentAccess($appointment);
+
         $request->validate([
             'note' => 'required|string|max:2000'
         ]);
@@ -1180,8 +1187,11 @@ class BookingAppointmentsController extends Controller
         $totalAttempts = $totalSyncs + $failedSyncs;
         $successRate = $totalAttempts > 0 ? round(($totalSyncs / $totalAttempts) * 100) : 100;
         
+        $syncStatsApptBase = BookingAppointment::query();
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($syncStatsApptBase);
+
         $stats = [
-            'total_synced' => BookingAppointment::count(),
+            'total_synced' => (clone $syncStatsApptBase)->count(),
             'today' => AppointmentSyncLog::whereDate('created_at', today())->count(),
             'failed' => $failedSyncs,
             'success_rate' => $successRate,
@@ -1228,7 +1238,8 @@ class BookingAppointmentsController extends Controller
     public function getAppointmentJson($id)
     {
         $appointment = BookingAppointment::with(['client', 'consultant', 'assignedBy'])->findOrFail($id);
-        
+        $this->assertBookingAppointmentAccess($appointment);
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -1275,7 +1286,8 @@ class BookingAppointmentsController extends Controller
     public function sendReminder(Request $request, $id)
     {
         $appointment = BookingAppointment::findOrFail($id);
-        
+        $this->assertBookingAppointmentAccess($appointment);
+
         $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
         
         $request->validate([
@@ -1309,6 +1321,9 @@ class BookingAppointmentsController extends Controller
      */
     public function syncStats()
     {
+        $appt24 = BookingAppointment::query()->where('created_at', '>=', now()->subDay());
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($appt24);
+
         $stats = [
             'today' => [
                 'syncs' => AppointmentSyncLog::today()->count(),
@@ -1317,8 +1332,8 @@ class BookingAppointmentsController extends Controller
                 'appointments_synced' => AppointmentSyncLog::today()->sum('appointments_new'),
             ],
             'last_24h' => [
-                'appointments' => BookingAppointment::where('created_at', '>=', now()->subDay())->count(),
-                'pending' => BookingAppointment::where('created_at', '>=', now()->subDay())->where('status', 'pending')->count(),
+                'appointments' => (clone $appt24)->count(),
+                'pending' => (clone $appt24)->where('status', 'pending')->count(),
             ],
             'last_sync' => AppointmentSyncLog::latest('started_at')->first(),
         ];
@@ -1335,6 +1350,7 @@ class BookingAppointmentsController extends Controller
     public function export(Request $request)
     {
         $query = BookingAppointment::with(['client', 'consultant']);
+        StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
 
         // Apply same filters as index
         if ($request->filled('status')) {
@@ -1422,6 +1438,7 @@ class BookingAppointmentsController extends Controller
         foreach ($request->appointment_ids as $id) {
             $appointment = BookingAppointment::find($id);
             if ($appointment) {
+                $this->assertBookingAppointmentAccess($appointment);
                 $appointment->status = $request->status;
                 
                 if ($request->status === 'confirmed') {

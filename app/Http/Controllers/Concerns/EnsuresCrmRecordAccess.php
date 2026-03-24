@@ -97,4 +97,14 @@ trait EnsuresCrmRecordAccess
             }
         }
     }
+
+    /**
+     * Gate email logs and similar rows: only check when a CRM client is linked (admins.id).
+     */
+    protected function ensureCrmRecordAccessForOptionalClientId(?int $clientAdminId): void
+    {
+        if ($clientAdminId !== null && $clientAdminId > 0) {
+            $this->ensureCrmRecordAccess($clientAdminId);
+        }
+    }
 }

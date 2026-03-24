@@ -7,7 +7,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Pending supervisor access requests</h4>
-                    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">Dashboard</a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('crm.access.dashboard') }}" class="btn btn-sm btn-outline-primary">Grants dashboard</a>
+                        <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">Main dashboard</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div id="crm-access-queue-msg" class="alert d-none" role="alert"></div>

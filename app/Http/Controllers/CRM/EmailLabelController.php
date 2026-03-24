@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\EmailLabel;
 use App\Models\EmailLog;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class EmailLabelController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     public function __construct()
     {
         $this->middleware('auth:admin');
@@ -172,6 +175,9 @@ class EmailLabelController extends Controller
             }
 
             $emailLog = EmailLog::findOrFail($request->mail_report_id);
+            $this->ensureCrmRecordAccessForOptionalClientId(
+                $emailLog->client_id ? (int) $emailLog->client_id : null
+            );
             $emailLog->labels()->detach($request->label_id);
 
             return response()->json([

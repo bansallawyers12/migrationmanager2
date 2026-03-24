@@ -1382,9 +1382,15 @@
 
         $(document).ready(function()
         {
-            document.getElementById('countbell_notification').parentNode.addEventListener('click', function(event){
-                window.location = "/all-notifications";
-            });
+            (function () {
+                var bell = document.getElementById('countbell_notification');
+                if (!bell || bell.closest('#crm-access-notification-dropdown')) return;
+                var p = bell.parentNode;
+                if (!p) return;
+                p.addEventListener('click', function () {
+                    window.location = "/all-notifications";
+                });
+            })();;
 
             /*function load_unseen_notification(view = '')
             {

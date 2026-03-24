@@ -508,6 +508,59 @@ final class StaffClientVisibility
     }
 
     /**
+     * Limit booking appointment listings to clients the viewer may access (linked CRM client_id).
+     *
+     * Rows with no linked client remain visible (public / unlinked bookings).
+     *
+     * @param  Builder<\App\Models\BookingAppointment>  $query
+     */
+    public static function restrictBookingAppointmentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
+    {
+        $user = $user ?? Auth::user();
+        if (! $user || self::isExemptFromAllocation($user)) {
+            return;
+        }
+
+        $strict = (bool) config('crm_access.strict_allocation', false);
+        if (! $strict && ! self::isRestrictedPersonAssisting($user)) {
+            return;
+        }
+
+        $staffId = (int) $user->id;
+        $table   = $query->getModel()->getTable();
+
+        $query->where(function (Builder $outer) use ($staffId, $table) {
+            $outer->whereNull("{$table}.client_id")
+                ->orWhere("{$table}.client_id", '<=', 0);
+
+            $outer->orWhere(function (Builder $inner) use ($staffId, $table) {
+                $inner->where("{$table}.client_id", '>', 0)
+                    ->where(function (Builder $accessQ) use ($staffId, $table) {
+                        $accessQ->whereExists(function ($sub) use ($staffId, $table) {
+                            $sub->select(DB::raw('1'))
+                                ->from('client_matters')
+                                ->whereColumn('client_matters.client_id', "{$table}.client_id")
+                                ->where('client_matters.sel_person_assisting', $staffId);
+                        })->orWhereExists(function ($sub) use ($staffId, $table) {
+                            $sub->select(DB::raw('1'))
+                                ->from('admins')
+                                ->whereColumn('admins.id', "{$table}.client_id")
+                                ->where('admins.user_id', $staffId);
+                        })->orWhereExists(function ($sub) use ($staffId, $table) {
+                            $sub->select(DB::raw('1'))
+                                ->from('client_access_grants')
+                                ->whereColumn('client_access_grants.admin_id', "{$table}.client_id")
+                                ->where('client_access_grants.staff_id', $staffId)
+                                ->where('client_access_grants.status', 'active')
+                                ->whereNotNull('client_access_grants.ends_at')
+                                ->whereRaw('client_access_grants.ends_at > NOW()');
+                        });
+                    });
+            });
+        });
+    }
+
+    /**
      * @param  \App\Models\Admin  $row
      */
     private static function userMaySeeByAllocation(int $adminId, Authenticatable $user, Admin $row): bool

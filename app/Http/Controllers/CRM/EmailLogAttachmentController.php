@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\EmailLogAttachment;
 use App\Models\EmailLog;
@@ -13,6 +14,8 @@ use ZipArchive;
 
 class EmailLogAttachmentController extends Controller
 {
+    use EnsuresCrmRecordAccess;
+
     public function __construct()
     {
         $this->middleware('auth:admin');
@@ -26,8 +29,12 @@ class EmailLogAttachmentController extends Controller
         try {
             $attachment = EmailLogAttachment::findOrFail($id);
 
-            // Security: Check user has access to this client's emails (optional - add authorization check)
             $emailLog = $attachment->emailLog;
+            if ($emailLog) {
+                $this->ensureCrmRecordAccessForOptionalClientId(
+                    $emailLog->client_id ? (int) $emailLog->client_id : null
+                );
+            }
 
             // Check if s3_key exists
             if (!$attachment->s3_key) {
@@ -83,6 +90,9 @@ class EmailLogAttachmentController extends Controller
     {
         try {
             $emailLog = EmailLog::findOrFail($emailLogId);
+            $this->ensureCrmRecordAccessForOptionalClientId(
+                $emailLog->client_id ? (int) $emailLog->client_id : null
+            );
             $attachments = $emailLog->attachments()->regular()->get();
 
             if ($attachments->isEmpty()) {
@@ -139,6 +149,13 @@ class EmailLogAttachmentController extends Controller
     {
         try {
             $attachment = EmailLogAttachment::findOrFail($id);
+
+            $emailLog = $attachment->emailLog;
+            if ($emailLog) {
+                $this->ensureCrmRecordAccessForOptionalClientId(
+                    $emailLog->client_id ? (int) $emailLog->client_id : null
+                );
+            }
 
             if (!$attachment->canPreview()) {
                 abort(400, 'This file type cannot be previewed');
