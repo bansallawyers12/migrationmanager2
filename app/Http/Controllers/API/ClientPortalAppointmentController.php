@@ -2705,21 +2705,45 @@ class ClientPortalAppointmentController extends BaseController
             }
 
             $paymentType = strtolower((string) $request->payment_type);
-            $stripeService = app(StripePaymentService::class);
-            $metadata = [
-                'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'payment_type' => $paymentType,
-            ];
+            $appointmentAmount = (float) ($appointment->final_amount ?? $appointment->amount);
 
-            $result = $stripeService->recordPaymentByIntent(
-                $appointment,
-                $request->payment_intent_id,
-                $metadata
-            );
+            DB::beginTransaction();
+            try {
+                $payment = AppointmentPayment::updateOrCreate(
+                    ['appointment_id' => $appointment->id],
+                    [
+                        'payment_gateway' => 'stripe',
+                        'transaction_id' => $request->payment_intent_id,
+                        'charge_id' => null,
+                        'customer_id' => null,
+                        'payment_method_id' => null,
+                        'amount' => $appointmentAmount,
+                        'currency' => 'AUD',
+                        'status' => 'succeeded',
+                        'error_message' => null,
+                        'transaction_data' => [
+                            'payment_type' => $paymentType,
+                            'payment_intent_id' => $request->payment_intent_id,
+                        ],
+                        'receipt_url' => null,
+                        'client_ip' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'processed_at' => now(),
+                    ]
+                );
 
-            if (!$result['success']) {
-                return $this->sendError($result['message'], $result['data'] ?? [], 422);
+                $appointment->update([
+                    'status' => 'paid',
+                    'is_paid' => true,
+                    'payment_status' => 'completed',
+                    'payment_method' => 'stripe',
+                    'paid_at' => now(),
+                ]);
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
 
             $syncError = null;
@@ -2742,7 +2766,7 @@ class ClientPortalAppointmentController extends BaseController
 
             $appointment->refresh();
 
-            $message = $result['message'];
+            $message = 'Payment recorded successfully';
             if ($syncError) {
                 $message .= ' Note: Payment completed but sync with website failed.';
             }
@@ -2752,15 +2776,15 @@ class ClientPortalAppointmentController extends BaseController
                 'message' => $message,
                 'data' => [
                     'appointment_id' => $appointment->id,
-                    'payment_id' => $result['data']['payment_id'],
-                    'transaction_id' => $result['data']['payment_intent_id'],
-                    'charge_id' => $result['data']['charge_id'],
-                    'amount' => $result['data']['amount'],
-                    'currency' => $result['data']['currency'],
+                    'payment_id' => $payment->id,
+                    'transaction_id' => $payment->transaction_id,
+                    'charge_id' => $payment->charge_id,
+                    'amount' => $payment->amount,
+                    'currency' => $payment->currency,
                     'status' => 'paid',
                     'payment_type' => $paymentType,
-                    'receipt_url' => $result['data']['receipt_url'] ?? null,
-                    'paid_at' => $result['data']['paid_at'],
+                    'receipt_url' => $payment->receipt_url,
+                    'paid_at' => $appointment->paid_at ? $appointment->paid_at->toIso8601String() : null,
                     'appointment' => $this->formatAppointmentData($appointment),
                 ],
                 'bansal_synced' => !$syncError
