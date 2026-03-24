@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Branch;
 use App\Models\ClientAccessGrant;
+use App\Models\Team;
 use App\Services\CrmAccess\CrmAccessDeniedException;
 use App\Services\CrmAccess\CrmAccessService;
 use Illuminate\Database\Eloquent\Builder;
