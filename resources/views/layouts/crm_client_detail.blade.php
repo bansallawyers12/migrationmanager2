@@ -2535,7 +2535,7 @@
                         <div class="teams-notification-message">
                             <strong>Client:</strong> ${notification.client_name}<br>
                             <strong>Purpose:</strong> ${notification.visit_purpose}<br>
-                            <strong>Time:</strong> ${formatDisplayDateTime(notification.created_at)}
+                            <strong>Time:</strong> ${typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(notification.created_at) : (notification.created_at || '')}
                         </div>
                                         <div class="teams-notification-actions">
                     <button class="teams-notification-action-btn primary" onclick="attendSession(${notification.checkin_id}, ${notification.id})">

@@ -48,13 +48,13 @@
         if (!timestamp) {
             return '';
         }
-
+        if (typeof window.formatDisplayDateTime === 'function') {
+            return window.formatDisplayDateTime(timestamp);
+        }
         const date = new Date(timestamp);
-
         if (Number.isNaN(date.getTime())) {
             return '';
         }
-
         return new Intl.DateTimeFormat(undefined, {
             hour: '2-digit',
             minute: '2-digit',

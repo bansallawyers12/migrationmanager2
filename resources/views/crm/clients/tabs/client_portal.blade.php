@@ -6111,7 +6111,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
 
                     html += '<tr data-matter-id="' + (matterId || '') + '">'
                         + '<td>' + fileNameCell + '</td>'
-                        + '<td>' + (doc.created_at ? formatDisplayDateTime(doc.created_at) : '') + '</td>'
+                        + '<td>' + (doc.created_at ? (typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(doc.created_at) : String(doc.created_at)) : '') + '</td>'
                         + '<td>' + statusBadge + '</td>'
                         + '<td><div class="action-buttons"><div class="action-row">' + downloadBtn + deleteBtn + '</div><div class="action-row action-row-move">' + approveBtn + rejectBtn + moveBtn + '</div></div></td>'
                         + '</tr>';

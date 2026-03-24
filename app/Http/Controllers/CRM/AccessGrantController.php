@@ -281,7 +281,7 @@ class AccessGrantController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, [
                 'id', 'staff_id', 'admin_id', 'record_type', 'grant_type', 'access_type', 'status',
-                'quick_reason_code', 'office_id', 'team_id', 'requested_at', 'approved_at', 'starts_at', 'ends_at',
+                'approved_by_staff_id', 'quick_reason_code', 'office_id', 'team_id', 'requested_at', 'approved_at', 'starts_at', 'ends_at',
                 'revoked_at', 'revoke_reason', 'requester_note',
             ]);
 
@@ -296,6 +296,7 @@ class AccessGrantController extends Controller
                         $g->grant_type,
                         $g->access_type,
                         $g->status,
+                        $g->approved_by_staff_id,
                         $g->quick_reason_code,
                         $g->office_id,
                         $g->team_id,

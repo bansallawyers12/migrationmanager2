@@ -1,5 +1,87 @@
 @extends('layouts.crm_client_detail')
 @section('title', 'Access grants dashboard')
+@section('styles')
+<style>
+    /* Stronger contrast on this page only (tables, filters, badges, headers). */
+    #crm-access-pending-card > .card-header,
+    #crm-access-grants-card > .card-header {
+        background: linear-gradient(135deg, #1a5f8f 0%, #134567 100%) !important;
+        color: #fff !important;
+    }
+
+    #crm-access-pending-card .card-header h5,
+    #crm-access-grants-card .card-header h4 {
+        color: #fff !important;
+    }
+
+    #crm-access-grants-card .card-header .btn-secondary {
+        background-color: #0d3d5c !important;
+        border: 1px solid rgba(255, 255, 255, 0.95) !important;
+        color: #fff !important;
+    }
+
+    #crm-access-grants-card .card-header .btn-secondary:hover,
+    #crm-access-grants-card .card-header .btn-secondary:focus {
+        background-color: #0a3048 !important;
+        border-color: #fff !important;
+        color: #fff !important;
+    }
+
+    #crm-pending-table thead th,
+    #crm-access-dash-table thead th {
+        background-color: #e9ecef !important;
+        color: #212529 !important;
+        border-color: #ced4da !important;
+        font-weight: 600 !important;
+        font-size: 0.8125rem !important;
+        letter-spacing: 0.02em;
+    }
+
+    #crm-access-dash-filters label.small {
+        color: #343a40 !important;
+        font-weight: 600 !important;
+    }
+
+    #crm-access-dash-filters .form-control::placeholder {
+        color: #5c636a !important;
+        opacity: 1;
+    }
+
+    #crm-access-dash-summary .text-muted.small {
+        color: #495057 !important;
+    }
+
+    #crm-access-dash-summary [data-field] {
+        color: #212529 !important;
+        font-weight: 600;
+    }
+
+    #crm-access-dash-table .badge-success,
+    #crm-pending-table .badge-success {
+        background-color: #146c43 !important;
+        color: #fff !important;
+    }
+
+    #crm-access-dash-table .badge-warning {
+        background-color: #b45309 !important;
+        color: #fff !important;
+    }
+
+    #crm-access-pending-card tbody .text-muted,
+    #crm-access-dash-table tbody .text-muted {
+        color: #495057 !important;
+    }
+
+    #crm-access-pending-card a.small.text-muted {
+        color: #0b5ed7 !important;
+        text-decoration: underline;
+    }
+
+    #crm-access-pending-card a.small.text-muted:hover {
+        color: #084298 !important;
+    }
+</style>
+@endsection
 @section('content')
 <div class="main-content">
     <section class="section">
@@ -27,7 +109,7 @@
                         <div id="crm-pending-msg" class="alert d-none mb-2" role="alert"></div>
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered mb-0" id="crm-pending-table">
-                                <thead class="thead-light">
+                                <thead>
                                     <tr>
                                         <th>Requested</th>
                                         <th>Requester</th>
@@ -48,7 +130,7 @@
             </div>
 
             {{-- ── Filtered grants table ───────────────────────────────────────────────────── --}}
-            <div class="card">
+            <div class="card" id="crm-access-grants-card">
                 <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h4 class="mb-0">All grants (filterable)</h4>
                     <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">Main dashboard</a>
@@ -56,24 +138,24 @@
                 <div class="card-body">
                     <form id="crm-access-dash-filters" class="form-row align-items-end mb-3">
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">Staff ID</label>
-                            <input type="number" name="staff_id" class="form-control form-control-sm" min="1" placeholder="Staff #">
+                            <label class="small" for="crm-access-filter-staff">Staff ID</label>
+                            <input type="number" name="staff_id" id="crm-access-filter-staff" class="form-control form-control-sm" min="1" placeholder="Staff #">
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">Record (admin) ID</label>
-                            <input type="number" name="admin_id" class="form-control form-control-sm" min="1" placeholder="Client/lead #">
+                            <label class="small" for="crm-access-filter-admin">Record (admin) ID</label>
+                            <input type="number" name="admin_id" id="crm-access-filter-admin" class="form-control form-control-sm" min="1" placeholder="Client/lead #">
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">From</label>
-                            <input type="date" name="date_from" class="form-control form-control-sm">
+                            <label class="small" for="crm-access-filter-from">From</label>
+                            <input type="date" name="date_from" id="crm-access-filter-from" class="form-control form-control-sm">
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">To</label>
-                            <input type="date" name="date_to" class="form-control form-control-sm">
+                            <label class="small" for="crm-access-filter-to">To</label>
+                            <input type="date" name="date_to" id="crm-access-filter-to" class="form-control form-control-sm">
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">Office</label>
-                            <select name="office_id" class="form-control form-control-sm">
+                            <label class="small" for="crm-access-filter-office">Office</label>
+                            <select name="office_id" id="crm-access-filter-office" class="form-control form-control-sm">
                                 <option value="">Any</option>
                                 @foreach($branches as $b)
                                     <option value="{{ $b->id }}">{{ $b->office_name }}</option>
@@ -81,8 +163,8 @@
                             </select>
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">Team</label>
-                            <select name="team_id" class="form-control form-control-sm">
+                            <label class="small" for="crm-access-filter-team">Team</label>
+                            <select name="team_id" id="crm-access-filter-team" class="form-control form-control-sm">
                                 <option value="">Any</option>
                                 @foreach($teams as $t)
                                     <option value="{{ $t->id }}">{{ $t->name }}</option>
@@ -90,8 +172,8 @@
                             </select>
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">Grant type</label>
-                            <select name="grant_type" class="form-control form-control-sm">
+                            <label class="small" for="crm-access-filter-grant-type">Grant type</label>
+                            <select name="grant_type" id="crm-access-filter-grant-type" class="form-control form-control-sm">
                                 <option value="">Any</option>
                                 <option value="quick">Quick</option>
                                 <option value="supervisor_approved">Supervisor approved</option>
@@ -99,8 +181,8 @@
                             </select>
                         </div>
                         <div class="form-group col-md-2 col-sm-6">
-                            <label class="small text-muted">Status</label>
-                            <select name="status" class="form-control form-control-sm">
+                            <label class="small" for="crm-access-filter-status">Status</label>
+                            <select name="status" id="crm-access-filter-status" class="form-control form-control-sm">
                                 <option value="">Any</option>
                                 <option value="pending">Pending</option>
                                 <option value="active">Active</option>
@@ -151,6 +233,7 @@
                                     <th>Record</th>
                                     <th>Type</th>
                                     <th>Status</th>
+                                    <th>Granted by</th>
                                     <th>Office / team</th>
                                     <th>Note / reason</th>
                                 </tr>
@@ -176,6 +259,9 @@
     var msg        = document.getElementById('crm-access-dash-msg');
     var exportLink = document.getElementById('crm-access-dash-export');
     var token      = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+    var fmtWhen    = typeof window.formatGrantWhen === 'function'
+        ? window.formatGrantWhen
+        : function (v) { return v == null || v === '' ? '' : String(v); };
 
     /* ── helpers ────────────────────────────────────────────────────────────── */
     function showMsg(el, text, isErr) {
@@ -236,7 +322,7 @@
                     var tr = document.createElement('tr');
                     tr.setAttribute('data-pending-id', g.id);
                     tr.innerHTML =
-                        '<td class="text-nowrap small">' + formatGrantWhen(g.requested_at) + '</td>' +
+                        '<td class="text-nowrap small">' + fmtWhen(g.requested_at) + '</td>' +
                         '<td class="small">' + req + '</td>' +
                         '<td class="small">' + rec + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
                         '<td class="small">' + (ot || '—') + '</td>' +
@@ -331,6 +417,16 @@
                     var st   = g.staff ? (g.staff.first_name + ' ' + g.staff.last_name).trim() : ('#' + g.staff_id);
                     var ad   = g.admin ? (g.admin.first_name + ' ' + g.admin.last_name).trim() : ('#' + g.admin_id);
                     var app  = g.approved_by ? (g.approved_by.first_name + ' ' + g.approved_by.last_name).trim() : '';
+                    var grantedBy = app;
+                    if (!grantedBy && g.grant_type === 'quick') {
+                        grantedBy = 'Self (quick access)';
+                    }
+                    if (!grantedBy && g.grant_type === 'exempt') {
+                        grantedBy = 'Role exempt';
+                    }
+                    if (!grantedBy) {
+                        grantedBy = '—';
+                    }
                     var ot   = '';
                     if (g.office_label_snapshot) ot = g.office_label_snapshot;
                     else if (g.office_id) ot = 'O' + g.office_id;
@@ -340,11 +436,12 @@
                     var tr = document.createElement('tr');
                     tr.innerHTML =
                         '<td class="small">' + g.id + '</td>' +
-                        '<td class="text-nowrap small">' + formatGrantWhen(g.created_at) + '</td>' +
+                        '<td class="text-nowrap small">' + fmtWhen(g.created_at) + '</td>' +
                         '<td class="small">' + st + '</td>' +
                         '<td class="small">' + ad + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
                         '<td class="small">' + g.grant_type + '</td>' +
-                        '<td class="small">' + statusBadge(g.status) + (app ? ' <small class="text-muted">by ' + app + '</small>' : '') + '</td>' +
+                        '<td class="small">' + statusBadge(g.status) + '</td>' +
+                        '<td class="small">' + grantedBy + '</td>' +
                         '<td class="small">' + (ot || '—') + '</td>' +
                         '<td class="small">' + note + '</td>';
                     tb.appendChild(tr);

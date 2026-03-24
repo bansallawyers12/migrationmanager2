@@ -37,6 +37,9 @@
 <script>
 (function () {
     var dataUrl = @json(route('crm.access.my-grants.data'));
+    var fmtWhen = typeof window.formatGrantWhen === 'function'
+        ? window.formatGrantWhen
+        : function (v) { return v == null || v === '' ? '' : String(v); };
 
     function statusBadge(status) {
         var map = {
@@ -51,9 +54,9 @@
     }
 
     function row(g) {
-        var expires = g.ends_at ? formatGrantWhen(g.ends_at) : '—';
+        var expires = g.ends_at ? (fmtWhen(g.ends_at) || '—') : '—';
         return '<tr>' +
-            '<td>' + (g.requested_at ? formatGrantWhen(g.requested_at) : '—') + '</td>' +
+            '<td>' + (g.requested_at ? (fmtWhen(g.requested_at) || '—') : '—') + '</td>' +
             '<td>#' + g.admin_id + '</td>' +
             '<td>' + (g.record_type || '—') + '</td>' +
             '<td>' + (g.grant_type || '—').replace('_', ' ') + '</td>' +

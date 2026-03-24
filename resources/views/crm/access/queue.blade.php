@@ -46,6 +46,9 @@
     var rejectTpl = @json(str_replace('999999999', '__ID__', route('crm.access.reject', ['grant' => 999999999])));
     var token = document.querySelector('meta[name="csrf-token"]');
     token = token ? token.getAttribute('content') : '';
+    var fmtWhen = typeof window.formatGrantWhen === 'function'
+        ? window.formatGrantWhen
+        : function (v) { return v == null || v === '' ? '' : String(v); };
 
     function showMsg(text, isErr) {
         var el = document.getElementById('crm-access-queue-msg');
@@ -71,7 +74,7 @@
         }
         var rid = g.id;
         return '<tr data-grant-id="' + rid + '">' +
-            '<td>' + formatGrantWhen(g.requested_at) + '</td>' +
+            '<td>' + fmtWhen(g.requested_at) + '</td>' +
             '<td>' + req + '</td>' +
             '<td>' + rec + ' <span class="text-muted">(' + g.record_type + ' #' + g.admin_id + ')</span></td>' +
             '<td>' + reasonNote + '</td>' +
