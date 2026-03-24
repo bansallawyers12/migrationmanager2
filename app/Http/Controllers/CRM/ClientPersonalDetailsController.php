@@ -5,8 +5,10 @@ namespace App\Http\Controllers\CRM;
 use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -31,9 +33,7 @@ use App\Models\Company;
 use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
-use Illuminate\Support\Facades\Log;
 use App\Traits\LogsClientActivity;
-use Auth;
 
 /**
  * ClientPersonalDetailsController
@@ -118,7 +118,7 @@ class ClientPersonalDetailsController extends Controller
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['AUTH-KEY: ' . $apiKey]);
         $response = curl_exec($ch);  //dd($response);
-        curl_close($ch);
+        // curl handles are closed automatically in recent PHP versions.
         if (!$response) {
             return response()->json(['localities' => []]);
         }
@@ -156,11 +156,11 @@ class ClientPersonalDetailsController extends Controller
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
-            curl_close($ch);
+            // curl handles are closed automatically in recent PHP versions.
             
             // Log curl errors for debugging
             if ($curlError) {
-                \Log::error('Google Places Autocomplete API CURL Error: ' . $curlError);
+                Log::error('Google Places Autocomplete API CURL Error: ' . $curlError);
             }
             
             $data = json_decode($response, true);
@@ -295,7 +295,7 @@ class ClientPersonalDetailsController extends Controller
             curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Migration Manager CRM');
             $response = curl_exec($ch);
-            curl_close($ch);
+            // curl handles are closed automatically in recent PHP versions.
             
             $results = json_decode($response, true);
             
@@ -484,11 +484,11 @@ class ClientPersonalDetailsController extends Controller
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
-            curl_close($ch);
+            // curl handles are closed automatically in recent PHP versions.
             
             // Log curl errors for debugging
             if ($curlError) {
-                \Log::error('Google Places Details API CURL Error: ' . $curlError);
+                Log::error('Google Places Details API CURL Error: ' . $curlError);
             }
             
             $data = json_decode($response, true);
@@ -621,7 +621,7 @@ class ClientPersonalDetailsController extends Controller
         $occupation = $request->input('occupation');
 
         // Example: Replace this with actual search logic based on your database schema
-        $occupations = \DB::table('client_occupation_lists')
+        $occupations = DB::table('client_occupation_lists')
             ->where('occupation', 'like', "%{$occupation}%")
             ->get(['occupation', 'occupation_code', 'list', 'visa_subclass','access_authority']);
 
@@ -630,7 +630,7 @@ class ClientPersonalDetailsController extends Controller
 
     public function saveRelationship(Request $request)
     {
-        $clientId = auth()->user()->id; // Assuming the logged-in user is the client
+        $clientId = Auth::id(); // Assuming the logged-in user is the client
 
         // Loop through the relationship data to insert each relationship
         foreach ($request->relationship_type as $index => $relationshipType) {
@@ -1473,7 +1473,7 @@ class ClientPersonalDetailsController extends Controller
 
         // Handle Partner Deletion
     if (isset($requestData['delete_partner_ids']) && is_array($requestData['delete_partner_ids'])) {
-        \Log::info('Deleting partners:', ['delete_partner_ids' => $requestData['delete_partner_ids']]);
+        Log::info('Deleting partners:', ['delete_partner_ids' => $requestData['delete_partner_ids']]);
         foreach ($requestData['delete_partner_ids'] as $partnerId) {
             $partner = ClientRelationship::find($partnerId);
             if ($partner && $partner->client_id == $obj->id) {
@@ -1493,7 +1493,7 @@ class ClientPersonalDetailsController extends Controller
                         $pointsService->clearCache($obj->id);
                     }
                     
-                    \Log::info('Cleared partner EOI data for deleted partner', [
+                    Log::info('Cleared partner EOI data for deleted partner', [
                         'partner_id' => $partnerId,
                         'related_client_id' => $partner->related_client_id,
                         'client_id' => $obj->id
@@ -1513,21 +1513,21 @@ class ClientPersonalDetailsController extends Controller
                     ClientRelationship::where('client_id', $partner->related_client_id)
                         ->where('related_client_id', $obj->id)
                         ->delete();
-                    \Log::info('Deleted reciprocal relationship for partner:', ['partner_id' => $partnerId, 'related_client_id' => $partner->related_client_id]);
+                    Log::info('Deleted reciprocal relationship for partner:', ['partner_id' => $partnerId, 'related_client_id' => $partner->related_client_id]);
                 }
                 
                 // Delete the partner record
                 $partner->delete();
-                \Log::info('Deleted partner:', ['partner_id' => $partnerId]);
+                Log::info('Deleted partner:', ['partner_id' => $partnerId]);
             } else {
-                \Log::warning('Partner not found or does not belong to client:', ['partner_id' => $partnerId, 'client_id' => $obj->id]);
+                Log::warning('Partner not found or does not belong to client:', ['partner_id' => $partnerId, 'client_id' => $obj->id]);
             }
         }
     }
 
     // Partner Handling for client_partners table
     if (isset($requestData['partner_details']) && is_array($requestData['partner_details'])) {
-        \Log::info('Processing partner data:', [
+        Log::info('Processing partner data:', [
             'partner_details' => $requestData['partner_details'],
             'relationship_type' => $requestData['relationship_type'] ?? [],
             'partner_id' => $requestData['partner_id'] ?? [],
@@ -1556,7 +1556,7 @@ class ClientPersonalDetailsController extends Controller
 
             // Skip if relationship_type is not provided (validation should catch this, but adding as a safety check)
             if (empty($relationshipType)) {
-                \Log::warning('Skipping partner entry due to missing relationship type:', ['key' => $key]);
+                Log::warning('Skipping partner entry due to missing relationship type:', ['key' => $key]);
                 continue;
             }
 
@@ -1578,14 +1578,14 @@ class ClientPersonalDetailsController extends Controller
                 'phone' => $saveExtraFields ? $phone : null,
             ];
 
-            \Log::info('Prepared partner data:', ['key' => $key, 'partnerData' => $partnerData]);
+            Log::info('Prepared partner data:', ['key' => $key, 'partnerData' => $partnerData]);
 
             if ($partnerId && is_numeric($partnerId)) {
                 // Update existing partner
                 $existingPartner = ClientRelationship::find($partnerId);
                 if ($existingPartner && $existingPartner->client_id == $obj->id) {
                     $existingPartner->update($partnerData);
-                    \Log::info('Updated existing partner:', ['partner_id' => $partnerId, 'data' => $partnerData]);
+                    Log::info('Updated existing partner:', ['partner_id' => $partnerId, 'data' => $partnerData]);
 
                     // Update reciprocal relationship if exists
                     if ($existingPartner->related_client_id && isset($relationshipMap[$relationshipType])) {
@@ -1601,15 +1601,15 @@ class ClientPersonalDetailsController extends Controller
                         ClientRelationship::where('client_id', $existingPartner->related_client_id)
                             ->where('related_client_id', $obj->id)
                             ->update($reciprocalData);
-                        \Log::info('Updated reciprocal relationship for partner:', ['partner_id' => $partnerId, 'reciprocal_data' => $reciprocalData]);
+                        Log::info('Updated reciprocal relationship for partner:', ['partner_id' => $partnerId, 'reciprocal_data' => $reciprocalData]);
                     }
                 } else {
-                    \Log::warning('Existing partner not found or does not belong to client:', ['partner_id' => $partnerId, 'client_id' => $obj->id]);
+                    Log::warning('Existing partner not found or does not belong to client:', ['partner_id' => $partnerId, 'client_id' => $obj->id]);
                 }
             } else {
                 // Create new partner
                 $newPartner = ClientRelationship::create($partnerData);
-                \Log::info('Created new partner:', ['new_partner_id' => $newPartner->id, 'data' => $partnerData]);
+                Log::info('Created new partner:', ['new_partner_id' => $newPartner->id, 'data' => $partnerData]);
 
                 // Create reciprocal relationship if related_client_id is set
                 if ($relatedClientId && isset($relationshipMap[$relationshipType])) {
@@ -1627,9 +1627,9 @@ class ClientPersonalDetailsController extends Controller
                             'phone' => null,
                         ];
                         ClientRelationship::create($reciprocalData);
-                        \Log::info('Created reciprocal relationship for new partner:', ['new_partner_id' => $newPartner->id, 'reciprocal_data' => $reciprocalData]);
+                        Log::info('Created reciprocal relationship for new partner:', ['new_partner_id' => $newPartner->id, 'reciprocal_data' => $reciprocalData]);
                     } else {
-                        \Log::warning('Related client not found for reciprocal relationship:', ['related_client_id' => $relatedClientId]);
+                        Log::warning('Related client not found for reciprocal relationship:', ['related_client_id' => $relatedClientId]);
                     }
                 }
             }
@@ -1637,9 +1637,9 @@ class ClientPersonalDetailsController extends Controller
 
         // Debug: Log the number of partners saved
         $savedPartners = ClientRelationship::where('client_id', $obj->id)->count();
-        \Log::info('Total partners saved for client:', ['client_id' => $obj->id, 'count' => $savedPartners]);
+        Log::info('Total partners saved for client:', ['client_id' => $obj->id, 'count' => $savedPartners]);
     } else {
-        \Log::info('No partner data provided to process.');
+        Log::info('No partner data provided to process.');
     }
 
         $saved	=	$obj->save();
@@ -1660,11 +1660,11 @@ class ClientPersonalDetailsController extends Controller
         if(!$saved) {
             return redirect()->back()->with('error', config('constants.server_error'));
         } else if( $route ==url('/assignee')) {
-            //$subject = 'Lead status has changed to '.@$requestData['status'].' from '. \Auth::user()->first_name;
-            $subject = 'Lead status has changed from '. \Auth::user()->first_name;
+            //$subject = 'Lead status has changed to '.@$requestData['status'].' from '. Auth::user()->first_name;
+            $subject = 'Lead status has changed from '. Auth::user()->first_name;
             $objs = new ActivitiesLog;
             $objs->client_id = $request->id;
-            $objs->created_by = \Auth::user()->id;
+            $objs->created_by = Auth::user()->id;
             $objs->subject = $subject;
             $objs->task_status = 0;
             $objs->pin = 0;
@@ -2701,7 +2701,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Email diff failed, using simple comparison', [
+                Log::warning('Email diff failed, using simple comparison', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -2894,7 +2894,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Passport diff failed, using simple comparison', [
+                Log::warning('Passport diff failed, using simple comparison', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -2982,7 +2982,7 @@ class ClientPersonalDetailsController extends Controller
             // Update client's visa expiry verified status using existing system
             if ($visaExpiryVerified === '1') {
                 $client->visa_expiry_verified_at = now();
-                $client->visa_expiry_verified_by = \Auth::user()->id;
+                $client->visa_expiry_verified_by = Auth::user()->id;
             } else {
                 $client->visa_expiry_verified_at = null;
                 $client->visa_expiry_verified_by = null;
@@ -3023,7 +3023,7 @@ class ClientPersonalDetailsController extends Controller
                         $existingVisa = ClientVisaCountry::find($visaId);
                         if ($existingVisa && $existingVisa->client_id == $client->id) {
                             $existingVisa->update([
-                                'admin_id' => \Auth::user()->id,
+                                'admin_id' => Auth::user()->id,
                                 'visa_type' => $visaData['visa_type_hidden'],
                                 'visa_expiry_date' => $expiryDate,
                                 'visa_grant_date' => $grantDate,
@@ -3034,7 +3034,7 @@ class ClientPersonalDetailsController extends Controller
                             // ID provided but doesn't exist, create new
                             $newVisa = ClientVisaCountry::create([
                                 'client_id' => $client->id,
-                                'admin_id' => \Auth::user()->id,
+                                'admin_id' => Auth::user()->id,
                                 'visa_type' => $visaData['visa_type_hidden'],
                                 'visa_expiry_date' => $expiryDate,
                                 'visa_grant_date' => $grantDate,
@@ -3046,7 +3046,7 @@ class ClientPersonalDetailsController extends Controller
                         // Create new visa
                         $newVisa = ClientVisaCountry::create([
                             'client_id' => $client->id,
-                            'admin_id' => \Auth::user()->id,
+                            'admin_id' => Auth::user()->id,
                             'visa_type' => $visaData['visa_type_hidden'],
                             'visa_expiry_date' => $expiryDate,
                             'visa_grant_date' => $grantDate,
@@ -3083,7 +3083,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Visa diff failed, using simple comparison', [
+                Log::warning('Visa diff failed, using simple comparison', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -3139,7 +3139,7 @@ class ClientPersonalDetailsController extends Controller
         try {
             $requestData = $request->all();
             
-            \Log::info('Address save request data:', $requestData);
+            Log::info('Address save request data:', $requestData);
             
             // Get existing addresses before update for change tracking
             $existingAddresses = ClientAddress::where('client_id', $client->id)->get();
@@ -3191,7 +3191,7 @@ class ClientPersonalDetailsController extends Controller
                     // Clean up address_id - it might be empty string, null, or actual ID
                     $address_id = !empty($address_id) ? (int)$address_id : null;
                     
-                    \Log::info("Processing address entry $key:", [
+                    Log::info("Processing address entry $key:", [
                         'address_id' => $address_id ?: '(new)',
                         'zip' => $zip,
                         'address_line_1' => $address_line_1,
@@ -3276,7 +3276,7 @@ class ClientPersonalDetailsController extends Controller
                             ]);
                             // Track this ID to keep it
                             $addressIdsToKeep[] = $address_id;
-                            \Log::info("Updated address ID: $address_id");
+                            Log::info("Updated address ID: $address_id");
                         } else {
                             // Address ID provided but doesn't exist or doesn't belong to client
                             // Create as new address instead
@@ -3296,7 +3296,7 @@ class ClientPersonalDetailsController extends Controller
                             ]);
                             // Track newly created ID to keep it
                             $addressIdsToKeep[] = $newAddress->id;
-                            \Log::info("Created new address (invalid ID provided), new ID: {$newAddress->id}");
+                            Log::info("Created new address (invalid ID provided), new ID: {$newAddress->id}");
                         }
                     } else {
                         // Create new address (no ID provided)
@@ -3316,13 +3316,13 @@ class ClientPersonalDetailsController extends Controller
                         ]);
                         // Track newly created ID to keep it
                         $addressIdsToKeep[] = $newAddress->id;
-                        \Log::info("Created new address, ID: {$newAddress->id}");
+                        Log::info("Created new address, ID: {$newAddress->id}");
                     }
                 }
                 
                 // Delete addresses that exist in DB but were not processed/created
                 // This handles the case where user removes an address from the form
-                \Log::info('Address IDs to keep:', $addressIdsToKeep);
+                Log::info('Address IDs to keep:', $addressIdsToKeep);
                 
                 // CRITICAL SAFETY CHECK: Prevent accidental deletion of all addresses
                 // If there were existing addresses but $addressIdsToKeep is empty after processing,
@@ -3332,11 +3332,11 @@ class ClientPersonalDetailsController extends Controller
                     $deletedCount = ClientAddress::where('client_id', $client->id)
                         ->whereNotIn('id', $addressIdsToKeep)
                         ->delete();
-                    \Log::info("Deleted $deletedCount addresses that were not in the request");
+                    Log::info("Deleted $deletedCount addresses that were not in the request");
                 } elseif ($existingAddressCount > 0) {
                     // Security safeguard: If there were existing addresses but none to keep,
                     // this is suspicious - log warning and prevent deletion to avoid data loss
-                    \Log::warning("SECURITY: Prevented deletion of all {$existingAddressCount} addresses for client {$client->id}. " .
+                    Log::warning("SECURITY: Prevented deletion of all {$existingAddressCount} addresses for client {$client->id}. " .
                         "No valid addresses in request - this may indicate an empty form submission or bug.");
                 }
             }
@@ -3379,7 +3379,7 @@ class ClientPersonalDetailsController extends Controller
                     // Build HTML directly with proper formatting
                     $description = $this->formatAddressDiffForActivityLog($diffResult);
                     
-                    \Log::info('Creating activity log for address change', [
+                    Log::info('Creating activity log for address change', [
                         'added' => count($diffResult['added']),
                         'removed' => count($diffResult['removed']),
                         'modified' => count($diffResult['modified'])
@@ -3392,11 +3392,11 @@ class ClientPersonalDetailsController extends Controller
                         'activity'
                     );
                 } else {
-                    \Log::info('No activity log created - addresses are identical');
+                    Log::info('No activity log created - addresses are identical');
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Address diff failed, using simple comparison', [
+                Log::warning('Address diff failed, using simple comparison', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
@@ -3419,7 +3419,7 @@ class ClientPersonalDetailsController extends Controller
                 'message' => 'Address information updated successfully'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error saving address information: ' . $e->getMessage(), [
+            Log::error('Error saving address information: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
@@ -3547,7 +3547,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Travel diff failed, using simple comparison', [
+                Log::warning('Travel diff failed, using simple comparison', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -3775,7 +3775,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Qualification diff failed, using simple comparison', [
+                Log::warning('Qualification diff failed, using simple comparison', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -3985,7 +3985,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple comparison if diff fails
-                \Log::warning('Experience diff failed, using simple comparison', [
+                Log::warning('Experience diff failed, using simple comparison', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -4254,7 +4254,7 @@ class ClientPersonalDetailsController extends Controller
                         $existingChar = ClientCharacter::find($characterId);
                         if ($existingChar && $existingChar->client_id == $client->id) {
                             $existingChar->update([
-                                'admin_id' => auth()->id(),
+                                'admin_id' => Auth::id(),
                                 'type_of_character' => $charData['type_of_character'],
                                 'character_detail' => $charData['detail']
                             ]);
@@ -4263,7 +4263,7 @@ class ClientPersonalDetailsController extends Controller
                             // ID provided but doesn't exist, create new
                             $newChar = ClientCharacter::create([
                                 'client_id' => $client->id,
-                                'admin_id' => auth()->id(),
+                                'admin_id' => Auth::id(),
                                 'type_of_character' => $charData['type_of_character'],
                                 'character_detail' => $charData['detail']
                             ]);
@@ -4273,7 +4273,7 @@ class ClientPersonalDetailsController extends Controller
                         // Create new character
                         $newChar = ClientCharacter::create([
                             'client_id' => $client->id,
-                            'admin_id' => auth()->id(),
+                            'admin_id' => Auth::id(),
                             'type_of_character' => $charData['type_of_character'],
                             'character_detail' => $charData['detail']
                         ]);
@@ -4308,7 +4308,7 @@ class ClientPersonalDetailsController extends Controller
                 }
             } catch (\Exception $e) {
                 // Fallback to simple count if diff fails
-                \Log::warning('Character diff failed, using simple count', [
+                Log::warning('Character diff failed, using simple count', [
                     'error' => $e->getMessage()
                 ]);
                 
@@ -4413,7 +4413,7 @@ class ClientPersonalDetailsController extends Controller
                     
                     // Create the main relationship entry
                     ClientRelationship::create([
-                        'admin_id' => auth()->id(),
+                        'admin_id' => Auth::id(),
                         'client_id' => $client->id,
                         'related_client_id' => (!empty($partnerData['partner_id']) && $partnerData['partner_id'] !== '0') ? $partnerData['partner_id'] : null,
                         'details' => $partnerData['details'],
@@ -4439,7 +4439,7 @@ class ClientPersonalDetailsController extends Controller
                             
                             // Create reciprocal entry
                             ClientRelationship::create([
-                                'admin_id' => auth()->id(),
+                                'admin_id' => Auth::id(),
                                 'client_id' => $partnerData['partner_id'],
                                 'related_client_id' => $client->id,
                                 'details' => $client->first_name . ' ' . $client->last_name . ' (' . $client->email . ', ' . $client->phone . ', ' . $client->client_id . ')',
@@ -4594,7 +4594,7 @@ class ClientPersonalDetailsController extends Controller
                     'details' => $partnerClient->first_name . ' ' . $partnerClient->last_name,
                 ]);
                 
-                \Log::info('Created ClientPartner record for EOI synchronization', [
+                Log::info('Created ClientPartner record for EOI synchronization', [
                     'client_id' => $client->id,
                     'partner_id' => $selectedPartnerId,
                     'relationship_type' => $relationshipType
@@ -4757,7 +4757,7 @@ class ClientPersonalDetailsController extends Controller
                             $dobFormatted = $dobDate->format('Y-m-d');
                         } catch (\Exception $e) {
                             // If date format is invalid, set to null and log the error
-                            \Log::warning('Invalid DOB format for child: ' . $childData['dob']);
+                            Log::warning('Invalid DOB format for child: ' . $childData['dob']);
                             $dobFormatted = null;
                         }
                     }
@@ -4792,7 +4792,7 @@ class ClientPersonalDetailsController extends Controller
                     
                     // Create the primary relationship (parent -> child)
                     $newChild = ClientRelationship::create([
-                        'admin_id' => auth()->id(),
+                        'admin_id' => Auth::id(),
                         'client_id' => $client->id,
                         'related_client_id' => $relatedClientId,
                         'details' => $primaryDetails,
@@ -4825,7 +4825,7 @@ class ClientPersonalDetailsController extends Controller
                             
                             if (!$existingReciprocal) {
                                 ClientRelationship::create([
-                                    'admin_id' => auth()->id(),
+                                    'admin_id' => Auth::id(),
                                     'client_id' => $relatedClientId,
                                     'related_client_id' => $client->id,
                                     'details' => "{$client->first_name} {$client->last_name} ({$client->email}, {$client->phone}, {$client->client_id})",
@@ -5181,7 +5181,7 @@ class ClientPersonalDetailsController extends Controller
             $relatedFiles = $request->input('related_files', []);
             
             // Log what we received
-            \Log::info('Save related files received data', [
+            Log::info('Save related files received data', [
                 'clientId' => $client->id,
                 'rawRelatedFiles' => $relatedFiles,
                 'allRequestData' => $request->all()
@@ -5201,7 +5201,7 @@ class ClientPersonalDetailsController extends Controller
             }
 
             // Log what we're saving
-            \Log::info('Saving related files', [
+            Log::info('Saving related files', [
                 'clientId' => $client->id,
                 'relatedFilesArray' => $relatedFiles,
                 'relatedFilesString' => $relatedFilesString
@@ -5229,7 +5229,7 @@ class ClientPersonalDetailsController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error in saveRelatedFilesInfoSection: ' . $e->getMessage());
+            Log::error('Error in saveRelatedFilesInfoSection: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error saving related files: ' . $e->getMessage()
@@ -5269,7 +5269,7 @@ class ClientPersonalDetailsController extends Controller
             $removedFiles = array_diff($currentRelatedFiles, $newRelatedFileIds);
 
             // Log for debugging
-            \Log::info('Bidirectional update debug', [
+            Log::info('Bidirectional update debug', [
                 'currentClientId' => $currentClientId,
                 'currentRelatedFiles' => $currentRelatedFiles,
                 'newRelatedFileIds' => $newRelatedFileIds,
@@ -5302,7 +5302,7 @@ class ClientPersonalDetailsController extends Controller
                         $relatedClient->related_files = implode(',', $relatedFiles);
                         $relatedClient->save();
                         
-                        \Log::info('Removed client from related files', [
+                        Log::info('Removed client from related files', [
                             'relatedClientId' => $removedFileId,
                             'removedClientId' => $currentClientId,
                             'newRelatedFiles' => $relatedClient->related_files
@@ -5333,7 +5333,7 @@ class ClientPersonalDetailsController extends Controller
                             $relatedClient->related_files = implode(',', $existingRelatedFiles);
                             $relatedClient->save();
                             
-                            \Log::info('Added client to related files', [
+                            Log::info('Added client to related files', [
                                 'relatedClientId' => $relatedFileId,
                                 'addedClientId' => $currentClientId,
                                 'newRelatedFiles' => $relatedClient->related_files
@@ -5344,7 +5344,7 @@ class ClientPersonalDetailsController extends Controller
             }
 
         } catch (\Exception $e) {
-            \Log::error('Error updating bidirectional related files: ' . $e->getMessage());
+            Log::error('Error updating bidirectional related files: ' . $e->getMessage());
         }
     }
 
@@ -5418,7 +5418,7 @@ class ClientPersonalDetailsController extends Controller
                         $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $parentData['dob']);
                         $dobFormatted = $dobDate->format('Y-m-d');
                     } catch (\Exception $e) {
-                        \Log::warning('Invalid DOB format for parent: ' . $parentData['dob']);
+                        Log::warning('Invalid DOB format for parent: ' . $parentData['dob']);
                         $dobFormatted = null;
                     }
                 }
@@ -5451,7 +5451,7 @@ class ClientPersonalDetailsController extends Controller
 
                 // Save primary parent relationship
                 $parentRelationship = ClientRelationship::create([
-                    'admin_id' => auth()->id(),
+                    'admin_id' => Auth::id(),
                     'client_id' => $client->id,
                     'related_client_id' => null,
                     'relationship_type' => $parentData['relationship_type'],
@@ -5486,7 +5486,7 @@ class ClientPersonalDetailsController extends Controller
                         // Create reciprocal relationship if it doesn't exist
                         if (!$existingReciprocal) {
                             ClientRelationship::create([
-                                'admin_id' => auth()->id(),
+                                'admin_id' => Auth::id(),
                                 'client_id' => $relatedClient->id,
                                 'related_client_id' => $client->id,
                                 'relationship_type' => $reciprocalRelationshipType,
@@ -5563,7 +5563,7 @@ class ClientPersonalDetailsController extends Controller
                         $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $siblingData['dob']);
                         $dobFormatted = $dobDate->format('Y-m-d');
                     } catch (\Exception $e) {
-                        \Log::warning('Invalid DOB format for sibling: ' . $siblingData['dob']);
+                        Log::warning('Invalid DOB format for sibling: ' . $siblingData['dob']);
                         $dobFormatted = null;
                     }
                 }
@@ -5586,7 +5586,7 @@ class ClientPersonalDetailsController extends Controller
 
                 // Save primary sibling relationship
                 $siblingRelationship = ClientRelationship::create([
-                    'admin_id' => auth()->id(),
+                    'admin_id' => Auth::id(),
                     'client_id' => $client->id,
                     'related_client_id' => null,
                     'relationship_type' => $siblingData['relationship_type'],
@@ -5621,7 +5621,7 @@ class ClientPersonalDetailsController extends Controller
                         // Create reciprocal relationship if it doesn't exist
                         if (!$existingReciprocal) {
                             ClientRelationship::create([
-                                'admin_id' => auth()->id(),
+                                'admin_id' => Auth::id(),
                                 'client_id' => $relatedClient->id,
                                 'related_client_id' => $client->id,
                                 'relationship_type' => $reciprocalRelationshipType,
@@ -5698,7 +5698,7 @@ class ClientPersonalDetailsController extends Controller
                         $dobDate = \Carbon\Carbon::createFromFormat('d/m/Y', $otherData['dob']);
                         $dobFormatted = $dobDate->format('Y-m-d');
                     } catch (\Exception $e) {
-                        \Log::warning('Invalid DOB format for other: ' . $otherData['dob']);
+                        Log::warning('Invalid DOB format for other: ' . $otherData['dob']);
                         $dobFormatted = null;
                     }
                 }
@@ -5721,7 +5721,7 @@ class ClientPersonalDetailsController extends Controller
 
                 // Save primary other relationship
                 $otherRelationship = ClientRelationship::create([
-                    'admin_id' => auth()->id(),
+                    'admin_id' => Auth::id(),
                     'client_id' => $client->id,
                     'related_client_id' => null,
                     'relationship_type' => $otherData['relationship_type'],
@@ -5756,7 +5756,7 @@ class ClientPersonalDetailsController extends Controller
                         // Create reciprocal relationship if it doesn't exist
                         if (!$existingReciprocal) {
                             ClientRelationship::create([
-                                'admin_id' => auth()->id(),
+                                'admin_id' => Auth::id(),
                                 'client_id' => $relatedClient->id,
                                 'related_client_id' => $client->id,
                                 'relationship_type' => $reciprocalRelationshipType,
