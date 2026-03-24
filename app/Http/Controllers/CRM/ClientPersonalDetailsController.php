@@ -658,56 +658,43 @@ class ClientPersonalDetailsController extends Controller
 
             $query = $request->input('query');
             $excludeClient = $request->input('exclude_client');
+            $queryStr = strtolower($query);
 
-            // Simplified search - just get all clients first, then filter
+            // Only return records the caller may actually access (respects allocation + grants)
             $allClients = Admin::whereIn('type', ['client', 'lead'])
                 ->select('id', 'email', 'first_name', 'last_name', 'phone', 'client_id')
-                ->get();
+                ->where(function ($q) use ($queryStr) {
+                    $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $queryStr . '%'])
+                      ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $queryStr . '%'])
+                      ->orWhereRaw('LOWER(email) LIKE ?', ['%' . $queryStr . '%'])
+                      ->orWhereRaw('LOWER(phone) LIKE ?', ['%' . $queryStr . '%'])
+                      ->orWhereRaw('LOWER(client_id) LIKE ?', ['%' . $queryStr . '%']);
+                });
 
-            // Filter results in PHP for better debugging
-            $filteredClients = $allClients->filter(function($client) use ($query, $excludeClient) {
-                // Check if client matches search query
-                $matches = false;
-                $searchTerm = strtolower($query);
-                
-                if (strpos(strtolower($client->first_name), $searchTerm) !== false ||
-                    strpos(strtolower($client->last_name), $searchTerm) !== false ||
-                    strpos(strtolower($client->email), $searchTerm) !== false ||
-                    strpos(strtolower($client->phone), $searchTerm) !== false ||
-                    strpos(strtolower($client->client_id), $searchTerm) !== false) {
-                    $matches = true;
-                }
-                
-                // Exclude current client if provided
+            \App\Support\StaffClientVisibility::restrictAdminEloquentQuery($allClients);
+
+            $allClients = $allClients->get();
+
+            // Filter only the exclude-client rule in PHP (search is done in SQL now)
+            $filteredClients = $allClients->filter(function($client) use ($excludeClient) {
                 if ($excludeClient && $client->id == $excludeClient) {
-                    $matches = false;
+                    return false;
                 }
-                
-                return $matches;
+
+                return true;
             });
 
             // Convert to array and limit results
             $partners = $filteredClients->take(20)->values()->toArray();
 
-            // Return JSON response with consistent structure
             return response()->json([
                 'partners' => $partners,
-                'debug' => [
-                    'query' => $query,
-                    'exclude_client' => $excludeClient,
-                    'total_clients' => $allClients->count(),
-                    'filtered_count' => count($partners)
-                ]
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'partners' => [],
                 'error' => $e->getMessage(),
-                'debug' => [
-                    'query' => $request->input('query', ''),
-                    'exclude_client' => $request->input('exclude_client', '')
-                ]
             ], 200);
         }
     }
@@ -749,6 +736,12 @@ class ClientPersonalDetailsController extends Controller
     public function fetchClientMatterAssignee(Request $request)
     {
         $requestData = $request->all();
+        if (!empty($requestData['client_matter_id'])) {
+            $clientId = DB::table('client_matters')->where('id', $requestData['client_matter_id'])->value('client_id');
+            if ($clientId) {
+                $this->ensureCrmRecordAccess((int) $clientId);
+            }
+        }
         $matter_info = DB::table('client_matters')->where('id',$requestData['client_matter_id'])->first();
         //dd($matter_info);
         if(!empty($matter_info)) {
@@ -766,6 +759,10 @@ class ClientPersonalDetailsController extends Controller
     public function updateClientMatterAssignee(Request $request){
         $response = ['status' => false, 'message' => 'Invalid request. Please try again.'];
         $requstData = $request->all();
+
+        if (!empty($requstData['client_id'])) {
+            $this->ensureCrmRecordAccess((int) $requstData['client_id']);
+        }
 
         if (empty($requstData['selectedMatterLM'])) {
             $response['message'] = 'Please select a matter first.';
@@ -844,6 +841,10 @@ class ClientPersonalDetailsController extends Controller
             'phone' => 'required|max:255|unique:admins,phone,'.$requestData['id'],
             'client_id' => 'required|max:255|unique:admins,client_id,'.$requestData['id']
         ]);
+
+        if (!empty($requestData['id'])) {
+            $this->ensureCrmRecordAccess((int) $requestData['id']);
+        }
 
         $related_files = '';
         if(isset($requestData['related_files'])){
@@ -4629,6 +4630,8 @@ class ClientPersonalDetailsController extends Controller
     public function getPartnerEoiData($partnerId)
     {
         try {
+            $this->ensureCrmRecordAccess((int) $partnerId);
+
             // Get the partner's data from their actual profile
             $partnerClient = \App\Models\Admin::find($partnerId);
             if (!$partnerClient) {

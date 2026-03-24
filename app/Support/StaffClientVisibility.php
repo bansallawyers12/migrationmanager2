@@ -22,7 +22,14 @@ final class StaffClientVisibility
 {
     private const DEFAULT_PERSON_ASSISTING_ROLE_IDS = [13];
 
-    /** Super Admin (1), PR (12), Admin (17) — must stay aligned with config/crm.php */
+    /**
+     * Roles that get full lead visibility in non-strict mode.
+     * In strict mode (CRM_ACCESS_STRICT_ALLOCATION=true) this list is IGNORED and
+     * everyone (including PR role 12) is subject to allocation + grant checks.
+     * Must stay aligned with config/crm.php.
+     *
+     * @see userMaySeeByAllocation for the strict-mode enforcement path
+     */
     private const DEFAULT_LEAD_FULL_ACCESS_ROLE_IDS = [1, 12, 17];
 
     public static function personAssistingRoleIds(): array
@@ -445,6 +452,9 @@ final class StaffClientVisibility
     /**
      * Limit signature / document listings to records the viewer may access (client_id / lead_id on documents).
      *
+     * Uses the model's own table name (via qualifyColumn) so callers that join the documents
+     * table under an alias, or that use a different primary table, still get correct SQL.
+     *
      * @param  Builder<\App\Models\Document>  $query
      */
     public static function restrictDocumentEloquentQuery(Builder $query, ?Authenticatable $user = null): void
@@ -460,30 +470,32 @@ final class StaffClientVisibility
         }
 
         $staffId = (int) $user->id;
+        $model   = $query->getModel();
+        $table   = $model->getTable();
 
-        $query->where(function (Builder $outer) use ($staffId) {
-            $outer->where(function (Builder $q) {
-                $q->whereNull('documents.client_id')->whereNull('documents.lead_id');
+        $query->where(function (Builder $outer) use ($staffId, $table) {
+            $outer->where(function (Builder $q) use ($table) {
+                $q->whereNull("{$table}.client_id")->whereNull("{$table}.lead_id");
             });
 
             foreach (['client_id', 'lead_id'] as $col) {
-                $outer->orWhere(function (Builder $docQ) use ($staffId, $col) {
-                    $docQ->whereNotNull("documents.{$col}")
-                        ->where(function (Builder $accessQ) use ($staffId, $col) {
-                            $accessQ->whereExists(function ($sub) use ($staffId, $col) {
+                $outer->orWhere(function (Builder $docQ) use ($staffId, $col, $table) {
+                    $docQ->whereNotNull("{$table}.{$col}")
+                        ->where(function (Builder $accessQ) use ($staffId, $col, $table) {
+                            $accessQ->whereExists(function ($sub) use ($staffId, $col, $table) {
                                 $sub->select(DB::raw('1'))
                                     ->from('client_matters')
-                                    ->whereColumn('client_matters.client_id', "documents.{$col}")
+                                    ->whereColumn('client_matters.client_id', "{$table}.{$col}")
                                     ->where('client_matters.sel_person_assisting', $staffId);
-                            })->orWhereExists(function ($sub) use ($staffId, $col) {
+                            })->orWhereExists(function ($sub) use ($staffId, $col, $table) {
                                 $sub->select(DB::raw('1'))
                                     ->from('admins')
-                                    ->whereColumn('admins.id', "documents.{$col}")
+                                    ->whereColumn('admins.id', "{$table}.{$col}")
                                     ->where('admins.user_id', $staffId);
-                            })->orWhereExists(function ($sub) use ($staffId, $col) {
+                            })->orWhereExists(function ($sub) use ($staffId, $col, $table) {
                                 $sub->select(DB::raw('1'))
                                     ->from('client_access_grants')
-                                    ->whereColumn('client_access_grants.admin_id', "documents.{$col}")
+                                    ->whereColumn('client_access_grants.admin_id', "{$table}.{$col}")
                                     ->where('client_access_grants.staff_id', $staffId)
                                     ->where('client_access_grants.status', 'active')
                                     ->whereNotNull('client_access_grants.ends_at')
@@ -504,11 +516,13 @@ final class StaffClientVisibility
 
         if (($row->type ?? '') === 'lead') {
             if (! $strict) {
+                // Non-strict mode: PR (role 12) and other full-access roles see all leads.
+                // When strict_allocation = true, ALL non-exempt roles (including PR 12) fall
+                // through to the allocation check below — enforcing plan §2 / §9.
                 if (! self::isRestrictedPersonAssisting($user)) {
-                    return true;
-                }
-                if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
-                    return true;
+                    if (in_array((int) ($user->role ?? 0), self::leadFullAccessRoleIds(), true)) {
+                        return true;
+                    }
                 }
                 $staffId = (int) $user->id;
                 if (DB::table('client_matters')
@@ -521,6 +535,7 @@ final class StaffClientVisibility
                 return (int) ($row->user_id ?? 0) === $staffId;
             }
 
+            // Strict mode: allocation-only regardless of role (PR 12 included).
             $staffId = (int) $user->id;
             if (DB::table('client_matters')
                 ->where('client_id', $adminId)

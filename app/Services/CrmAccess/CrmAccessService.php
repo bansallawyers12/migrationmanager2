@@ -233,11 +233,25 @@ class CrmAccessService
 
     public function expireStaleGrants(): int
     {
-        return ClientAccessGrant::query()
+        $now = Carbon::now('UTC');
+
+        $expired = ClientAccessGrant::query()
             ->where('status', 'active')
             ->whereNotNull('ends_at')
-            ->where('ends_at', '<', Carbon::now('UTC'))
+            ->where('ends_at', '<', $now)
             ->update(['status' => 'expired']);
+
+        // Also clean up pending requests that were never actioned after a generous window
+        // (configurable; defaults to 14 days so stale requests don't accumulate).
+        $pendingTtlDays = max(1, (int) config('crm_access.pending_ttl_days', 14));
+        $pendingCutoff  = $now->copy()->subDays($pendingTtlDays);
+
+        ClientAccessGrant::query()
+            ->where('status', 'pending')
+            ->where('requested_at', '<', $pendingCutoff)
+            ->update(['status' => 'expired', 'revoke_reason' => 'Auto-expired: not actioned within ' . $pendingTtlDays . ' days']);
+
+        return $expired;
     }
 
     protected function hasDuplicateActiveQuickGrant(Staff $user, int $adminId): bool

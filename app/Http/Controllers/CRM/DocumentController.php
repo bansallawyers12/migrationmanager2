@@ -37,11 +37,13 @@ class DocumentController extends Controller
 
     protected function authorizeDocumentAssociatedAccess(Document $document): void
     {
-        if ($document->client_id) {
-            $this->ensureCrmRecordAccess((int) $document->client_id);
-        }
+        // For documents linked to a client or lead, enforce access.
+        // ensureCrmRecordAccess silently skips rows where the stored ID is not a
+        // client/lead (e.g. ad-hoc docs where client_id holds the uploading staff's id).
         if ($document->lead_id) {
-            $this->ensureCrmRecordAccess((int) $document->lead_id);
+            $this->ensureCrmRecordAccessStrict((int) $document->lead_id);
+        } elseif ($document->client_id) {
+            $this->ensureCrmRecordAccess((int) $document->client_id);
         }
     }
     /**
@@ -463,14 +465,16 @@ class DocumentController extends Controller
             // Get S3 URL using Laravel's url() method (matches working examples)
             $s3Url = Storage::disk('s3')->url($s3FilePath);
             
-            // Update document with S3 file information
+            // Update document with S3 file information.
+            // client_id is intentionally left null here — this is a staff-authored
+            // ad-hoc document not yet linked to any client/lead. It will be linked
+            // later if the user explicitly assigns it via the edit/signature flow.
             $document->update([
                 'file_name' => $originalFileName,
                 'filetype' => $uploadedFile->getMimeType(),
-                'myfile' => $s3Url,              // Full S3 URL
-                'myfile_key' => $fileName,       // S3 key for reference
-                'doc_type' => $docType,          // Document category
-                'client_id' => $adminId,         // Associated admin ID
+                'myfile' => $s3Url,          // Full S3 URL
+                'myfile_key' => $fileName,   // S3 key for reference
+                'doc_type' => $docType,      // Document category
                 'file_size' => $uploadedFile->getSize(),
             ]);
             

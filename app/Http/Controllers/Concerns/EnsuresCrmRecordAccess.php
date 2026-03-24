@@ -12,6 +12,10 @@ trait EnsuresCrmRecordAccess
 {
     /**
      * Abort with 403 unless the current staff may access this client/lead row (admins.id).
+     *
+     * Rows where no matching admins.id exists with type = client|lead are silently allowed
+     * (e.g. ad-hoc documents associated to a staff user_id, not a client). Callers that
+     * explicitly want a 404 on missing records should check existence themselves first.
      */
     protected function ensureCrmRecordAccess(int $adminId): void
     {
@@ -19,8 +23,47 @@ trait EnsuresCrmRecordAccess
             return;
         }
 
-        if (! Admin::query()->where('id', $adminId)->whereIn('type', ['client', 'lead'])->exists()) {
+        $row = Admin::query()
+            ->where('id', $adminId)
+            ->whereIn('type', ['client', 'lead'])
+            ->first(['id', 'type']);
+
+        // ID does not correspond to a client/lead — skip gate (not our concern)
+        if (! $row) {
             return;
+        }
+
+        $user = Auth::guard('admin')->user();
+        if (StaffClientVisibility::canAccessClientOrLead($adminId, $user)) {
+            return;
+        }
+
+        if (request()->expectsJson() || request()->ajax()) {
+            throw new HttpResponseException(
+                response()->json(StaffClientVisibility::unauthorizedPayload(), 403)
+            );
+        }
+
+        abort(403, 'Unauthorized');
+    }
+
+    /**
+     * Abort 403 if $adminId is a client/lead row and the current user cannot access it.
+     * Unlike ensureCrmRecordAccess, throws even if the row doesn't exist.
+     */
+    protected function ensureCrmRecordAccessStrict(int $adminId): void
+    {
+        if ($adminId <= 0) {
+            abort(404);
+        }
+
+        $row = Admin::query()
+            ->where('id', $adminId)
+            ->whereIn('type', ['client', 'lead'])
+            ->first(['id', 'type']);
+
+        if (! $row) {
+            abort(404);
         }
 
         $user = Auth::guard('admin')->user();

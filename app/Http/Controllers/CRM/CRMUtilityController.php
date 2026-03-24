@@ -1147,6 +1147,13 @@ public function getChapters(Request $request)
 		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
 		$requestData['subject'] = str_replace('__AMP__', '&', $requestData['subject'] ?? '');
 		//echo '<pre>'; print_r($requestData); die;
+
+		// Gate on the associated client or lead record
+		$associatedAdminId = $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
+		if ($associatedAdminId) {
+			$this->ensureCrmRecordAccess((int) $associatedAdminId);
+		}
+
 		$user_id = @Auth::user()->id;
 		$reciept_id = null;
 		$array = array();
