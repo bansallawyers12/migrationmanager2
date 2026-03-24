@@ -100,6 +100,16 @@
 			<?php
 			}
 			?>
+
+			<?php
+			$grantsDashUser = Auth::user();
+			$showGrantsDashboard = $grantsDashUser instanceof \App\Models\Staff
+				&& app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($grantsDashUser);
+			if ($showGrantsDashboard) {
+				$grantsDashActive = (Route::currentRouteName() === 'crm.access.dashboard') ? 'active' : '';
+			?>
+			<li class="{{ $grantsDashActive }}"><a class="nav-link" href="{{ route('crm.access.dashboard') }}">Grants dashboard</a></li>
+			<?php } ?>
 			
 		</ul>
 </div>

@@ -38,6 +38,8 @@
             />
         </section>
 
+        @include('crm.partials.access-approvals-dashboard')
+
         {{-- Priority Focus Section --}}
         <section class="priority-focus">
             {{-- My Actions (Microsoft To Do Style) --}}
