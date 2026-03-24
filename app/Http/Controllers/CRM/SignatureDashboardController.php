@@ -72,18 +72,21 @@ class SignatureDashboardController extends Controller
 
         $documents = $query->paginate(20);
 
-        // Get counts for dashboard cards (global access - all documents)
+        // Get counts for dashboard cards — all scoped to records the viewer may access.
+        // Under strict allocation, exempt staff see all rows; restricted staff see only
+        // their allocated + grant-covered documents (via Document::scopeVisible).
         $counts = [
             'sent_by_me' => Document::forSignatureWorkflow()->forUser($staff->id)->notArchived()->count(),
-            'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(), // All documents (global)
-            'pending' => Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count(), // All pending (global)
-            'signed' => Document::forSignatureWorkflow()->visible($staff)->byStatus('signed')->notArchived()->count(), // All signed (global)
+            'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(),
+            'pending' => Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count(),
+            'signed' => Document::forSignatureWorkflow()->visible($staff)->byStatus('signed')->notArchived()->count(),
             'overdue' => 0, // due_at column removed
         ];
 
-        // All users see global counts now
-        $counts['all'] = Document::forSignatureWorkflow()->notArchived()->count();
-        $counts['all_pending'] = Document::forSignatureWorkflow()->byStatus('sent')->notArchived()->count();
+        // Aggregates also respect visibility so restricted staff cannot infer
+        // the existence of documents they have no access to.
+        $counts['all'] = Document::forSignatureWorkflow()->visible($staff)->notArchived()->count();
+        $counts['all_pending'] = Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count();
 
         // Provide errors variable for the layout
         $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();

@@ -24,10 +24,7 @@ class AccessGrantController extends Controller
 
     public function meta(): JsonResponse
     {
-        $user = Auth::guard('admin')->user();
-        if (! $user) {
-            abort(401);
-        }
+        $user = $this->requireStaff();
 
         $teamId = $user->team;
         $teamIdInt = is_numeric($teamId) ? (int) $teamId : null;

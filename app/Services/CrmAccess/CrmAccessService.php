@@ -246,12 +246,12 @@ class CrmAccessService
         $pendingTtlDays = max(1, (int) config('crm_access.pending_ttl_days', 14));
         $pendingCutoff  = $now->copy()->subDays($pendingTtlDays);
 
-        ClientAccessGrant::query()
+        $pendingExpired = ClientAccessGrant::query()
             ->where('status', 'pending')
             ->where('requested_at', '<', $pendingCutoff)
             ->update(['status' => 'expired', 'revoke_reason' => 'Auto-expired: not actioned within ' . $pendingTtlDays . ' days']);
 
-        return $expired;
+        return $expired + $pendingExpired;
     }
 
     protected function hasDuplicateActiveQuickGrant(Staff $user, int $adminId): bool

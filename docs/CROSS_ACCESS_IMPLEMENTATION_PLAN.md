@@ -1,8 +1,8 @@
 # Cross-access & allocated-only visibility — implementation plan
 
-**v4.0** — `teams` table confirmed; all open items fully resolved; plan is implementation-ready.
+**v5.0** — Product rules unchanged; **as-built** sections and HTTP/config inventory aligned with the current Laravel codebase (Phases A–D implemented; Phase E mostly done — see §15).
 
-This document turns agreed product rules into build phases for the Laravel/PostgreSQL CRM.
+This document turns agreed product rules into build phases for the Laravel CRM (default DB driver in `config/database.php` is `pgsql`; MySQL may be used per environment).
 
 ---
 
@@ -79,10 +79,28 @@ return [
 
     // Strict allocation enforcement on/off (flip false → true in Phase C)
     'strict_allocation' => env('CRM_ACCESS_STRICT_ALLOCATION', false),
+
+    // Also implemented in code (see config/crm_access.php): max_pending_supervisor_requests,
+    // pending_ttl_days, quick_grant_minutes, supervisor_grant_hours — all env-overridable.
 ];
 ```
 
-Document all keys in `.env.example`.
+> **Note:** The committed `config/crm_access.php` uses a small `$intList()` helper so empty or broken env strings do not wipe approver or exempt defaults. Prefer reading that file for the exact defaults.
+
+**Environment variables** (add to `.env` as needed; there is no committed `.env.example` in this repo at time of writing):
+
+| Variable | Purpose |
+|----------|---------|
+| `CRM_ACCESS_EXEMPT_ROLE_IDS` | Comma-separated role IDs (default `1,17`). Empty/invalid env falls back to `[1, 17]` in code. |
+| `CRM_ACCESS_APPROVER_STAFF_IDS` | Comma-separated `staff.id` values; empty env falls back to hardcoded default list in `config/crm_access.php`. |
+| `CRM_ACCESS_QUICK_ONLY_ROLE_IDS` | Quick-only roles (default `14`); empty env falls back to `[14]`. |
+| `CRM_ACCESS_STRICT_ALLOCATION` | `true` / `false` — strict allocated-only + grants for non-exempt roles. |
+| `CRM_ACCESS_QUICK_GRANT_MINUTES` | Quick grant length (default `15`). |
+| `CRM_ACCESS_SUPERVISOR_GRANT_HOURS` | Supervisor grant length after approval (default `24`). |
+| `CRM_ACCESS_MAX_PENDING_SUPERVISOR_REQUESTS` | Cap pending supervisor requests per staff (default `5`). |
+| `CRM_ACCESS_PENDING_TTL_DAYS` | Days before stale `pending` supervisor requests are auto-expired by `expireStaleGrants()` (default `14`). |
+
+Actual parsing and fallbacks live in `config/crm_access.php` (`$intList` helper for ID lists).
 
 ---
 
@@ -197,11 +215,20 @@ hasActiveGrant(Staff $user, int $adminId): bool
         AND ends_at > UTC_NOW()
     → false if user deactivated (status != 1) regardless of row
 
-canAccessClientOrLead(Staff $user, int $adminId): bool
-    1. isExemptRole → true  (+ log exempt row if Phase D active)
-    2. StaffClientVisibility::canAccessClientOrLead → true  (allocated)
-    3. hasActiveGrant → true  (granted extra access)
-    4. → false
+getApproverStaffIds(): array
+    → configured approver `staff.id` values that still exist with status = active,
+      merged with all active Super Admin (role 1) staff ids
+
+**Access decision (implemented on `StaffClientVisibility`, not on `CrmAccessService`):**
+
+`StaffClientVisibility::canAccessClientOrLead(int $adminId, ?Authenticatable $user): bool`
+
+1. Resolve `admins` row for `client` / `lead`; apply super-admin-only locked client file rules where configured.
+2. **Exempt role** → `true` and **exempt audit row** once per UTC calendar day per staff + record (`logExemptAccessIfNeeded` on `Staff` instances).
+3. **Active time-bound grant** for that staff + `admin_id` → `true` (`CrmAccessService::hasActiveGrant`).
+4. Else **allocation / lead rules** via `userMaySeeByAllocation` (strict vs non-strict; PR / lead full-access only when **not** strict — see `StaffClientVisibility`).
+
+Controllers use `EnsuresCrmRecordAccess` (`ensureCrmRecordAccess`, `ensureCrmRecordAccessStrict`, `ensureCrmRecordAccessFromRequest`, `ensureCrmRecordAccessForOptionalClientId`) to centralise HTTP abort behaviour.
 
 requestQuickGrant(Staff $user, int $adminId, string $recordType,
                   int $officeId, ?int $teamId, string $reasonCode): Grant
@@ -232,14 +259,16 @@ revokeGrantsForStaff(int $staffId, string $reason): int
 
 expireStaleGrants(): int  (called by scheduled job, safety net only)
     - UPDATE status=expired WHERE status=active AND ends_at < now()
+    - Also expire very old status=pending rows (not actioned within pending_ttl_days)
+      with revoke_reason set (stale supervisor queue hygiene)
 ```
 
 ### Integration with `StaffClientVisibility`
 
-Add two static helpers:
+Illustrative helpers (as-built reads **arrays** from `config('crm_access.*')`, not raw `explode` on every call):
 
 ```php
-// StaffClientVisibility.php
+// StaffClientVisibility.php (illustrative)
 
 public static function isExemptFromAllocation(\App\Models\Staff $user): bool
 {
@@ -256,25 +285,31 @@ public static function isQuickAccessOnly(\App\Models\Staff $user): bool
 }
 ```
 
-Then modify `canAccessClientOrLead` and `restrictAdminEloquentQuery` to **skip restrictions** for exempt roles and **additionally check grants** for non-exempt users (Phase C).
+**As-built:** `canAccessClientOrLead` honours grants and strict/non-strict allocation; list helpers include `restrictAdminEloquentQuery`, `restrictLeadListQuery`, `restrictMatterListToAllocatedClients`, `restrictDocumentEloquentQuery`, `restrictBookingAppointmentEloquentQuery`, `enrichGlobalSearchItem`, `crossAccessUiFlags`.
 
 ---
 
 ## 7. HTTP / API surface
 
-All under `auth:admin` middleware. Prefix: `/crm/access/` (or integrate into existing CRM route groups).
+Registered in `routes/clients.php` under prefix **`/crm/access/`** with `auth:admin` (same group as other CRM routes). Named routes use the `crm.access.*` prefix.
 
-| Method | URI | Who | Body / Params |
-|--------|-----|-----|---------------|
-| `POST` | `/crm/access/quick` | Any staff | `admin_id`, `record_type`, `office_id`, `reason_code` |
-| `POST` | `/crm/access/supervisor` | Any staff | `admin_id`, `record_type`, `office_id`, `note?` |
-| `GET` | `/crm/access/queue` | Approver / Super Admin only | — |
-| `POST` | `/crm/access/{grant}/approve` | Approver / Super Admin only | — |
-| `POST` | `/crm/access/{grant}/reject` | Approver / Super Admin only | `reason?` |
-| `GET` | `/crm/access/my-grants` | Authenticated staff | — |
-| `GET` | `/crm/access/dashboard` | Approver / Super Admin | Filters |
+| Method | URI | Who | Response / notes |
+|--------|-----|-----|-------------------|
+| `GET` | `/crm/access/meta` | Authenticated staff | JSON: branches, teams, quick reasons, staff office/team, UI flags (`show_quick` / `show_supervisor`). |
+| `POST` | `/crm/access/quick` | Authenticated staff | JSON. Body: `admin_id`, `record_type`, `office_id`, `team_id?`, `reason_code`. **Throttle:** 30/min. |
+| `POST` | `/crm/access/supervisor` | Authenticated staff | JSON. Body: `admin_id`, `record_type`, `office_id`, `team_id?`, `note?`. **Throttle:** 10/min. |
+| `GET` | `/crm/access/queue` | Approver / Super Admin | **HTML** queue page. |
+| `GET` | `/crm/access/queue/data` | Approver / Super Admin | JSON pending supervisor requests (up to 200). |
+| `GET` | `/crm/access/queue/mini` | Approver / Super Admin | JSON pending supervisor requests (up to 15) for header dropdown. |
+| `POST` | `/crm/access/{grant}/approve` | Approver / Super Admin | JSON (`{grant}` numeric). |
+| `POST` | `/crm/access/{grant}/reject` | Approver / Super Admin | JSON; body `reason?`. |
+| `GET` | `/crm/access/my-grants` | Authenticated staff | **HTML** “my grants” page. |
+| `GET` | `/crm/access/my-grants/data` | Authenticated staff | JSON. |
+| `GET` | `/crm/access/dashboard` | Approver / Super Admin | **HTML** grants dashboard (filters, aggregates, table, CSV link). |
+| `GET` | `/crm/access/dashboard/data` | Approver / Super Admin | JSON (filtered rows + summary; use for integrations — **replaces** old “JSON-only `/dashboard`” behaviour). |
+| `GET` | `/crm/access/dashboard/export` | Approver / Super Admin | **CSV download**; same query-string filters as `/dashboard/data`. |
 
-All return JSON. CSRF covered by standard `VerifyCsrfToken` middleware.
+State-changing routes use CSRF via standard web middleware. JSON endpoints expect `Accept: application/json` / XHR where clients rely on JSON error bodies.
 
 ---
 
@@ -284,65 +319,56 @@ The app already has `Notification` model (`sender_id`, `receiver_id`, `module_id
 
 **Use the existing system:**
 
-On `requestSupervisorGrant`:
+On `requestSupervisorGrant` (as-built in `CrmAccessService::notifyApproversOfPendingGrant`):
+
+- Resolve targets with **`getApproverStaffIds()`** (configured approvers + active role-1 staff), excluding the requester.
+- Create `Notification` rows with **`receiver_status = 0`** (unread), `url` pointing at `/crm/access/queue`, `notification_type = access_request`.
+- **`NotificationCountUpdated`** is broadcast per approver with updated unread count.
+- **`BroadcastNotificationCreated`** is also used for a shared real-time toast payload (batch UUID).
+
+Pseudocode shape:
 
 ```php
-foreach (CrmAccessService::getApproverIds() as $approverId) {
-    $notification = Notification::create([
-        'sender_id'         => $requester->id,
-        'receiver_id'       => $approverId,
-        'module_id'         => $grantId,
-        'url'               => '/crm/access/queue',
-        'notification_type' => 'access_request',
-        'message'           => "{$requester->first_name} requested access to client #{$adminId}",
-        'receiver_status'   => 1,
-        'seen'              => 0,
-    ]);
-    broadcast(new BroadcastNotificationCreated($notification));
+foreach ($crmAccess->getApproverStaffIds() as $approverId) {
+    // skip self; create Notification; broadcast NotificationCountUpdated + toast batch
 }
-broadcast(new NotificationCountUpdated(...));
 ```
 
 On approve/reject: notify the requester in the same way.
 
 ---
 
-## 9. Enforcement points (complete call-site inventory from codebase)
+## 9. Enforcement points (call-site inventory — **as-built**)
 
-### Already using `canAccessClientOrLead` (must extend to check grants)
+Line numbers drift quickly; use ripgrep for `EnsuresCrmRecordAccess`, `ensureCrmRecordAccess`, `StaffClientVisibility::`, and `restrictBookingAppointmentEloquentQuery` in `app/Http/Controllers`.
 
-| File | Locations |
+### Core visibility + grants
+
+| Area | Mechanism |
 |------|-----------|
-| `ClientsController` | Lines 627, 679, 1858, 2042, 2861, 2938, 7473 |
-| `LeadController` | Lines 342, 850, 907, 1237, 1460 |
-| `ClientDocumentsController` | Lines 51, 67 |
-| `ClientPersonalDetailsController` | Line 1735 |
-| `LeadConversionController` | Line 71 |
+| Single-record client/lead access | `StaffClientVisibility::canAccessClientOrLead` (grants + allocation + exempt logging). |
+| HTTP guard | `EnsuresCrmRecordAccess` trait on CRM controllers. |
+| Client/lead listings | `restrictAdminEloquentQuery`, `restrictLeadListQuery`, `restrictMatterListToAllocatedClients`, `personAssistingStaffIdOrNull` / search enrichment. |
+| Documents | `Document::scopeVisible` → `StaffClientVisibility::restrictDocumentEloquentQuery`. |
+| Booking appointments | `StaffClientVisibility::restrictBookingAppointmentEloquentQuery` on list/export/stats queries; per-row checks via `ensureCrmRecordAccess` when `client_id` is set. |
+| Email tied to client | `ensureCrmRecordAccessForOptionalClientId` when `email_logs.client_id` is set (`EmailUploadController`, `EmailLabelController` apply/remove, `EmailLogAttachmentController`). |
 
-### Using `restrictAdminEloquentQuery` / `personAssistingStaffIdOrNull` (list queries — extend for Phase C)
+### Controllers touched for cross-access (non-exhaustive; verify with grep)
 
-| File | Usage |
-|------|-------|
-| `ClientsController` | Lines 176, 308, 548, 592, 2223, 2283 |
-| `ClientQueries` trait | Applies to all controllers using it |
-| `VisaTypeSheetController`, `ArtSheetController`, `EoiRoiSheetController` | Sheet-level queries |
+| File | Status |
+|------|--------|
+| `ClientsController`, `LeadController`, `ClientDocumentsController`, `LeadConversionController` | Existing checks extended with grant-aware visibility / lists (Phase B–C). |
+| `ClientPersonalDetailsController` | Multiple endpoints gated; `searchPartner` and mutating routes use visibility + access checks (no full enumeration). |
+| `DocumentController` | `EnsuresCrmRecordAccess`; document query scoping via `restrictDocumentEloquentQuery`. |
+| `ClientAccountsController`, `EmailUploadController` | Gated on client/record context. |
+| `OfficeVisitController`, `CRMUtilityController` (e.g. `sendmail`) | Gated where `client_id` / `lead_id` apply. |
+| `BookingAppointmentsController` | List/calendar/export/stats restricted; show/update/bulk actions gated on linked `client_id`. |
+| `EmailLabelController`, `EmailLogAttachmentController` | Gated via email log’s `client_id` when present. |
+| `SignatureDashboardController` | Uses `Document::visible($staff)` → **`restrictDocumentEloquentQuery`** (confirm any “global” copy in comments vs actual query). |
+| `AuditLogController` | **N/A for client cross-access** — indexes `StaffLoginLog` only (no per-client log API in that controller). |
+| `BroadcastNotificationAjaxController` | **N/A** for client record scoping — broadcasts by staff ids / scope, not `client_id`. |
 
-### No current `canAccessClientOrLead` check — **add in Phase C**
-
-These controllers accept `client_id` / `admin_id` from request but have **no access gate** today:
-
-| File | Note |
-|------|------|
-| `DocumentController` | Accepts `client_id` for document operations — no gate found |
-| `SignatureDashboardController` | Uses `StaffClientVisibility` scope but confirm coverage |
-| `AuditLogController` | May expose log entries for any client_id |
-| `ClientAccountsController` | Accepts client_id for account data |
-| `BookingAppointmentsController` | Client-linked bookings |
-| `BroadcastNotificationAjaxController` | If accepts client_id |
-| `OfficeVisitController` | If accepts client_id |
-| `EmailUploadController`, `EmailLabelController`, `EmailLogAttachmentController` | Email data tied to clients |
-
-> **Action:** During Phase C, grep all controllers for `$request->client_id`, `$request->admin_id` etc. and insert the gate or delegate to service.
+> **Ongoing hygiene:** When adding endpoints that accept `client_id`, `admin_id`, or `lead_id`, use the trait or an explicit `canAccessClientOrLead` check.
 
 ### Search (`getallclients` in `ClientsController`)
 
@@ -373,22 +399,17 @@ Fields:
 
 ### 10.3 Approver popup / notification
 
-- Approvers see **pending count badge** on their bell / notification icon (existing `NotificationCountUpdated` mechanism).
-- Clicking opens a **mini-queue popup** showing pending requests: requester name, client name, reason, requested at — with **Approve** / **Reject** inline.
-- Full queue also accessible from dashboard.
+- **As-built:** Approvers get a **dropdown on the notification bell** (`resources/views/Elements/CRM/header_client_detail.blade.php`): secondary badge for pending supervisor count; body loads `/crm/access/queue/mini` with inline **Approve / Reject**; links to full queue, grants dashboard, and all notifications. Non-approvers keep single-click navigation to `/all-notifications` (see layout scripts).
+- Unread notification count still driven by existing `Notification` + `NotificationCountUpdated` / Echo.
 
 ### 10.4 Dashboard
 
-- Filters: user, client/lead, date range, office, team, grant type (`quick` / `supervisor_approved` / `exempt`), status.
-- Aggregates: total grants, distinct clients per user, quick vs supervisor split.
-- **"Pending Approvals"** section or tab — visible to approvers + Super Admin only.
-- Export CSV for audits.
+- **As-built:** `/crm/access/dashboard` (HTML) with filters (staff id, record `admin_id`, date range, office, team, grant type, status), summary tiles (global pending/active + filtered aggregates and quick/supervisor/exempt split), table (up to 500 rows), and **Export CSV** via `/crm/access/dashboard/export`. JSON: `/crm/access/dashboard/data`.
 
 ### 10.5 Superadmin staff settings
 
-- Add `quick_access_enabled` toggle on the staff edit screen.
-- Visible / editable only to Super Admin (role 1).
-- Toggling **off** immediately fires `revokeGrantsForStaff`.
+- **As-built:** `quick_access_enabled` on staff save in `AdminConsole\StaffController` (Super Admin); toggling **off** revokes grants via `CrmAccessService::revokeGrantsForStaff`.
+- New staff with role 14 get `quick_access_enabled = true` on create (same controller).
 
 ---
 
@@ -429,11 +450,13 @@ Fields:
 
 ### Phase E — Hardening + scheduled jobs
 
-1. Scheduled command `access:expire-grants` as safety net (in addition to per-request enforcement).
-2. Scheduled check: deactivated staff → revoke active grants.
-3. Rate-limit request endpoints (e.g. max 5 pending supervisor requests per user at a time).
-4. Security review: IDOR on approve endpoint (ensure approver cannot approve grants for themselves); verify `admin_id` ownership.
-5. Load test approver queue with realistic data volume.
+1. **Done:** Scheduled command `access:expire-grants` — registered **hourly** in `app/Console/Kernel.php`.
+2. **Done (on deactivation / flag):** `revokeGrantsForStaff` from staff maintenance (e.g. Admin Console staff save when status or quick flag changes) — verify all deactivate paths if new entry points are added.
+3. **Done:** Rate limits on `quick` / `supervisor` routes; **max pending supervisor requests** enforced in `CrmAccessService` via config.
+4. **Done in service:** Self-approve / self-reject rejected; approver role + staff id checks.
+5. **Optional / ops:** Load test approver queue and dashboard at volume; formal penetration test on grant IDs.
+
+**Rollout status vs code:** see **§15** at end of document.
 
 ---
 
@@ -462,23 +485,23 @@ Fields:
 | Non-approver hits `/crm/access/queue` | 403 |
 | Deep link to client with no allocation + no grant | 403 / redirect to search |
 | Approver tries to approve their own request | Service rejects; 422 error |
-| Phase C: PR (role 12) opens unallocated client | Denied; must request access |
-| Phase C: PR (role 12) opens unallocated lead | Denied; same rule as clients |
+| Phase C: PR (role 12) opens unallocated client | Denied when `CRM_ACCESS_STRICT_ALLOCATION=true`; must request access |
+| Phase C: PR (role 12) opens unallocated lead | With **strict** on, denied like clients; with **strict** off, PR may still see all leads per `lead_full_access_role_ids` — confirm env before UAT |
 
 ---
 
-## 13. Open items — all resolved ✅
+## 13. Product decisions (locked) ✅
 
 | # | Item | Decision |
 |---|------|---------|
 | 1 | `staff.team` field | `teams` table already exists with 16 named rows + colours. Use FK. No new table needed. |
 | 2 | Search: locked vs hidden | **Show locked + Request Access** |
-| 3 | Lead restriction post-Phase C | **Everyone restricted** (PR role 12 included) |
+| 3 | Lead restriction when strict allocation is on | **Everyone non-exempt restricted** (PR role 12 included for leads) |
 | 4 | Calling Team grant path | **Quick access only**; supervisor path hard-blocked for `user_roles.id = 14` |
-| 5 | Exempt logging granularity | **Once per calendar day** per staff + record combo |
-| 6 | Notifications | **Existing broadcast system** only (no email v1) |
+| 5 | Exempt logging granularity | **Once per calendar day** (UTC) per staff + record combo |
+| 6 | Notifications | **Existing broadcast system** (no email v1) |
 
-**No open items remain. Plan is implementation-ready.**
+**Follow-ups (non-blocking):** add a committed `.env.example` documenting `CRM_ACCESS_*` if the project adopts one; optional integration/feature tests for dashboard CSV and booking/email gates.
 
 ---
 
@@ -510,18 +533,39 @@ Fields:
 | 16 | Migration Agent |
 | 17 | Admin |
 
-### Key files to touch
+### Key files (as-built)
 
-| File | Change |
-|------|--------|
-| `app/Support/StaffClientVisibility.php` | Add `isExemptFromAllocation`; extend `canAccessClientOrLead` and list queries |
-| `app/Models/Staff.php` | Cast `quick_access_enabled` as boolean |
-| `config/crm_access.php` | New file |
-| `app/Services/CrmAccess/CrmAccessService.php` | New service class |
-| `app/Models/ClientAccessGrant.php` | New Eloquent model |
-| `app/Http/Controllers/CRM/AccessGrantController.php` | New controller |
-| `resources/views/crm/` | Modal, dashboard tab, popup changes |
+| File | Role |
+|------|------|
+| `config/crm_access.php` | Feature flags, approvers, durations, pending caps, TTL |
+| `app/Support/StaffClientVisibility.php` | Access rules, list restrictions, search enrichment, exempt logging, document/booking query scopes |
+| `app/Services/CrmAccess/CrmAccessService.php` | Grants, approve/reject, expiry, notifications |
+| `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php` | Reusable HTTP guards |
+| `app/Http/Controllers/CRM/AccessGrantController.php` | Meta, quick/supervisor, queue, dashboard, CSV, mini-queue API |
+| `app/Models/ClientAccessGrant.php` | Grant model |
+| `routes/clients.php` | `crm/access/*` routes |
+| `resources/views/crm/partials/cross-access-modal.blade.php` | Request modal |
+| `resources/views/crm/access/*.blade.php` | Queue, my grants, dashboard |
+| `resources/views/Elements/CRM/header_client_detail.blade.php` | Approver bell + mini-queue |
+| `resources/views/layouts/crm_client_detail.blade.php` (and dashboard variant) | Search locked row handling, bell click guard |
+| `app/Console/Commands/ExpireCrmAccessGrants.php` | `access:expire-grants` command |
 
 ---
 
-*Document version: 4.0 — all decisions locked; `teams` table confirmed; implementation-ready.*
+## 15. Implementation status summary (for PM / QA)
+
+| Phase | Scope | Status |
+|-------|--------|--------|
+| **A** | Migrations, `crm_access` config, `CrmAccessService`, `StaffClientVisibility` helpers, strict flag | **Implemented** |
+| **B** | Routes, grant request/approve/reject, notifications, search locked + modal, `quick_access_enabled` UI, unit tests | **Implemented** (iterate on UX as needed) |
+| **C** | Strict allocation + grants on lists/leads; controller gates §9 | **Implemented** (keep grep hygiene for new endpoints) |
+| **D** | Exempt daily logging, full dashboard + CSV, approver bell mini-queue | **Implemented** |
+| **E** | Job + expiry + rate limits + self-approval guard | **Largely implemented**; load/perf testing optional |
+
+**Tests:** `tests/Unit/CrmAccessServiceQuickOnlyTest.php` covers core service rules (expand with feature tests against DB as desired).
+
+**UI assets:** `resources/views/crm/partials/cross-access-modal.blade.php`, `crm/access/queue.blade.php`, `crm/access/my_grants.blade.php`, `crm/access/dashboard.blade.php`.
+
+---
+
+*Document version: 5.0 — product rules in §1–2, §12–13; operational truth for routes/config/controllers in §7, §9, §14–15.*
