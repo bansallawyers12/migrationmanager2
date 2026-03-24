@@ -144,6 +144,116 @@
     margin-right: 8px;
 }
 
+/* Access approvals (dashboard) — WCAG-friendly contrast */
+.access-approvals-dashboard.focus-container {
+    min-height: auto;
+    border-left: 4px solid var(--primary-color);
+}
+
+.access-approvals-dashboard h3 {
+    color: var(--text-color);
+}
+
+.access-approvals-dashboard h3 i {
+    color: var(--primary-color);
+}
+
+.access-approvals-dashboard .access-approvals-queue {
+    color: var(--text-color);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.access-approvals-dashboard .access-approvals-queue .access-approvals-empty {
+    color: #3d4852;
+}
+
+.access-approvals-dashboard .cag-grant-card {
+    background-color: #eef2f6;
+    border: 1px solid #b8c2ce;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    color: #0f172a;
+}
+
+.access-approvals-dashboard .cag-grant-primary {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.access-approvals-dashboard .cag-grant-record {
+    font-weight: 400;
+    color: #475569;
+}
+
+.access-approvals-dashboard .cag-grant-meta {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: #475569;
+    margin-top: 0.25rem;
+}
+
+.access-approvals-dashboard .cag-grant-detail {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #334155;
+    margin-top: 0.35rem;
+}
+
+.access-approvals-dashboard .cag-grant-actions {
+    margin-top: 0.65rem;
+}
+
+.access-approvals-dashboard .cag-grant-actions .btn-success {
+    background-color: #1a7f37;
+    border-color: #166b2f;
+    color: #fff;
+    font-weight: 600;
+}
+
+.access-approvals-dashboard .cag-grant-actions .btn-success:hover,
+.access-approvals-dashboard .cag-grant-actions .btn-success:focus {
+    background-color: #14632c;
+    border-color: #125828;
+    color: #fff;
+}
+
+.access-approvals-dashboard .cag-grant-actions .btn-outline-danger {
+    color: #9b1c2e;
+    border-color: #9b1c2e;
+    font-weight: 600;
+}
+
+.access-approvals-dashboard .cag-grant-actions .btn-outline-danger:hover,
+.access-approvals-dashboard .cag-grant-actions .btn-outline-danger:focus {
+    background-color: #9b1c2e;
+    border-color: #9b1c2e;
+    color: #fff;
+}
+
+.access-approvals-dashboard .access-approvals-header .btn-outline-secondary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 600;
+}
+
+.access-approvals-dashboard .access-approvals-header .btn-outline-secondary:hover,
+.access-approvals-dashboard .access-approvals-header .btn-outline-secondary:focus {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.access-approvals-dashboard .badge-access-pending {
+    background-color: #8a4b03;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+    vertical-align: middle;
+}
+
 /* Task and Case Lists */
 .task-list, .case-list {
     list-style: none;

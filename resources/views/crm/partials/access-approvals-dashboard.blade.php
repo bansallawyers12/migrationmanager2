@@ -11,19 +11,19 @@
 @endphp
 @if($dashCrmAccessIsApprover)
 <section class="access-approvals-dashboard focus-container" style="margin-bottom: 1.5rem;">
-    <div class="focus-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+    <div class="focus-header access-approvals-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
         <h3 style="margin: 0;">
-            <i class="fas fa-user-shield" style="color: var(--primary-color, #2564cf);"></i>
+            <i class="fas fa-user-shield" aria-hidden="true"></i>
             Access approvals
             @if($dashCrmAccessPending > 0)
-                <span class="badge badge-warning ml-1">{{ $dashCrmAccessPending }}</span>
+                <span class="badge badge-access-pending ml-1">{{ $dashCrmAccessPending }}</span>
             @endif
         </h3>
         <a href="{{ route('crm.access.queue') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-inbox mr-1"></i> Full access queue
+            <i class="fas fa-inbox mr-1" aria-hidden="true"></i> Full access queue
         </a>
     </div>
-    <div id="crm-access-dashboard-mini-queue" class="px-1 py-2 small text-muted" style="min-height: 2rem;">Loading…</div>
+    <div id="crm-access-dashboard-mini-queue" class="access-approvals-queue px-1 py-2" style="min-height: 2rem;">Loading…</div>
 </section>
 @push('scripts')
 @php
@@ -49,7 +49,7 @@
             .then(function (data) {
                 var items = data.items || [];
                 if (items.length === 0) {
-                    box.innerHTML = '<span class="text-muted">No pending supervisor requests.</span>';
+                    box.innerHTML = '<span class="access-approvals-empty">No pending supervisor requests.</span>';
                     return;
                 }
                 var html = '';
@@ -65,13 +65,13 @@
                     } else {
                         detail = reasonTxt || note;
                     }
-                    html += '<div class="border rounded p-2 mb-2 bg-light" data-grant-mini="' + g.id + '">' +
-                        '<div class="font-weight-bold">' + rec + ' <span class="text-muted font-weight-normal">(' + g.record_type + ' #' + g.admin_id + ')</span></div>' +
-                        '<div class="text-muted" style="font-size:11px;">' + (g.requested_at || '') + ' · ' + req + '</div>' +
-                        (detail ? '<div class="mt-1" style="font-size:11px;">' + detail + '</div>' : '') +
-                        '<div class="mt-2">' +
-                        '<button type="button" class="btn btn-sm btn-success py-0 px-2 js-cag-mini-approve" data-id="' + g.id + '">Approve</button> ' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 js-cag-mini-reject" data-id="' + g.id + '">Reject</button>' +
+                    html += '<div class="cag-grant-card" data-grant-mini="' + g.id + '">' +
+                        '<div class="cag-grant-primary">' + rec + ' <span class="cag-grant-record">(' + g.record_type + ' #' + g.admin_id + ')</span></div>' +
+                        '<div class="cag-grant-meta">' + (g.requested_at || '') + ' · ' + req + '</div>' +
+                        (detail ? '<div class="cag-grant-detail">' + detail + '</div>' : '') +
+                        '<div class="cag-grant-actions">' +
+                        '<button type="button" class="btn btn-sm btn-success py-1 px-2 js-cag-mini-approve" data-id="' + g.id + '">Approve</button> ' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 js-cag-mini-reject" data-id="' + g.id + '">Reject</button>' +
                         '</div></div>';
                 });
                 box.innerHTML = html;
