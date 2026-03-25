@@ -6,6 +6,7 @@
         ? \App\Models\ClientAccessGrant::query()
             ->where('status', 'pending')
             ->where('grant_type', 'supervisor_approved')
+            ->where('staff_id', '!=', (int) $dashStaff->id)
             ->count()
         : 0;
 @endphp

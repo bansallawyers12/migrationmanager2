@@ -132,6 +132,9 @@ class AccessGrantController extends Controller
             ->with(['staff:id,first_name,last_name,email', 'admin:id,first_name,last_name,client_id,type'])
             ->where('status', 'pending')
             ->where('grant_type', 'supervisor_approved')
+            // Approvers should not see (or act on) their own requests in the approvals queue.
+            // Requesters can still track these in "My grants".
+            ->where('staff_id', '!=', (int) $user->id)
             ->orderByDesc('requested_at')
             ->limit(200)
             ->get();
@@ -153,6 +156,7 @@ class AccessGrantController extends Controller
             ->with(['staff:id,first_name,last_name,email', 'admin:id,first_name,last_name,client_id,type'])
             ->where('status', 'pending')
             ->where('grant_type', 'supervisor_approved')
+            ->where('staff_id', '!=', (int) $user->id)
             ->orderByDesc('requested_at')
             ->limit(15)
             ->get();
