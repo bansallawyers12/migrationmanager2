@@ -156,6 +156,23 @@
 									</select>
                                 </div>
 
+                                @php
+                                    $_qaActor = auth()->guard('admin')->user();
+                                    $_canQa = $_qaActor instanceof \App\Models\Staff
+                                        && app(\App\Services\CrmAccess\CrmAccessService::class)->canManageStaffQuickAccess($_qaActor);
+                                @endphp
+                                @if($_canQa)
+                                <div class="form-group">
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="hidden" name="quick_access_enabled" value="0">
+                                        <input type="checkbox" name="quick_access_enabled" value="1" class="mr-2"
+                                            @if(old('quick_access_enabled')) checked @endif>
+                                        <span>Quick access enabled ({{ config('crm_access.quick_grant_minutes', 15) }}-minute cross-access requests)</span>
+                                    </label>
+                                    <small class="text-muted d-block mt-1">Super Admin or access approver. Enabling grants this staff member the ability to request cross-access.</small>
+                                </div>
+                                @endif
+
                                 <div class="form-group">
                                     <label for="role">Permission</label>
 							    	<br><b>Notes</b>  &nbsp;&nbsp;&nbsp;&nbsp;

@@ -129,7 +129,13 @@ class StaffController extends Controller
             $obj->phone = @$requestData['phone'];
             $obj->role = @$requestData['role'];
             if ((int) $obj->role === 14) {
+                // Calling Team always gets quick access auto-enabled
                 $obj->quick_access_enabled = true;
+            } else {
+                $storeActor = Auth::user();
+                if ($storeActor instanceof Staff && app(CrmAccessService::class)->canManageStaffQuickAccess($storeActor)) {
+                    $obj->quick_access_enabled = $request->boolean('quick_access_enabled');
+                }
             }
             $obj->office_id = @$requestData['office'];
             $obj->team = @$requestData['team'];

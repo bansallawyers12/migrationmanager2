@@ -1,6 +1,6 @@
 # Cross-access & allocated-only visibility — implementation plan
 
-**v5.0** — Product rules unchanged; **as-built** sections and HTTP/config inventory aligned with the current Laravel codebase (Phases A–D implemented; Phase E mostly done — see §15).
+**v5.1** — Product rules unchanged; **as-built** sections and HTTP/config inventory aligned with the current Laravel codebase (Phases A–D implemented; Phase E mostly done — see §15). Adds `exempt_staff_ids` support and approver quick-access management (see §3, §6).
 
 This document turns agreed product rules into build phases for the Laravel CRM (default DB driver in `config/database.php` is `pgsql`; MySQL may be used per environment).
 
@@ -10,8 +10,8 @@ This document turns agreed product rules into build phases for the Laravel CRM (
 
 | Area | Rule |
 |------|------|
-| Default visibility | **Allocated only** for **all** staff **except** configurable **exempt roles** (Super Admin, Admin, + extras). |
-| Exempt staff | No quick-access or supervisor request flow; full access; still **logged** in same audit stream as `access_type = exempt`. |
+| Default visibility | **Allocated only** for **all** staff **except** configurable **exempt roles** (Super Admin, Admin, + extras) **and exempt staff IDs**. |
+| Exempt staff | No quick-access or supervisor request flow; full access; still **logged** in same audit stream as `access_type = exempt`. Exemption applies to both role-based (`exempt_role_ids`) and id-based (`exempt_staff_ids`) entries. |
 | Extra access | **Quick** (15 min, selectable reason) or **Supervisor-approved** (24 h from approval). Quick-flagged users may **also** request 24 h. |
 | Record types | **Clients and leads** — same cross-access model for both. |
 | Initiation | **Search only** (header/global search + equivalent APIs); other deep links enforce grant check or 403/redirect. |
@@ -38,6 +38,7 @@ This document turns agreed product rules into build phases for the Laravel CRM (
 **Key decisions locked:**
 
 - **Exempt roles** (bypass all flows, logged as `exempt`): `1` (Super Admin) and `17` (Admin). Config key: `CRM_ACCESS_EXEMPT_ROLE_IDS=1,17`.
+- **Exempt staff IDs** (same bypass as exempt roles, regardless of their role): `36718` (Vipul Goyal) by default. Config key: `CRM_ACCESS_EXEMPT_STAFF_IDS=36718`. IDs in this list are checked in both `CrmAccessService::isExemptRole` and `StaffClientVisibility::isExemptFromAllocation` — they get full client/lead access and their access is logged as `exempt` daily.
 - **Calling Team (14) — quick access only:** the supervisor approval path is **hard-blocked** for role 14 in the service layer. They may only get a 15-minute quick grant. In the setup migration, set `quick_access_enabled = true` for **all existing** role-14 staff. New role-14 staff: default `true` at creation.
 - **Leads — same restriction as clients after Phase C:** everyone except exempt roles is restricted to allocated leads. This removes the current "Person Responsible sees all leads" exception.
 - **Exempt logging:** write **one row per calendar day per staff + admin record combo** (not every page load). Keeps the audit table clean while full coverage is maintained.
@@ -54,6 +55,9 @@ File: `config/crm_access.php` (new file, all overridable via `.env`):
 return [
     // Role IDs that bypass allocation and the grant flow entirely
     'exempt_role_ids' => env('CRM_ACCESS_EXEMPT_ROLE_IDS', '1,17'),
+
+    // staff.id values that bypass allocation like exempt roles (regardless of their role)
+    'exempt_staff_ids' => env('CRM_ACCESS_EXEMPT_STAFF_IDS', '36718'),
 
     // staff.id values allowed to approve requests (plus all role-1 users)
     'approver_staff_ids' => env('CRM_ACCESS_APPROVER_STAFF_IDS',
@@ -203,10 +207,16 @@ Single class, injected via DI or called statically. Centralises all rules.
 
 ```
 isExemptRole(Staff $user): bool
-    → intval($user->role) in config exempt_role_ids
+    → $user->id in config exempt_staff_ids  (checked first)
+    → OR intval($user->role) in config exempt_role_ids
 
 isApprover(Staff $user): bool
     → isExemptRole (role 1) OR $user->id in approver_staff_ids
+
+canManageStaffQuickAccess(Staff $actor): bool
+    → role === 1 (Super Admin) OR isApprover($actor)
+    → Used by StaffController (create + update) and staff edit/create UI
+      to show/hide the "Quick access enabled" checkbox
 
 hasActiveGrant(Staff $user, int $adminId): bool
     → client_access_grants WHERE staff_id=$user->id
@@ -224,7 +234,7 @@ getApproverStaffIds(): array
 `StaffClientVisibility::canAccessClientOrLead(int $adminId, ?Authenticatable $user): bool`
 
 1. Resolve `admins` row for `client` / `lead`; apply super-admin-only locked client file rules where configured.
-2. **Exempt role** → `true` and **exempt audit row** once per UTC calendar day per staff + record (`logExemptAccessIfNeeded` on `Staff` instances).
+2. **Exempt role or exempt staff ID** → `true` and **exempt audit row** once per UTC calendar day per staff + record (`logExemptAccessIfNeeded` on `Staff` instances).
 3. **Active time-bound grant** for that staff + `admin_id` → `true` (`CrmAccessService::hasActiveGrant`).
 4. Else **allocation / lead rules** via `userMaySeeByAllocation` (strict vs non-strict; PR / lead full-access only when **not** strict — see `StaffClientVisibility`).
 
@@ -272,9 +282,12 @@ Illustrative helpers (as-built reads **arrays** from `config('crm_access.*')`, n
 
 public static function isExemptFromAllocation(\App\Models\Staff $user): bool
 {
-    $exemptIds = array_map('intval',
-        explode(',', config('crm_access.exempt_role_ids', '1,17')));
-    return in_array((int) $user->role, $exemptIds, true);
+    // Exempt by specific staff ID (takes priority — role-independent)
+    if (in_array((int) $user->id, config('crm_access.exempt_staff_ids', []), true)) {
+        return true;
+    }
+    // Exempt by role
+    return in_array((int) $user->role, config('crm_access.exempt_role_ids', [1, 17]), true);
 }
 
 public static function isQuickAccessOnly(\App\Models\Staff $user): bool
@@ -516,7 +529,7 @@ Fields:
 | 36692 | Celesty Parmar | Manager@bansalimmigration.com.au |
 | 36483 | Bipan Chander | bansalimmigration123@gmail.com |
 | 36484 | KHUSHI Sangroya | khusi.bansal01@gmail.com |
-| 36718 | Vipul Goyal | Immi2@bansalimmigration.com.au |
+| 36718 | Vipul Goyal | Immi2@bansalimmigration.com.au | **Also in `CRM_ACCESS_EXEMPT_STAFF_IDS`** — full client/lead visibility (exempt, logged daily) |
 | 36523 | Sam (Shubam) | shubambansal.au1@gmail.com |
 | 36836 | Yadwinder Pal Singh | migration8899@gmail.com |
 | 36830 | Ankit Bansal | admin@bansaleducation.com.au |
@@ -537,7 +550,7 @@ Fields:
 
 | File | Role |
 |------|------|
-| `config/crm_access.php` | Feature flags, approvers, durations, pending caps, TTL |
+| `config/crm_access.php` | Feature flags, exempt role IDs, exempt staff IDs, approvers, durations, pending caps, TTL |
 | `app/Support/StaffClientVisibility.php` | Access rules, list restrictions, search enrichment, exempt logging, document/booking query scopes |
 | `app/Services/CrmAccess/CrmAccessService.php` | Grants, approve/reject, expiry, notifications |
 | `app/Http/Controllers/Concerns/EnsuresCrmRecordAccess.php` | Reusable HTTP guards |
