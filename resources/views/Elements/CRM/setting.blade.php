@@ -3,6 +3,18 @@
 			$roles = \App\Models\UserRole::find(Auth::user()->role);
 			$newarray = json_decode($roles->module_access);
 			$module_access = (array) $newarray;
+
+			// CRM access approvers get full admin console menu access (same as Super Admin)
+			$_settingUser = Auth::user();
+			$_isApproverOrAdmin = (int) ($_settingUser->role ?? 0) === 1
+				|| ($_settingUser instanceof \App\Models\Staff
+					&& in_array((int) $_settingUser->id, config('crm_access.approver_staff_ids', []), true));
+			if ($_isApproverOrAdmin) {
+				// Ensure the gated numeric keys are present so all guarded menu items show
+				$module_access['1'] = true;
+				$module_access['4'] = true;
+				$module_access['6'] = true;
+			}
 		} else {
 			$module_access = [];
 		}
@@ -89,8 +101,8 @@
 			<li class="{{$esignatureclasstype}}"><a class="nav-link" href="{{route('adminconsole.features.esignature.index')}}">E-Signature</a></li>
 			
 			<?php
-			// Activity Search menu - Only for super admin (role = 1)
-			if(Auth::user()->role == 1) {
+			// Activity Search menu - Super Admin and CRM access approvers
+			if($_isApproverOrAdmin) {
 				$activitySearchclasstype = '';
 				if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.system.activity-search.')){
 					$activitySearchclasstype = 'active';

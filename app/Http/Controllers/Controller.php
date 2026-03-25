@@ -240,19 +240,29 @@ class Controller extends BaseController
 
 	public function checkAuthorizationAction($controller = NULL, $action = NULL, $role = NULL)
 	{
+		// Super Admin (role 1) — unrestricted
+		if ($role == 1) {
+			return;
+		}
 
-		$userrole = UserRole::where('usertype',$role)->first();
-		if($userrole && $role != 1){
-			 $module_access  = $userrole->module_access;
-			 //for test series vendor & organizations & professors authentication
+		// CRM access approvers get the same unrestricted admin console access as Super Admin
+		$actorId = (int) (Auth::id() ?? 0);
+		if ($actorId > 0) {
+			$approverIds = config('crm_access.approver_staff_ids', []);
+			if (in_array($actorId, $approverIds, true)) {
+				return;
+			}
+		}
 
-				$noAccessController = json_decode($module_access);
+		$userrole = UserRole::where('usertype', $role)->first();
+		if ($userrole) {
+			$module_access = $userrole->module_access;
 
-					if (!in_array($controller, $noAccessController)) //pass from controller
-					{
-						return true;
-					}
+			$noAccessController = json_decode($module_access);
 
+			if (!in_array($controller, $noAccessController)) {
+				return true;
+			}
 		}
 	}
 
