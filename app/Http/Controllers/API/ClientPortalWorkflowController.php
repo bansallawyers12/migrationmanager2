@@ -31,10 +31,25 @@ class ClientPortalWorkflowController extends Controller
             
             // Get client_matter_id parameter (optional)
             $clientMatterId = $request->get('client_matter_id');
+            $workflowId = null;
+
+            // Resolve workflow_id from client_matters using client_id + client_matter_id
+            if (!is_null($clientMatterId)) {
+                $workflowId = DB::table('client_matters')
+                    ->where('client_id', $clientId)
+                    ->where('id', $clientMatterId)
+                    ->value('workflow_id');
+            }
             
             // Use client_matter_id for document checklists (migrated from applications table)
             // Get all workflow stages (ordered by sort_order, then id)
-            $workflowStages = DB::table('workflow_stages')
+            $workflowStagesQuery = DB::table('workflow_stages');
+
+            if (!is_null($workflowId)) {
+                $workflowStagesQuery->where('workflow_id', $workflowId);
+            }
+
+            $workflowStages = $workflowStagesQuery
                 ->orderByRaw('COALESCE(sort_order, id) ASC')
                 ->select(
                     'id',
