@@ -1482,57 +1482,32 @@
     <script>
         // Pass countries data to JavaScript
         window.countriesData = @json($countries ?? []);
-        
-        // Simplified lead edit - disable individual save buttons and use main form submit
-        document.addEventListener('DOMContentLoaded', function() {
-            // Hide all individual "Save" buttons in edit-actions
-            document.querySelectorAll('.edit-actions').forEach(el => el.style.display = 'none');
-            
-            // Make all sections always in edit mode
-            document.querySelectorAll('.content-section').forEach(section => {
-                const display = section.querySelector('.section-display');
-                const edit = section.querySelector('.section-edit');
-                if (display) display.style.display = 'none';
-                if (edit) edit.style.display = 'block';
-            });
-        });
-        
-        // Disable AJAX save functions to prevent conflicts
-        function saveBasicInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function savePhoneNumbers() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveEmailAddresses() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function savePassportInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveVisaInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveTravelInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveQualificationsInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveExperienceInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveOccupationInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveTestScoreInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveAdditionalInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveCharacterInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveRelatedFilesInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function savePartnerInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveChildrenInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        function saveEoiInfo() { alert('Please use the Save Lead button at the top or in the sidebar.'); }
-        
-        // Sidebar navigation
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                // Update active state
-                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-                event.currentTarget.classList.add('active');
-            }
-        }
-        
-        function toggleSidebar() {
-            document.getElementById('sidebarNav').classList.toggle('collapsed');
-        }
-        
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+
+        // Lead edit uses Summary/Edit sections like client edit, but historically missed the JS helpers.
+        // Provide minimal, safe helpers so the pencil buttons work.
+        window.toggleEditMode = window.toggleEditMode || function(sectionType) {
+            const summaryView = document.getElementById(sectionType + 'Summary');
+            const editView = document.getElementById(sectionType + 'Edit');
+            if (!summaryView || !editView) return;
+
+            summaryView.style.display = 'none';
+            summaryView.classList.add('hidden');
+
+            editView.style.display = 'block';
+            editView.classList.remove('hidden');
+        };
+
+        window.cancelEdit = window.cancelEdit || function(sectionType) {
+            const summaryView = document.getElementById(sectionType + 'Summary');
+            const editView = document.getElementById(sectionType + 'Edit');
+            if (!summaryView || !editView) return;
+
+            editView.style.display = 'none';
+            editView.classList.add('hidden');
+
+            summaryView.style.display = 'block';
+            summaryView.classList.remove('hidden');
+        };
     </script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>

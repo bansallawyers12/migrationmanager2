@@ -1734,6 +1734,58 @@
         }
     });
     </script>
+
+    <script>
+    (function() {
+        function cleanupStaleOverlays() {
+            // popuploader can become "display:none" but still sit above page in some edge cases;
+            // ensure it cannot block clicks unless explicitly shown.
+            var pl = document.querySelector('.popuploader');
+            if (pl) {
+                var cs = window.getComputedStyle(pl);
+                if (cs.display === 'none') {
+                    pl.style.pointerEvents = 'none';
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', cleanupStaleOverlays);
+        window.addEventListener('load', cleanupStaleOverlays);
+    })();
+    </script>
+
+    <script>
+    (function() {
+        function cleanupStaleBackdrops() {
+            // Only clean when no modal is visible.
+            if (document.querySelector('.modal.show')) return;
+
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length) {
+                backdrops.forEach(function(b) {
+                    try { b.parentNode && b.parentNode.removeChild(b); } catch (e) {}
+                });
+            }
+
+            // If a stale modal-open remains it can block page interaction.
+            if (document.body.classList.contains('modal-open')) {
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+                document.body.style.removeProperty('overflow');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', cleanupStaleBackdrops);
+        window.addEventListener('pageshow', cleanupStaleBackdrops);
+        window.addEventListener('load', function () {
+            cleanupStaleBackdrops();
+            // Catch backdrops inserted slightly after load (async scripts / modals).
+            requestAnimationFrame(function () {
+                cleanupStaleBackdrops();
+                setTimeout(cleanupStaleBackdrops, 300);
+            });
+        });
+    })();
+    </script>
     <script>
     $(document).ready(function () {
         // Sidebar toggle functionality
@@ -1795,7 +1847,7 @@
         <!-- Notifications will be dynamically added here -->
     </div>
     
-    @if (!request()->routeIs('leads.create'))
+    @if (!request()->routeIs(['leads.create', 'leads.edit', 'clients.edit']))
         @include('crm.partials.cross-access-modal', ['crossAccessLeadBase' => url('/leads/history')])
     @endif
     @stack('scripts')
