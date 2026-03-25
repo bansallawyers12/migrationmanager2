@@ -17,7 +17,7 @@
             <i class="fas fa-user-shield" aria-hidden="true"></i>
             Access approvals
             @if($dashCrmAccessPending > 0)
-                <span class="badge badge-access-pending ml-1">{{ $dashCrmAccessPending }}</span>
+                <span class="badge badge-access-pending ml-1" id="crm-access-approvals-count">{{ $dashCrmAccessPending }}</span>
             @endif
         </h3>
         <a href="{{ route('crm.access.queue') }}" class="btn btn-sm btn-outline-secondary">
@@ -51,6 +51,29 @@
         fetch(miniUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (r) { return r.json(); })
             .then(function (data) {
+                // Keep the header counter in sync after approve/reject without page refresh.
+                var pendingCount = (data && typeof data.pending_count === 'number') ? data.pending_count : null;
+                var badge = document.getElementById('crm-access-approvals-count');
+                if (pendingCount != null) {
+                    if (pendingCount > 0) {
+                        if (!badge) {
+                            var h3 = box.closest('section') ? box.closest('section').querySelector('h3') : null;
+                            if (h3) {
+                                var span = document.createElement('span');
+                                span.id = 'crm-access-approvals-count';
+                                span.className = 'badge badge-access-pending ml-1';
+                                span.textContent = String(pendingCount);
+                                h3.appendChild(span);
+                                badge = span;
+                            }
+                        } else {
+                            badge.textContent = String(pendingCount);
+                            badge.style.display = '';
+                        }
+                    } else if (badge) {
+                        badge.parentNode && badge.parentNode.removeChild(badge);
+                    }
+                }
                 var items = data.items || [];
                 if (items.length === 0) {
                     box.innerHTML = '<span class="access-approvals-empty">No pending supervisor requests.</span>';

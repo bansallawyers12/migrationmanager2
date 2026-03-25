@@ -152,16 +152,20 @@ class AccessGrantController extends Controller
             abort(403, 'Not authorized.');
         }
 
-        $items = ClientAccessGrant::query()
+        $base = ClientAccessGrant::query()
             ->with(['staff:id,first_name,last_name,email', 'admin:id,first_name,last_name,client_id,type'])
             ->where('status', 'pending')
             ->where('grant_type', 'supervisor_approved')
             ->where('staff_id', '!=', (int) $user->id)
-            ->orderByDesc('requested_at')
-            ->limit(15)
-            ->get();
+            ->orderByDesc('requested_at');
 
-        return response()->json(['items' => $items]);
+        $pendingCount = (clone $base)->count();
+        $items = (clone $base)->limit(15)->get();
+
+        return response()->json([
+            'pending_count' => (int) $pendingCount,
+            'items' => $items,
+        ]);
     }
 
     public function approve(ClientAccessGrant $grant): JsonResponse
