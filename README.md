@@ -545,6 +545,9 @@ Row-level visibility and temporary access grants are controlled in `config/crm_a
 # Comma-separated role IDs that bypass allocation (default: 1,17 — Super Admin, Admin)
 CRM_ACCESS_EXEMPT_ROLE_IDS=1,17
 
+# Comma-separated staff.id values that bypass allocation like exempt roles (default: 36718)
+CRM_ACCESS_EXEMPT_STAFF_IDS=36718
+
 # Comma-separated staff.id values who may approve supervisor requests (plus all active role-1 staff)
 CRM_ACCESS_APPROVER_STAFF_IDS=36834,36524,36692,36483,36484,36718,36523,36836,36830
 

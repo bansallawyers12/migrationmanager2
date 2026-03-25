@@ -88,6 +88,11 @@ final class StaffClientVisibility
             return false;
         }
 
+        $staffId = (int) ($user->id ?? 0);
+        if ($staffId > 0 && in_array($staffId, config('crm_access.exempt_staff_ids', []), true)) {
+            return true;
+        }
+
         return in_array((int) ($user->role ?? 0), config('crm_access.exempt_role_ids', [1, 17]), true);
     }
 

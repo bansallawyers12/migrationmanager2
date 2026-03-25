@@ -152,7 +152,12 @@
 									</select>
                                 </div>
 
-                                @if((int) auth()->guard('admin')->user()->role === 1)
+                                @php
+                                    $_quickActor = auth()->guard('admin')->user();
+                                    $_canQuick = $_quickActor instanceof \App\Models\Staff
+                                        && app(\App\Services\CrmAccess\CrmAccessService::class)->canManageStaffQuickAccess($_quickActor);
+                                @endphp
+                                @if($_canQuick)
                                 <div class="form-group">
                                     <label class="d-flex align-items-center mb-0">
                                         <input type="hidden" name="quick_access_enabled" value="0">
@@ -160,7 +165,7 @@
                                             @if(old('quick_access_enabled', $fetchedData->quick_access_enabled ?? false)) checked @endif>
                                         <span>Quick access enabled ({{ config('crm_access.quick_grant_minutes', 15) }}-minute cross-access requests)</span>
                                     </label>
-                                    <small class="text-muted d-block mt-1">Super Admin only. Turning off revokes active quick and pending supervisor grants immediately.</small>
+                                    <small class="text-muted d-block mt-1">Super Admin or access approver. Turning off revokes active quick and pending supervisor grants immediately.</small>
                                 </div>
                                 @endif
 

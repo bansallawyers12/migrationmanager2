@@ -278,17 +278,17 @@ class StaffController extends Controller
                 $obj->password = Hash::make(@$requestData['password']);
             }
 
-            if ((int) Auth::user()->role === 1) {
+            $crmAccess = app(CrmAccessService::class);
+            $actor = Auth::user();
+            if ($actor instanceof Staff && $crmAccess->canManageStaffQuickAccess($actor)) {
                 $obj->quick_access_enabled = $request->boolean('quick_access_enabled');
             }
 
             $saved = $obj->save();
 
-            $crmAccess = app(CrmAccessService::class);
-
             if ($saved && $prevStatus === 1 && (int) $obj->status === 0) {
                 $crmAccess->revokeGrantsForStaff((int) $obj->id, 'Staff account deactivated');
-            } elseif ($saved && (int) Auth::user()->role === 1 && $prevQuickEnabled && ! $obj->quick_access_enabled) {
+            } elseif ($saved && $actor instanceof Staff && $crmAccess->canManageStaffQuickAccess($actor) && $prevQuickEnabled && ! $obj->quick_access_enabled) {
                 $crmAccess->revokeGrantsForStaff((int) $obj->id, 'Quick access disabled');
             }
 

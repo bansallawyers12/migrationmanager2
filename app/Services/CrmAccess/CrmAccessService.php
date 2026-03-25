@@ -17,9 +17,22 @@ class CrmAccessService
 {
     public function isExemptRole(Staff $user): bool
     {
+        $staffId = (int) ($user->id ?? 0);
+        if ($staffId > 0 && in_array($staffId, config('crm_access.exempt_staff_ids', []), true)) {
+            return true;
+        }
+
         $role = (int) ($user->role ?? 0);
 
         return in_array($role, config('crm_access.exempt_role_ids', [1, 17]), true);
+    }
+
+    /**
+     * Super Admin or CRM access approver may enable/disable quick cross-access on other staff.
+     */
+    public function canManageStaffQuickAccess(Staff $actor): bool
+    {
+        return (int) ($actor->role ?? 0) === 1 || $this->isApprover($actor);
     }
 
     public function isApprover(Staff $user): bool

@@ -19,6 +19,9 @@ return [
     // Falls back to [1, 17] if env is misconfigured to prevent locking out super-admins.
     'exempt_role_ids' => $intList('CRM_ACCESS_EXEMPT_ROLE_IDS', '1,17', [1, 17]),
 
+    // Specific staff.id values that bypass allocation like exempt roles (e.g. access supervisors who are not Super Admin).
+    'exempt_staff_ids' => $intList('CRM_ACCESS_EXEMPT_STAFF_IDS', '36718', [36718]),
+
     // staff.id values allowed to approve requests (plus all active role-1 users at runtime).
     'approver_staff_ids' => $intList(
         'CRM_ACCESS_APPROVER_STAFF_IDS',

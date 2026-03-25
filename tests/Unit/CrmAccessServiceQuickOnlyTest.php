@@ -64,6 +64,30 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         $this->assertFalse((new CrmAccessService())->isExemptRole($staff));
     }
 
+    public function test_exempt_staff_id_bypasses_allocation(): void
+    {
+        $staff = new Staff(['id' => 36718, 'role' => 13]);
+        $this->assertTrue((new CrmAccessService())->isExemptRole($staff));
+        $this->assertTrue(\App\Support\StaffClientVisibility::isExemptFromAllocation($staff));
+    }
+
+    public function test_can_manage_staff_quick_access_for_approver(): void
+    {
+        config(['crm_access.approver_staff_ids' => [36718]]);
+        $approver = new Staff(['id' => 36718, 'role' => 13, 'status' => 1]);
+        $svc = new CrmAccessService();
+        $this->assertTrue($svc->isApprover($approver));
+        $this->assertTrue($svc->canManageStaffQuickAccess($approver));
+    }
+
+    public function test_can_manage_staff_quick_access_denied_for_regular_staff(): void
+    {
+        config(['crm_access.approver_staff_ids' => [99999]]);
+        $staff = new Staff(['id' => 1, 'role' => 13, 'status' => 1]);
+        $svc = new CrmAccessService();
+        $this->assertFalse($svc->canManageStaffQuickAccess($staff));
+    }
+
     // -----------------------------------------------------------------------
     // isApprover
     // -----------------------------------------------------------------------
