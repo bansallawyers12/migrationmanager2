@@ -734,7 +734,25 @@
     <script src="{{ asset('js/leads/lead-form-navigation.js') }}"></script>
     <script src="{{ asset('js/leads/lead-form.js') }}"></script>
     <script>
+        function clearStuckGlobalLoaderForLeadCreate() {
+            const loader = document.querySelector('.loader');
+            if (!loader) return;
+
+            const styles = window.getComputedStyle(loader);
+            const isVisible = styles.display !== 'none' && styles.visibility !== 'hidden' && styles.opacity !== '0';
+            if (!isVisible) return;
+
+            // Safety net for this page only: a stuck global loader can block all form inputs.
+            loader.style.display = 'none';
+            loader.style.opacity = '0';
+            loader.style.visibility = 'hidden';
+            loader.style.pointerEvents = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            clearStuckGlobalLoaderForLeadCreate();
+            setTimeout(clearStuckGlobalLoaderForLeadCreate, 300);
+
             console.log('DOM Content Loaded');
             
             const floatingSaveBtn = document.getElementById('floatingSaveBtn');
@@ -876,6 +894,8 @@
                 }
             }
         });
+
+        window.addEventListener('load', clearStuckGlobalLoaderForLeadCreate);
     </script>
     
     <script>

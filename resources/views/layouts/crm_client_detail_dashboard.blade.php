@@ -1795,7 +1795,9 @@
         <!-- Notifications will be dynamically added here -->
     </div>
     
-    @include('crm.partials.cross-access-modal', ['crossAccessLeadBase' => url('/leads/history')])
+    @if (!request()->routeIs('leads.create'))
+        @include('crm.partials.cross-access-modal', ['crossAccessLeadBase' => url('/leads/history')])
+    @endif
     @stack('scripts')
     
     {{-- Define updateNotificationBell before Vite so it's available when Echo/client_portal receive events --}}
