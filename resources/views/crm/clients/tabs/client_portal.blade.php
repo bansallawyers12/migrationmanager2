@@ -84,8 +84,9 @@
                 
                 // Get all workflow stages
                 $allWorkflowStages = DB::table('workflow_stages')
+                    ->where('workflow_id', $selectedMatter->workflow_id)
                     ->orderByRaw('COALESCE(sort_order, id) ASC')
-                    ->get();
+                    ->get(); //dd($allWorkflowStages);
 
                 $currentStageName = null;
                 $isVerificationStage = false;

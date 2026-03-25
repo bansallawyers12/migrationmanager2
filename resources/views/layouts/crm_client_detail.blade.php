@@ -425,6 +425,16 @@
             background-color: #64748b;
             color: #ffffff;
         }
+
+        .status-btn-client {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-btn-client.active {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
         
         .status-btn:hover {
             transform: translateY(-1px);

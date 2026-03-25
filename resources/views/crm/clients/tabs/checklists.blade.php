@@ -168,8 +168,14 @@
                                                             </div>
                                                         </div>
                                                         <div class="checklist-summary d-flex align-items-center">
-                                                            <button type="button" class="btn btn-sm btn-outline-primary convertLeadToClient mr-2" onclick="event.stopPropagation();" title="Convert to Client">
-                                                                <i class="fas fa-user-check mr-1"></i> Convert to Client
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-primary convertLeadToClient mr-2"
+                                                                    onclick="event.stopPropagation();"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#convertLeadToClientModal"
+                                                                    title="{{ ($fetchedData->type ?? '') === 'lead' ? 'Convert to Client' : 'Create New Matter' }}">
+                                                                <i class="fas fa-user-check mr-1"></i>
+                                                                {{ ($fetchedData->type ?? '') === 'lead' ? 'Convert to Client' : 'Create New Matter' }}
                                                             </button>
                                                             <span class="badge badge-info mr-2">
                                                                 <i class="fas fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
