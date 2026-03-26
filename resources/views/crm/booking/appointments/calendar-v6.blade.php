@@ -3,9 +3,7 @@
 
 @section('content')
 
-{{-- ✅ Load FullCalendar v6 CSS from reliable CDN --}}
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
-
+{{-- FullCalendar v6 base styles are injected by JS when app.js loads (@fullcalendar/*). No separate global CSS exists on the fullcalendar npm package; a CDN link to index.global.min.css is invalid and breaks the console. --}}
 @vite(['resources/css/fullcalendar-v6.css'])
 
 <div class="section-body">
