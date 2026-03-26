@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\CRM;
 
-use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\BookingAppointment;
 use App\Models\AppointmentConsultant;
@@ -24,8 +23,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class BookingAppointmentsController extends Controller
 {
-    use EnsuresCrmRecordAccess;
-
     protected AppointmentSyncService $syncService;
     protected BansalApiClient $bansalApiClient;
 
@@ -38,9 +35,7 @@ class BookingAppointmentsController extends Controller
 
     protected function assertBookingAppointmentAccess(BookingAppointment $appointment): void
     {
-        $this->ensureCrmRecordAccessForOptionalClientId(
-            $appointment->client_id ? (int) $appointment->client_id : null
-        );
+        StaffClientVisibility::abortUnlessMayAccessBookingAppointment($appointment);
     }
 
     /**

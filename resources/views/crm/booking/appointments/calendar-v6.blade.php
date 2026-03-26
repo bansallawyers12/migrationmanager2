@@ -295,7 +295,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     start: fetchInfo.startStr,
                     end: fetchInfo.endStr,
                     format: 'calendar'
-                }));
+                }), {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
                 
                 const data = await response.json();
                 console.log('API Response:', data);
@@ -714,31 +720,39 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
+            credentials: 'same-origin',
             body: JSON.stringify(requestData)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+        .then(async function(response) {
+            var ct = response.headers.get('content-type') || '';
+            var data = {};
+            if (ct.indexOf('application/json') !== -1) {
+                try { data = await response.json(); } catch (e) { data = {}; }
+            }
+            if (!response.ok) {
+                var msg = data.message || data.error || ('Request failed (HTTP ' + response.status + ')');
+                showAlert('danger', 'Failed to update status: ' + msg);
+                return;
+            }
+            if (data.success === true || data.status === true) {
                 // Update the status badge in the modal
-                const statusBadge = document.getElementById('statusBadge');
+                var statusBadge = document.getElementById('statusBadge');
                 if (statusBadge) {
                     statusBadge.textContent = newStatus.toUpperCase();
-                    statusBadge.className = `badge badge-${getStatusClass(newStatus)}`;
+                    statusBadge.className = 'badge badge-' + getStatusClass(newStatus);
                 }
-                
-                // Close the modal and refresh calendar
                 $('#eventModal').modal('hide');
                 calendar.refetchEvents();
-                
-                // Show success message
                 showAlert('success', 'Status updated successfully!');
             } else {
                 showAlert('danger', 'Failed to update status: ' + (data.message || 'Unknown error'));
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Error updating status:', error);
             showAlert('danger', 'Failed to update status. Please try again.');
         })
@@ -774,8 +788,10 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
+            credentials: 'same-origin',
             body: JSON.stringify({
                 consultant_id: consultantId
             })
@@ -930,8 +946,10 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
+            credentials: 'same-origin',
             body: formData
         })
         .then(response => {
@@ -1062,8 +1080,10 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
+            credentials: 'same-origin',
             body: JSON.stringify({
                 meeting_type: newMeetingType
             })

@@ -3,12 +3,14 @@
 namespace App\Support;
 
 use App\Models\Admin;
+use App\Models\BookingAppointment;
 use App\Models\ClientAccessGrant;
 use App\Models\Staff;
 use App\Services\CrmAccess\CrmAccessService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -563,6 +565,27 @@ final class StaffClientVisibility
                     });
             });
         });
+    }
+
+    /**
+     * Abort 403 unless this booking row would pass restrictBookingAppointmentEloquentQuery (same rule as calendar/list API).
+     * Keeps write access aligned with what the user can see on the booking calendar.
+     */
+    public static function abortUnlessMayAccessBookingAppointment(BookingAppointment $appointment, ?Authenticatable $user = null): void
+    {
+        $query = BookingAppointment::query()->whereKey($appointment->getKey());
+        self::restrictBookingAppointmentEloquentQuery($query, $user);
+        if ($query->exists()) {
+            return;
+        }
+
+        if (request()->expectsJson() || request()->ajax()) {
+            throw new HttpResponseException(
+                response()->json(self::unauthorizedPayload(), 403)
+            );
+        }
+
+        abort(403, 'Unauthorized');
     }
 
     /**
