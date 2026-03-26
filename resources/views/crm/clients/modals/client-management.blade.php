@@ -3,9 +3,7 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="appliationModalLabel">
-                    {{ ($fetchedData->type ?? '') === 'lead' ? 'Convert Lead To Client' : 'Create New Matter' }}
-                </h5>
+				<h5 class="modal-title" id="appliationModalLabel">Convert Lead To Client</h5>
 				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>

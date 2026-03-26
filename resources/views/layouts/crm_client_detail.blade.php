@@ -450,6 +450,16 @@
             transform: none;
             opacity: 1;
         }
+
+        .client-status-badge {
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .client-status-badge:hover {
+            transform: none;
+            opacity: 1;
+        }
         
         /* Sidebar Matter Selection */
         .sidebar-matter-selection {

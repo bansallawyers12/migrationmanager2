@@ -69,26 +69,16 @@ use App\Http\Controllers\Controller;
                 </div>
             </div>
             
-            <!-- Client/Lead action buttons -->
+            <!-- Client/Lead status badge (display only, no click action) -->
+            @if(($fetchedData->type ?? '') === 'lead')
             <div class="sidebar-client-lead-buttons">
-                @if(($fetchedData->type ?? '') === 'lead')
-                    <button type="button"
-                            class="status-btn status-btn-lead active"
-                            data-bs-toggle="modal"
-                            data-bs-target="#convertLeadToClientModal"
-                            title="Create matter and convert to client">
-                        Lead
-                    </button>
-                @elseif(($fetchedData->type ?? '') === 'client')
-                    <button type="button"
-                            class="status-btn status-btn-client active"
-                            data-bs-toggle="modal"
-                            data-bs-target="#convertLeadToClientModal"
-                            title="Create a new matter for this client">
-                        Client
-                    </button>
-                @endif
+                <span class="status-btn status-btn-lead lead-status-badge active">Lead</span>
             </div>
+            @elseif(($fetchedData->type ?? '') === 'client')
+            <div class="sidebar-client-lead-buttons">
+                <span class="status-btn status-btn-client client-status-badge active">Client</span>
+            </div>
+            @endif
             
             <!-- Matter Selection Dropdown in Sidebar -->
             <div class="sidebar-matter-selection">
