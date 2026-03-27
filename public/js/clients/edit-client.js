@@ -1596,7 +1596,9 @@ function initializeDatepickers() {
  * Toggle Spouse Details Section based on Marital Status
  */
 function toggleSpouseDetailsSection() {
-    const maritalStatus = document.getElementById('maritalStatus').value;
+    const maritalStatusEl = document.getElementById('maritalStatus');
+    if (!maritalStatusEl) return;
+    const maritalStatus = maritalStatusEl.value;
     const spouseDetailsSection = document.getElementById('spouseDetailsSection');
 
     // Check if the spouseDetailsSection element exists before trying to access its style

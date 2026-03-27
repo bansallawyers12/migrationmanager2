@@ -541,8 +541,10 @@
                                         ]]);
                                     }
                                 @endphp
-                                @foreach($sponsorshipRows as $idx => $s)
+                                @php $sponsorshipTotal = $sponsorshipRows->count(); @endphp
+                                @foreach($sponsorshipRows->values() as $idx => $s)
                                 <div class="sponsorship-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">
+                                    <p class="sponsorship-row-label" style="margin:0 0 10px 0;font-weight:600;color:#495057;{{ $sponsorshipTotal > 1 ? '' : 'display:none;' }}">Sponsorship {{ $idx + 1 }}</p>
                                     <div class="content-grid">
                                         <div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_types[]" value="{{ $s->sponsorship_type ?? '' }}" placeholder="e.g. 482, 494"></div>
                                         <div class="form-group"><label>Status</label><input type="text" name="sponsorship_statuses[]" value="{{ $s->sponsorship_status ?? '' }}" placeholder="Status"></div>
@@ -1220,16 +1222,30 @@
     }
 
     function reindexSponsorshipRows() {
-        $('#sponsorshipsContainer .sponsorship-row').each(function(i) {
+        const rows = $('#sponsorshipsContainer .sponsorship-row');
+        const showLabels = rows.length > 1;
+        rows.each(function(i) {
             $(this).find('.sponsorship-regional-cb').attr('name', 'sponsorship_regional[' + i + ']');
             $(this).find('.sponsorship-adverse-cb').attr('name', 'sponsorship_adverse[' + i + ']');
+            const label = $(this).find('.sponsorship-row-label');
+            if (showLabels) {
+                label.text('Sponsorship ' + (i + 1)).show();
+            } else {
+                label.hide();
+            }
         });
     }
 
     function addSponsorshipRow() {
+        // Open edit mode if currently showing summary
+        const editView = document.getElementById('sponsorshipEdit');
+        if (editView && (editView.style.display === 'none' || editView.classList.contains('hidden'))) {
+            if (typeof toggleEditMode === 'function') toggleEditMode('sponsorship');
+        }
         const container = $('#sponsorshipsContainer');
         const idx = container.find('.sponsorship-row').length;
         const row = '<div class="sponsorship-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">' +
+            '<p class="sponsorship-row-label" style="margin:0 0 10px 0;font-weight:600;color:#495057;display:none;"></p>' +
             '<div class="content-grid">' +
             '<div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_types[]" value="" placeholder="e.g. 482, 494"></div>' +
             '<div class="form-group"><label>Status</label><input type="text" name="sponsorship_statuses[]" value="" placeholder="Status"></div>' +

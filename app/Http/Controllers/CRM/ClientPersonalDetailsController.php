@@ -1963,14 +1963,20 @@ class ClientPersonalDetailsController extends Controller
 
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
 
-        $types = $request->input('sponsorship_types', []);
-        $statuses = $request->input('sponsorship_statuses', []);
-        $startDates = $request->input('sponsorship_start_dates', []);
-        $endDates = $request->input('sponsorship_end_dates', []);
-        $trns = $request->input('sponsorship_trns', []);
-        $regionals = $request->input('sponsorship_regional', []);
-        $adverses = $request->input('sponsorship_adverse', []);
-        $notes = $request->input('sponsorship_previous_notes', []);
+        // Use array_values() to re-key all arrays to 0-based sequential indices.
+        // Text [] fields are already sequential; checkbox arrays use named keys like
+        // sponsorship_regional[0], sponsorship_regional[2] (sparse when unchecked rows
+        // exist), so re-keying normalises them before the loop index lookup below.
+        $types = array_values($request->input('sponsorship_types', []));
+        $statuses = array_values($request->input('sponsorship_statuses', []));
+        $startDates = array_values($request->input('sponsorship_start_dates', []));
+        $endDates = array_values($request->input('sponsorship_end_dates', []));
+        $trns = array_values($request->input('sponsorship_trns', []));
+        $notes = array_values($request->input('sponsorship_previous_notes', []));
+        // Checkboxes: convert the named-key map {0:'1', 2:'1'} into a set of indices
+        // for fast membership testing without relying on sequential key access.
+        $regionalChecked = array_keys($request->input('sponsorship_regional', []));
+        $adverseChecked  = array_keys($request->input('sponsorship_adverse', []));
 
         $company->sponsorships()->delete();
 
@@ -1992,8 +1998,8 @@ class ClientPersonalDetailsController extends Controller
             $start = ! empty($startDates[$i]) ? $startDates[$i] : null;
             $end = ! empty($endDates[$i]) ? $endDates[$i] : null;
             $note = trim((string) ($notes[$i] ?? ''));
-            $regional = ! empty($regionals[$i]);
-            $adverse = ! empty($adverses[$i]);
+            $regional = in_array($i, $regionalChecked);
+            $adverse  = in_array($i, $adverseChecked);
 
             if ($type === '' && $status === '' && $trn === '' && ! $start && ! $end && $note === '' && ! $regional && ! $adverse) {
                 continue;
