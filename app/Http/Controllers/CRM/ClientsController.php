@@ -2067,6 +2067,7 @@ class ClientsController extends Controller
                     'company.tradingNames',
                     'company.directors.directorClient',
                     'company.nominations.nominatedClient',
+                    'company.sponsorships',
                     'companyNominationsAsNominee.company',
                 ])->find($id); //dd($fetchedData);
                 

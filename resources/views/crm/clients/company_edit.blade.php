@@ -487,31 +487,75 @@
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('sponsorship')">
                                     <i class="fas fa-pen"></i>
                                 </button>
+                                <button type="button" class="add-section-btn" onclick="addSponsorshipRow()" title="Add Sponsorship"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
                         <div id="sponsorshipSummary" class="summary-view">
+                            @if($company && $company->sponsorships->isNotEmpty())
                             <div class="summary-grid">
-                                @if($company && ($company->sponsorship_type || $company->sponsorship_status || $company->trn))
+                                @foreach($company->sponsorships as $s)
+                                <div class="summary-item full-width" style="border-bottom:1px solid #e9ecef;padding-bottom:12px;margin-bottom:12px;">
+                                    @if($company->sponsorships->count() > 1)
+                                    <p style="margin:0 0 8px 0;font-weight:600;color:#495057;">Sponsorship {{ $loop->iteration }}</p>
+                                    @endif
+                                    <div class="summary-grid">
+                                        @if($s->sponsorship_type)<div class="summary-item"><span class="summary-label">Type:</span><span class="summary-value">{{ $s->sponsorship_type }}</span></div>@endif
+                                        @if($s->sponsorship_status)<div class="summary-item"><span class="summary-label">Status:</span><span class="summary-value">{{ $s->sponsorship_status }}</span></div>@endif
+                                        @if($s->trn)<div class="summary-item"><span class="summary-label">TRN:</span><span class="summary-value">{{ $s->trn }}</span></div>@endif
+                                        @if($s->sponsorship_start_date)<div class="summary-item"><span class="summary-label">Start:</span><span class="summary-value">{{ $s->sponsorship_start_date->format('d/m/Y') }}</span></div>@endif
+                                        @if($s->sponsorship_end_date)<div class="summary-item"><span class="summary-label">End:</span><span class="summary-value">{{ $s->sponsorship_end_date->format('d/m/Y') }}</span></div>@endif
+                                        @if($s->regional_sponsorship)<div class="summary-item"><span class="summary-label">Regional:</span><span class="summary-value">Yes</span></div>@endif
+                                        @if($s->adverse_information)<div class="summary-item"><span class="summary-label">Adverse information:</span><span class="summary-value">Yes</span></div>@endif
+                                        @if($s->previous_sponsorship_notes)<div class="summary-item full-width"><span class="summary-label">Notes:</span><span class="summary-value">{{ $s->previous_sponsorship_notes }}</span></div>@endif
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            @elseif($company && ($company->sponsorship_type || $company->sponsorship_status || $company->trn))
+                            <div class="summary-grid">
                                 @if($company->sponsorship_type)<div class="summary-item"><span class="summary-label">Type:</span><span class="summary-value">{{ $company->sponsorship_type }}</span></div>@endif
                                 @if($company->sponsorship_status)<div class="summary-item"><span class="summary-label">Status:</span><span class="summary-value">{{ $company->sponsorship_status }}</span></div>@endif
                                 @if($company->trn)<div class="summary-item"><span class="summary-label">TRN:</span><span class="summary-value">{{ $company->trn }}</span></div>@endif
                                 @if($company->sponsorship_start_date)<div class="summary-item"><span class="summary-label">Start:</span><span class="summary-value">{{ $company->sponsorship_start_date?->format('d/m/Y') }}</span></div>@endif
                                 @if($company->sponsorship_end_date)<div class="summary-item"><span class="summary-label">End:</span><span class="summary-value">{{ $company->sponsorship_end_date?->format('d/m/Y') }}</span></div>@endif
-                                @else
-                                <div class="empty-state"><p>No sponsorship details added yet.</p></div>
-                                @endif
                             </div>
+                            @else
+                            <div class="empty-state"><p>No sponsorship details added yet.</p></div>
+                            @endif
                         </div>
                         <div id="sponsorshipEdit" class="edit-view hidden">
-                            <div class="content-grid">
-                                <div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_type" value="{{ optional($company)->sponsorship_type ?? '' }}" placeholder="e.g. 482, 494"></div>
-                                <div class="form-group"><label>Status</label><input type="text" name="sponsorship_status" value="{{ optional($company)->sponsorship_status ?? '' }}" placeholder="Status"></div>
-                                <div class="form-group"><label>TRN</label><input type="text" name="trn" value="{{ optional($company)->trn ?? '' }}" placeholder="Training Reference Number"></div>
-                                <div class="form-group"><label>Start Date</label><input type="date" name="sponsorship_start_date" value="{{ optional($company)->sponsorship_start_date?->format('Y-m-d') ?? '' }}"></div>
-                                <div class="form-group"><label>End Date</label><input type="date" name="sponsorship_end_date" value="{{ optional($company)->sponsorship_end_date?->format('Y-m-d') ?? '' }}"></div>
-                                <div class="form-group"><label><input type="checkbox" name="regional_sponsorship" value="1" {{ optional($company)->regional_sponsorship ? 'checked' : '' }}> Regional Sponsorship</label></div>
-                                <div class="form-group"><label><input type="checkbox" name="adverse_information" value="1" {{ optional($company)->adverse_information ? 'checked' : '' }}> Adverse Information</label></div>
-                                <div class="form-group full-width"><label>Previous Sponsorship Notes</label><textarea name="previous_sponsorship_notes" rows="2">{{ optional($company)->previous_sponsorship_notes ?? '' }}</textarea></div>
+                            <div id="sponsorshipsContainer">
+                                @php
+                                    if ($company && $company->sponsorships->isNotEmpty()) {
+                                        $sponsorshipRows = $company->sponsorships;
+                                    } else {
+                                        $sponsorshipRows = collect([(object) [
+                                            'sponsorship_type' => optional($company)->sponsorship_type,
+                                            'sponsorship_status' => optional($company)->sponsorship_status,
+                                            'trn' => optional($company)->trn,
+                                            'sponsorship_start_date' => optional($company)->sponsorship_start_date,
+                                            'sponsorship_end_date' => optional($company)->sponsorship_end_date,
+                                            'regional_sponsorship' => optional($company)->regional_sponsorship,
+                                            'adverse_information' => optional($company)->adverse_information,
+                                            'previous_sponsorship_notes' => optional($company)->previous_sponsorship_notes,
+                                        ]]);
+                                    }
+                                @endphp
+                                @foreach($sponsorshipRows as $idx => $s)
+                                <div class="sponsorship-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">
+                                    <div class="content-grid">
+                                        <div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_types[]" value="{{ $s->sponsorship_type ?? '' }}" placeholder="e.g. 482, 494"></div>
+                                        <div class="form-group"><label>Status</label><input type="text" name="sponsorship_statuses[]" value="{{ $s->sponsorship_status ?? '' }}" placeholder="Status"></div>
+                                        <div class="form-group"><label>TRN</label><input type="text" name="sponsorship_trns[]" value="{{ $s->trn ?? '' }}" placeholder="Training Reference Number"></div>
+                                        <div class="form-group"><label>Start Date</label><input type="date" name="sponsorship_start_dates[]" value="{{ ($s->sponsorship_start_date ?? null) ? \Carbon\Carbon::parse($s->sponsorship_start_date)->format('Y-m-d') : '' }}"></div>
+                                        <div class="form-group"><label>End Date</label><input type="date" name="sponsorship_end_dates[]" value="{{ ($s->sponsorship_end_date ?? null) ? \Carbon\Carbon::parse($s->sponsorship_end_date)->format('Y-m-d') : '' }}"></div>
+                                        <div class="form-group"><label><input type="checkbox" class="sponsorship-regional-cb" name="sponsorship_regional[{{ $idx }}]" value="1" {{ !empty($s->regional_sponsorship) ? 'checked' : '' }}> Regional Sponsorship</label></div>
+                                        <div class="form-group"><label><input type="checkbox" class="sponsorship-adverse-cb" name="sponsorship_adverse[{{ $idx }}]" value="1" {{ !empty($s->adverse_information) ? 'checked' : '' }}> Adverse Information</label></div>
+                                        <div class="form-group full-width"><label>Previous Sponsorship Notes</label><textarea name="sponsorship_previous_notes[]" rows="2">{{ $s->previous_sponsorship_notes ?? '' }}</textarea></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSponsorshipRow(this)"><i class="fas fa-times"></i> Remove</button>
+                                </div>
+                                @endforeach
                             </div>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveSponsorshipInfo()">Save</button>
@@ -1173,6 +1217,40 @@
         const container = $('#nominationsContainer');
         if (container.find('.nomination-row').length <= 1) return;
         $(btn).closest('.nomination-row').remove();
+    }
+
+    function reindexSponsorshipRows() {
+        $('#sponsorshipsContainer .sponsorship-row').each(function(i) {
+            $(this).find('.sponsorship-regional-cb').attr('name', 'sponsorship_regional[' + i + ']');
+            $(this).find('.sponsorship-adverse-cb').attr('name', 'sponsorship_adverse[' + i + ']');
+        });
+    }
+
+    function addSponsorshipRow() {
+        const container = $('#sponsorshipsContainer');
+        const idx = container.find('.sponsorship-row').length;
+        const row = '<div class="sponsorship-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">' +
+            '<div class="content-grid">' +
+            '<div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_types[]" value="" placeholder="e.g. 482, 494"></div>' +
+            '<div class="form-group"><label>Status</label><input type="text" name="sponsorship_statuses[]" value="" placeholder="Status"></div>' +
+            '<div class="form-group"><label>TRN</label><input type="text" name="sponsorship_trns[]" value="" placeholder="Training Reference Number"></div>' +
+            '<div class="form-group"><label>Start Date</label><input type="date" name="sponsorship_start_dates[]" value=""></div>' +
+            '<div class="form-group"><label>End Date</label><input type="date" name="sponsorship_end_dates[]" value=""></div>' +
+            '<div class="form-group"><label><input type="checkbox" class="sponsorship-regional-cb" name="sponsorship_regional[' + idx + ']" value="1"> Regional Sponsorship</label></div>' +
+            '<div class="form-group"><label><input type="checkbox" class="sponsorship-adverse-cb" name="sponsorship_adverse[' + idx + ']" value="1"> Adverse Information</label></div>' +
+            '<div class="form-group full-width"><label>Previous Sponsorship Notes</label><textarea name="sponsorship_previous_notes[]" rows="2"></textarea></div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSponsorshipRow(this)"><i class="fas fa-times"></i> Remove</button>' +
+            '</div>';
+        container.append(row);
+        reindexSponsorshipRows();
+    }
+
+    function removeSponsorshipRow(btn) {
+        const container = $('#sponsorshipsContainer');
+        if (container.find('.sponsorship-row').length <= 1) return;
+        $(btn).closest('.sponsorship-row').remove();
+        reindexSponsorshipRows();
     }
 
     function saveSection(sectionName, callback) {

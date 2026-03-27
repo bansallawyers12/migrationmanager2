@@ -1944,26 +1944,96 @@ class ClientPersonalDetailsController extends Controller
         if (!$client->is_company) {
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
-        $validated = $request->validate([
-            'sponsorship_type' => 'nullable|string|max:50',
-            'sponsorship_status' => 'nullable|string|max:50',
-            'sponsorship_start_date' => 'nullable|date',
-            'sponsorship_end_date' => 'nullable|date',
-            'trn' => 'nullable|string|max:50',
-            'regional_sponsorship' => 'nullable|boolean',
-            'adverse_information' => 'nullable|boolean',
-            'previous_sponsorship_notes' => 'nullable|string',
+        $request->validate([
+            'sponsorship_types' => 'nullable|array',
+            'sponsorship_types.*' => 'nullable|string|max:50',
+            'sponsorship_statuses' => 'nullable|array',
+            'sponsorship_statuses.*' => 'nullable|string|max:50',
+            'sponsorship_start_dates' => 'nullable|array',
+            'sponsorship_start_dates.*' => 'nullable|date',
+            'sponsorship_end_dates' => 'nullable|array',
+            'sponsorship_end_dates.*' => 'nullable|date',
+            'sponsorship_trns' => 'nullable|array',
+            'sponsorship_trns.*' => 'nullable|string|max:50',
+            'sponsorship_regional' => 'nullable|array',
+            'sponsorship_adverse' => 'nullable|array',
+            'sponsorship_previous_notes' => 'nullable|array',
+            'sponsorship_previous_notes.*' => 'nullable|string',
         ]);
+
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->sponsorship_type = $validated['sponsorship_type'] ?? null;
-        $company->sponsorship_status = $validated['sponsorship_status'] ?? null;
-        $company->sponsorship_start_date = $validated['sponsorship_start_date'] ?? null;
-        $company->sponsorship_end_date = $validated['sponsorship_end_date'] ?? null;
-        $company->trn = $validated['trn'] ?? null;
-        $company->regional_sponsorship = $request->has('regional_sponsorship');
-        $company->adverse_information = $request->has('adverse_information');
-        $company->previous_sponsorship_notes = $validated['previous_sponsorship_notes'] ?? null;
+
+        $types = $request->input('sponsorship_types', []);
+        $statuses = $request->input('sponsorship_statuses', []);
+        $startDates = $request->input('sponsorship_start_dates', []);
+        $endDates = $request->input('sponsorship_end_dates', []);
+        $trns = $request->input('sponsorship_trns', []);
+        $regionals = $request->input('sponsorship_regional', []);
+        $adverses = $request->input('sponsorship_adverse', []);
+        $notes = $request->input('sponsorship_previous_notes', []);
+
+        $company->sponsorships()->delete();
+
+        $count = max(
+            count($types),
+            count($statuses),
+            count($startDates),
+            count($endDates),
+            count($trns),
+            count($notes),
+            1
+        );
+
+        $sort = 0;
+        for ($i = 0; $i < $count; $i++) {
+            $type = trim((string) ($types[$i] ?? ''));
+            $status = trim((string) ($statuses[$i] ?? ''));
+            $trn = trim((string) ($trns[$i] ?? ''));
+            $start = ! empty($startDates[$i]) ? $startDates[$i] : null;
+            $end = ! empty($endDates[$i]) ? $endDates[$i] : null;
+            $note = trim((string) ($notes[$i] ?? ''));
+            $regional = ! empty($regionals[$i]);
+            $adverse = ! empty($adverses[$i]);
+
+            if ($type === '' && $status === '' && $trn === '' && ! $start && ! $end && $note === '' && ! $regional && ! $adverse) {
+                continue;
+            }
+
+            $company->sponsorships()->create([
+                'sponsorship_type' => $type !== '' ? $type : null,
+                'sponsorship_status' => $status !== '' ? $status : null,
+                'sponsorship_start_date' => $start,
+                'sponsorship_end_date' => $end,
+                'trn' => $trn !== '' ? $trn : null,
+                'regional_sponsorship' => $regional,
+                'adverse_information' => $adverse,
+                'previous_sponsorship_notes' => $note !== '' ? $note : null,
+                'sort_order' => $sort++,
+            ]);
+        }
+
+        $first = $company->sponsorships()->orderBy('sort_order')->orderBy('id')->first();
+        if ($first) {
+            $company->sponsorship_type = $first->sponsorship_type;
+            $company->sponsorship_status = $first->sponsorship_status;
+            $company->sponsorship_start_date = $first->sponsorship_start_date;
+            $company->sponsorship_end_date = $first->sponsorship_end_date;
+            $company->trn = $first->trn;
+            $company->regional_sponsorship = $first->regional_sponsorship;
+            $company->adverse_information = $first->adverse_information;
+            $company->previous_sponsorship_notes = $first->previous_sponsorship_notes;
+        } else {
+            $company->sponsorship_type = null;
+            $company->sponsorship_status = null;
+            $company->sponsorship_start_date = null;
+            $company->sponsorship_end_date = null;
+            $company->trn = null;
+            $company->regional_sponsorship = false;
+            $company->adverse_information = false;
+            $company->previous_sponsorship_notes = null;
+        }
         $company->save();
+
         return response()->json(['success' => true, 'message' => 'Sponsorship updated successfully']);
     }
 

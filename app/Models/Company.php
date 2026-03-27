@@ -104,4 +104,12 @@ class Company extends Model
     {
         return $this->hasMany(CompanyNomination::class)->orderBy('sort_order');
     }
+
+    /**
+     * Employer sponsorship rows (multiple per company).
+     */
+    public function sponsorships(): HasMany
+    {
+        return $this->hasMany(CompanySponsorship::class)->orderBy('sort_order')->orderBy('id');
+    }
 }
