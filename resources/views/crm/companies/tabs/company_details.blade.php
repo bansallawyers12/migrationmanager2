@@ -42,7 +42,7 @@
                 @if(optional($fetchedData->company)->company_type)
                 <div class="field-group">
                     <span class="field-label">Business Type:</span>
-                    <span class="field-value">{{ $fetchedData->company->company_type }}</span>
+                    <span class="field-value">{{ \App\Models\Company::businessTypeLabel($fetchedData->company->company_type) }}</span>
                 </div>
                 @endif
                 @if(optional($fetchedData->company)->company_website)
@@ -55,13 +55,13 @@
                     </span>
                 </div>
                 @endif
-                @if(optional($fetchedData->company)->company_type === 'Trust' && (optional($fetchedData->company)->trust_name || optional($fetchedData->company)->trust_abn || optional($fetchedData->company)->trustee_name))
+                @if($comp && $comp->isTrusteeBusiness() && ($comp->trust_name || $comp->trust_abn || $comp->trustee_name || $comp->trustee_details))
                 <div class="field-group" style="grid-column: 1 / -1;">
-                    <span class="field-label">Trust Details:</span>
+                    <span class="field-label">Trust details:</span>
                     <span class="field-value">
-                        @if($comp->trust_name) Trust: {{ $comp->trust_name }}@endif
-                        @if($comp->trust_abn) | ABN: {{ $comp->trust_abn }}@endif
-                        @if($comp->trustee_name) | Trustee: {{ $comp->trustee_name }}@endif
+                        @if($comp->trust_name) Trust name: {{ $comp->trust_name }}@endif
+                        @if($comp->trust_abn) @if($comp->trust_name) | @endif ABN/ACN: {{ $comp->trust_abn }}@endif
+                        @if($comp->trustee_name) @if($comp->trust_name || $comp->trust_abn) | @endif Trustee: {{ $comp->trustee_name }}@endif
                         @if($comp->trustee_details) | {{ $comp->trustee_details }}@endif
                     </span>
                 </div>

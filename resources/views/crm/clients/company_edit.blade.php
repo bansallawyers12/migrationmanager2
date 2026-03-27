@@ -16,6 +16,9 @@
     // Get company data
     $company = $fetchedData->company;
     $contactPerson = $company && $company->contact_person_id ? \App\Models\Admin::find($company->contact_person_id) : null;
+    $isTrusteeBusinessType = $company && $company->isTrusteeBusiness();
+    $companyTypeForForm = old('company_type', $company ? $company->company_type : '');
+    $showTrusteeFieldsInitial = \App\Models\Company::isTrusteeBusinessType($companyTypeForForm);
 @endphp
 
 @push('styles')
@@ -64,12 +67,6 @@
                         <i class="fas fa-user-tie"></i>
                         <span>Contact Person</span>
                     </button>
-                    @if($company && $company->company_type === 'Trust')
-                    <button class="nav-item" onclick="scrollToSection('trustSection')">
-                        <i class="fas fa-landmark"></i>
-                        <span>Trust</span>
-                    </button>
-                    @endif
                     <button class="nav-item" onclick="scrollToSection('sponsorshipSection')">
                         <i class="fas fa-file-contract"></i>
                         <span>Sponsorship</span>
@@ -189,7 +186,19 @@
                                 @if($company && $company->company_type)
                                 <div class="summary-item">
                                     <span class="summary-label">Business Type:</span>
-                                    <span class="summary-value">{{ $company->company_type }}</span>
+                                    <span class="summary-value">{{ \App\Models\Company::businessTypeLabel($company->company_type) }}</span>
+                                </div>
+                                @endif
+                                @if($isTrusteeBusinessType && $company->trust_name)
+                                <div class="summary-item">
+                                    <span class="summary-label">Trust Name:</span>
+                                    <span class="summary-value">{{ $company->trust_name }}</span>
+                                </div>
+                                @endif
+                                @if($isTrusteeBusinessType && $company->trust_abn)
+                                <div class="summary-item">
+                                    <span class="summary-label">ABN/ACN (trust):</span>
+                                    <span class="summary-value">{{ $company->trust_abn }}</span>
                                 </div>
                                 @endif
                                 @if($company && $company->company_website)
@@ -280,9 +289,29 @@
                                         <option value="Proprietary Company" {{ old('company_type', $company ? $company->company_type : '') == 'Proprietary Company' ? 'selected' : '' }}>Proprietary Company (Pty Ltd)</option>
                                         <option value="Public Company" {{ old('company_type', $company ? $company->company_type : '') == 'Public Company' ? 'selected' : '' }}>Public Company</option>
                                         <option value="Not-for-Profit" {{ old('company_type', $company ? $company->company_type : '') == 'Not-for-Profit' ? 'selected' : '' }}>Not-for-Profit Organization</option>
-                                        <option value="Trust" {{ old('company_type', $company ? $company->company_type : '') == 'Trust' ? 'selected' : '' }}>Trust</option>
+                                        <option value="Trustee" {{ \App\Models\Company::isTrusteeBusinessType(old('company_type', $company ? $company->company_type : '')) ? 'selected' : '' }}>Trustee</option>
                                         <option value="Other" {{ old('company_type', $company ? $company->company_type : '') == 'Other' ? 'selected' : '' }}>Other</option>
                                     </select>
+                                </div>
+
+                                <div id="trusteeInlineFields" class="trustee-inline-fields" style="grid-column: 1 / -1; {{ $showTrusteeFieldsInitial ? '' : 'display: none;' }}">
+                                    <div class="content-grid">
+                                        <div class="form-group">
+                                            <label for="companyTrustName">Trust Name</label>
+                                            <input type="text" id="companyTrustName" name="trust_name"
+                                                   value="{{ old('trust_name', $company ? $company->trust_name : '') }}"
+                                                   placeholder="Name of the trust"
+                                                   @if(!$showTrusteeFieldsInitial) disabled @endif>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="companyTrustAbnAcn">ABN/ACN</label>
+                                            <input type="text" id="companyTrustAbnAcn" name="trust_abn"
+                                                   value="{{ old('trust_abn', $company ? $company->trust_abn : '') }}"
+                                                   placeholder="Trust ABN or ACN"
+                                                   maxlength="64"
+                                                   @if(!$showTrusteeFieldsInitial) disabled @endif>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="form-group">
@@ -430,53 +459,6 @@
                         </div>
                     </section>
                 </section>
-
-                @if($company && $company->company_type === 'Trust')
-                <!-- Trust Section (visible when Business Type = Trust) -->
-                <section id="trustSection" class="content-section">
-                    <section class="form-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-landmark"></i> Trust Details</h3>
-                            <div class="section-actions">
-                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('trust')">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="trustSummary" class="summary-view">
-                            <div class="summary-grid">
-                                @if($company->trust_name)
-                                <div class="summary-item"><span class="summary-label">Trust Name:</span><span class="summary-value">{{ $company->trust_name }}</span></div>
-                                @endif
-                                @if($company->trust_abn)
-                                <div class="summary-item"><span class="summary-label">Trust ABN:</span><span class="summary-value">{{ $company->trust_abn }}</span></div>
-                                @endif
-                                @if($company->trustee_name)
-                                <div class="summary-item"><span class="summary-label">Trustee:</span><span class="summary-value">{{ $company->trustee_name }}</span></div>
-                                @endif
-                                @if($company->trustee_details)
-                                <div class="summary-item full-width"><span class="summary-label">Trustee Details:</span><span class="summary-value">{{ $company->trustee_details }}</span></div>
-                                @endif
-                                @if(!$company->trust_name && !$company->trust_abn && !$company->trustee_name && !$company->trustee_details)
-                                <div class="empty-state"><p>No trust details added yet.</p></div>
-                                @endif
-                            </div>
-                        </div>
-                        <div id="trustEdit" class="edit-view hidden">
-                            <div class="content-grid">
-                                <div class="form-group"><label for="trustName">Trust Name</label><input type="text" id="trustName" name="trust_name" value="{{ $company->trust_name ?? '' }}" placeholder="Trust name"></div>
-                                <div class="form-group"><label for="trustAbn">Trust ABN</label><input type="text" id="trustAbn" name="trust_abn" value="{{ $company->trust_abn ?? '' }}" placeholder="11 digits" maxlength="11"></div>
-                                <div class="form-group"><label for="trusteeName">Trustee Name</label><input type="text" id="trusteeName" name="trustee_name" value="{{ $company->trustee_name ?? '' }}" placeholder="Trustee name"></div>
-                                <div class="form-group full-width"><label for="trusteeDetails">Trustee Details</label><textarea id="trusteeDetails" name="trustee_details" rows="3">{{ $company->trustee_details ?? '' }}</textarea></div>
-                            </div>
-                            <div class="edit-actions">
-                                <button type="button" class="btn btn-primary" onclick="saveTrustInfo()">Save</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('trust')">Cancel</button>
-                            </div>
-                        </div>
-                    </section>
-                </section>
-                @endif
 
                 <!-- Sponsorship Section -->
                 <section id="sponsorshipSection" class="content-section">
@@ -1109,6 +1091,16 @@
             $('#tradingNamesContainer').toggle($(this).val() === '1');
         });
 
+        function toggleTrusteeCompanyFields() {
+            var v = $('#companyType').val();
+            var show = (v === 'Trustee' || v === 'Trust');
+            var el = $('#trusteeInlineFields');
+            el.toggle(show);
+            el.find('input').prop('disabled', !show);
+        }
+        $('#companyType').on('change', toggleTrusteeCompanyFields);
+        toggleTrusteeCompanyFields();
+
         // Init Select2 for nomination person search (existing rows)
         $('.nomination-person-select').each(function() {
             if (!$(this).hasClass('select2-hidden-accessible')) {
@@ -1304,9 +1296,6 @@
             window.location.reload();
         });
     }
-    @if($company && $company->company_type === 'Trust')
-    function saveTrustInfo() { saveSection('trust', function() { toggleEditMode('trust'); }); }
-    @endif
     function saveSponsorshipInfo() { saveSection('sponsorship', function() { toggleEditMode('sponsorship'); }); }
     function saveDirectorsInfo() { saveSection('directors', function() { toggleEditMode('directors'); }); }
     function saveFinancialInfo() { saveSection('financial', function() { toggleEditMode('financial'); }); }

@@ -357,8 +357,8 @@
                                             <option value="Not-for-Profit" {{ old('company_type') == 'Not-for-Profit' ? 'selected' : '' }}>
                                                 Not-for-Profit Organization
                                             </option>
-                                            <option value="Trust" {{ old('company_type') == 'Trust' ? 'selected' : '' }}>
-                                                Trust
+                                            <option value="Trustee" {{ \App\Models\Company::isTrusteeBusinessType(old('company_type')) ? 'selected' : '' }}>
+                                                Trustee
                                             </option>
                                             <option value="Other" {{ old('company_type') == 'Other' ? 'selected' : '' }}>
                                                 Other

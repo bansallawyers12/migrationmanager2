@@ -768,6 +768,8 @@ class LeadController extends Controller
                     $primaryIdx = min((int) ($requestData['trading_name_primary'] ?? 0), max(0, count($tradingNames) - 1));
                     $primaryTradingName = $tradingNames[$primaryIdx] ?? $tradingNames[0] ?? null;
 
+                    $leadCompanyType = Company::normalizeBusinessType($requestData['company_type'] ?? null);
+
                     $company = Company::create([
                         'admin_id' => $admin->id,
                         'company_name' => $requestData['company_name'],
@@ -779,7 +781,7 @@ class LeadController extends Controller
                         'ACN' => isset($requestData['ACN']) && !empty($requestData['ACN'])
                             ? preg_replace('/\D/', '', $requestData['ACN'])
                             : null,
-                        'company_type' => $requestData['company_type'] ?? null,
+                        'company_type' => $leadCompanyType,
                         'company_website' => !empty(trim($requestData['company_website'] ?? '')) ? $requestData['company_website'] : null,
                         'contact_person_id' => $requestData['contact_person_id'] ?? null,
                         'contact_person_position' => $requestData['contact_person_position'] ?? null,

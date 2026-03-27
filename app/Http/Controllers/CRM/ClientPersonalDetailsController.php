@@ -1850,14 +1850,28 @@ class ClientPersonalDetailsController extends Controller
             'ACN' => 'nullable|string|max:20',
             'company_type' => 'nullable|string|max:50',
             'company_website' => 'nullable|url|max:255',
+            'trust_name' => 'nullable|string|max:255',
+            'trust_abn' => 'nullable|string|max:64',
         ]);
 
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => $validated['company_name']]);
         $company->company_name = $validated['company_name'];
         $company->ABN_number = !empty($validated['ABN_number']) ? preg_replace('/\D/', '', $validated['ABN_number']) : null;
         $company->ACN = !empty($validated['ACN']) ? preg_replace('/\D/', '', $validated['ACN']) : null;
-        $company->company_type = $validated['company_type'] ?? null;
+        $company->company_type = Company::normalizeBusinessType($validated['company_type'] ?? null);
         $company->company_website = $validated['company_website'] ?? null;
+
+        if (Company::isTrusteeBusinessType($company->company_type)) {
+            $tnm = $validated['trust_name'] ?? null;
+            $company->trust_name = ($tnm !== null && trim((string) $tnm) !== '') ? trim((string) $tnm) : null;
+            $tn = $validated['trust_abn'] ?? null;
+            $company->trust_abn = ($tn !== null && trim((string) $tn) !== '') ? trim((string) $tn) : null;
+        } else {
+            $company->trust_name = null;
+            $company->trust_abn = null;
+            $company->trustee_name = null;
+            $company->trustee_details = null;
+        }
 
         $hasTradingName = (int) ($validated['has_trading_name'] ?? 0) === 1;
         $company->has_trading_name = $hasTradingName;
@@ -1922,19 +1936,23 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        if ($company->company_type !== 'Trust') {
-            return response()->json(['success' => false, 'message' => 'Trust section only applies when Business Type is Trust'], 400);
+        if (! Company::isTrusteeBusinessType($company->company_type)) {
+            return response()->json(['success' => false, 'message' => 'Trust details only apply when Business Type is Trustee'], 400);
         }
         $validated = $request->validate([
             'trust_name' => 'nullable|string|max:255',
-            'trust_abn' => 'nullable|string|max:20',
+            'trust_abn' => 'nullable|string|max:64',
             'trustee_name' => 'nullable|string|max:255',
             'trustee_details' => 'nullable|string',
         ]);
-        $company->trust_name = $validated['trust_name'] ?? null;
-        $company->trust_abn = !empty($validated['trust_abn']) ? preg_replace('/\D/', '', $validated['trust_abn']) : null;
-        $company->trustee_name = $validated['trustee_name'] ?? null;
-        $company->trustee_details = $validated['trustee_details'] ?? null;
+        $tnm = $validated['trust_name'] ?? null;
+        $company->trust_name = ($tnm !== null && trim((string) $tnm) !== '') ? trim((string) $tnm) : null;
+        $ta = $validated['trust_abn'] ?? null;
+        $company->trust_abn = ($ta !== null && trim((string) $ta) !== '') ? trim((string) $ta) : null;
+        $tn = $validated['trustee_name'] ?? null;
+        $company->trustee_name = ($tn !== null && trim((string) $tn) !== '') ? trim((string) $tn) : null;
+        $td = $validated['trustee_details'] ?? null;
+        $company->trustee_details = ($td !== null && trim((string) $td) !== '') ? trim((string) $td) : null;
         $company->save();
         return response()->json(['success' => true, 'message' => 'Trust details updated successfully']);
     }

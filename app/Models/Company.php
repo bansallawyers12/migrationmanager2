@@ -69,6 +69,45 @@ class Company extends Model
         'wages_expenditure' => 'decimal:2',
     ];
 
+    /** Stored value for business type “Trustee” (legacy DB may still have "Trust"). */
+    public const BUSINESS_TYPE_TRUSTEE = 'Trustee';
+
+    public static function normalizeBusinessType(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+        if (trim($value) === '') {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === 'Trust' ? self::BUSINESS_TYPE_TRUSTEE : $value;
+    }
+
+    public static function isTrusteeBusinessType(mixed $value): bool
+    {
+        return is_string($value) && in_array($value, [self::BUSINESS_TYPE_TRUSTEE, 'Trust'], true);
+    }
+
+    /**
+     * Human-readable business type (maps legacy "Trust" to "Trustee").
+     */
+    public static function businessTypeLabel(mixed $stored): ?string
+    {
+        if (! is_string($stored) || $stored === '') {
+            return null;
+        }
+
+        return $stored === 'Trust' ? self::BUSINESS_TYPE_TRUSTEE : $stored;
+    }
+
+    public function isTrusteeBusiness(): bool
+    {
+        return self::isTrusteeBusinessType($this->company_type);
+    }
+
     /**
      * Get the admin (lead/client) record this company belongs to
      */
