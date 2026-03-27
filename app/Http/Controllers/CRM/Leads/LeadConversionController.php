@@ -100,9 +100,6 @@ class LeadConversionController extends Controller
                 $matter->sel_person_assisting = $requestData['person_assisting'] ?? null;
                 $matter->sel_matter_id = $requestData['matter_id'];
 
-                // Get matter info for unique matter number
-                $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
-                
                 // Generate unique matter number
                 $client_matters_cnt_per_client = DB::table('client_matters')
                     ->select('id')
@@ -110,10 +107,14 @@ class LeadConversionController extends Controller
                     ->where('client_id', $client->id)
                     ->count();
                     
-                $client_matters_current_no = str_pad($client_matters_cnt_per_client + 1, 3, '0', STR_PAD_LEFT);
+                $client_matters_current_no = $client_matters_cnt_per_client + 1;
                 
-                if($matterInfo) {
-                    $matter->client_unique_matter_no = $matterInfo->nick_name . "_" . $client_matters_current_no;
+                if ((int) $requestData['matter_id'] === 1) {
+                    $matter->client_unique_matter_no = 'GN_' . $client_matters_current_no;
+                } else {
+                    $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
+                    $prefix = ($matterInfo && $matterInfo->nick_name) ? $matterInfo->nick_name : 'Matter';
+                    $matter->client_unique_matter_no = $prefix . '_' . $client_matters_current_no;
                 }
                 
                 $matterType = Matter::find($requestData['matter_id']);

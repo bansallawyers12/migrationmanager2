@@ -5385,6 +5385,11 @@ class ClientsController extends Controller
                 echo json_encode($response);
                 return;
             }
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $clientForMatter->id, Auth::user())) {
+                $response['message'] = config('constants.unauthorized');
+                echo json_encode($response);
+                return;
+            }
             $matterId = (int) ($requestData['matter_id'] ?? 0);
             if (! Matter::allowedForClientIsCompany($matterId, (bool) $clientForMatter->is_company)) {
                 $response['message'] = 'This matter type is not valid for this client record.';
@@ -5407,7 +5412,8 @@ class ClientsController extends Controller
                 $obj5->client_unique_matter_no = 'GN_'.$client_matters_current_no;
             } else {
                 $matterInfo = Matter::select('nick_name')->where('id', '=', $requestData['matter_id'])->first();
-                $obj5->client_unique_matter_no = $matterInfo->nick_name."_".$client_matters_current_no;
+                $prefix = ($matterInfo && $matterInfo->nick_name) ? $matterInfo->nick_name : 'Matter';
+                $obj5->client_unique_matter_no = $prefix."_".$client_matters_current_no;
             }
             $matterType = Matter::find($requestData['matter_id']);
             $workflowId = $matterType && $matterType->workflow_id ? $matterType->workflow_id : \App\Models\Workflow::where('name', 'General')->value('id');
@@ -5933,7 +5939,15 @@ class ClientsController extends Controller
                 $obj = Admin::find($id);
                 $client_type = $obj->type;
                 Log::info('ConvertLeadToClient: admin found', ['admin_id' => $id, 'client_type' => $client_type]);
+                if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                    return Redirect::to('/clients')->with('error', config('constants.unauthorized'));
+                }
                 if($slug == 'client') {
+                    // Cross-check: form client_id must match the URL-encoded id
+                    if ((int) ($request['client_id'] ?? 0) !== (int) $id) {
+                        Log::warning('ConvertLeadToClient: client_id mismatch', ['url_id' => $id, 'form_client_id' => $request['client_id']]);
+                        return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('error', 'Invalid request.');
+                    }
                     $matterIdChangetype = (int) ($request['matter_id'] ?? 0);
                     if (! Matter::allowedForClientIsCompany($matterIdChangetype, (bool) $obj->is_company)) {
                         return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('error', 'This matter type is not valid for this client record.');
@@ -5946,7 +5960,7 @@ class ClientsController extends Controller
 
                     $matter = new ClientMatter();
                     $matter->user_id = $request['user_id'];
-                    $matter->client_id = $request['client_id'];
+                    $matter->client_id = (int) $id;
                     $matter->office_id = $request['office_id'] ?? optional(Auth::user())->office_id ?? null;
                     $matter->sel_migration_agent = $request['migration_agent'];
                     $matter->sel_person_responsible = $request['person_responsible'];
@@ -5960,13 +5974,14 @@ class ClientsController extends Controller
                         'migration_agent' => $request['migration_agent'],
                     ]);
 
-                    $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',$request['client_id'])->count();
+                    $client_matters_cnt_per_client = DB::table('client_matters')->select('id')->where('sel_matter_id',$request['matter_id'])->where('client_id',(int) $id)->count();
                     $client_matters_current_no = $client_matters_cnt_per_client+1;
                     if($request['matter_id'] == 1) {
                         $matter->client_unique_matter_no = 'GN_'.$client_matters_current_no;
                     } else {
                         $matterInfo = Matter::select('nick_name')->where('id', '=', $request['matter_id'])->first();
-                        $matter->client_unique_matter_no = $matterInfo ? $matterInfo->nick_name."_".$client_matters_current_no : 'Matter_'.$client_matters_current_no;
+                        $prefix = ($matterInfo && $matterInfo->nick_name) ? $matterInfo->nick_name : 'Matter';
+                        $matter->client_unique_matter_no = $prefix."_".$client_matters_current_no;
                     }
                     Log::info('ConvertLeadToClient: client_unique_matter_no', ['client_unique_matter_no' => $matter->client_unique_matter_no]);
 
