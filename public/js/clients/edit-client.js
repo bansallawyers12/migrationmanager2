@@ -4351,9 +4351,12 @@ $(document).ready(function() {
         });
 
         // Validate on form submission
-        document.getElementById('editClientForm').addEventListener('submit', function(e) {
-            validatePersonalPhoneNumbers();
-        });
+        const editClientForm = document.getElementById('editClientForm');
+        if (editClientForm) {
+            editClientForm.addEventListener('submit', function(e) {
+                validatePersonalPhoneNumbers();
+            });
+        }
 
         // Initial validation on page load
         validatePersonalPhoneNumbers();
@@ -6295,12 +6298,8 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeRelatedFilesSelect2() {
     const relatedFilesSelect = $('#relatedFiles');
-    
-    console.log('initializeRelatedFilesSelect2 called');
-    console.log('Related Files Select element found:', relatedFilesSelect.length);
-    console.log('jQuery Select2 available:', typeof $.fn.select2 !== 'undefined');
-    console.log('Window config:', window.editClientConfig);
-    console.log('Current client ID:', window.currentClientId);
+
+    if (relatedFilesSelect.length === 0) return;
     
     if (relatedFilesSelect.length > 0 && typeof $.fn.select2 !== 'undefined') {
         console.log('Initializing Related Files Select2...');
