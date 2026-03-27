@@ -61,7 +61,13 @@
         <div class="note-client-info">
             <a href="{{ route('clients.detail', base64_encode(convert_uuencode($client->id))) }}" class="client-link">
                 <i class="fas fa-user"></i>
-                <strong>{{ $client->first_name ?: 'Unknown' }} {{ $client->last_name ?: 'Client' }}</strong>
+                @php
+                    $noteClientLabel = trim($client->company_name_or_personal_name);
+                    if ($noteClientLabel === '') {
+                        $noteClientLabel = trim(($client->first_name ?: '') . ' ' . ($client->last_name ?: '')) ?: 'Unknown Client';
+                    }
+                @endphp
+                <strong>{{ $noteClientLabel }}</strong>
                 <span class="client-id-small">{{ $client->client_id ?: 'N/A' }}</span>
             </a>
         </div>

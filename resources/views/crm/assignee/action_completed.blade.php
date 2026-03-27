@@ -278,7 +278,10 @@
                                                 <?php
                                                     $staff = $list->noteStaff;
                                                     $full_name = $staff ? ($staff->first_name ?? 'N/A') . ' ' . ($staff->last_name ?? 'N/A') : 'N/A';
-                                                    $client_name = $list->noteClient ? $list->noteClient->first_name . ' ' . $list->noteClient->last_name : 'N/P';
+                                                    $client_name = $list->noteClient ? trim($list->noteClient->company_name_or_personal_name) : 'N/P';
+                                                    if ($list->noteClient && $client_name === '') {
+                                                        $client_name = trim($list->noteClient->first_name . ' ' . $list->noteClient->last_name) ?: 'N/P';
+                                                    }
                                                 ?>
                                                 <tr>
                                                     <td style="text-align: center;">{{ ++$i }}</td>

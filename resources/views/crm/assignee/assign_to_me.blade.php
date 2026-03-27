@@ -105,13 +105,6 @@
                                             }
                                         ?>
 										<tr>
-                                            <?php
-												if($list->noteClient){
-													$client_name=$list->noteClient->first_name.' '.$list->noteClient->last_name;
-												}else{
-													$client_name='N/P';
-												}
-											?>
 											<td>{{ ++$i }} &nbsp;
                                                 <?php
                                                 if($list->status === 1) { ?>
@@ -122,7 +115,14 @@
                                             </td>
 											<td>{{ $list->assigned_staff->first_name ?? ''}}  {{$list->assigned_staff->last_name ?? ''}}</td>
 											<td>{{ $full_name??'N/P' }}</td>
-                                            <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank" >{{ $list->noteClient->client_id ?? 'N/P' }}</a></td>
+                                            <td>
+                                                @if($list->noteClient)
+                                                    {{ trim($list->noteClient->company_name_or_personal_name) }}<br>
+                                                    <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$list->client_id)))}}" target="_blank">{{ $list->noteClient->client_id ?? 'N/P' }}</a>
+                                                @else
+                                                    N/P
+                                                @endif
+                                            </td>
 											<td>{{ date('d/m/Y',strtotime($list->action_date)) ?? 'N/P'}} </td>
                                             <td>{{ $list->task_group??'N/P' }}</td>
                                             <td>{{ $list->description??'N/P' }}</td>
@@ -281,13 +281,6 @@
                                             }
                                         ?>
 										<tr>
-                                            <?php
-												if($listC->noteClient){
-													$client_name=$listC->noteClient->first_name.' '.$listC->noteClient->last_name;
-												}else{
-													$client_name='N/P';
-												}
-											?>
 											<td>{{ ($keyC+1) }} &nbsp;
                                                 <?php
                                                 if($listC->status === 1) { ?>
@@ -298,7 +291,14 @@
                                             </td>
 											<td>{{ $listC->assigned_staff->first_name ?? ''}}  {{$listC->assigned_staff->last_name ?? ''}}</td>
 											<td>{{ $full_nameC??'N/P' }}</td>
-                                            <td><a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)))}}" target="_blank" >{{ $listC->noteClient->client_id ?? 'N/P' }}</a></td>
+                                            <td>
+                                                @if($listC->noteClient)
+                                                    {{ trim($listC->noteClient->company_name_or_personal_name) }}<br>
+                                                    <a href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$listC->client_id)))}}" target="_blank">{{ $listC->noteClient->client_id ?? 'N/P' }}</a>
+                                                @else
+                                                    N/P
+                                                @endif
+                                            </td>
 											<td>{{ date('d/m/Y',strtotime($listC->action_date)) ?? 'N/P'}} </td>
                                             <td>{{ $listC->task_group??'N/P' }}</td>
                                             <td>{{ $listC->description??'N/P' }}</td>

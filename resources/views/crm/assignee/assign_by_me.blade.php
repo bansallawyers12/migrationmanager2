@@ -153,7 +153,10 @@
                                                 @php
                                                     $admin = \App\Models\Staff::where('id', $list->assigned_to)->first();
                                                     $full_name = $admin ? ($admin->first_name ?? 'N/A') . ' ' . ($admin->last_name ?? 'N/A') : 'N/P';
-                                                    $client_name = $list->noteClient ? $list->noteClient->first_name . ' ' . $list->noteClient->last_name : 'N/P';
+                                                    $client_name = $list->noteClient ? trim($list->noteClient->company_name_or_personal_name) : 'N/P';
+                                                    if ($list->noteClient && $client_name === '') {
+                                                        $client_name = trim($list->noteClient->first_name . ' ' . $list->noteClient->last_name) ?: 'N/P';
+                                                    }
                                                 @endphp
                                                 <tr>
                                                     <td style="text-align: center;">{{ ++$i }}</td>

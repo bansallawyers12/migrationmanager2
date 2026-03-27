@@ -44,7 +44,7 @@ class AssigneeController extends Controller
     {
         $query = QueryBuilder::for(Note::class)
             ->allowedSorts(['first_name', 'action_date', 'task_group', 'created_at'])
-            ->with(['noteStaff','noteClient','lead.service','assigned_staff'])
+            ->with(['noteStaff','noteClient.company','lead.service','assigned_staff'])
             ->where('type','client')
             ->where('is_action', 1)
             ->where('status','<>','1');
@@ -63,9 +63,9 @@ class AssigneeController extends Controller
     public function completed(Request $request)
     {
         if(Auth::user()->role == 1){
-            $assignees = \App\Models\Note::with(['noteStaff','noteClient','lead.service','assigned_staff'])->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
+            $assignees = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20); //where('status','like','Closed')
         }else{
-            $assignees = \App\Models\Note::with(['noteStaff','noteClient','lead.service','assigned_staff'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->where('status','1')->orderBy('created_at', 'desc')->latest()->paginate(20);
         }  //dd( $assignees);
         return view('crm.assignee.completed',compact('assignees'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -205,9 +205,9 @@ class AssigneeController extends Controller
      public function assigned_by_me(Request $request)
      {
         if(Auth::user()->role == 1){
-             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient','assigned_staff'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff'])->where('status','<>',1)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         } else {
-             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient','assigned_staff'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+             $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','assigned_staff'])->where('status','<>',1)->where('user_id',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
          #dd($assignees_notCompleted);
          return view('crm.assignee.assign_by_me',compact('assignees_notCompleted'))
@@ -218,13 +218,13 @@ class AssigneeController extends Controller
     public function assigned_to_me(Request $request)
     {
         if(Auth::user()->role == 1){
-            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
+            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);//where('status','not like','Closed')
 
-            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->whereNotNull('client_id')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }else{
-            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_notCompleted = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','<>','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
 
-            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
+            $assignees_completed = \App\Models\Note::with(['noteStaff','noteClient.company','lead.service','assigned_staff'])->where('status','1')->where('assigned_to',Auth::user()->id)->where('type','client')->where('is_action', 1)->orderBy('created_at', 'desc')->latest()->paginate(20);
         }
         return view('crm.assignee.assign_to_me',compact('assignees_notCompleted','assignees_completed'))
          ->with('i', (request()->input('page', 1) - 1) * 20);
@@ -242,7 +242,7 @@ class AssigneeController extends Controller
 
         $assignees_completed = \App\Models\Note::with([
                 'noteStaff',
-                'noteClient',
+                'noteClient.company',
                 'assigned_staff'
             ])
             ->where('status', 1)
@@ -338,7 +338,7 @@ class AssigneeController extends Controller
                         'notes.unique_group_id',
                         'notes.created_at'
                     ])
-                    ->with(['noteStaff', 'noteClient', 'assigned_staff'])
+                    ->with(['noteStaff', 'noteClient.company', 'assigned_staff'])
                     ->where('notes.status', '<>', '1')
                     ->where('notes.type', 'client')
                     ->where('notes.is_action', 1);
@@ -419,9 +419,8 @@ class AssigneeController extends Controller
                         try {
                             // Client Portal actions created by client (e.g. upload from mobile): show client name as assigner
                             if (isset($data->task_group) && (string) $data->task_group === 'Client Portal' && (int) $data->user_id === (int) $data->client_id && $data->noteClient) {
-                                $firstName = Utf8Helper::safeSanitize($data->noteClient->first_name ?? '');
-                                $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name ?? '');
-                                return trim($firstName . ' ' . $lastName) ?: 'N/P';
+                                $portalLabel = Utf8Helper::safeSanitize(trim($data->noteClient->company_name_or_personal_name ?? ''));
+                                return $portalLabel !== '' ? $portalLabel : 'N/P';
                             }
                             if ($data->noteStaff) {
                                 $firstName = Utf8Helper::safeSanitize($data->noteStaff->first_name ?? '');
@@ -436,11 +435,12 @@ class AssigneeController extends Controller
                     ->addColumn('client_reference', function($data) {
                         try {
                             if ($data->noteClient && $data->client_id) {
-                                $firstName = Utf8Helper::safeSanitize($data->noteClient->first_name ?? '');
-                                $lastName = Utf8Helper::safeSanitize($data->noteClient->last_name ?? '');
                                 $clientId = Utf8Helper::safeSanitize($data->noteClient->client_id ?? '');
-                                
-                                $client_name = $firstName . ' ' . $lastName;
+                                $label = Utf8Helper::safeSanitize(trim($data->noteClient->company_name_or_personal_name ?? ''));
+                                if ($label === '') {
+                                    $label = trim(Utf8Helper::safeSanitize($data->noteClient->first_name ?? '') . ' ' . Utf8Helper::safeSanitize($data->noteClient->last_name ?? ''));
+                                }
+                                $client_name = $label;
                                 $client_name .= "<br>";
                                 $client_encoded_id = base64_encode(convert_uuencode(@$data->client_id));
                                 $client_name .= '<a href="'.url('/clients/detail/'.$client_encoded_id).'" target="_blank">'.$clientId.'</a>';
@@ -527,7 +527,10 @@ class AssigneeController extends Controller
                         $query->whereHas('noteClient', function($q) use ($keywordLower) {
                             $q->whereRaw('LOWER(client_id) LIKE ?', ['%' . $keywordLower . '%'])
                               ->orWhereRaw('LOWER(first_name) LIKE ?', ['%' . $keywordLower . '%'])
-                              ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%']);
+                              ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $keywordLower . '%'])
+                              ->orWhereHas('company', function ($cq) use ($keywordLower) {
+                                  $cq->whereRaw('LOWER(company_name) LIKE ?', ['%' . $keywordLower . '%']);
+                              });
                         });
                     });
 

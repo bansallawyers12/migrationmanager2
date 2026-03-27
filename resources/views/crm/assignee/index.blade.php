@@ -111,7 +111,10 @@
 										<tr>
                                             <?php
 												if($list->noteClient){
-													$client_name=$list->noteClient->first_name.' '.$list->noteClient->last_name;
+													$client_name = trim($list->noteClient->company_name_or_personal_name);
+													if ($client_name === '') {
+														$client_name = trim($list->noteClient->first_name.' '.$list->noteClient->last_name);
+													}
 												}else{
 													$client_name='N/P';
 												}

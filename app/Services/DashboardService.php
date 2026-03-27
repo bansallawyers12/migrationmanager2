@@ -95,7 +95,11 @@ class DashboardService
      */
     private function getNotesData($user)
     {
-        $query = Note::with(['client:id,first_name,last_name,client_id', 'assignedUser:id,first_name,last_name'])
+        $query = Note::with([
+            'client:id,first_name,last_name,client_id,is_company',
+            'client.company:id,admin_id,company_name',
+            'assignedUser:id,first_name,last_name',
+        ])
             ->where('type', 'client')
             ->where('is_action', 1)
             ->where('status', '!=', 1);

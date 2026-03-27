@@ -44,8 +44,11 @@
     $assignedUser = $note->assignedUser ?? null;
     $assignedName = $assignedUser ? $assignedUser->first_name . ' ' . $assignedUser->last_name : 'Unassigned';
 
-    // Client display: Personal Actions have null client
-    $clientName = $client ? trim($client->first_name . ' ' . $client->last_name) : 'Personal Action';
+    // Client display: Personal Actions have null client; companies use company name from accessor
+    $clientName = $client ? trim($client->company_name_or_personal_name) : 'Personal Action';
+    if ($client && $clientName === '') {
+        $clientName = trim($client->first_name . ' ' . $client->last_name) ?: 'Client';
+    }
     $clientCode = $client && $client->client_id ? $client->client_id : '';
     $clientId = $client ? (string) $client->id : '';
 
