@@ -685,11 +685,17 @@
                         </div>
                         <div id="workforceSummary" class="summary-view">
                             <div class="summary-grid">
-                                @if($company && ($company->workforce_total || $company->workforce_australian_citizens !== null))
-                                @if($company->workforce_australian_citizens !== null)<div class="summary-item"><span class="summary-label">Australian Citizens:</span><span class="summary-value">{{ $company->workforce_australian_citizens }}</span></div>@endif
-                                @if($company->workforce_permanent_residents !== null)<div class="summary-item"><span class="summary-label">Permanent Residents:</span><span class="summary-value">{{ $company->workforce_permanent_residents }}</span></div>@endif
-                                @if($company->workforce_temp_visa_holders !== null)<div class="summary-item"><span class="summary-label">Temp Visa Holders:</span><span class="summary-value">{{ $company->workforce_temp_visa_holders }}</span></div>@endif
-                                @if($company->workforce_total !== null)<div class="summary-item"><span class="summary-label">Total:</span><span class="summary-value">{{ $company->workforce_total }}</span></div>@endif
+                                @php $hasWorkforce = $company && ($company->workforce_australian_citizens !== null || $company->workforce_permanent_residents !== null || $company->workforce_temp_visa_holders !== null || $company->workforce_total !== null || $company->workforce_foreign_494 !== null || $company->workforce_foreign_other_temp_activity !== null || $company->workforce_foreign_overseas_students !== null || $company->workforce_foreign_working_holiday !== null || $company->workforce_foreign_other !== null); @endphp
+                                @if($hasWorkforce)
+                                @if($company->workforce_australian_citizens !== null)<div class="summary-item"><span class="summary-label">workforce_aus_professionals:</span><span class="summary-value">{{ $company->workforce_australian_citizens }}</span></div>@endif
+                                @if($company->workforce_permanent_residents !== null)<div class="summary-item"><span class="summary-label">workforce_aus_tradespersons:</span><span class="summary-value">{{ $company->workforce_permanent_residents }}</span></div>@endif
+                                @if($company->workforce_temp_visa_holders !== null)<div class="summary-item"><span class="summary-label">workforce_aus_employment_other:</span><span class="summary-value">{{ $company->workforce_temp_visa_holders }}</span></div>@endif
+                                @if($company->workforce_total !== null)<div class="summary-item"><span class="summary-label">workforce_foreign_482_457:</span><span class="summary-value">{{ $company->workforce_total }}</span></div>@endif
+                                @if($company->workforce_foreign_494 !== null)<div class="summary-item"><span class="summary-label">workforce_foreign_494:</span><span class="summary-value">{{ $company->workforce_foreign_494 }}</span></div>@endif
+                                @if($company->workforce_foreign_other_temp_activity !== null)<div class="summary-item"><span class="summary-label">workforce_foreign_other_temp_activity:</span><span class="summary-value">{{ $company->workforce_foreign_other_temp_activity }}</span></div>@endif
+                                @if($company->workforce_foreign_overseas_students !== null)<div class="summary-item"><span class="summary-label">workforce_foreign_overseas_students:</span><span class="summary-value">{{ $company->workforce_foreign_overseas_students }}</span></div>@endif
+                                @if($company->workforce_foreign_working_holiday !== null)<div class="summary-item"><span class="summary-label">workforce_foreign_working_holiday:</span><span class="summary-value">{{ $company->workforce_foreign_working_holiday }}</span></div>@endif
+                                @if($company->workforce_foreign_other !== null)<div class="summary-item"><span class="summary-label">workforce_foreign_other:</span><span class="summary-value">{{ $company->workforce_foreign_other }}</span></div>@endif
                                 @else
                                 <div class="empty-state"><p>No workforce details added yet.</p></div>
                                 @endif
@@ -697,10 +703,15 @@
                         </div>
                         <div id="workforceEdit" class="edit-view hidden">
                             <div class="content-grid">
-                                <div class="form-group"><label>Australian Citizens</label><input type="number" name="workforce_australian_citizens" value="{{ optional($company)->workforce_australian_citizens ?? '' }}" min="0"></div>
-                                <div class="form-group"><label>Permanent Residents</label><input type="number" name="workforce_permanent_residents" value="{{ optional($company)->workforce_permanent_residents ?? '' }}" min="0"></div>
-                                <div class="form-group"><label>Temp Visa Holders</label><input type="number" name="workforce_temp_visa_holders" value="{{ optional($company)->workforce_temp_visa_holders ?? '' }}" min="0"></div>
-                                <div class="form-group"><label>Total</label><input type="number" name="workforce_total" value="{{ optional($company)->workforce_total ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_aus_professionals</label><input type="number" name="workforce_australian_citizens" value="{{ optional($company)->workforce_australian_citizens ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_aus_tradespersons</label><input type="number" name="workforce_permanent_residents" value="{{ optional($company)->workforce_permanent_residents ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_aus_employment_other</label><input type="number" name="workforce_temp_visa_holders" value="{{ optional($company)->workforce_temp_visa_holders ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_foreign_482_457</label><input type="number" name="workforce_total" value="{{ optional($company)->workforce_total ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_foreign_494</label><input type="number" name="workforce_foreign_494" value="{{ optional($company)->workforce_foreign_494 ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_foreign_other_temp_activity</label><input type="number" name="workforce_foreign_other_temp_activity" value="{{ optional($company)->workforce_foreign_other_temp_activity ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_foreign_overseas_students</label><input type="number" name="workforce_foreign_overseas_students" value="{{ optional($company)->workforce_foreign_overseas_students ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_foreign_working_holiday</label><input type="number" name="workforce_foreign_working_holiday" value="{{ optional($company)->workforce_foreign_working_holiday ?? '' }}" min="0"></div>
+                                <div class="form-group"><label>workforce_foreign_other</label><input type="number" name="workforce_foreign_other" value="{{ optional($company)->workforce_foreign_other ?? '' }}" min="0"></div>
                             </div>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveWorkforceInfo()">Save</button>

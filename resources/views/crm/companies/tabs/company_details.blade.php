@@ -124,14 +124,20 @@
         @endif
 
         {{-- Workforce Card --}}
-        @if($comp && ($comp->workforce_total !== null || $comp->workforce_australian_citizens !== null))
+        @php $hasWorkforce = $comp && ($comp->workforce_australian_citizens !== null || $comp->workforce_permanent_residents !== null || $comp->workforce_temp_visa_holders !== null || $comp->workforce_total !== null || $comp->workforce_foreign_494 !== null || $comp->workforce_foreign_other_temp_activity !== null || $comp->workforce_foreign_overseas_students !== null || $comp->workforce_foreign_working_holiday !== null || $comp->workforce_foreign_other !== null); @endphp
+        @if($hasWorkforce)
         <div class="card" style="margin-bottom: 20px;">
             <h3><i class="fas fa-users"></i> Workforce</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
-                @if($comp->workforce_australian_citizens !== null)<div class="field-group"><span class="field-label">Australian Citizens:</span><span class="field-value">{{ $comp->workforce_australian_citizens }}</span></div>@endif
-                @if($comp->workforce_permanent_residents !== null)<div class="field-group"><span class="field-label">Permanent Residents:</span><span class="field-value">{{ $comp->workforce_permanent_residents }}</span></div>@endif
-                @if($comp->workforce_temp_visa_holders !== null)<div class="field-group"><span class="field-label">Temp Visa Holders:</span><span class="field-value">{{ $comp->workforce_temp_visa_holders }}</span></div>@endif
-                @if($comp->workforce_total !== null)<div class="field-group"><span class="field-label">Total:</span><span class="field-value">{{ $comp->workforce_total }}</span></div>@endif
+                @if($comp->workforce_australian_citizens !== null)<div class="field-group"><span class="field-label">workforce_aus_professionals:</span><span class="field-value">{{ $comp->workforce_australian_citizens }}</span></div>@endif
+                @if($comp->workforce_permanent_residents !== null)<div class="field-group"><span class="field-label">workforce_aus_tradespersons:</span><span class="field-value">{{ $comp->workforce_permanent_residents }}</span></div>@endif
+                @if($comp->workforce_temp_visa_holders !== null)<div class="field-group"><span class="field-label">workforce_aus_employment_other:</span><span class="field-value">{{ $comp->workforce_temp_visa_holders }}</span></div>@endif
+                @if($comp->workforce_total !== null)<div class="field-group"><span class="field-label">workforce_foreign_482_457:</span><span class="field-value">{{ $comp->workforce_total }}</span></div>@endif
+                @if($comp->workforce_foreign_494 !== null)<div class="field-group"><span class="field-label">workforce_foreign_494:</span><span class="field-value">{{ $comp->workforce_foreign_494 }}</span></div>@endif
+                @if($comp->workforce_foreign_other_temp_activity !== null)<div class="field-group"><span class="field-label">workforce_foreign_other_temp_activity:</span><span class="field-value">{{ $comp->workforce_foreign_other_temp_activity }}</span></div>@endif
+                @if($comp->workforce_foreign_overseas_students !== null)<div class="field-group"><span class="field-label">workforce_foreign_overseas_students:</span><span class="field-value">{{ $comp->workforce_foreign_overseas_students }}</span></div>@endif
+                @if($comp->workforce_foreign_working_holiday !== null)<div class="field-group"><span class="field-label">workforce_foreign_working_holiday:</span><span class="field-value">{{ $comp->workforce_foreign_working_holiday }}</span></div>@endif
+                @if($comp->workforce_foreign_other !== null)<div class="field-group"><span class="field-label">workforce_foreign_other:</span><span class="field-value">{{ $comp->workforce_foreign_other }}</span></div>@endif
             </div>
         </div>
         @endif

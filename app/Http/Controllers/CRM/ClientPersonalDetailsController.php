@@ -2124,16 +2124,26 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
         $validated = $request->validate([
-            'workforce_australian_citizens' => 'nullable|integer|min:0',
-            'workforce_permanent_residents' => 'nullable|integer|min:0',
-            'workforce_temp_visa_holders' => 'nullable|integer|min:0',
-            'workforce_total' => 'nullable|integer|min:0',
+            'workforce_australian_citizens'      => 'nullable|integer|min:0',
+            'workforce_permanent_residents'      => 'nullable|integer|min:0',
+            'workforce_temp_visa_holders'        => 'nullable|integer|min:0',
+            'workforce_total'                    => 'nullable|integer|min:0',
+            'workforce_foreign_494'              => 'nullable|integer|min:0',
+            'workforce_foreign_other_temp_activity' => 'nullable|integer|min:0',
+            'workforce_foreign_overseas_students'=> 'nullable|integer|min:0',
+            'workforce_foreign_working_holiday'  => 'nullable|integer|min:0',
+            'workforce_foreign_other'            => 'nullable|integer|min:0',
         ]);
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->workforce_australian_citizens = $validated['workforce_australian_citizens'] ?? null;
-        $company->workforce_permanent_residents = $validated['workforce_permanent_residents'] ?? null;
-        $company->workforce_temp_visa_holders = $validated['workforce_temp_visa_holders'] ?? null;
-        $company->workforce_total = $validated['workforce_total'] ?? null;
+        $company->workforce_australian_citizens       = $validated['workforce_australian_citizens'] ?? null;
+        $company->workforce_permanent_residents       = $validated['workforce_permanent_residents'] ?? null;
+        $company->workforce_temp_visa_holders         = $validated['workforce_temp_visa_holders'] ?? null;
+        $company->workforce_total                     = $validated['workforce_total'] ?? null;
+        $company->workforce_foreign_494               = $validated['workforce_foreign_494'] ?? null;
+        $company->workforce_foreign_other_temp_activity = $validated['workforce_foreign_other_temp_activity'] ?? null;
+        $company->workforce_foreign_overseas_students = $validated['workforce_foreign_overseas_students'] ?? null;
+        $company->workforce_foreign_working_holiday   = $validated['workforce_foreign_working_holiday'] ?? null;
+        $company->workforce_foreign_other             = $validated['workforce_foreign_other'] ?? null;
         $company->save();
         return response()->json(['success' => true, 'message' => 'Workforce updated successfully']);
     }
