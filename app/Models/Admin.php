@@ -287,6 +287,15 @@ class Admin extends Authenticatable
     }
 
     /**
+     * Employer nominations listing this client/lead as the nominated person.
+     */
+    public function companyNominationsAsNominee(): HasMany
+    {
+        return $this->hasMany(\App\Models\CompanyNomination::class, 'nominated_client_id', 'id')
+            ->orderBy('sort_order');
+    }
+
+    /**
      * Check if this is a company
      */
     public function isCompany(): bool

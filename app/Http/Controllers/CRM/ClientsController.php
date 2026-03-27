@@ -2062,7 +2062,13 @@ class ClientsController extends Controller
             $activeTab = $tab ?? 'personaldetails';
 
             if (Admin::where('id', '=', $id)->whereIn('type', ['client', 'lead'])->exists()) {
-                $fetchedData = Admin::with(['company.contactPerson', 'company.tradingNames', 'company.directors.directorClient', 'company.nominations.nominatedClient'])->find($id); //dd($fetchedData);
+                $fetchedData = Admin::with([
+                    'company.contactPerson',
+                    'company.tradingNames',
+                    'company.directors.directorClient',
+                    'company.nominations.nominatedClient',
+                    'companyNominationsAsNominee.company',
+                ])->find($id); //dd($fetchedData);
                 
                 // Route to company detail page if this is a company
                 if ($fetchedData && $fetchedData->is_company) {
@@ -2161,13 +2167,26 @@ class ClientsController extends Controller
                 $matterNumber = $id1 ?? '';
                 $officePhone = $currentAdmin->phone ?? '';
                 $officeCountryCode = '+61';
+
+                // Employer nominations: only list companies this staff may open (cross-access / allocation).
+                $visibleNomineeNominations = $fetchedData->companyNominationsAsNominee
+                    ->filter(function ($n) {
+                        $companyAdminId = $n->company?->admin_id;
+                        if ($companyAdminId === null) {
+                            return true;
+                        }
+
+                        return StaffClientVisibility::canAccessClientOrLead((int) $companyAdminId, Auth::user());
+                    })
+                    ->values();
                 
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
-                    'staffName', 'matterNumber', 'officePhone', 'officeCountryCode'
+                    'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
+                    'visibleNomineeNominations'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
