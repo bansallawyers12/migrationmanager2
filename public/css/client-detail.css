@@ -9,6 +9,13 @@
 /* Activity Feed Width Toggle Styles */
 .activity-feed.wide-mode { flex: 0 0 50% !important; width: 50% !important; min-width: 450px !important; max-width: 700px !important; }
 
+/* Dedicated Activity nav: main column hidden, feed uses remaining width */
+.crm-container--activity-tab .activity-feed {
+    flex: 1 1 auto !important;
+    min-width: 0;
+    max-width: none;
+}
+
 /* Normal state - when compact-mode is NOT active */
 .main-content .content-grid { 
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; 

@@ -23,12 +23,15 @@
         $('.main-content').css('overflow-y', 'visible');
         $('.main-content').css('height', 'auto');
 
-        var mainContentHeight = $('.main-content').outerHeight();
+        var mainVisible = $('.main-content').is(':visible');
+        var mainContentHeight = mainVisible ? $('.main-content').outerHeight() : 0;
         var activityFeedContentHeight = $('.activity-feed').prop('scrollHeight');
         var hasSubstantialContent = activityFeedContentHeight > 100;
 
         var targetHeight;
-        if (hasSubstantialContent) {
+        if (!mainVisible) {
+            targetHeight = maxAvailableHeight;
+        } else if (hasSubstantialContent) {
             targetHeight = Math.max(mainContentHeight, maxAvailableHeight);
         } else {
             targetHeight = Math.min(mainContentHeight, maxAvailableHeight);

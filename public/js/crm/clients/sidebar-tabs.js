@@ -15,6 +15,21 @@
         initialized: false
     };
 
+    /** Tabs where the right-rail activity feed should be visible (details tabs + dedicated Activity nav). */
+    function isActivityFeedTab(tabId) {
+        return tabId === 'personaldetails' || tabId === 'companydetails' || tabId === 'activityfeed';
+    }
+
+    function setMainColumnForTab(tabId) {
+        if (tabId === 'activityfeed') {
+            $('#main-content').hide();
+            $('.crm-container').addClass('crm-container--activity-tab');
+        } else {
+            $('#main-content').show();
+            $('.crm-container').removeClass('crm-container--activity-tab');
+        }
+    }
+
     /**
      * Initialize sidebar tabs
      * NOTE: This should be called from within $(document).ready() - don't wrap it again
@@ -94,9 +109,12 @@
         updateUrl(tabId);
         
         // Handle activity feed visibility
-        if (tabId === 'personaldetails') {
+        if (isActivityFeedTab(tabId)) {
             $('#activity-feed').show();
-            $('#main-content').css('flex', '1');
+            if (tabId !== 'activityfeed') {
+                $('#main-content').css('flex', '1');
+            }
+            setMainColumnForTab(tabId);
             
             // Adjust Activity Feed height when it becomes visible
             setTimeout(function() {
@@ -107,6 +125,7 @@
         } else {
             handleMatterSpecificTab(tabId);
             $('#activity-feed').hide();
+            setMainColumnForTab(tabId);
         }
         
         // Handle EOI-ROI tab activation

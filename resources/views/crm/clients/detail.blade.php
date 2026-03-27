@@ -318,7 +318,7 @@ use App\Http\Controllers\Controller;
             $matter_cnt = \App\Models\ClientMatter::select('id')->where('client_id',$fetchedData->id)->where('matter_status',1)->count();
             
             // Valid tab names that should NOT be treated as matter IDs
-            $validTabNames = ['personaldetails', 'noteterm', 'personaldocuments', 'visadocuments', 
+            $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 
                               'eoiroi', 'emails', 
                               // Legacy removed tab slugs
                               'formgenerations', 'formgenerationsl',
@@ -334,6 +334,10 @@ use App\Http\Controllers\Controller;
                 <button class="client-nav-button active" data-tab="personaldetails">
                     <i class="fas fa-user"></i>
                     <span>Personal Details</span>
+                </button>
+                <button class="client-nav-button" data-tab="activityfeed">
+                    <i class="fas fa-history"></i>
+                    <span>Activity</span>
                 </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
@@ -393,6 +397,10 @@ use App\Http\Controllers\Controller;
                     <i class="fas fa-user"></i>
                     <span>Personal Details</span>
                 </button>
+                <button class="client-nav-button" data-tab="activityfeed">
+                    <i class="fas fa-history"></i>
+                    <span>Activity</span>
+                </button>
                 <button class="client-nav-button" data-tab="noteterm">
                     <i class="fas fa-sticky-note"></i>
                     <span>Notes</span>
@@ -422,6 +430,8 @@ use App\Http\Controllers\Controller;
             <!-- Tab Contents -->
             <div class="tab-content" id="tab-content">
             @include('crm.clients.tabs.personal_details')
+            
+            @include('crm.clients.tabs.activityfeed_tab')
             
             @include('crm.clients.tabs.notes')
             
@@ -457,7 +467,7 @@ use App\Http\Controllers\Controller;
         </div>
     </main>
 
-    <!-- Activity Feed (Only visible with Personal Details) -->
+    <!-- Activity Feed (Personal Details, Activity nav, etc.) -->
     @include('crm.clients.tabs.activity_feed')
 </div>
 

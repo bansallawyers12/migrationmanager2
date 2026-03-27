@@ -1277,13 +1277,18 @@ $(document).ready(function() {
 
 
 
-    // Initialize Activity Feed visibility on page load
+    // Initialize Activity Feed visibility on page load (details tabs + Activity sidebar tab)
 
-    if ($('#personaldetails-tab').hasClass('active')) {
+    if ($('#personaldetails-tab').hasClass('active') || $('#companydetails-tab').hasClass('active') || $('#activityfeed-tab').hasClass('active')) {
 
         $('#activity-feed').show();
 
-        $('#main-content').css('flex', '1');
+        if (!$('#activityfeed-tab').hasClass('active')) {
+            $('#main-content').css('flex', '1');
+        } else {
+            $('#main-content').hide();
+            $('.crm-container').addClass('crm-container--activity-tab');
+        }
 
         
 

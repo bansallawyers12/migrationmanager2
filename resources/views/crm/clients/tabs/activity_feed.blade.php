@@ -1,4 +1,4 @@
-<!-- Activity Feed (Only visible with Personal Details) -->
+<!-- Activity Feed (Personal Details, Company Details, Activity nav; single #activity-feed instance) -->
 <aside class="activity-feed" id="activity-feed">
     <div class="activity-feed-header">
         <h2><i class="fas fa-history"></i> Activity Feed</h2>

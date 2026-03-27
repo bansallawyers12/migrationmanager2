@@ -163,7 +163,17 @@
                 @foreach($comp->nominations as $nom)
                 <div class="field-group">
                     <span class="field-label">{{ $nom->position_title ?? 'Position' }}:</span>
-                    <span class="field-value">{{ $nom->nominatedClient ? $nom->nominatedClient->first_name.' '.$nom->nominatedClient->last_name : ($nom->nominated_person_name ?? 'N/A') }}@if($nom->trn) (TRN: {{ $nom->trn }})@endif</span>
+                    <span class="field-value">
+                        @if($nom->nominatedClient)
+                            <a href="{{ route('clients.detail', base64_encode(convert_uuencode($nom->nominatedClient->id))) }}"
+                               style="color: #007bff; text-decoration: none;">
+                                {{ trim($nom->nominatedClient->first_name.' '.$nom->nominatedClient->last_name) }}
+                            </a>
+                        @else
+                            {{ $nom->nominated_person_name ?? 'N/A' }}
+                        @endif
+                        @if($nom->trn) (TRN: {{ $nom->trn }})@endif
+                    </span>
                 </div>
                 @endforeach
             </div>
