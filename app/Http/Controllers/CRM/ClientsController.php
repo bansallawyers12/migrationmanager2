@@ -2029,18 +2029,6 @@ class ClientsController extends Controller
             $encodeId = $id;
             $id = $this->decodeString($id);
 
-            $targetRecord = Admin::query()
-                ->where('id', (int) $id)
-                ->whereIn('type', ['client', 'lead'])
-                ->first(['id', 'type']);
-
-            // Keep existing client authorization behavior intact.
-            // For leads, allow opening detail page from global search.
-            if (($targetRecord->type ?? null) !== 'lead'
-                && ! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
-                return redirect()->route('clients.index')->with('error', config('constants.unauthorized'));
-            }
-
             // If $id1 holds a tab name rather than a matter reference (happens when the URL
             // only has two segments, e.g. /clients/detail/{client}/{tab}), move it to $tab
             // so that every downstream view receives a clean null $id1.
@@ -2056,6 +2044,34 @@ class ClientsController extends Controller
                     $tab = $id1;
                 }
                 $id1 = null;
+            }
+
+            $targetRecord = Admin::query()
+                ->where('id', (int) $id)
+                ->whereIn('type', ['client', 'lead'])
+                ->first(['id', 'type', 'first_name', 'last_name', 'client_id']);
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $id, Auth::user())) {
+                $displayName = trim((string) (($targetRecord->first_name ?? '') . ' ' . ($targetRecord->last_name ?? '')));
+                if ($displayName === '') {
+                    $displayName = (string) ($targetRecord->client_id ?? ('#' . (int) $id));
+                }
+
+                $accessModalPayload = [
+                    'id' => $encodeId . '/Client',
+                    'cid' => (int) $id,
+                    'name' => $displayName,
+                    'record_type' => (string) ($targetRecord->type ?? 'client'),
+                    'redirect_to' => route('clients.detail', [
+                        'client_id' => $encodeId,
+                        'client_unique_matter_ref_no' => $id1,
+                        'tab' => $tab,
+                    ]),
+                ];
+
+                return view('crm.access.detail-gate', [
+                    'crossAccessAutoOpen' => $accessModalPayload,
+                ]);
             }
 
             // Set default tab if not provided

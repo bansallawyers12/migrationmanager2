@@ -1,5 +1,6 @@
 @php
     $crossAccessLeadBase = $crossAccessLeadBase ?? url('/history');
+    $crossAccessAutoOpen = $crossAccessAutoOpen ?? session('crm_access_modal_payload');
 @endphp
 
 <style>
@@ -33,6 +34,7 @@
                 <input type="hidden" id="crmCrossAccessAdminId" value="">
                 <input type="hidden" id="crmCrossAccessRecordType" value="">
                 <input type="hidden" id="crmCrossAccessNavId" value="">
+                <input type="hidden" id="crmCrossAccessRedirectTo" value="">
                 <div class="form-group">
                     <label for="crmCrossAccessOffice">Office</label>
                     <select id="crmCrossAccessOffice" class="form-control"></select>
@@ -64,6 +66,7 @@
     window.crmAccessQuickUrl = @json(route('crm.access.quick'));
     window.crmAccessSupervisorUrl = @json(route('crm.access.supervisor'));
     window.crmClientDetailBase = @json(url('/clients/detail'));
+    window.crmAccessAutoOpen = @json($crossAccessAutoOpen);
 
     window.buildClientDetailUrlFromSearchId = function (selId) {
         var s = String(selId).split('/');
@@ -130,6 +133,7 @@
         document.getElementById('crmCrossAccessAdminId').value = repo.cid || '';
         document.getElementById('crmCrossAccessRecordType').value = repo.record_type || 'client';
         document.getElementById('crmCrossAccessNavId').value = repo.id || '';
+        document.getElementById('crmCrossAccessRedirectTo').value = repo.redirect_to || '';
         document.getElementById('crmCrossAccessNote').value = '';
         loadMeta(function () {
             var el = document.getElementById('crmCrossAccessModal');
@@ -172,6 +176,11 @@
                     reason_code: reason
                 }, function (x) {
                     if (!x.ok) { showModalMsg(x.j.message || 'Failed', true); return; }
+                    var redirectTo = document.getElementById('crmCrossAccessRedirectTo').value;
+                    if (redirectTo) {
+                        window.location.href = redirectTo;
+                        return;
+                    }
                     var nav = document.getElementById('crmCrossAccessNavId').value;
                     window.location.href = window.buildClientDetailUrlFromSearchId(nav);
                 });
@@ -195,6 +204,11 @@
                     showModalMsg('Request submitted. Approvers have been notified.', false);
                 });
             });
+        }
+
+        if (window.crmAccessAutoOpen && typeof window.openCrmAccessModal === 'function') {
+            window.openCrmAccessModal(window.crmAccessAutoOpen);
+            window.crmAccessAutoOpen = null;
         }
     });
 })();
