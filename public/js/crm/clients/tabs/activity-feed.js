@@ -201,15 +201,24 @@
      */
     function setupWidthToggle() {
         $('#increase-activity-feed-width').on('change', function() {
+            var onActivityTab = $('.crm-container').hasClass('crm-container--activity-tab');
             if ($(this).is(':checked')) {
-                $('.activity-feed').addClass('wide-mode');
-                $('.main-content').addClass('compact-mode');
+                // On the full-width Activity tab the feed already fills the viewport —
+                // only open the filter bar; don't add wide-mode / compact-mode.
+                if (!onActivityTab) {
+                    $('.activity-feed').addClass('wide-mode');
+                    if ($('.main-content').is(':visible')) {
+                        $('.main-content').addClass('compact-mode');
+                    }
+                }
                 $('#activity-feed-filter-bar').slideDown(200);
                 initActivityFeedDatepickers();
             } else {
                 $('#activity-feed-filter-bar').slideUp(200);
-                $('.activity-feed').removeClass('wide-mode');
-                $('.main-content').removeClass('compact-mode');
+                if (!onActivityTab) {
+                    $('.activity-feed').removeClass('wide-mode');
+                    $('.main-content').removeClass('compact-mode');
+                }
             }
             
             // Adjust Activity Feed height after layout change

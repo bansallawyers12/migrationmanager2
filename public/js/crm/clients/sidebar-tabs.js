@@ -349,7 +349,13 @@
     }
 
     /**
-     * Activate initial tab from URL or default
+     * Activate initial tab from URL or default.
+     *
+     * For "default" tabs whose pane already carries the `active` class from PHP
+     * (personaldetails on client pages, companydetails on company pages) we apply
+     * the side-effects (feed visibility, main-column visibility) directly instead of
+     * triggering a click — this avoids an unwanted pushState history entry on every
+     * fresh page load.
      */
     function activateInitialTab(activeTabFromUrl) {
         // Check localStorage first (takes precedence for better UX when returning to page)
@@ -376,36 +382,48 @@
         if (normalizedTabId === 'formgenerations' || normalizedTabId === 'formgenerationsl') {
             tabId = 'checklists';
         }
-        
-        if (tabId !== 'personaldetails') {
-            // Trigger click on the button for non-default tabs
-            const $button = $(`.client-nav-button[data-tab="${tabId}"]`);
-            if ($button.length) {
-                $button.click();
-            } else {
-                // Try to find a close match (singular vs plural issue)
-                // BUT exclude hyphenated variations inherited from legacy tabs
-                const availableTabs = [];
-                $('.client-nav-button').each(function() {
-                    availableTabs.push($(this).data('tab'));
-                });
-                
-                const closeTabs = availableTabs.filter(t => {
-                    // Exact match check first
-                    if (t === tabId) return true;
-                    
-                    // Only allow close matches if neither contains a hyphen
-                    // This avoids legacy tab slugs from hijacking current tabs
-                    if (t.includes('-') || tabId.includes('-')) {
-                        return false;
+
+        // "Default" tabs: the Blade template already marks the pane and button as active.
+        // Apply side-effects directly to avoid an unwanted pushState entry.
+        const defaultTabs = ['personaldetails', 'companydetails'];
+        if (defaultTabs.includes(tabId)) {
+            // The pane is already active from PHP; just apply feed + column visibility.
+            if (isActivityFeedTab(tabId)) {
+                $('#activity-feed').show();
+                setMainColumnForTab(tabId);
+                setTimeout(function() {
+                    if (typeof adjustActivityFeedHeight === 'function') {
+                        adjustActivityFeedHeight();
                     }
-                    
-                    return t.startsWith(tabId) || tabId.startsWith(t);
-                });
-                
-                if (closeTabs.length > 0) {
-                    $(`.client-nav-button[data-tab="${closeTabs[0]}"]`).click();
+                }, 100);
+            } else {
+                $('#activity-feed').hide();
+                setMainColumnForTab(tabId);
+            }
+            return;
+        }
+
+        // Non-default tab: trigger click so full tab-switching logic runs.
+        const $button = $(`.client-nav-button[data-tab="${tabId}"]`);
+        if ($button.length) {
+            $button.click();
+        } else {
+            // Try to find a close match (singular vs plural), excluding hyphenated legacy slugs
+            const availableTabs = [];
+            $('.client-nav-button').each(function() {
+                availableTabs.push($(this).data('tab'));
+            });
+            
+            const closeTabs = availableTabs.filter(t => {
+                if (t === tabId) return true;
+                if (t.includes('-') || tabId.includes('-')) {
+                    return false;
                 }
+                return t.startsWith(tabId) || tabId.startsWith(t);
+            });
+            
+            if (closeTabs.length > 0) {
+                $(`.client-nav-button[data-tab="${closeTabs[0]}"]`).click();
             }
         }
     }

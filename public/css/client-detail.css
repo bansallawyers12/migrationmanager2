@@ -12,8 +12,14 @@
 /* Dedicated Activity nav: main column hidden, feed uses remaining width */
 .crm-container--activity-tab .activity-feed {
     flex: 1 1 auto !important;
-    min-width: 0;
-    max-width: none;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+}
+
+/* On the Activity nav tab the feed is already full-width — hide the expand-width toggle */
+.crm-container--activity-tab .activity-feed-header label {
+    display: none !important;
 }
 
 /* Normal state - when compact-mode is NOT active */

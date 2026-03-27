@@ -19,11 +19,14 @@
         var maxAvailableHeight = windowHeight - 120;
 
         $('.crm-container').css('align-items', 'flex-start');
-        $('.main-content').css('max-height', 'none');
-        $('.main-content').css('overflow-y', 'visible');
-        $('.main-content').css('height', 'auto');
 
         var mainVisible = $('.main-content').is(':visible');
+        if (mainVisible) {
+            $('.main-content').css('max-height', 'none');
+            $('.main-content').css('overflow-y', 'visible');
+            $('.main-content').css('height', 'auto');
+        }
+
         var mainContentHeight = mainVisible ? $('.main-content').outerHeight() : 0;
         var activityFeedContentHeight = $('.activity-feed').prop('scrollHeight');
         var hasSubstantialContent = activityFeedContentHeight > 100;
