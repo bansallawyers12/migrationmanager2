@@ -589,7 +589,12 @@
                                 <label for="matter_id">Select Matter <span class="span_req">*</span></label>
                                 <select data-valid="required" class="form-control select2" name="matter_id" id="sel_matter_id_lead">
                                     <option value="">Select Matter</option>
-                                    @foreach(\App\Models\Matter::select('id','title')->where('status',1)->get() as $matterlist)
+                                    @php
+                                        $leadCostMatterQuery = \App\Models\Matter::select('id', 'title')->where('status', 1)
+                                            ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
+                                        $leadCostMatterList = $leadCostMatterQuery->get();
+                                    @endphp
+                                    @foreach($leadCostMatterList as $matterlist)
                                         <option value="{{$matterlist->id}}">{{@$matterlist->title}}</option>
                                     @endforeach
                                 </select>

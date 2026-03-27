@@ -87,6 +87,11 @@ class LeadConversionController extends Controller
 
             // Create matter if matter data is provided
             if(isset($requestData['matter_id']) && isset($requestData['migration_agent'])) {
+                $matterIdSingle = (int) $requestData['matter_id'];
+                if (! Matter::allowedForClientIsCompany($matterIdSingle, (bool) $client->is_company)) {
+                    DB::rollback();
+                    return redirect()->back()->with('error', 'This matter type is not valid for this client record.');
+                }
                 $matter = new ClientMatter();
                 $matter->user_id = $requestData['user_id'] ?? Auth::user()->id;
                 $matter->client_id = $client->id;

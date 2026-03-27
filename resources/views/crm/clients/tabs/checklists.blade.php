@@ -80,14 +80,8 @@
                                                     <select data-valid="required" class="form-control select2 checklist-field" name="checklist_matter" id="checklist_matter_select">
                                                         <option value="">Select Matter</option>
                                                         @php
-                                                            $matterQuery = \App\Models\Matter::select('id','title')->where('status',1);
-                                                            if (isset($fetchedData) && $fetchedData->is_company) {
-                                                                $matterQuery->where('is_for_company', true);
-                                                            } else {
-                                                                $matterQuery->where(function($q) {
-                                                                    $q->where('is_for_company', false)->orWhereNull('is_for_company');
-                                                                });
-                                                            }
+                                                            $matterQuery = \App\Models\Matter::select('id','title')->where('status',1)
+                                                                ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                             $matterList = $matterQuery->get();
                                                         @endphp
                                                         @foreach($matterList as $matterlist)

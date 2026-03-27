@@ -781,19 +781,10 @@
                                                     <option value="Work Visa" {{--$visaCountry->visa_type == 'Work Visa' ? 'selected' : ''--}}>Work Visa</option>
                                                     <option value="Tourist Visa" {{--$visaCountry->visa_type == 'Tourist Visa' ? 'selected' : ''--}}>Tourist Visa</option>-->
                                                     @php
-                                                        // Filter matters based on client type
                                                         $matterQuery = \App\Models\Matter::select('id','title','nick_name')
                                                             ->where('status',1)
-                                                            ->orderby('id','ASC');
-                                                        
-                                                        if (isset($fetchedData) && $fetchedData->is_company) {
-                                                            $matterQuery->where('is_for_company', true);
-                                                        } else {
-                                                            $matterQuery->where(function($q) {
-                                                                $q->where('is_for_company', false)
-                                                                  ->orWhereNull('is_for_company');
-                                                            });
-                                                        }
+                                                            ->orderby('id','ASC')
+                                                            ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                         $matterList = $matterQuery->get();
                                                     @endphp
                                                     @foreach($matterList as $matterlist)
@@ -847,19 +838,10 @@
                                             <option value="Work Visa">Work Visa</option>
                                             <option value="Tourist Visa">Tourist Visa</option>-->
                                             @php
-                                                // Filter matters based on client type
                                                 $matterQuery = \App\Models\Matter::select('id','title','nick_name')
                                                     ->where('status',1)
-                                                    ->orderby('id','ASC');
-                                                
-                                                if (isset($fetchedData) && $fetchedData->is_company) {
-                                                    $matterQuery->where('is_for_company', true);
-                                                } else {
-                                                    $matterQuery->where(function($q) {
-                                                        $q->where('is_for_company', false)
-                                                          ->orWhereNull('is_for_company');
-                                                    });
-                                                }
+                                                    ->orderby('id','ASC')
+                                                    ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                 $matterList = $matterQuery->get();
                                             @endphp
                                             @foreach($matterList as $matterlist)
@@ -937,19 +919,10 @@
                                                 <option value="Work Visa">Work Visa</option>
                                                 <option value="Tourist Visa">Tourist Visa</option>-->
                                                 @php
-                                                    // Filter matters based on client type
                                                     $matterQuery = \App\Models\Matter::select('id','title','nick_name')
                                                         ->where('status',1)
-                                                        ->orderby('id','ASC');
-                                                    
-                                                    if (isset($fetchedData) && $fetchedData->is_company) {
-                                                        $matterQuery->where('is_for_company', true);
-                                                    } else {
-                                                        $matterQuery->where(function($q) {
-                                                            $q->where('is_for_company', false)
-                                                              ->orWhereNull('is_for_company');
-                                                        });
-                                                    }
+                                                        ->orderby('id','ASC')
+                                                        ->forClientType((bool) (isset($fetchedData) && $fetchedData->is_company));
                                                     $matterList = $matterQuery->get();
                                                 @endphp
                                                 @foreach($matterList as $matterlist)

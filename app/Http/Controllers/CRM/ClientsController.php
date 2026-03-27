@@ -5363,6 +5363,18 @@ class ClientsController extends Controller
         if ($request->isMethod('post'))
         {
             $requestData = $request->all(); //dd($requestData);
+            $clientForMatter = Admin::find($requestData['client_id'] ?? null);
+            if (!$clientForMatter || ! in_array($clientForMatter->type, ['client', 'lead'], true)) {
+                $response['message'] = 'Invalid client.';
+                echo json_encode($response);
+                return;
+            }
+            $matterId = (int) ($requestData['matter_id'] ?? 0);
+            if (! Matter::allowedForClientIsCompany($matterId, (bool) $clientForMatter->is_company)) {
+                $response['message'] = 'This matter type is not valid for this client record.';
+                echo json_encode($response);
+                return;
+            }
             //insert into client matter table
             $obj5 = new ClientMatter();
             $obj5->user_id = Auth::user()->id;
@@ -5906,6 +5918,11 @@ class ClientsController extends Controller
                 $client_type = $obj->type;
                 Log::info('ConvertLeadToClient: admin found', ['admin_id' => $id, 'client_type' => $client_type]);
                 if($slug == 'client') {
+                    $matterIdChangetype = (int) ($request['matter_id'] ?? 0);
+                    if (! Matter::allowedForClientIsCompany($matterIdChangetype, (bool) $obj->is_company)) {
+                        return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with('error', 'This matter type is not valid for this client record.');
+                    }
+
                     $obj->type = $slug;
                     $obj->user_id = $request['user_id'];
                     $saved = $obj->save();
