@@ -390,7 +390,11 @@ class AssigneeController extends Controller
                             break;
                         case 'client_reference':
                             $query->leftJoin('admins as client_admins', 'notes.client_id', '=', 'client_admins.id')
-                                ->orderByRaw("COALESCE(client_admins.first_name, 'zzz') " . $orderDirection . ", COALESCE(client_admins.last_name, '') " . $orderDirection);
+                                ->leftJoin('companies as action_client_companies', 'action_client_companies.admin_id', '=', 'client_admins.id')
+                                ->orderByRaw(
+                                    "LOWER(COALESCE(NULLIF(TRIM(action_client_companies.company_name), ''), COALESCE(client_admins.first_name, '') || ' ' || COALESCE(client_admins.last_name, ''))) "
+                                    . $orderDirection
+                                );
                             break;
                         case 'assign_date':
                             $query->orderBy('notes.action_date', $orderDirection);

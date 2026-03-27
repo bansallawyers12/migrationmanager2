@@ -6186,6 +6186,17 @@ class ClientsController extends Controller
                 echo json_encode(array('success' => false, 'message' => 'At least one assignee must be selected'));
                 exit;
             }
+
+            $targetClient = $this->findClientOrLeadForAction((int) $clientId);
+            if (! $targetClient) {
+                echo json_encode(array('success' => false, 'message' => 'Client or lead not found'));
+                exit;
+            }
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
+                echo json_encode(array('success' => false, 'message' => config('constants.unauthorized')));
+                exit;
+            }
+            $clientLabel = $this->actionClientDisplayName($targetClient);
             
             // Get the next unique ID for this action
             $actionUniqueId = 'group_' . uniqid('', true);
@@ -6201,7 +6212,8 @@ class ClientsController extends Controller
 
                 // Set the title for the current assignee
                 $assigneeName = $this->getAssigneeName($assigneeId);
-                $action->title = $requestData['remindersubject'] ?? 'Lead assigned to ' . $assigneeName;
+                $defaultTitle = ($clientLabel !== '' ? $clientLabel . ': ' : '') . 'Assigned to ' . $assigneeName;
+                $action->title = ! empty($requestData['remindersubject']) ? $requestData['remindersubject'] : $defaultTitle;
 
                 // PostgreSQL NOT NULL constraints - must set these fields (Notes Table pattern)
                 $action->is_action = 1; // This is an action
@@ -6231,11 +6243,8 @@ class ClientsController extends Controller
                 if ($saved) {
                     // Update lead action date
                     if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
-                        $Lead = Admin::find($clientId);
-                        if ($Lead) {
-                            $Lead->followup_date = $requestData['followup_datetime'];
-                            $Lead->save();
-                        }
+                        $targetClient->followup_date = $requestData['followup_datetime'];
+                        $targetClient->save();
                     }
 
                     // Create a notification for the current assignee
@@ -6260,14 +6269,15 @@ class ClientsController extends Controller
                         $formattedDate = date('d/M/Y h:i A');
                     }
                     
-                    $o->message = 'Action Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
+                    $o->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '')
+                        . 'Assigned by ' . Auth::user()->first_name . ' ' . Auth::user()->last_name . ' on ' . $formattedDate;
                     $o->save();
 
                     // Log the activity for the current assignee
                     $objs = new ActivitiesLog;
                     $objs->client_id = $clientId;
                     $objs->created_by = Auth::user()->id;
-                    $objs->subject = 'Set action for ' . $assigneeName;
+                    $objs->subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '') . 'Set action for ' . $assigneeName;
                     $objs->description = '<span class="text-semi-bold">' . ($requestData['remindersubject'] ?? '') . '</span><p>' . ($requestData['description'] ?? '') . '</p>';
                     $objs->task_status = 0;
                     $objs->pin = 0;
@@ -6302,6 +6312,27 @@ class ClientsController extends Controller
     {
         $staff = \App\Models\Staff::find($assigneeId);
         return $staff ? $staff->first_name . ' ' . $staff->last_name : 'Unknown Assignee';
+    }
+
+    /**
+     * Client/lead row for action APIs (with company for display name).
+     */
+    protected function findClientOrLeadForAction(int $id): ?Admin
+    {
+        return Admin::with('company')->whereIn('type', ['client', 'lead'])->find($id);
+    }
+
+    /**
+     * Human label for actions/notifications: company name when is_company, else person name.
+     */
+    protected function actionClientDisplayName(Admin $client): string
+    {
+        $label = trim($client->company_name_or_personal_name);
+        if ($label === '') {
+            $label = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        }
+
+        return $label;
     }
 
     /**
@@ -6400,11 +6431,28 @@ class ClientsController extends Controller
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
                 $clientIdParts = explode('/', $requestData['client_id']);
                 $encodedClientId = $clientIdParts[0];
-                $clientId = $this->decodeString($encodedClientId);
+                $decodedClient = $this->decodeString($encodedClientId);
+                if ($decodedClient === false || $decodedClient === '') {
+                    return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
+                }
+                $clientId = (int) $decodedClient;
             }
 
             // Generate unique action ID
             $actionUniqueId = 'group_' . uniqid('', true);
+
+            $clientLabel = '';
+            $targetClient = null;
+            if ($clientId !== null) {
+                $targetClient = $this->findClientOrLeadForAction((int) $clientId);
+                if (! $targetClient) {
+                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
+                }
+                if (! StaffClientVisibility::canAccessClientOrLead((int) $clientId, Auth::user())) {
+                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+                }
+                $clientLabel = $this->actionClientDisplayName($targetClient);
+            }
 
             // Handle single or multiple assignees
             $assignees = is_array($requestData['rem_cat']) ? $requestData['rem_cat'] : [$requestData['rem_cat']];
@@ -6423,6 +6471,8 @@ class ClientsController extends Controller
                 $action->assigned_to = $assigneeId;
                 $action->status = '0'; // Not completed
                 $action->pin = 0; // Required field - default to not pinned
+                $assigneeName = $this->getAssigneeName($assigneeId);
+                $action->title = ($clientLabel !== '' ? $clientLabel . ': ' : '') . 'Assigned to ' . $assigneeName;
                 
                 if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
                     $action->action_date = @$requestData['followup_datetime'];
@@ -6444,7 +6494,7 @@ class ClientsController extends Controller
                         $notification->url = URL::to('/action');
                     }
                     
-                    $notification->message = 'assigned you an action';
+                    $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                     $notification->seen = 0;
                     $notification->save();
                 }
@@ -6474,11 +6524,24 @@ class ClientsController extends Controller
             
             // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
+            $clientLabel = '';
             if (!empty($requestData['client_id'])) {
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
                 $clientIdParts = explode('/', $requestData['client_id']);
                 $encodedClientId = $clientIdParts[0];
-                $clientId = $this->decodeString($encodedClientId);
+                $decodedId = $this->decodeString($encodedClientId);
+                if ($decodedId === false || $decodedId === '') {
+                    return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
+                }
+                $clientId = (int) $decodedId;
+                $targetForAction = $this->findClientOrLeadForAction($clientId);
+                if (! $targetForAction) {
+                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
+                }
+                if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
+                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+                }
+                $clientLabel = $this->actionClientDisplayName($targetForAction);
             }
             
             // Update action fields
@@ -6507,7 +6570,7 @@ class ClientsController extends Controller
                     $notification->url = URL::to('/action');
                 }
                 
-                $notification->message = 'updated your action';
+                $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Updated — reassigned to you';
                 $notification->seen = 0;
                 $notification->save();
             }
@@ -6518,7 +6581,7 @@ class ClientsController extends Controller
                 $activityLog = new ActivitiesLog;
                 $activityLog->client_id = $clientId;
                 $activityLog->created_by = Auth::user()->id;
-                $activityLog->subject = 'Updated action for ' . $assigneeName;
+                $activityLog->subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '') . 'Updated action for ' . $assigneeName;
                 $activityLog->description = '<span class="text-semi-bold">' . ($action->task_group ?? '') . '</span><p>' . ($action->description ?? '') . '</p>';
                 $activityLog->task_status = $action->status === '1' ? 1 : 0;
                 $activityLog->pin = 0;
@@ -6549,11 +6612,24 @@ class ClientsController extends Controller
             
             // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
+            $clientLabel = '';
             if (!empty($requestData['client_id'])) {
                 // Extract just the encoded part (format: "ENCODED/Matter/NO" or "ENCODED/Client")
                 $clientIdParts = explode('/', $requestData['client_id']);
                 $encodedClientId = $clientIdParts[0];
-                $clientId = $this->decodeString($encodedClientId);
+                $decodedId = $this->decodeString($encodedClientId);
+                if ($decodedId === false || $decodedId === '') {
+                    return response()->json(['success' => false, 'message' => 'Invalid client ID'], 400);
+                }
+                $clientId = (int) $decodedId;
+                $targetForAction = $this->findClientOrLeadForAction($clientId);
+                if (! $targetForAction) {
+                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
+                }
+                if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
+                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+                }
+                $clientLabel = $this->actionClientDisplayName($targetForAction);
             }
 
             // Generate unique action ID
@@ -6571,6 +6647,8 @@ class ClientsController extends Controller
             $action->assigned_to = @$requestData['rem_cat'];
             $action->status = '0'; // Not completed
             $action->pin = 0; // Required field - default to not pinned
+            $assigneeName = $this->getAssigneeName($action->assigned_to);
+            $action->title = ($clientLabel !== '' ? $clientLabel . ': ' : '') . 'Assigned to ' . $assigneeName;
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
                 $action->action_date = @$requestData['followup_datetime'];
@@ -6592,7 +6670,7 @@ class ClientsController extends Controller
                     $notification->url = URL::to('/action');
                 }
                 
-                $notification->message = 'assigned you an action';
+                $notification->message = ($clientLabel !== '' ? 'Action for ' . $clientLabel . '. ' : '') . 'Assigned to you';
                 $notification->seen = 0;
                 $notification->save();
             }
