@@ -52,6 +52,7 @@
                                                             <option value="">Select Document Type</option>
                                                             <option value="1" {{ old('doc_type') == '1' ? 'selected' : '' }}>Personal</option>
                                                             <option value="2" {{ old('doc_type') == '2' ? 'selected' : '' }}>Visa</option>
+                                                            <option value="3" {{ old('doc_type') == '3' ? 'selected' : '' }}>Nomination</option>
                                                         </select>
                                                         @if ($errors->has('doc_type'))
                                                             <span class="custom-error" role="alert">

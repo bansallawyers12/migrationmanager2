@@ -25,7 +25,8 @@
                                         ->where('type','client')
                                         ->where(function($query) {
                                             $query->orWhere('doc_type','personal')
-                                            ->orWhere('doc_type','visa');
+                                            ->orWhere('doc_type','visa')
+                                            ->orWhere('doc_type','nomination');
                                         })->orderBy('type', 'DESC')->get();
                                         foreach($fetchd as $notuseKey=>$fetch)
                                         {

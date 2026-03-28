@@ -17,6 +17,7 @@ use App\Models\ClientMatter;
 // use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
+use App\Models\NominationDocumentType;
 
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
@@ -779,6 +780,218 @@ class ClientDocumentsController extends Controller
         echo json_encode($response);
     }
 
+    public function addNominationDocChecklist(Request $request)
+    {
+        $response = ['status' => false, 'message' => 'Please try again'];
+
+        try {
+            $clientid = $request->clientid;
+            if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
+                return;
+            }
+
+            $doctype = $request->doctype ?? '';
+
+            if (!$request->has('nomination_checklist')) {
+                echo json_encode($response);
+
+                return;
+            }
+
+            $checklistArray = $request->input('nomination_checklist');
+            if (!is_array($checklistArray)) {
+                echo json_encode($response);
+
+                return;
+            }
+
+            $saved = false;
+            foreach ($checklistArray as $item) {
+                $obj = new Document();
+                $obj->user_id = Auth::user()->id;
+                $obj->client_id = $clientid;
+                $obj->type = $request->type;
+                $obj->doc_type = $doctype;
+                $obj->client_matter_id = $request->client_matter_id;
+                $obj->checklist = $item;
+                $obj->folder_name = $request->folder_name;
+                $saved = $obj->save();
+            }
+
+            if (!$saved) {
+                echo json_encode($response);
+
+                return;
+            }
+
+            if ($request->type == 'client') {
+                $checklistCount = count($checklistArray);
+                $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
+                $subject = !empty($matterRef)
+                    ? "added Nomination Checklist - {$matterRef}"
+                    : 'added Nomination Checklist';
+                $description = '<p>Added '.$checklistCount.' nomination document checklist items: '.implode(', ', array_slice($checklistArray, 0, 3)).($checklistCount > 3 ? '...' : '').'</p>';
+
+                $this->logClientActivity(
+                    $clientid,
+                    $subject,
+                    $description,
+                    'document'
+                );
+            }
+
+            if (isset($request->client_matter_id) && $request->client_matter_id != '') {
+                $obj1 = ClientMatter::find($request->client_matter_id);
+                if ($obj1) {
+                    $obj1->updated_at = date('Y-m-d H:i:s');
+                    $obj1->save();
+                }
+            }
+
+            $response['status'] = true;
+            $response['message'] = 'You have added your nomination checklist';
+
+            $fetchd = Document::with('staff')->where('client_id', $clientid)
+                ->whereNull('not_used_doc')
+                ->where('doc_type', $doctype)
+                ->where('type', $request->type)
+                ->orderBy('updated_at', 'DESC')
+                ->get();
+
+            ob_start();
+            foreach ($fetchd as $fetch) {
+                $admin = $fetch->staff;
+                $nomCat = NominationDocumentType::where('id', $fetch->folder_name)->first();
+                $catTitle = $nomCat->title ?? '';
+                $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$fetch->client_id.'/nomination/'.$fetch->myfile;
+
+                if (
+                    $request->client_matter_id != $fetch->client_matter_id
+                    || $request->folder_name != $fetch->folder_name
+                ) {
+                    $showCls = "style='display: none;'";
+                } else {
+                    $showCls = '';
+                }
+                ?>
+                        <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id; ?>" data-catid="<?php echo $fetch->folder_name; ?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls; ?>>
+                            <td style="white-space: initial;">
+                                <div data-id="<?php echo $fetch->id; ?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
+                                    <div class="checklist-actions" style="display: flex; gap: 5px;">
+                                        <?php if (!$fetch->file_name) { ?>
+                                        <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="white-space: initial;">
+                                <?php if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
+                                    <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showNominationFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->filetype); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
+                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->filetype; ?>','<?php echo $fetch->myfile; ?>','preview-container-nomdocumnetlist')">
+                                            <i class="fas fa-file-image"></i> <span><?php echo htmlspecialchars($fetch->file_name.'.'.$fetch->filetype); ?></span>
+                                        </a>
+                                    </div>
+                                <?php } else { ?>
+                                    <div class="migration_upload_document" style="display: inline-block;">
+                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id; ?>">
+                                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>" />
+                                            <input type="hidden" name="clientid" value="<?php echo $fetch->client_id; ?>">
+                                            <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id; ?>">
+                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id; ?>">
+                                            <input type="hidden" name="type" value="client">
+                                            <input type="hidden" name="doctype" value="nomination">
+                                            <input type="hidden" name="doccategory" value="<?php echo htmlspecialchars($catTitle); ?>">
+
+                                            <div class="document-drag-drop-zone nomination-doc-drag-zone"
+                                                 data-fileid="<?php echo $fetch->id; ?>"
+                                                 data-doccategory="<?php echo $fetch->folder_name; ?>"
+                                                 data-formid="mig_upload_form_<?php echo $fetch->id; ?>">
+                                                <div class="drag-zone-inner">
+                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
+                                                </div>
+                                            </div>
+
+                                            <input class="migdocupload d-none nomination-migupload"
+                                                   data-fileid="<?php echo $fetch->id; ?>"
+                                                   data-doccategory="<?php echo $fetch->folder_name; ?>"
+                                                   type="file"
+                                                   name="document_upload"
+                                                   style="display: none;"/>
+                                        </form>
+                                    </div>
+                                <?php } ?>
+                            </td>
+                            <td>
+                                <?php if ($fetch->myfile) { ?>
+                                    <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
+                                    <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
+                                    <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
+                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="nomination" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                    <?php
+            }
+
+            $data = ob_get_clean();
+            ob_start();
+            foreach ($fetchd as $fetch) {
+                ?>
+                        <div class="grid_list">
+                            <div class="grid_col">
+                                <div class="grid_icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                <div class="grid_content">
+                                    <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
+                                    <div class="dropdown d-inline dropdown_ellipsis_icon">
+                                        <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                                        <div class="dropdown-menu">
+                                            <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
+                                            <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
+                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="nomination" data-href="notuseddoc" href="javascript:;">Not Used</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+            }
+            $griddata = ob_get_clean();
+            $response['data'] = $data;
+            $response['griddata'] = $griddata;
+        } catch (\Exception $e) {
+            Log::error('Error adding nomination document checklist', [
+                'client_id' => $request->clientid ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $response['status'] = false;
+            $response['message'] = 'An error occurred. Please try again.';
+        }
+        echo json_encode($response);
+    }
+
+    public function uploadNominationDocument(Request $request): void
+    {
+        $request->merge(['doctype' => $request->input('doctype', 'nomination')]);
+        $this->uploadvisadocument($request);
+    }
+
+    public function bulkUploadNominationDocuments(Request $request)
+    {
+        $request->merge(['doctype' => $request->input('doctype', 'nomination')]);
+
+        return $this->bulkUploadVisaDocuments($request);
+    }
+
     /**
      * Upload Visa Document
      */
@@ -947,10 +1160,11 @@ class ClientDocumentsController extends Controller
                     if($saved){
                         if($request->type == 'client'){
                             $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
-                            $subject = !empty($matterRef) 
-                                ? "uploaded Visa Document: {$checklistName} - {$matterRef}"
-                                : "uploaded Visa Document: {$checklistName}";
-                            $description = "<p>Uploaded visa document</p>";
+                            $docLabel = $doctype === 'nomination' ? 'Nomination' : 'Visa';
+                            $subject = !empty($matterRef)
+                                ? "uploaded {$docLabel} Document: {$checklistName} - {$matterRef}"
+                                : "uploaded {$docLabel} Document: {$checklistName}";
+                            $description = '<p>Uploaded '.strtolower($docLabel).' document</p>';
                             
                             $this->logClientActivity(
                                 $clientid,
@@ -968,7 +1182,9 @@ class ClientDocumentsController extends Controller
                         }
                         
                         $response['status'] = true;
-                        $response['message'] = 'You have successfully uploaded your visa document';
+                        $response['message'] = $doctype === 'nomination'
+                            ? 'You have successfully uploaded your nomination document'
+                            : 'You have successfully uploaded your visa document';
                         $response['filename'] = $name;
                         $response['filetype'] = $extension;
                         $response['fileurl'] = $fileUrl;
@@ -1339,6 +1555,8 @@ class ClientDocumentsController extends Controller
                     $response['folder_name'] = 'preview-container-' . ($doc->folder_name ?? '');
                 } else if ($doc->doc_type == 'visa') {
                     $response['folder_name'] = 'preview-container-migdocumnetlist';
+                } else if ($doc->doc_type == 'nomination') {
+                    $response['folder_name'] = 'preview-container-nomdocumnetlist';
                 }
             } else {
                 Log::error('Document rename failed: Database update failed', [
@@ -1453,7 +1671,7 @@ class ClientDocumentsController extends Controller
             // Validate required fields
             $request->validate([
                 'document_id' => 'required|integer',
-                'target_type' => 'required|in:personal,visa',
+                'target_type' => 'required|in:personal,visa,nomination',
                 'target_id' => 'required|integer', // Category ID for both personal and visa
             ]);
             
@@ -1521,6 +1739,20 @@ class ClientDocumentsController extends Controller
                 $document->cp_list_id = null;       // Remove from workflow checklist scope
                 
                 $targetName = $category->title;
+            } elseif ($targetType === 'nomination') {
+                $category = NominationDocumentType::find($targetId);
+                if (!$category) {
+                    $response['message'] = 'Target nomination category not found';
+                    return response()->json($response);
+                }
+
+                $document->type = 'client';
+                $document->doc_type = 'nomination';
+                $document->folder_name = $targetId;
+                $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
+                $document->cp_list_id = null;
+
+                $targetName = $category->title;
             }
             
             $document->updated_at = now();
@@ -1529,11 +1761,13 @@ class ClientDocumentsController extends Controller
             if ($saved) {
                 // Log activity
                 $documentName = $document->file_name ?? $document->checklist ?? 'Document';
-                $oldLocation = $oldType === 'personal' 
-                    ? ($oldFolderName ? "Personal (Category: {$oldFolderName})" : "Personal")
-                    : ($oldChecklistName ? "Visa ({$oldChecklistName})" : "Visa");
-                
-                $newLocation = $targetType === 'personal' ? "Personal ({$targetName})" : "Visa ({$targetName})";
+                $oldLane = $oldType === 'personal' ? 'Personal' : ($oldType === 'nomination' ? 'Nomination' : 'Visa');
+                $newLane = $targetType === 'personal' ? 'Personal' : ($targetType === 'nomination' ? 'Nomination' : 'Visa');
+                $oldLocation = $oldType === 'personal'
+                    ? ($oldFolderName ? "Personal (Category: {$oldFolderName})" : 'Personal')
+                    : ($oldChecklistName ? "{$oldLane} ({$oldChecklistName})" : $oldLane);
+
+                $newLocation = $targetType === 'personal' ? "Personal ({$targetName})" : "{$newLane} ({$targetName})";
                 
                 $matterRef = $this->getMatterReference($document->client_id, $document->client_matter_id);
                 $subject = !empty($matterRef) 
@@ -1625,6 +1859,51 @@ class ClientDocumentsController extends Controller
                 'matter_id' => $request->matter_id ?? null,
                 'error' => $e->getMessage()
             ]);
+            return response()->json([]);
+        }
+    }
+
+    public function getNominationCategories(Request $request)
+    {
+        try {
+            $clientId = $request->client_id;
+            $matterId = $request->matter_id;
+
+            if (!$clientId || !$matterId) {
+                return response()->json([]);
+            }
+
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
+                return $deny;
+            }
+
+            $categories = NominationDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
+                ->where('status', 1)
+                ->where(function ($query) use ($clientId, $matterId) {
+                    $query->where(function ($q) {
+                        $q->whereNull('client_id')
+                            ->whereNull('client_matter_id');
+                    })
+                        ->orWhere(function ($q) use ($clientId) {
+                            $q->where('client_id', $clientId)
+                                ->whereNull('client_matter_id');
+                        })
+                        ->orWhere(function ($q) use ($clientId, $matterId) {
+                            $q->where('client_id', $clientId)
+                                ->where('client_matter_id', $matterId);
+                        });
+                })
+                ->orderBy('id', 'ASC')
+                ->get();
+
+            return response()->json($categories);
+        } catch (\Exception $e) {
+            Log::error('Error getting nomination categories', [
+                'client_id' => $request->client_id ?? null,
+                'matter_id' => $request->matter_id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([]);
         }
     }
@@ -2310,6 +2589,139 @@ class ClientDocumentsController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Error updating category: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function addNominationDocCategory(Request $request)
+    {
+        $categoryTitle = trim($request->input('nomination_doc_category'));
+        $clientId = $request->input('clientid');
+        $clientMatterId = $request->input('clientmatterid');
+
+        $request->merge(['nomination_doc_category' => $categoryTitle]);
+
+        $validator = Validator::make($request->all(), [
+            'nomination_doc_category' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first('nomination_doc_category'),
+            ]);
+        }
+
+        if ($clientId !== null && $clientId !== '' && is_numeric($clientId)) {
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
+                return $deny;
+            }
+        }
+
+        $existsForNullClient = NominationDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->whereNull('client_matter_id')
+            ->whereNull('client_id')
+            ->exists();
+
+        if ($existsForNullClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists globally.',
+            ]);
+        }
+
+        $existsForSameClient = NominationDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->where('client_matter_id', $clientMatterId)
+            ->exists();
+
+        if ($existsForSameClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists for this client matter.',
+            ]);
+        }
+
+        try {
+            $category = new NominationDocumentType();
+            $category->title = $categoryTitle;
+            $category->status = 1;
+            $category->client_id = $clientId ?? null;
+            $category->client_matter_id = $clientMatterId ?? null;
+            $category->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Nomination document category added successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error adding category: '.$e->getMessage(),
+            ]);
+        }
+    }
+
+    public function updateNominationDocCategory(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:nomination_document_types,id',
+            'title' => 'required|string|max:255',
+        ]);
+
+        $category = NominationDocumentType::findOrFail($request->id);
+        $clientMatterId = $category->client_matter_id;
+
+        if ($category->client_matter_id === null) {
+            return response()->json(['success' => false, 'message' => 'Only client-matter-generated categories can be updated.']);
+        }
+
+        if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
+            if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $category->client_id)) {
+                return $deny;
+            }
+        }
+
+        $categoryTitle = trim($request->input('title'));
+
+        $existsForNullClient = NominationDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->whereNull('client_matter_id')
+            ->exists();
+
+        if ($existsForNullClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists globally for all client matters.Pls try other.',
+            ]);
+        }
+
+        $existsForSameClient = NominationDocumentType::where('title', $categoryTitle)
+            ->where('status', 1)
+            ->where('client_matter_id', $clientMatterId)
+            ->where('id', '!=', $request->id)
+            ->exists();
+
+        if ($existsForSameClient) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This category already exists for this client matter.',
+            ]);
+        }
+
+        try {
+            $category->title = $categoryTitle;
+            $category->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Nomination document category updated successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error updating category: '.$e->getMessage(),
             ]);
         }
     }

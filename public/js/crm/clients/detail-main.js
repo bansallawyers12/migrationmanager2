@@ -2064,6 +2064,32 @@ success: function(response) {
 
                 }
 
+                else if( activeTab == 'nominationdocuments') {
+
+                    if(selectedMatter != "" ) {
+
+                        $('#nominationdocuments-tab .migdocumnetlist1').find('.drow').each(function() {
+
+                            if ($(this).data('matterid') == selectedMatter) {
+
+                                $(this).show();
+
+                            } else {
+
+                                $(this).hide();
+
+                            }
+
+                        });
+
+                    }  else {
+
+                        $(this).hide();
+
+                    }
+
+                }
+
 
 
 
@@ -6028,7 +6054,7 @@ Bansal Immigration`;
                         // Remove document from current tab (Personal or Visa)
                         if(res.doc_type == 'personal') {
                             $('.documnetlist_'+res.doc_category+' #id_'+res.doc_id).remove();
-                        } else if( res.doc_type == 'visa') {
+                        } else if( res.doc_type == 'visa' || res.doc_type == 'nomination') {
                             $('.migdocumnetlist1 #id_'+res.doc_id).remove();
                         }
 
@@ -7685,7 +7711,7 @@ Bansal Immigration`;
         // This must be on document level, but we let drop zones handle their own events
         $(document).on('dragover', function(e) {
             // Allow drop zones to handle their own dragover events
-            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa').length) {
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination').length) {
                 return; // Let the drop zone handler take over
             }
             // For other areas, prevent default to allow file drops
@@ -7694,7 +7720,7 @@ Bansal Immigration`;
 
         $(document).on('drop', function(e) {
             // Allow drop zones to handle their own drop events
-            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa').length) {
+            if ($(e.target).closest('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone, .bulk-upload-dropzone, .bulk-upload-dropzone-visa, .bulk-upload-dropzone-nomination').length) {
                 return; // Let the drop zone handler take over
             }
             // For other areas, prevent default to prevent browser from opening file
@@ -7803,6 +7829,39 @@ Bansal Immigration`;
             var fileInput = $('#mig_upload_form_' + fileid).find('.migdocupload');
             fileInput.click();
         });
+
+        $(document).delegate('.nomination-doc-drag-zone', 'dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('drag_over');
+            return false;
+        });
+
+        $(document).delegate('.nomination-doc-drag-zone', 'dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag_over');
+            return false;
+        });
+
+        $(document).delegate('.nomination-doc-drag-zone', 'drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag_over');
+
+            var files = e.originalEvent.dataTransfer.files;
+            if (files && files.length > 0) {
+                handleVisaDocDragDrop($(this), files[0]);
+            }
+            return false;
+        });
+
+        $(document).delegate('.nomination-doc-drag-zone', 'click', function(e) {
+            e.preventDefault();
+            var fileid = $(this).data('fileid');
+            var fileInput = $('#mig_upload_form_' + fileid).find('.migdocupload');
+            fileInput.click();
+        });
         
         // Personal Documents - Upload Handler
         
@@ -7887,6 +7946,12 @@ Bansal Immigration`;
             var visa_doc_cat = dragZone.data('doccategory');
             var formId = dragZone.data('formid');
             var form = $('#' + formId);
+            var laneDocType = (form.find('input[name="doctype"]').val() || 'visa').toLowerCase();
+            var uploadUrl = laneDocType === 'nomination'
+                ? site_url + '/documents/upload-nomination-document'
+                : site_url + '/documents/upload-visa-document';
+            var previewPane = laneDocType === 'nomination' ? 'preview-container-nomdocumnetlist' : 'preview-container-migdocumnetlist';
+            var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             
             // Validate filename
             var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
@@ -7910,7 +7975,7 @@ Bansal Immigration`;
             
             // Upload via AJAX
             $.ajax({
-                url: site_url + '/documents/upload-visa-document',
+                url: uploadUrl,
                 type: 'POST',
                 dataType: 'json',
                 data: formData,
@@ -7928,8 +7993,8 @@ Bansal Immigration`;
                         // Replace upload TD content (Column 1 = File Name)
                         var uploadTd = row.find('td').eq(1);
                         uploadTd.html(
-                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showVisaFileContextMenu(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'preview-container-migdocumnetlist\')">' +
+                            '<div data-id="' + fileid + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileid + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + previewPane + '\')">' +
                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
                                 '</a>' +
                             '</div>'
@@ -7941,7 +8006,7 @@ Bansal Immigration`;
                             '<a class="renamechecklist" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
                             '<a class="renamedoc" data-id="' + fileid + '" href="javascript:;" style="display: none;"></a>' +
                             '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
-                            '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="visa" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
+                            '<a class="notuseddoc" data-id="' + fileid + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
                         );
                         
                         row.addClass('drow');
@@ -8019,6 +8084,24 @@ Bansal Immigration`;
 
         });
 
+        $(document).delegate('.add-nomination-doc-category', 'click', function (e) {
+
+            e.preventDefault();
+
+            let selectedMatterFM;
+
+            if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+                selectedMatterFM = $('.general_matter_checkbox_client_detail').val();
+            } else {
+                selectedMatterFM = $('#sel_matter_id_client_detail').val();
+            }
+
+            $('#nominationclientmatterid').val(selectedMatterFM);
+
+            $('.addnominationdoccatmodel').modal('show');
+
+        });
+
 
 
 
@@ -8036,6 +8119,22 @@ Bansal Immigration`;
             $('.create_migration_docs').modal('show');
 
             $("#visa_checklist").select2({dropdownParent: $("#openmigrationdocsmodal")});
+
+        });
+
+        $(document).delegate('.add_nomination_doc', 'click', function (e) {
+
+            e.preventDefault();
+
+            var hidden_client_matter_id = $('#sel_matter_id_client_detail').val();
+
+            $('#hidden_nomination_client_matter_id').val(hidden_client_matter_id);
+
+            $("#nomination_folder_name").val($(this).attr('data-categoryid'));
+
+            $('.create_nomination_docs').modal('show');
+
+            $("#nomination_checklist").select2({dropdownParent: $("#opennominationdocsmodal")});
 
         });
 
@@ -8108,7 +8207,14 @@ Bansal Immigration`;
 
             // Create FormData before clearing the input
 
-            var formData = new FormData($('#mig_upload_form_'+fileidL1)[0]);
+            var $form = $('#mig_upload_form_'+fileidL1);
+            var laneDocType = ($form.find('input[name="doctype"]').val() || 'visa').toLowerCase();
+            var uploadUrl = laneDocType === 'nomination'
+                ? site_url+'/documents/upload-nomination-document'
+                : site_url+'/documents/upload-visa-document';
+            var previewPane = laneDocType === 'nomination' ? 'preview-container-nomdocumnetlist' : 'preview-container-migdocumnetlist';
+            var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
+            var formData = new FormData($form[0]);
 
             // Append extra data manually
 
@@ -8124,7 +8230,7 @@ Bansal Immigration`;
 
             $.ajax({
 
-                url: site_url+'/documents/upload-visa-document',
+                url: uploadUrl,
 
                 type:'POST',
 
@@ -8156,9 +8262,9 @@ Bansal Immigration`;
 
                         uploadTd.html(
 
-                            '<div data-id="' + fileidL1 + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="showVisaFileContextMenu(event, ' + fileidL1 + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
+                            '<div data-id="' + fileidL1 + '" data-name="' + docNameWithoutExt + '" class="doc-row" title="Uploaded by: ' + (ress.uploaded_by || 'Staff') + (ress.uploaded_at ? ' on ' + formatClientDocDateTime(ress.uploaded_at) : '') + '" oncontextmenu="' + contextMenuFn + '(event, ' + fileidL1 + ', \'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + visa_doc_cat + '\', \'' + (ress.status_value || 'draft') + '\'); return false;">' +
 
-                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'preview-container-migdocumnetlist\')">' +
+                                '<a href="javascript:void(0);" onclick="previewFile(\'' + ress.filetype + '\', \'' + ress.fileurl + '\', \'' + previewPane + '\')">' +
 
                                     '<i class="fas fa-file-image"></i> <span>' + ress.filename + '</span>' +
 
@@ -8182,7 +8288,7 @@ Bansal Immigration`;
 
                             '<a class="download-file" data-filelink="' + ress.fileurl + '" data-filename="' + ress.filekey + '" href="#" style="display: none;"></a>' +
 
-                            '<a class="notuseddoc" data-id="' + fileidL1 + '" data-doctype="visa" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
+                            '<a class="notuseddoc" data-id="' + fileidL1 + '" data-doctype="' + laneDocType + '" data-href="notuseddoc" href="javascript:;" style="display: none;"></a>'
 
                         );
 

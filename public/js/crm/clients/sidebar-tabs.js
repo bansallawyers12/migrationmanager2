@@ -239,6 +239,9 @@
                     }
                 }, 300);
                 break;
+            case 'nominationdocuments':
+                filterNominationDocumentsByMatter(SidebarTabs.selectedMatter);
+                break;
             case 'client_portal':
                 if (typeof showClientMatterPortalData === 'function') {
                     showClientMatterPortalData(SidebarTabs.selectedMatter);
@@ -315,6 +318,22 @@
             });
         } else {
             $('#visadocuments-tab .migdocumnetlist1').find('.drow').hide();
+        }
+    }
+
+    function filterNominationDocumentsByMatter(matterId) {
+        if (matterId !== "") {
+            $('#nominationdocuments-tab .migdocumnetlist1').find('.drow').each(function() {
+                var docMatterId = $(this).data('matterid');
+                var hasNoMatter = !docMatterId || docMatterId === '' || docMatterId === 'null' || docMatterId === null || docMatterId === 0;
+                if (docMatterId == matterId || hasNoMatter) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        } else {
+            $('#nominationdocuments-tab .migdocumnetlist1').find('.drow').hide();
         }
     }
 
@@ -435,6 +454,7 @@
         ensureAllTabActive: ensureAllTabActive,
         filterNotesByMatter: filterNotesByMatter,
         filterVisaDocumentsByMatter: filterVisaDocumentsByMatter,
+        filterNominationDocumentsByMatter: filterNominationDocumentsByMatter,
         filterEmailsByMatter: filterEmailsByMatter
     };
 

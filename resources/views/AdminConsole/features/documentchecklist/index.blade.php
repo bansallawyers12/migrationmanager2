@@ -118,6 +118,8 @@
                                                     echo "Personal";
                                                 } else if($list->doc_type == 2 ){
                                                     echo "Visa";
+                                                } else if($list->doc_type == 3 ){
+                                                    echo "Nomination";
                                                 }
                                             }?>
                                         </td>
