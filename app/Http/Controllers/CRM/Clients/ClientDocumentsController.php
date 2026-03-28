@@ -2688,6 +2688,7 @@ class ClientDocumentsController extends Controller
         $existsForNullClient = NominationDocumentType::where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_matter_id')
+            ->whereNull('client_id')
             ->exists();
 
         if ($existsForNullClient) {
@@ -3418,10 +3419,11 @@ class ClientDocumentsController extends Controller
             if ($uploadedCount > 0) {
                 // Log activity
                 $matterRef = $this->getMatterReference($clientid, $matterid);
+                $docLabel = $doctype === 'nomination' ? 'nomination' : 'visa';
                 $subject = !empty($matterRef) 
-                    ? "bulk uploaded {$uploadedCount} visa documents - {$matterRef}"
-                    : "bulk uploaded {$uploadedCount} visa documents";
-                $description = "<p>Bulk uploaded {$uploadedCount} visa documents</p>";
+                    ? "bulk uploaded {$uploadedCount} {$docLabel} documents - {$matterRef}"
+                    : "bulk uploaded {$uploadedCount} {$docLabel} documents";
+                $description = "<p>Bulk uploaded {$uploadedCount} {$docLabel} documents</p>";
                 
                 $this->logClientActivity(
                     $clientid,
