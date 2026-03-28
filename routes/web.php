@@ -243,10 +243,6 @@ Route::middleware(['auth:admin'])->group(function() {
     Route::get('/api-key', [CRMUtilityController::class, 'editapi'])->name('api');
     Route::post('/api-key', [CRMUtilityController::class, 'editapi'])->name('api.update');
 
-    /*---------- Reverb real-time messaging lab (isolated; staff only) ----------*/
-    Route::get('/reverb-messaging-test', [ReverbMessagingLabController::class, 'index'])->name('reverb-messaging-lab.index');
-    Route::post('/reverb-messaging-test/resolve-matter', [ReverbMessagingLabController::class, 'resolveMatter'])->name('reverb-messaging-lab.resolve-matter');
-
 	/*--------------------------------------------------
 	| SECTION: Client Management Routes
 	|--------------------------------------------------*/
@@ -321,6 +317,15 @@ Route::middleware(['auth:admin'])->group(function() {
 
 
 	});
+
+/*
+| Reverb lab: outside the block above so unauthenticated visitors can be
+| signed in via .env (REVERB_ACCESS_*) before auth:admin runs.
+*/
+Route::middleware(['reverb.lab.env.auto', 'auth:admin'])->group(function () {
+    Route::get('/reverb-messaging-test', [ReverbMessagingLabController::class, 'index'])->name('reverb-messaging-lab.index');
+    Route::post('/reverb-messaging-test/resolve-matter', [ReverbMessagingLabController::class, 'resolveMatter'])->name('reverb-messaging-lab.resolve-matter');
+});
 
 /*--------------------------------------------------
 | SECTION: Document Signature Routes (Admin & Public)
