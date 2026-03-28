@@ -1,17 +1,6 @@
 /**
- * Real-time Chat Implementation with Pusher Cloud
- * 
- * This file provides a complete WebSocket integration for real-time chat
- * between web frontend and mobile app using Pusher Cloud Service.
- * 
- * Features:
- * - Real-time message sending and receiving
- * - Private channels with authentication
- * - Automatic reconnection
- * - Unread count updates
- * - Message read status
- * - Typing indicators
- * - Managed cloud service (no server maintenance required)
+ * Real-time chat via Laravel Reverb (Pusher protocol).
+ * Auth: /api/broadcasting/auth with Bearer token (VITE_REVERB_* in .env).
  */
 
 import Echo from 'laravel-echo';
@@ -20,22 +9,13 @@ import Pusher from 'pusher-js';
 // Make Pusher available globally (required by Laravel Echo)
 window.Pusher = Pusher;
 
-/**
- * Initialize Laravel Echo with Pusher Cloud
- * 
- * Configuration:
- * - broadcaster: 'pusher' (uses Pusher Cloud)
- * - key: Pusher App Key (from your Pusher dashboard)
- * - cluster: Pusher cluster (e.g., 'ap2', 'us2', 'eu')
- * - forceTLS: true (always use secure connection with Pusher Cloud)
- * - authEndpoint: Laravel Sanctum/Passport authentication endpoint
- */
 class RealtimePusherChat {
     constructor(config = {}) {
         this.config = {
-            pusherKey: config.pusherKey || import.meta.env.VITE_PUSHER_APP_KEY,
-            pusherCluster: config.pusherCluster || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2',
-            forceTLS: config.forceTLS !== undefined ? config.forceTLS : true,
+            reverbKey:
+                config.reverbKey ||
+                config.pusherKey ||
+                import.meta.env.VITE_REVERB_APP_KEY,
             apiBaseUrl: config.apiBaseUrl || '/api',
             authToken: config.authToken || null,
             userId: config.userId || null,
@@ -57,41 +37,43 @@ class RealtimePusherChat {
         this.initialize();
     }
 
-    /**
-     * Initialize Echo instance with Pusher Cloud configuration
-     */
     initialize() {
         try {
-            if (!this.config.pusherKey) {
-                throw new Error('Pusher App Key is required. Please set VITE_PUSHER_APP_KEY in your .env file');
+            if (!this.config.reverbKey) {
+                throw new Error(
+                    'Reverb app key is required. Set VITE_REVERB_APP_KEY in .env (see REVERB_APP_KEY).'
+                );
             }
 
+            const useTLS = import.meta.env.VITE_REVERB_SCHEME === 'https';
+            const port = parseInt(import.meta.env.VITE_REVERB_PORT, 10);
+            const wsPort = !isNaN(port) ? port : useTLS ? 443 : 8080;
+
             this.echo = new Echo({
-                broadcaster: 'pusher',
-                key: this.config.pusherKey,
-                cluster: this.config.pusherCluster,
-                forceTLS: this.config.forceTLS,
-                encrypted: true,
-                enabledTransports: ['ws', 'wss'],
+                broadcaster: 'reverb',
+                key: this.config.reverbKey,
+                wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
+                wsPort,
+                wssPort: wsPort,
+                forceTLS: useTLS,
+                enabledTransports: useTLS ? ['wss'] : ['ws', 'wss'],
                 authEndpoint: `${this.config.apiBaseUrl}/broadcasting/auth`,
                 auth: {
                     headers: {
-                        'Authorization': `Bearer ${this.config.authToken}`,
-                        'Accept': 'application/json',
-                    }
-                }
+                        Authorization: `Bearer ${this.config.authToken}`,
+                        Accept: 'application/json',
+                    },
+                },
             });
 
-            // Enable Pusher logging if configured
             if (this.config.enableLogging) {
                 Pusher.logToConsole = true;
             }
 
-            console.log('✅ Laravel Echo initialized with Pusher Cloud');
-            console.log(`🌍 Connected to cluster: ${this.config.pusherCluster}`);
+            console.log('✅ Laravel Echo initialized with Reverb', useTLS ? '(wss)' : '(ws)');
             this.triggerListeners('onConnectionEstablished');
         } catch (error) {
-            console.error('❌ Failed to initialize Echo with Pusher:', error);
+            console.error('❌ Failed to initialize Echo with Reverb:', error);
             this.triggerListeners('onConnectionError', error);
         }
     }
@@ -336,7 +318,7 @@ class RealtimePusherChat {
     disconnect() {
         if (this.echo) {
             this.echo.disconnect();
-            console.log('🔌 Disconnected from Pusher Cloud');
+            console.log('🔌 Disconnected from Reverb');
         }
     }
 
@@ -375,10 +357,8 @@ export default RealtimePusherChat;
 /*
 import RealtimePusherChat from './realtime-pusherchat';
 
-// Initialize the chat client with Pusher Cloud
 const chat = new RealtimePusherChat({
-    pusherKey: 'your-pusher-app-key',
-    pusherCluster: 'ap2', // Your Pusher cluster (ap2 for Asia Pacific)
+    reverbKey: import.meta.env.VITE_REVERB_APP_KEY,
     authToken: 'your-bearer-token',
     userId: 123,
     enableLogging: true // Enable for debugging

@@ -357,22 +357,37 @@ Route::post('/broadcasting/auth', function (Request $request) {
         
         Log::info('Channel auth successful', ['user_id' => $user->id, 'channel' => $channelName]);
 
-        // Generate auth response using Pusher Cloud
+        // Sign with Laravel Reverb (Pusher protocol); must match REVERB_APP_KEY the client uses.
+        $reverb = config('broadcasting.connections.reverb');
+        $reverbKey = $reverb['key'] ?? '';
+        $reverbSecret = $reverb['secret'] ?? '';
+        $reverbAppId = $reverb['app_id'] ?? '';
+
+        if ($reverbKey === '' || $reverbSecret === '' || $reverbAppId === '') {
+            Log::error('Broadcasting auth: Reverb credentials missing (REVERB_APP_KEY / REVERB_APP_SECRET / REVERB_APP_ID)');
+
+            return response()->json([
+                'error' => 'Broadcasting is not configured. Set REVERB_APP_KEY, REVERB_APP_SECRET, and REVERB_APP_ID.',
+            ], 503);
+        }
+
+        $reverbOpts = $reverb['options'] ?? [];
         $pusher = new \Pusher\Pusher(
-            config('broadcasting.connections.pusher.key'),
-            config('broadcasting.connections.pusher.secret'),
-            config('broadcasting.connections.pusher.app_id'),
+            $reverbKey,
+            $reverbSecret,
+            $reverbAppId,
             [
-                'cluster' => config('broadcasting.connections.pusher.options.cluster'),
-                'useTLS' => config('broadcasting.connections.pusher.options.useTLS', true),
-                'encrypted' => config('broadcasting.connections.pusher.options.encrypted', true),
+                'host' => $reverbOpts['host'] ?? '127.0.0.1',
+                'port' => (int) ($reverbOpts['port'] ?? 8080),
+                'scheme' => $reverbOpts['scheme'] ?? 'http',
+                'useTLS' => (bool) ($reverbOpts['useTLS'] ?? false),
             ]
         );
 
         $authResponse = $pusher->authorizeChannel($channelName, $socketId);
 
         return response($authResponse, 200, [
-            'Content-Type' => 'text/plain'
+            'Content-Type' => 'application/json',
         ]);
         
     } catch (\Exception $e) {
