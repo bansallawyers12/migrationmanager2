@@ -21,6 +21,7 @@ use App\Http\Controllers\CRM\BroadcastController;
 use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\CRM\ReportController;
 use App\Http\Controllers\Auth\AdminLoginController;
+use App\Http\Controllers\CRM\ReverbMessagingLabController;
 
 /*
 |--------------------------------------------------------------------------
@@ -241,6 +242,10 @@ Route::middleware(['auth:admin'])->group(function() {
 	/*---------- API Settings ----------*/
     Route::get('/api-key', [CRMUtilityController::class, 'editapi'])->name('api');
     Route::post('/api-key', [CRMUtilityController::class, 'editapi'])->name('api.update');
+
+    /*---------- Reverb real-time messaging lab (isolated; staff only) ----------*/
+    Route::get('/reverb-messaging-test', [ReverbMessagingLabController::class, 'index'])->name('reverb-messaging-lab.index');
+    Route::post('/reverb-messaging-test/resolve-matter', [ReverbMessagingLabController::class, 'resolveMatter'])->name('reverb-messaging-lab.resolve-matter');
 
 	/*--------------------------------------------------
 	| SECTION: Client Management Routes
