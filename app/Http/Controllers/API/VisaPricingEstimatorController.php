@@ -165,11 +165,11 @@ class VisaPricingEstimatorController extends BaseController
                 'non_internet_app_charge' => $visa['non_internet_app_charge'] ?? null,
                 'subsequent_temp_app_charge' => $visa['subsequent_temp_app_charge'] ?? null,
             ],
-            // 'line_items' => $lineItems,
-            // 'total' => round($total, 2),
-            // 'currency' => 'AUD',
-            // 'price_starts_from' => 'AUD ' . number_format($total, 2, '.', ','),
-            // 'disclaimer' => 'This is an estimate only. The estimator might not include the second instalment payable for some visas. Verify current charges at https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges',
+            'line_items' => $lineItems,
+            'total' => round($total, 2),
+            'currency' => 'AUD',
+            'price_starts_from' => 'AUD ' . number_format($total, 2, '.', ','),
+            'disclaimer' => 'This is an estimate only. The estimator might not include the second instalment payable for some visas. Verify current charges at https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges',
         ];
 
         return $this->sendResponse($result, 'Estimate calculated successfully');
