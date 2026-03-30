@@ -14,20 +14,43 @@ $intList = static function (string $envKey, string $envDefault, array $hardDefau
     return $filtered !== [] ? $filtered : $hardDefault;
 };
 
+// Canonical default for both approver and exempt staff id lists (used when env is missing or invalid).
+$defaultPrivilegedStaffIdsCsv = '36834,36524,36692,36483,36484,36718,36523,36836,36830';
+$defaultPrivilegedStaffIdsArr = [36834, 36524, 36692, 36483, 36484, 36718, 36523, 36836, 36830];
+
+$approver_staff_ids = $intList(
+    'CRM_ACCESS_APPROVER_STAFF_IDS',
+    $defaultPrivilegedStaffIdsCsv,
+    $defaultPrivilegedStaffIdsArr
+);
+
+// When CRM_ACCESS_EXEMPT_STAFF_IDS is unset or blank, exempt ids always match the resolved approver list
+// (so changing only CRM_ACCESS_APPROVER_STAFF_IDS in .env keeps both in sync).
+$exemptEnvRaw = env('CRM_ACCESS_EXEMPT_STAFF_IDS');
+$exemptEnvTrimmed = is_string($exemptEnvRaw) ? trim($exemptEnvRaw) : '';
+if ($exemptEnvRaw === null || $exemptEnvRaw === false || $exemptEnvTrimmed === '') {
+    $exempt_staff_ids = array_values($approver_staff_ids);
+} else {
+    $exempt_staff_ids = array_values(array_filter(
+        array_map('intval', explode(',', $exemptEnvTrimmed)),
+        static fn (int $v) => $v > 0
+    ));
+    if ($exempt_staff_ids === []) {
+        $exempt_staff_ids = $defaultPrivilegedStaffIdsArr;
+    }
+}
+
 return [
     // Role IDs that bypass allocation and the grant flow entirely.
     // Falls back to [1, 17] if env is misconfigured to prevent locking out super-admins.
     'exempt_role_ids' => $intList('CRM_ACCESS_EXEMPT_ROLE_IDS', '1,17', [1, 17]),
 
-    // Specific staff.id values that bypass allocation like exempt roles (e.g. access supervisors who are not Super Admin).
-    'exempt_staff_ids' => $intList('CRM_ACCESS_EXEMPT_STAFF_IDS', '36718', [36718]),
+    // Specific staff.id values that bypass allocation like exempt roles (e.g. supervisors who are not Super Admin).
+    // Omit or leave blank CRM_ACCESS_EXEMPT_STAFF_IDS to use the same ids as approver_staff_ids (above).
+    'exempt_staff_ids' => $exempt_staff_ids,
 
     // staff.id values allowed to approve requests (plus all active role-1 users at runtime).
-    'approver_staff_ids' => $intList(
-        'CRM_ACCESS_APPROVER_STAFF_IDS',
-        '36834,36524,36692,36483,36484,36718,36523,36836,36830',
-        []
-    ),
+    'approver_staff_ids' => $approver_staff_ids,
 
     'quick_reason_options' => [
         'calling'    => 'Calling / Reception',

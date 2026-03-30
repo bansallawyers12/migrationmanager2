@@ -1,6 +1,6 @@
 # Cross-access & allocated-only visibility — implementation plan
 
-**v5.1** — Product rules unchanged; **as-built** sections and HTTP/config inventory aligned with the current Laravel codebase (Phases A–D implemented; Phase E mostly done — see §15). Adds `exempt_staff_ids` support and approver quick-access management (see §3, §6).
+**v5.3** — When `CRM_ACCESS_EXEMPT_STAFF_IDS` is omitted or blank, `exempt_staff_ids` is the **same resolved list** as `approver_staff_ids` (so `.env` approver-only edits stay in sync). Canonical nine ids remain the PHP fallback when both env lists are empty/invalid. **as-built** sections aligned with the Laravel codebase (Phases A–D implemented; Phase E mostly done — see §15).
 
 This document turns agreed product rules into build phases for the Laravel CRM (default DB driver in `config/database.php` is `pgsql`; MySQL may be used per environment).
 
@@ -38,7 +38,7 @@ This document turns agreed product rules into build phases for the Laravel CRM (
 **Key decisions locked:**
 
 - **Exempt roles** (bypass all flows, logged as `exempt`): `1` (Super Admin) and `17` (Admin). Config key: `CRM_ACCESS_EXEMPT_ROLE_IDS=1,17`.
-- **Exempt staff IDs** (same bypass as exempt roles, regardless of their role): `36718` (Vipul Goyal) by default. Config key: `CRM_ACCESS_EXEMPT_STAFF_IDS=36718`. IDs in this list are checked in both `CrmAccessService::isExemptRole` and `StaffClientVisibility::isExemptFromAllocation` — they get full client/lead access and their access is logged as `exempt` daily.
+- **Exempt staff IDs** (same bypass as exempt roles, regardless of their role): **omit or leave blank** `CRM_ACCESS_EXEMPT_STAFF_IDS` in `.env` and exempt ids **mirror** the resolved `approver_staff_ids` list (from `CRM_ACCESS_APPROVER_STAFF_IDS` + `$intList` fallbacks in `config/crm_access.php`). Set `CRM_ACCESS_EXEMPT_STAFF_IDS` only when exempt must **differ** from approvers. Canonical default for both lists when env is empty/invalid: `36834, 36524, 36692, 36483, 36484, 36718, 36523, 36836, 36830`. Checked in `CrmAccessService::isExemptRole` and `StaffClientVisibility::isExemptFromAllocation` — full client/lead access; logged as `exempt` daily.
 - **Calling Team (14) — quick access only:** the supervisor approval path is **hard-blocked** for role 14 in the service layer. They may only get a 15-minute quick grant. In the setup migration, set `quick_access_enabled = true` for **all existing** role-14 staff. New role-14 staff: default `true` at creation.
 - **Leads — same restriction as clients after Phase C:** everyone except exempt roles is restricted to allocated leads. This removes the current "Person Responsible sees all leads" exception.
 - **Exempt logging:** write **one row per calendar day per staff + admin record combo** (not every page load). Keeps the audit table clean while full coverage is maintained.
@@ -47,56 +47,21 @@ This document turns agreed product rules into build phases for the Laravel CRM (
 
 ---
 
-## 3. Configuration (no code deploy for list tweaks)
+## 3. Configuration (env overrides vs committed defaults)
 
-File: `config/crm_access.php` (new file, all overridable via `.env`):
+File: `config/crm_access.php`. **Operational tweaks** (durations, strict flag, comma-separated id/role lists) ship via `.env` without code edits. **Changing the canonical nine default staff ids** still requires editing that file (or setting both env lists).
 
-```php
-return [
-    // Role IDs that bypass allocation and the grant flow entirely
-    'exempt_role_ids' => env('CRM_ACCESS_EXEMPT_ROLE_IDS', '1,17'),
+**Behaviour (as committed):** `approver_staff_ids` is parsed with `$intList()` from `CRM_ACCESS_APPROVER_STAFF_IDS` (fallback: canonical nine ids). **`exempt_staff_ids`** is the **same array** as `approver_staff_ids` when `CRM_ACCESS_EXEMPT_STAFF_IDS` is **unset or blank**; otherwise it is parsed from that variable (empty parse → canonical nine). Other keys (`exempt_role_ids`, `quick_access_only_role_ids`, durations, caps, `strict_allocation`) use `$intList` / `env()` as in the file.
 
-    // staff.id values that bypass allocation like exempt roles (regardless of their role)
-    'exempt_staff_ids' => env('CRM_ACCESS_EXEMPT_STAFF_IDS', '36718'),
-
-    // staff.id values allowed to approve requests (plus all role-1 users)
-    'approver_staff_ids' => env('CRM_ACCESS_APPROVER_STAFF_IDS',
-        '36834,36524,36692,36483,36484,36718,36523,36836,36830'),
-
-    // Quick-access options presented in the modal (code => label)
-    // Calling Team always sees this list; others see it if quick_access_enabled = true
-    'quick_reason_options' => [
-        'calling'     => 'Calling / Reception',
-        'cover'       => 'Covering Absent Colleague',
-        'urgent'      => 'Urgent Client Follow-up',
-        'admin_task'  => 'Administrative Task',
-    ],
-
-    // Roles restricted to quick access only (supervisor path blocked)
-    'quick_access_only_role_ids' => env('CRM_ACCESS_QUICK_ONLY_ROLE_IDS', '14'),
-
-    // Quick grant duration (minutes)
-    'quick_grant_minutes' => 15,
-
-    // Supervisor-approved grant duration (hours)
-    'supervisor_grant_hours' => 24,
-
-    // Strict allocation enforcement on/off (flip false → true in Phase C)
-    'strict_allocation' => env('CRM_ACCESS_STRICT_ALLOCATION', false),
-
-    // Also implemented in code (see config/crm_access.php): max_pending_supervisor_requests,
-    // pending_ttl_days, quick_grant_minutes, supervisor_grant_hours — all env-overridable.
-];
-```
-
-> **Note:** The committed `config/crm_access.php` uses a small `$intList()` helper so empty or broken env strings do not wipe approver or exempt defaults. Prefer reading that file for the exact defaults.
+> **Note:** Prefer reading `config/crm_access.php` for the exact implementation; the illustrative `return [...]` snippet was removed here to avoid drifting from code.
 
 **Environment variables** (add to `.env` as needed; there is no committed `.env.example` in this repo at time of writing):
 
 | Variable | Purpose |
 |----------|---------|
 | `CRM_ACCESS_EXEMPT_ROLE_IDS` | Comma-separated role IDs (default `1,17`). Empty/invalid env falls back to `[1, 17]` in code. |
-| `CRM_ACCESS_APPROVER_STAFF_IDS` | Comma-separated `staff.id` values; empty env falls back to hardcoded default list in `config/crm_access.php`. |
+| `CRM_ACCESS_EXEMPT_STAFF_IDS` | Optional. **Omit or leave blank** so `exempt_staff_ids` **equals** the resolved `approver_staff_ids` (stays in sync when you only edit approvers). Set explicitly only when exempt must differ from approvers. If set but parses to empty, falls back to canonical nine ids in `config/crm_access.php`. |
+| `CRM_ACCESS_APPROVER_STAFF_IDS` | Comma-separated `staff.id` values; empty/invalid env falls back to canonical nine ids in `config/crm_access.php`. |
 | `CRM_ACCESS_QUICK_ONLY_ROLE_IDS` | Quick-only roles (default `14`); empty env falls back to `[14]`. |
 | `CRM_ACCESS_STRICT_ALLOCATION` | `true` / `false` — strict allocated-only + grants for non-exempt roles. |
 | `CRM_ACCESS_QUICK_GRANT_MINUTES` | Quick grant length (default `15`). |
@@ -529,10 +494,12 @@ Fields:
 | 36692 | Celesty Parmar | Manager@bansalimmigration.com.au |
 | 36483 | Bipan Chander | bansalimmigration123@gmail.com |
 | 36484 | KHUSHI Sangroya | khusi.bansal01@gmail.com |
-| 36718 | Vipul Goyal | Immi2@bansalimmigration.com.au | **Also in `CRM_ACCESS_EXEMPT_STAFF_IDS`** — full client/lead visibility (exempt, logged daily) |
+| 36718 | Vipul Goyal | Immi2@bansalimmigration.com.au | **Default privileged staff** (with the other eight) — full client/lead visibility when exempt env is omitted (exempt mirrors approvers) |
 | 36523 | Sam (Shubam) | shubambansal.au1@gmail.com |
 | 36836 | Yadwinder Pal Singh | migration8899@gmail.com |
 | 36830 | Ankit Bansal | admin@bansaleducation.com.au |
+
+> **Default exemption:** If `CRM_ACCESS_EXEMPT_STAFF_IDS` is **omitted or blank**, `exempt_staff_ids` is the **same** as the resolved `approver_staff_ids` (from `CRM_ACCESS_APPROVER_STAFF_IDS` or the canonical nine-id fallback in `config/crm_access.php`).
 
 ### `user_roles` (confirmed from DB)
 
@@ -581,4 +548,4 @@ Fields:
 
 ---
 
-*Document version: 5.0 — product rules in §1–2, §12–13; operational truth for routes/config/controllers in §7, §9, §14–15.*
+*Document version: 5.3 — product rules in §1–2, §12–13; operational truth for routes/config/controllers in §7, §9, §14–15.*

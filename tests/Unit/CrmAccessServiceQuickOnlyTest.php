@@ -66,15 +66,47 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
 
     public function test_exempt_staff_id_bypasses_allocation(): void
     {
-        $staff = new Staff(['id' => 36718, 'role' => 13]);
+        $this->assertContains(
+            36718,
+            config('crm_access.exempt_staff_ids', []),
+            'exempt_staff_ids should include default privileged staff (see config/crm_access.php)'
+        );
+        $staff = new Staff(['role' => 13]);
+        $staff->id = 36718;
         $this->assertTrue((new CrmAccessService())->isExemptRole($staff));
         $this->assertTrue(\App\Support\StaffClientVisibility::isExemptFromAllocation($staff));
+    }
+
+    public function test_exempt_staff_ids_can_differ_from_approvers_when_configured(): void
+    {
+        $prevApprovers = config('crm_access.approver_staff_ids');
+        $prevExempt = config('crm_access.exempt_staff_ids');
+        try {
+            config([
+                'crm_access.approver_staff_ids' => [36718],
+                'crm_access.exempt_staff_ids' => [50001],
+            ]);
+            $exemptOnly = new Staff(['role' => 13]);
+            $exemptOnly->id = 50001;
+            $this->assertTrue((new CrmAccessService())->isExemptRole($exemptOnly));
+
+            $approverOnly = new Staff(['role' => 13]);
+            $approverOnly->id = 36718;
+            $this->assertTrue((new CrmAccessService())->isApprover($approverOnly));
+            $this->assertFalse((new CrmAccessService())->isExemptRole($approverOnly));
+        } finally {
+            config([
+                'crm_access.approver_staff_ids' => $prevApprovers,
+                'crm_access.exempt_staff_ids' => $prevExempt,
+            ]);
+        }
     }
 
     public function test_can_manage_staff_quick_access_for_approver(): void
     {
         config(['crm_access.approver_staff_ids' => [36718]]);
-        $approver = new Staff(['id' => 36718, 'role' => 13, 'status' => 1]);
+        $approver = new Staff(['role' => 13, 'status' => 1]);
+        $approver->id = 36718;
         $svc = new CrmAccessService();
         $this->assertTrue($svc->isApprover($approver));
         $this->assertTrue($svc->canManageStaffQuickAccess($approver));
