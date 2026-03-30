@@ -500,45 +500,48 @@ class DashboardService
             return ['success' => false, 'message' => 'Failed to complete action'];
         }
 
-        // Create completed action activity log (only if client_id exists - Personal Actions have null)
+        // Activity Feed: log completion for client-linked actions, except Client Portal category (matches AssigneeController).
         if ($noteData->client_id) {
-            $assigneeName = 'N/A';
-            if ($noteData->assigned_to) {
-                $assignee = \App\Models\Staff::find($noteData->assigned_to);
-                $assigneeName = $assignee ? $assignee->first_name . ' ' . $assignee->last_name : 'N/A';
-            }
+            $taskGroup = $noteData->task_group ?? '';
 
-            $description = '';
-            if (!empty($completionNotes)) {
-                $description .= '<p>';
-                $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
-                $description .= 'style="cursor: pointer; color: #6c757d;" ';
-                $description .= 'title="Convert to Note" ';
-                $description .= 'data-activity-id="" ';
-                $description .= 'data-activity-subject="Completion Notes" ';
-                $description .= 'data-activity-description="' . htmlspecialchars($completionNotes, ENT_QUOTES) . '" ';
-                $description .= 'data-activity-created-by="' . Auth::id() . '" ';
-                $description .= 'data-activity-created-at="' . now() . '" ';
-                $description .= 'data-client-id="' . $noteData->client_id . '"></i></p>';
-                $description .= '<p>' . nl2br(htmlspecialchars($completionNotes)) . '</p>';
-                $description .= '<hr>';
-            }
-            $description .= '<p>' . ($noteData->description ?? '') . '</p>';
+            if ((string) $taskGroup !== 'Client Portal') {
+                $assigneeName = 'N/A';
+                if ($noteData->assigned_to) {
+                    $assignee = \App\Models\Staff::find($noteData->assigned_to);
+                    $assigneeName = $assignee ? $assignee->first_name . ' ' . $assignee->last_name : 'N/A';
+                }
 
-            ActivitiesLog::create([
-                'client_id' => $noteData->client_id,
-                'created_by' => Auth::id(),
-                'subject' => 'completed action for ' . $assigneeName,
-                'description' => $description,
-                'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
-                'followup_date' => $noteData->updated_at,
-                'task_group' => $noteData->task_group ?? null,
-                'task_status' => 1,
-                'pin' => 0,
-            ]);
+                $description = '';
+                if (!empty($completionNotes)) {
+                    $description .= '<p>';
+                    $description .= '<i class="fas fa-ellipsis-v convert-activity-to-note" ';
+                    $description .= 'style="cursor: pointer; color: #6c757d;" ';
+                    $description .= 'title="Convert to Note" ';
+                    $description .= 'data-activity-id="" ';
+                    $description .= 'data-activity-subject="Completion Notes" ';
+                    $description .= 'data-activity-description="' . htmlspecialchars($completionNotes, ENT_QUOTES) . '" ';
+                    $description .= 'data-activity-created-by="' . Auth::id() . '" ';
+                    $description .= 'data-activity-created-at="' . now() . '" ';
+                    $description .= 'data-client-id="' . $noteData->client_id . '"></i></p>';
+                    $description .= '<p>' . nl2br(htmlspecialchars($completionNotes)) . '</p>';
+                    $description .= '<hr>';
+                }
+                $description .= '<p>' . ($noteData->description ?? '') . '</p>';
+
+                ActivitiesLog::create([
+                    'client_id' => $noteData->client_id,
+                    'created_by' => Auth::id(),
+                    'subject' => 'completed action for ' . $assigneeName,
+                    'description' => $description,
+                    'use_for' => (Auth::id() != $noteData->assigned_to) ? $noteData->assigned_to : null,
+                    'followup_date' => $noteData->updated_at,
+                    'task_group' => $noteData->task_group ?? null,
+                    'task_status' => 1,
+                    'pin' => 0,
+                ]);
+            }
 
             // Client Portal category only: notify client (notification list API + push + real-time)
-            $taskGroup = $noteData->task_group ?? '';
             if ((string) $taskGroup === 'Client Portal') {
                 $messageText = trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string) ($noteData->description ?? ''))));
                 if (mb_strlen($messageText) > 200) {

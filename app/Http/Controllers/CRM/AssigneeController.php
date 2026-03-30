@@ -112,25 +112,29 @@ class AssigneeController extends Controller
                     $description .= '<hr>';
                 }
                 $description .= '<p>'.@$note_data['description'].'</p>';
-                
-                $objs = new ActivitiesLog;
-                $objs->client_id = $note_data['client_id'];
-                $objs->created_by = Auth::user()->id;
-                $objs->subject = 'completed action for '.@$assignee_name;
-                $objs->description = $description;
-                if(Auth::user()->id != @$note_data['assigned_to']){
-                    $objs->use_for = @$note_data['assigned_to'];
-                } else {
-                    $objs->use_for = null;
+
+                // Skip Personal Details Activity Feed for Client Portal actions (Action page category);
+                // client notifications below still run; other task groups keep the completion log.
+                $taskGroup = $note_data['task_group'] ?? '';
+                if ((string) $taskGroup !== 'Client Portal') {
+                    $objs = new ActivitiesLog;
+                    $objs->client_id = $note_data['client_id'];
+                    $objs->created_by = Auth::user()->id;
+                    $objs->subject = 'completed action for '.@$assignee_name;
+                    $objs->description = $description;
+                    if(Auth::user()->id != @$note_data['assigned_to']){
+                        $objs->use_for = @$note_data['assigned_to'];
+                    } else {
+                        $objs->use_for = null;
+                    }
+                    $objs->followup_date = @$note_data['updated_at']; // ActivitiesLog uses followup_date
+                    $objs->task_group = $taskGroup;
+                    $objs->task_status = 1; //marked completed
+                    $objs->pin = 0;
+                    $objs->save();
                 }
-                $objs->followup_date = @$note_data['updated_at']; // ActivitiesLog uses followup_date
-                $objs->task_group = @$note_data['task_group'];
-                $objs->task_status = 1; //marked completed
-                $objs->pin = 0;
-                $objs->save();
 
                 // Client Portal category only: notify client (notification list API + push + real-time)
-                $taskGroup = $note_data['task_group'] ?? '';
                 $clientId = $note_data['client_id'] ?? null;
                 if ($clientId && (string) $taskGroup === 'Client Portal') {
                     $messageText = trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string) ($note_data['description'] ?? ''))));
@@ -790,8 +794,8 @@ class AssigneeController extends Controller
             // Step 1: Mark the current action as complete
             $currentAction->update(['status' => '1']);
 
-            // Step 2: Create activity log for action completion (only if there's a client_id)
-            if ($currentAction->client_id) {
+            // Step 2: Activity Feed log for completed action (omit Client Portal — same as Action page complete flow)
+            if ($currentAction->client_id && (string) ($currentAction->task_group ?? '') !== 'Client Portal') {
                 $completionLog = new ActivitiesLog;
                 $completionLog->client_id = $currentAction->client_id;
                 $completionLog->created_by = Auth::user()->id;
@@ -831,8 +835,8 @@ class AssigneeController extends Controller
             $newAction->unique_group_id = $actionUniqueId; // Generate unique group ID for the new action
             $newAction->save();
 
-            // Step 4: Create activity log for new action creation (only if there's a client_id)
-            if ($clientId) {
+            // Step 4: Activity Feed log for the new action (omit when new row is Client Portal category)
+            if ($clientId && (string) ($validated['task_group'] ?? '') !== 'Client Portal') {
                 $newActionLog = new ActivitiesLog;
                 $newActionLog->client_id = $clientId;
                 $newActionLog->created_by = Auth::user()->id;

@@ -5040,13 +5040,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formData = new FormData();
                 formData.append('message', messageText);
                 formData.append('client_matter_id', effectiveMatterId);
+                formData.append('source', 'client_portal');
                 pendingFiles.forEach(function(f) { formData.append('attachments[]', f); });
                 options.body = formData;
             } else {
                 options.headers['Content-Type'] = 'application/json';
                 options.body = JSON.stringify({
                     message: messageText,
-                    client_matter_id: effectiveMatterId
+                    client_matter_id: effectiveMatterId,
+                    source: 'client_portal'
                 });
             }
             
@@ -5217,7 +5219,8 @@ $(document).ready(function () {
                 wf_stage: wfStage,
                 'cp_checklist_names[]': selectedNames,
                 description: $('#cp_checklist_description').val(),
-                allow_client: $('#cp_allow_client').is(':checked') ? 1 : 0
+                allow_client: $('#cp_allow_client').is(':checked') ? 1 : 0,
+                source: 'client_portal'
             },
             success: function (response) {
                 $btn.prop('disabled', false).text('Add Checklist');
@@ -6146,7 +6149,7 @@ $(document).on('click', '.cp-delete-doc-btn', function () {
     $.ajax({
         url: '/api/client-portal/delete-document',
         method: 'POST',
-        data: { document_id: documentId, _token: $('meta[name="csrf-token"]').attr('content') },
+        data: { document_id: documentId, source: 'client_portal', _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
                 $row.remove();
@@ -6185,7 +6188,7 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
     $.ajax({
         url: '/api/client-portal/update-document-status',
         method: 'POST',
-        data: { document_id: documentId, status: 1, _token: $('meta[name="csrf-token"]').attr('content') },
+        data: { document_id: documentId, status: 1, source: 'client_portal', _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
                 $statusCell.html('<span class="badge badge-success">Approved</span>');
@@ -6218,7 +6221,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
     $.ajax({
         url: '/api/client-portal/update-document-status',
         method: 'POST',
-        data: { document_id: documentId, status: 2, rejection_reason: reason, _token: $('meta[name="csrf-token"]').attr('content') },
+        data: { document_id: documentId, status: 2, rejection_reason: reason, source: 'client_portal', _token: $('meta[name="csrf-token"]').attr('content') },
         success: function (response) {
             if (response.success) {
                 $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-danger" title="' + $('<div>').text(reason || 'No reason provided').html() + '" style="cursor:help;">Rejected</span>');

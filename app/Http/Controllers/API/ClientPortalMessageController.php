@@ -269,17 +269,19 @@ class ClientPortalMessageController extends Controller
                     ]);
                 }
 
-                // Create activity log
-                DB::table('activities_logs')->insert([
-                    'client_id' => $senderId,
-                    'created_by' => $senderId,
-                    'subject' => 'Message sent to client',
-                    'description' => 'Message sent from web page to client ' . $recipientUser->full_name . ' for matter ID: ' . $clientMatterId,
-                    'task_status' => 0, // Required NOT NULL field (0 = activity, 1 = task)
-                    'pin' => 0, // Required NOT NULL field (0 = not pinned, 1 = pinned)
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                // Activity Feed: skip when caller marks Client Portal CRM tab (matches ClientPortalController::sendMessageToClient).
+                if ($request->input('source') !== 'client_portal') {
+                    DB::table('activities_logs')->insert([
+                        'client_id' => $senderId,
+                        'created_by' => $senderId,
+                        'subject' => 'Message sent to client',
+                        'description' => 'Message sent from web page to client ' . $recipientUser->full_name . ' for matter ID: ' . $clientMatterId,
+                        'task_status' => 0, // Required NOT NULL field (0 = activity, 1 = task)
+                        'pin' => 0, // Required NOT NULL field (0 = not pinned, 1 = pinned)
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,

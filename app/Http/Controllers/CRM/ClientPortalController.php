@@ -3844,35 +3844,38 @@ class ClientPortalController extends Controller
 				}
 				$isLastStage = !$isLastStageQuery->exists();
 
-				// Log activity (Client Portal tab - website)
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
-				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
-				if ($isAdvancingToDecisionReceived) {
-					$decisionOutcome = $request->input('decision_outcome');
-					$decisionNote = $request->input('decision_note', '');
-					$comments .= '<br>Outcome: <b>' . e($decisionOutcome) . '</b>';
-					if (!empty(trim($decisionNote))) {
-						$comments .= '<br>Note: ' . e($decisionNote);
-					}
-				}
-				if ($isAtVerificationStage) {
-					$verificationNote = $request->input('verification_note', '');
-					if (!empty(trim($verificationNote))) {
-						$comments .= '<br>Verification note: ' . e($verificationNote);
-					}
-				}
 
-				$activityLog = new ActivitiesLog;
-				$activityLog->client_id = $clientMatter->client_id;
-				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
-				$activityLog->description = $comments;
-				$activityLog->activity_type = 'stage';
-				$activityLog->use_for = 'matter';
-				$activityLog->task_status = 0;
-				$activityLog->pin = 0;
-				$activityLog->source = 'client_portal_web';
-				$activityLog->save();
+				// Activity Feed (activities_logs): skip when request is from Client Portal tab; keep for Workflow tab etc.
+				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $nextStage->name . '</b>';
+					if ($isAdvancingToDecisionReceived) {
+						$decisionOutcome = $request->input('decision_outcome');
+						$decisionNote = $request->input('decision_note', '');
+						$comments .= '<br>Outcome: <b>' . e($decisionOutcome) . '</b>';
+						if (!empty(trim($decisionNote))) {
+							$comments .= '<br>Note: ' . e($decisionNote);
+						}
+					}
+					if ($isAtVerificationStage) {
+						$verificationNote = $request->input('verification_note', '');
+						if (!empty(trim($verificationNote))) {
+							$comments .= '<br>Verification note: ' . e($verificationNote);
+						}
+					}
+
+					$activityLog = new ActivitiesLog;
+					$activityLog->client_id = $clientMatter->client_id;
+					$activityLog->created_by = Auth::user()->id;
+					$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
+					$activityLog->description = $comments;
+					$activityLog->activity_type = 'stage';
+					$activityLog->use_for = 'matter';
+					$activityLog->task_status = 0;
+					$activityLog->pin = 0;
+					$activityLog->source = 'client_portal_web';
+					$activityLog->save();
+				}
 
 				// Create action for Action page Client Portal tab (only when triggered from Client Portal tab)
 				if ($request->input('source') === 'client_portal') {
@@ -4024,19 +4027,23 @@ class ClientPortalController extends Controller
 				$isFirstStage = !WorkflowStage::whereRaw('COALESCE(sort_order, id) < ?', [$prevOrder])->exists();
 
 				$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $matterId;
-				$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
 
-				$activityLog = new ActivitiesLog;
-				$activityLog->client_id = $clientMatter->client_id;
-				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
-				$activityLog->description = $comments;
-				$activityLog->activity_type = 'stage';
-				$activityLog->use_for = 'matter';
-				$activityLog->task_status = 0;
-				$activityLog->pin = 0;
-				$activityLog->source = 'client_portal_web';
-				$activityLog->save();
+				// Activity Feed (activities_logs): skip when request is from Client Portal tab; keep for Workflow tab etc.
+				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+					$comments = 'moved the stage from <b>' . $currentStage->name . '</b> to <b>' . $prevStage->name . '</b>';
+
+					$activityLog = new ActivitiesLog;
+					$activityLog->client_id = $clientMatter->client_id;
+					$activityLog->created_by = Auth::user()->id;
+					$activityLog->subject = $matterNo . ' Stage: ' . $currentStage->name;
+					$activityLog->description = $comments;
+					$activityLog->activity_type = 'stage';
+					$activityLog->use_for = 'matter';
+					$activityLog->task_status = 0;
+					$activityLog->pin = 0;
+					$activityLog->source = 'client_portal_web';
+					$activityLog->save();
+				}
 
 				// Create action for Action page Client Portal tab (only when triggered from Client Portal tab)
 				if ($request->input('source') === 'client_portal') {
@@ -4085,6 +4092,23 @@ class ClientPortalController extends Controller
 				'message' => 'An error occurred while updating the stage. Please try again.'
 			], 500);
 		}
+	}
+
+	/**
+	 * When staff act from the Client Portal tab (or legacy application tab), we skip writing to
+	 * activities_logs so the Personal Details Activity Feed is not duplicated; Action page still
+	 * uses notes via createClientPortalAction(). Workflow tab and matter list keep full logging.
+	 * Pass source=client_portal (or current_tab client_portal/application) from the Client Portal UI
+	 * for stage, matter, document, and staff message flows. Detail approve/reject endpoints do not
+	 * insert activities_logs rows.
+	 */
+	private function shouldOmitActivitiesLogForClientPortalWebContext(Request $request): bool
+	{
+		if ($request->input('source') === 'client_portal') {
+			return true;
+		}
+		$tab = (string) $request->input('current_tab', '');
+		return in_array($tab, ['application', 'client_portal'], true);
 	}
 
 	/**
@@ -4174,17 +4198,21 @@ class ClientPortalController extends Controller
 			$clientMatter->save();
 
 			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID:' . $matterId;
-			$activityLog = new ActivitiesLog;
-			$activityLog->client_id = $clientMatter->client_id;
-			$activityLog->created_by = Auth::user()->id;
-			$activityLog->subject = $matterNo . ' Workflow changed to ' . $workflow->name;
-			$activityLog->description = 'Workflow changed to <b>' . e($workflow->name) . '</b>. Stage mapped accordingly.';
-			$activityLog->activity_type = 'stage';
-			$activityLog->use_for = 'matter';
-			$activityLog->task_status = 0;
-			$activityLog->pin = 0;
-			$activityLog->source = 'client_portal_web';
-			$activityLog->save();
+
+			// Activity Feed: Workflow tab does not send source; omit only if Client Portal context is explicit.
+			if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientMatter->client_id;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = $matterNo . ' Workflow changed to ' . $workflow->name;
+				$activityLog->description = 'Workflow changed to <b>' . e($workflow->name) . '</b>. Stage mapped accordingly.';
+				$activityLog->activity_type = 'stage';
+				$activityLog->use_for = 'matter';
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->source = 'client_portal_web';
+				$activityLog->save();
+			}
 
 			return response()->json([
 				'status' => true,
@@ -4243,17 +4271,20 @@ class ClientPortalController extends Controller
 					$description .= '<br>Notes: ' . e($notes);
 				}
 
-				$activityLog = new ActivitiesLog;
-				$activityLog->client_id = $clientMatter->client_id;
-				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = 'Matter Discontinued';
-				$activityLog->description = $description;
-				$activityLog->activity_type = 'stage';
-				$activityLog->use_for = 'matter';
-				$activityLog->task_status = 0;
-				$activityLog->pin = 0;
-				$activityLog->source = 'client_portal_web';
-				$activityLog->save();
+				// Activity Feed: omit when discontinuing from Client Portal / application tab (current_tab in request).
+				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+					$activityLog = new ActivitiesLog;
+					$activityLog->client_id = $clientMatter->client_id;
+					$activityLog->created_by = Auth::user()->id;
+					$activityLog->subject = 'Matter Discontinued';
+					$activityLog->description = $description;
+					$activityLog->activity_type = 'stage';
+					$activityLog->use_for = 'matter';
+					$activityLog->task_status = 0;
+					$activityLog->pin = 0;
+					$activityLog->source = 'client_portal_web';
+					$activityLog->save();
+				}
 
 				// Notify client and send push when Discontinue is from Client Portal tab only
 				$currentTab = $request->input('current_tab', 'personaldetails');
@@ -4355,17 +4386,20 @@ class ClientPortalController extends Controller
 			if ($saved) {
 				// applications table removed
 
-				$activityLog = new ActivitiesLog;
-				$activityLog->client_id = $clientMatter->client_id;
-				$activityLog->created_by = Auth::user()->id;
-				$activityLog->subject = 'Matter Reopened';
-				$activityLog->description = 'Matter was reopened and set back to active.';
-				$activityLog->activity_type = 'stage';
-				$activityLog->use_for = 'matter';
-				$activityLog->task_status = 0;
-				$activityLog->pin = 0;
-				$activityLog->source = 'client_portal_web';
-				$activityLog->save();
+				// Activity Feed: omit when reopening from client detail Client Portal / application tab; keep for Workflow tab and matter list.
+				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+					$activityLog = new ActivitiesLog;
+					$activityLog->client_id = $clientMatter->client_id;
+					$activityLog->created_by = Auth::user()->id;
+					$activityLog->subject = 'Matter Reopened';
+					$activityLog->description = 'Matter was reopened and set back to active.';
+					$activityLog->activity_type = 'stage';
+					$activityLog->use_for = 'matter';
+					$activityLog->task_status = 0;
+					$activityLog->pin = 0;
+					$activityLog->source = 'client_portal_web';
+					$activityLog->save();
+				}
 
 				// Notify client and send push when Reopen is from Client Portal tab OR from Matter List (only if Client Portal is active)
 				$currentTab = $request->input('current_tab', '');
@@ -4472,16 +4506,19 @@ class ClientPortalController extends Controller
 			$clientId = $clientMatter->client_id;
 			$clientMatter->delete();
 
-			$activityLog = new ActivitiesLog;
-			$activityLog->client_id = $clientId;
-			$activityLog->created_by = Auth::user()->id;
-			$activityLog->subject = 'Matter Deleted';
-			$activityLog->description = 'Matter #' . $matterId . ' was permanently deleted from closed matters.';
-			$activityLog->activity_type = 'stage';
-			$activityLog->task_status = 0;
-			$activityLog->pin = 0;
-			$activityLog->source = 'client_portal_web';
-			$activityLog->save();
+			// Activity Feed: omit when delete is invoked with Client Portal context (source/current_tab).
+			if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+				$activityLog = new ActivitiesLog;
+				$activityLog->client_id = $clientId;
+				$activityLog->created_by = Auth::user()->id;
+				$activityLog->subject = 'Matter Deleted';
+				$activityLog->description = 'Matter #' . $matterId . ' was permanently deleted from closed matters.';
+				$activityLog->activity_type = 'stage';
+				$activityLog->task_status = 0;
+				$activityLog->pin = 0;
+				$activityLog->source = 'client_portal_web';
+				$activityLog->save();
+			}
 
 			return response()->json([
 				'status' => true,
@@ -5339,17 +5376,19 @@ $docType = $docList ? $docList->cp_checklist_name : ($appdoc->file_name ?? 'Docu
 					$clientMatterId = $doc->client_matter_id ?? null;
 					$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 					if ($clientMatter && !empty($clientMatter->client_id)) {
-						DB::table('activities_logs')->insert([
-							'client_id' => $clientMatter->client_id,
-							'created_by' => Auth::guard('admin')->id(),
-							'subject' => 'Approved document in Client Portal (Documents tab)',
-							'description' => 'Document approved via Client Portal tab (website) for document ID: ' . $documentId,
-							'task_status' => 0,
-							'pin' => 0,
-							'source' => 'client_portal_web',
-							'created_at' => now(),
-							'updated_at' => now()
-						]);
+						if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+							DB::table('activities_logs')->insert([
+								'client_id' => $clientMatter->client_id,
+								'created_by' => Auth::guard('admin')->id(),
+								'subject' => 'Approved document in Client Portal (Documents tab)',
+								'description' => 'Document approved via Client Portal tab (website) for document ID: ' . $documentId,
+								'task_status' => 0,
+								'pin' => 0,
+								'source' => 'client_portal_web',
+								'created_at' => now(),
+								'updated_at' => now()
+							]);
+						}
 
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
@@ -5427,17 +5466,19 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 					$clientMatterId = $doc->client_matter_id ?? null;
 					$clientMatter = $clientMatterId ? DB::table('client_matters')->where('id', $clientMatterId)->first() : null;
 					if ($clientMatter && !empty($clientMatter->client_id)) {
-						DB::table('activities_logs')->insert([
-							'client_id' => $clientMatter->client_id,
-							'created_by' => Auth::guard('admin')->id(),
-							'subject' => 'Rejected document in Client Portal (Documents tab)',
-							'description' => 'Document rejected via Client Portal tab (website) for document ID: ' . $documentId . (trim($rejectReason ?? '') !== '' ? '. Reason: ' . trim($rejectReason) : ''),
-							'task_status' => 0,
-							'pin' => 0,
-							'source' => 'client_portal_web',
-							'created_at' => now(),
-							'updated_at' => now()
-						]);
+						if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+							DB::table('activities_logs')->insert([
+								'client_id' => $clientMatter->client_id,
+								'created_by' => Auth::guard('admin')->id(),
+								'subject' => 'Rejected document in Client Portal (Documents tab)',
+								'description' => 'Document rejected via Client Portal tab (website) for document ID: ' . $documentId . (trim($rejectReason ?? '') !== '' ? '. Reason: ' . trim($rejectReason) : ''),
+								'task_status' => 0,
+								'pin' => 0,
+								'source' => 'client_portal_web',
+								'created_at' => now(),
+								'updated_at' => now()
+							]);
+						}
 
 						// Notify client (for List Notifications API)
 						$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatter->id;
@@ -6022,18 +6063,20 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 					'updated_at' => now()
 				]);
 
-				// Create activity log (message sent from website Client Portal tab)
-				DB::table('activities_logs')->insert([
-					'client_id' => $clientId,
-					'created_by' => $senderId,
-					'subject' => 'Message sent to client',
-					'description' => 'Message sent from Client Portal tab (website) to client ' . $recipientUser->full_name . ' for matter ID: ' . $clientMatterId,
-					'task_status' => 0,
-					'pin' => 0,
-					'source' => 'client_portal_web',
-					'created_at' => now(),
-					'updated_at' => now()
-				]);
+				// Activity Feed: omit when sending from Client Portal tab (request marks source / current_tab).
+				if (!$this->shouldOmitActivitiesLogForClientPortalWebContext($request)) {
+					DB::table('activities_logs')->insert([
+						'client_id' => $clientId,
+						'created_by' => $senderId,
+						'subject' => 'Message sent to client',
+						'description' => 'Message sent from Client Portal tab (website) to client ' . $recipientUser->full_name . ' for matter ID: ' . $clientMatterId,
+						'task_status' => 0,
+						'pin' => 0,
+						'source' => 'client_portal_web',
+						'created_at' => now(),
+						'updated_at' => now()
+					]);
+				}
 
 				// Actor name for notification and Action page: Super admin or PERSON ASSISTING / staff name
 				$actor = Auth::guard('admin')->user();
