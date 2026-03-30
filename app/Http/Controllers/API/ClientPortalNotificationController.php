@@ -53,6 +53,59 @@ class ClientPortalNotificationController extends Controller
     }
 
     /**
+     * Five most recent unread notifications for the authenticated user (client-portal types only).
+     *
+     * GET /api/notifications/recent-unread (auth:sanctum)
+     */
+    public function recentUnread(Request $request)
+    {
+        try {
+            $clientId = $request->user()->id;
+
+            $notifications = DB::table('notifications')
+                ->leftJoin('staff as sender_staff', 'notifications.sender_id', '=', 'sender_staff.id')
+                ->leftJoin('admins as sender_admin', 'notifications.sender_id', '=', 'sender_admin.id')
+                ->where('notifications.receiver_id', $clientId)
+                ->whereIn('notifications.notification_type', self::CLIENT_PORTAL_NOTIFICATION_TYPES)
+                ->where('notifications.receiver_status', 0)
+                ->select(
+                    'notifications.id',
+                    'notifications.sender_id',
+                    'notifications.module_id as client_matter_id',
+                    'notifications.url',
+                    'notifications.notification_type',
+                    'notifications.message',
+                    'notifications.receiver_status as is_read',
+                    'notifications.seen',
+                    'notifications.created_at',
+                    'notifications.updated_at',
+                    DB::raw("(COALESCE(sender_staff.first_name, sender_admin.first_name, '') || ' ' || COALESCE(sender_staff.last_name, sender_admin.last_name, '')) as sender_name")
+                )
+                ->orderBy('notifications.created_at', 'desc')
+                ->limit(1)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'notifications' => $notifications,
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('ClientPortal Notification RecentUnread Error: ' . $e->getMessage(), [
+                'user_id' => $request->user()?->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch recent unread notifications',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * List all notifications for the authenticated client (client-portal related only).
      * Optionally filter by client_matter_id (matter).
      *

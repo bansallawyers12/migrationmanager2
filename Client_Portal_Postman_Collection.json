@@ -10735,6 +10735,78 @@
 							"body": "{\n    \"message\": \"Unauthenticated.\"\n}"
 						}
 					]
+				},
+				{
+					"name": "Get Recent Notification List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Use token from login response"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/recent-unread",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"recent-unread"
+							]
+						},
+						"description": "Returns up to 5 most recent **unread** client-portal notifications for the authenticated user (same types as List Notifications). Ordered by `created_at` descending. **Requires** `Authorization: Bearer {{auth_token}}` (Sanctum)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{auth_token}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/notifications/recent-unread",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"notifications",
+										"recent-unread"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"notifications\": []\n    }\n}"
+						}
+					]
 				}
 			]
 		}
