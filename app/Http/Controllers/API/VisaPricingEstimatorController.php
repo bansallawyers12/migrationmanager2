@@ -164,15 +164,6 @@ class VisaPricingEstimatorController extends BaseController
         ];
 
         $result = [
-            'visa' => [
-                'id' => $visa['id'],
-                'label' => $visa['label'],
-                'base_charge' => $visa['base_charge'] ?? null,
-                'additional_18_plus' => $visa['additional_18_plus'] ?? null,
-                'additional_u18' => $visa['additional_u18'] ?? null,
-                'non_internet_app_charge' => $visa['non_internet_app_charge'] ?? null,
-                'subsequent_temp_app_charge' => $visa['subsequent_temp_app_charge'] ?? null,
-            ],
             'line_items' => $lineItems,
             'total' => round($total, 2),
             'currency' => 'AUD',
