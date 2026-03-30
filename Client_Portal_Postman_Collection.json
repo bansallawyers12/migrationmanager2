@@ -8102,18 +8102,24 @@
 								{
 									"key": "q",
 									"value": "partner",
-									"description": "Search query - filter by visa name, subclass, or stream (optional)",
+									"description": "Optional. Case-insensitive substring match on visa label only.",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Optional. Page number (integer min 1). Same pattern as GET /api/notifications. Default 1.",
 									"disabled": true
 								},
 								{
 									"key": "limit",
-									"value": "50",
-									"description": "Max results (optional, default: 50, max: 100)",
+									"value": "20",
+									"description": "Optional. Items per page (integer min 1, max 100). Default 20.",
 									"disabled": true
 								}
 							]
 						},
-						"description": "Get visa list with optional search. Aligned with Australian Department of Home Affairs Visa Pricing Estimator.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Query Parameters:**\n- `q` (optional): Search - filter by visa label, subclass, or stream\n- `limit` (optional): Max results (default 50, max 100)\n\n**Response:**\n- `200`: Visa list retrieved successfully\n\n**Reference:** https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator"
+						"description": "Get paginated visa list with optional label search. Query style matches `GET /api/notifications` (`page`, `limit`).\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Query parameters:**\n- `q` (optional): Substring search on `label` only\n- `page` (optional): Page number, integer ≥ 1, default `1`\n- `limit` (optional): Page size, integer 1–100, default `20`\n\n**Validation:** Invalid `q` / `page` / `limit` returns `422` with `success: false`, `message: Validation failed`, and `errors` (same shape as notifications list).\n\n**Response `200`:** `data` is an object with:\n- `data`: array of visas — `id`, `label`, `subclass` (parsed from label when `(subclass …)` present), `stream` (always `null`)\n- `pagination`: `current_page`, `per_page`, `total`, `last_page`, `from`, `to`\n\n**Reference:** https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator"
 					},
 					"response": [
 						{
@@ -8127,13 +8133,23 @@
 									}
 								],
 								"url": {
-									"raw": "{{base_url}}/visa-estimate/visa-list",
+									"raw": "{{base_url}}/visa-estimate/visa-list?page=1&limit=20",
 									"host": [
 										"{{base_url}}"
 									],
 									"path": [
 										"visa-estimate",
 										"visa-list"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										}
 									]
 								}
 							},
@@ -8147,7 +8163,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"message\": \"Visa list retrieved successfully\",\n    \"data\": [\n        {\n            \"id\": \"partner_309_100\",\n            \"label\": \"Partner (Provisional and Migrant) visa (subclass 309/100)\",\n            \"subclass\": \"309/100\",\n            \"stream\": null\n        }\n    ]\n}"
+							"body": "{\n    \"success\": true,\n    \"message\": \"Visa list retrieved successfully\",\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": \"71\",\n                \"label\": \"Partner (Provisional and Migrant) visa (subclass 309/100)\",\n                \"subclass\": \"309/100\",\n                \"stream\": null\n            }\n        ],\n        \"pagination\": {\n            \"current_page\": 1,\n            \"per_page\": 20,\n            \"total\": 154,\n            \"last_page\": 8,\n            \"from\": 1,\n            \"to\": 20\n        }\n    }\n}"
 						}
 					]
 				},
@@ -8173,7 +8189,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"visa_id\": \"partner_309_100\",\n    \"additional_applicants_18_plus\": 1,\n    \"additional_applicants_u18\": 3\n}",
+							"raw": "{\n    \"visa_id\": 71,\n    \"additional_applicants_18_plus\": 1,\n    \"additional_applicants_u18\": 3\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8190,7 +8206,7 @@
 								"estimate"
 							]
 						},
-						"description": "Calculate visa pricing estimate. Aligned with Australian Department of Home Affairs Visa Pricing Estimator.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Request Body:**\n- `visa_id` (required): Visa ID from visa-list API (e.g. partner_309_100)\n- `lodging_date` (optional): Application date (YYYY-MM-DD)\n- `additional_applicants_18_plus` (optional): Count of additional applicants 18+ (default 0)\n- `additional_applicants_u18` (optional): Count of additional applicants under 18 (default 0)\n\n**Response:**\n- `200`: Estimate calculated with line_items, total, currency\n- `404`: Visa not found\n\n**Reference:** https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator"
+						"description": "Calculate visa pricing estimate. Aligned with Australian Department of Home Affairs Visa Pricing Estimator.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Request Body:**\n- `visa_id` (required): Integer ID from `GET /visa-estimate/visa-list` response item `id` (e.g. `71` for Partner 309/100 row)\n- `lodging_date` (optional): Application date (YYYY-MM-DD)\n- `lodging_online` (optional): boolean\n- `primary_in_australia` (optional): boolean\n- `primary_holds_table2_visa` (optional): boolean\n- `additional_applicants_18_plus` (optional): Count of additional applicants 18+ (default 0)\n- `additional_applicants_u18` (optional): Count of additional applicants under 18 (default 0)\n\n**Response `200`:** `data` contains `line_items`, `total`, `currency`, `price_starts_from`, `disclaimer` (no separate `visa` object).\n\n**Response:**\n- `404`: Visa not found (invalid `visa_id`)\n\n**Reference:** https://immi.homeaffairs.gov.au/visas/visa-pricing-estimator"
 					},
 					"response": [
 						{
@@ -8209,7 +8225,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"visa_id\": \"partner_309_100\",\n    \"additional_applicants_18_plus\": 1,\n    \"additional_applicants_u18\": 3\n}",
+									"raw": "{\n    \"visa_id\": 71,\n    \"additional_applicants_18_plus\": 1,\n    \"additional_applicants_u18\": 3\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8237,7 +8253,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"success\": true,\n    \"message\": \"Estimate calculated successfully\",\n    \"data\": {\n        \"line_items\": [\n            {\"product\": \"Partner (Provisional and Migrant) visa (subclass 309/100)\", \"quantity\": 1, \"price\": 9365},\n            {\"product\": \"Additional Applicant Charge 18+\", \"quantity\": 1, \"price\": 4685},\n            {\"product\": \"Additional Applicant Charge U18\", \"quantity\": 3, \"price\": 7035},\n            {\"product\": \"GST\", \"quantity\": 1, \"price\": 0}\n        ],\n        \"total\": 21085,\n        \"currency\": \"AUD\",\n        \"price_starts_from\": \"AUD 21,085.00\"\n    }\n}"
+							"body": "{\n    \"success\": true,\n    \"message\": \"Estimate calculated successfully\",\n    \"data\": {\n        \"line_items\": [\n            {\"product\": \"Partner (Provisional and Migrant) visa (subclass 309/100)\", \"quantity\": 1, \"price\": 9365},\n            {\"product\": \"Additional Applicant Charge 18+\", \"quantity\": 1, \"price\": 4685},\n            {\"product\": \"Additional Applicant Charge U18\", \"quantity\": 3, \"price\": 7035},\n            {\"product\": \"GST\", \"quantity\": 1, \"price\": 0}\n        ],\n        \"total\": 21085,\n        \"currency\": \"AUD\",\n        \"price_starts_from\": \"AUD 21,085.00\",\n        \"disclaimer\": \"This is an estimate only. The estimator might not include the second instalment payable for some visas. Verify current charges at https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges\"\n    }\n}"
 						}
 					]
 				}
