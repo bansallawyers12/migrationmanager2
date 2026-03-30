@@ -47,7 +47,7 @@ return [
     */
     'lead_full_access_role_ids' => array_values(array_filter(array_map(
         'intval',
-        explode(',', (string) env('CRM_LEAD_FULL_ACCESS_ROLE_IDS', '1,17,12'))
+        explode(',', (string) env('CRM_LEAD_FULL_ACCESS_ROLE_IDS', '1,17'))
     ), static fn (int $id) => $id > 0)),
 
     /*
