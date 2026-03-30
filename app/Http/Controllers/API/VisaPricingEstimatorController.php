@@ -19,39 +19,55 @@ class VisaPricingEstimatorController extends BaseController
      * GET /api/visa-estimate/visa-list
      *
      * Query Parameters:
-     * - q: Search query - filters by visa label, subclass, or stream (optional)
-     * - limit: Max results (optional, default: 50)
+     * - q: Search query - case-insensitive substring match on visa label only (optional)
+     * - page: Page number (optional, default: 1)
+     * - limit: Items per page (optional, default: 10, max: 100)
      */
     public function getVisaList(Request $request)
     {
         $search = trim((string) $request->query('q', ''));
-        $limit = min((int) $request->query('limit', 50), 100);
+        $limit = min(max((int) $request->query('limit', 10), 1), 100);
+        $page = max((int) $request->query('page', 1), 1);
 
         $visas = config('visa_pricing_estimator.visas', []);
 
         if ($search !== '') {
             $searchLower = mb_strtolower($search);
-            $visas = array_filter($visas, function ($visa) use ($searchLower) {
-                $label = mb_strtolower($visa['label'] ?? '');
-                $subclass = mb_strtolower($visa['subclass'] ?? '');
-                $stream = mb_strtolower($visa['stream'] ?? '');
-                return str_contains($label, $searchLower)
-                    || str_contains($subclass, $searchLower)
-                    || str_contains($stream, $searchLower);
-            });
-            $visas = array_values($visas);
+            $visas = array_values(array_filter($visas, function ($visa) use ($searchLower) {
+                $label = mb_strtolower((string) ($visa['label'] ?? ''));
+
+                return str_contains($label, $searchLower);
+            }));
         }
 
-        $visas = array_slice($visas, 0, $limit);
+        $total = count($visas);
+        $lastPage = $total > 0 ? (int) ceil($total / $limit) : 1;
+        if ($page > $lastPage) {
+            $page = $lastPage;
+        }
 
-        $result = array_map(function ($visa) {
+        $offset = ($page - 1) * $limit;
+        $pageItems = array_slice($visas, $offset, $limit);
+
+        $items = array_map(function ($visa) {
             return [
                 'id' => $visa['id'],
                 'label' => $visa['label'],
-                'subclass' => $visa['subclass'],
-                'stream' => $visa['stream'],
             ];
-        }, $visas);
+        }, $pageItems);
+
+        $countOnPage = count($pageItems);
+        $result = [
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total' => $total,
+                'last_page' => $lastPage,
+                'from' => $countOnPage > 0 ? $offset + 1 : null,
+                'to' => $countOnPage > 0 ? $offset + $countOnPage : null,
+            ],
+        ];
 
         return $this->sendResponse($result, 'Visa list retrieved successfully');
     }
@@ -72,7 +88,7 @@ class VisaPricingEstimatorController extends BaseController
     public function getEstimate(Request $request)
     {
         $validated = $request->validate([
-            'visa_id' => ['required', 'string', 'max:100'],
+            'visa_id' => ['required', 'integer', 'min:1'],
             'lodging_date' => ['nullable', 'string', 'date'],
             'lodging_online' => ['nullable', 'boolean'],
             'primary_in_australia' => ['nullable', 'boolean'],
@@ -81,7 +97,7 @@ class VisaPricingEstimatorController extends BaseController
             'additional_applicants_u18' => ['nullable', 'integer', 'min:0', 'max:20'],
         ]);
 
-        $visaId = $validated['visa_id'];
+        $visaId = (string) $validated['visa_id'];
         $additional18Plus = (int) ($validated['additional_applicants_18_plus'] ?? 0);
         $additionalU18 = (int) ($validated['additional_applicants_u18'] ?? 0);
 
@@ -140,11 +156,20 @@ class VisaPricingEstimatorController extends BaseController
         ];
 
         $result = [
-            'line_items' => $lineItems,
-            'total' => round($total, 2),
-            'currency' => 'AUD',
-            'price_starts_from' => 'AUD ' . number_format($total, 2, '.', ','),
-            'disclaimer' => 'This is an estimate only. The estimator might not include the second instalment payable for some visas. Verify current charges at https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges',
+            'visa' => [
+                'id' => $visa['id'],
+                'label' => $visa['label'],
+                'base_charge' => $visa['base_charge'] ?? null,
+                'additional_18_plus' => $visa['additional_18_plus'] ?? null,
+                'additional_u18' => $visa['additional_u18'] ?? null,
+                'non_internet_app_charge' => $visa['non_internet_app_charge'] ?? null,
+                'subsequent_temp_app_charge' => $visa['subsequent_temp_app_charge'] ?? null,
+            ],
+            // 'line_items' => $lineItems,
+            // 'total' => round($total, 2),
+            // 'currency' => 'AUD',
+            // 'price_starts_from' => 'AUD ' . number_format($total, 2, '.', ','),
+            // 'disclaimer' => 'This is an estimate only. The estimator might not include the second instalment payable for some visas. Verify current charges at https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges',
         ];
 
         return $this->sendResponse($result, 'Estimate calculated successfully');
