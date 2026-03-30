@@ -50,9 +50,17 @@ class VisaPricingEstimatorController extends BaseController
         $pageItems = array_slice($visas, $offset, $limit);
 
         $items = array_map(function ($visa) {
+            $label = (string) ($visa['label'] ?? '');
+            $subclass = null;
+            if (preg_match('/\(\s*subclass\s*([^)]+)\)/i', $label, $matches)) {
+                $subclass = trim($matches[1]);
+            }
+
             return [
                 'id' => $visa['id'],
-                'label' => $visa['label'],
+                'label' => $label,
+                'subclass' => $subclass,
+                'stream' => null,
             ];
         }, $pageItems);
 
