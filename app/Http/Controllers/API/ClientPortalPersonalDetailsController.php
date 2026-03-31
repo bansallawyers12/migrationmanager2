@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Admin;
 use App\Models\ClientPortalDetailAudit;
 use App\Models\ClientMatter;
-use App\Models\Note;
+use App\Services\ClientPortalActionNoteService;
 use App\Models\Notification;
 use App\Models\Staff;
 use App\Events\NotificationCountUpdated;
@@ -10147,7 +10147,7 @@ class ClientPortalPersonalDetailsController extends Controller
     }
 
     /**
-     * Notify PERSON ASSISTING and super admins once, and create one Client Portal action.
+     * Notify PERSON ASSISTING and super admins once, and create Client Portal action note(s) for PR + PA.
      * Message format: "Client name updated detail with message - \"{detailMessage}\"." (no matter name, show once)
      *
      * @param int $clientId
@@ -10205,23 +10205,16 @@ class ClientPortalPersonalDetailsController extends Controller
         try {
             $clientMatterModel = ClientMatter::find($clientMatterId);
             if ($clientMatterModel) {
-                $assignedTo = $firstMatter->sel_person_assisting ?? ($recipientIds[0] ?? null);
-                if ($assignedTo) {
-                    $actionNote = new Note();
-                    $actionNote->user_id = $clientId;
-                    $actionNote->client_id = $clientMatterModel->client_id;
-                    $actionNote->matter_id = $clientMatterId;
-                    $actionNote->assigned_to = $assignedTo;
-                    $actionNote->description = $actionMessage;
-                    $actionNote->action_date = now()->toDateString();
-                    $actionNote->task_group = 'Client Portal';
-                    $actionNote->type = 'client';
-                    $actionNote->is_action = 1;
-                    $actionNote->status = '0';
-                    $actionNote->pin = 0;
-                    $actionNote->unique_group_id = 'group_' . uniqid('', true);
-                    $actionNote->save();
-                }
+                $fallback = isset($recipientIds[0]) ? (int) $recipientIds[0] : null;
+                $fallback = $fallback && $fallback > 0 ? $fallback : null;
+                ClientPortalActionNoteService::createGroupedForMatter(
+                    (int) $clientMatterModel->client_id,
+                    $clientMatterId,
+                    $actionMessage,
+                    $clientId,
+                    $clientMatterModel,
+                    $fallback
+                );
             }
         } catch (\Exception $e) {
             Log::warning('Detail update: failed to create Action page entry', ['client_matter_id' => $clientMatterId, 'error' => $e->getMessage()]);

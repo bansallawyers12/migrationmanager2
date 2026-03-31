@@ -15,7 +15,7 @@ use App\Models\Message;
 use App\Models\MessageRecipient;
 use App\Models\Staff;
 use App\Models\Admin;
-use App\Models\Note;
+use App\Services\ClientPortalActionNoteService;
 use App\Events\MessageSent;
 use App\Events\MessageReceived;
 use App\Events\MessageDeleted;
@@ -624,23 +624,15 @@ class ClientPortalMessageController extends Controller
                 // Create Client Portal action: "{Client name} sent message - \"{excerpt}\" in {Matter name}."
                 if ($clientMatter && isset($clientMatter->client_id)) {
                     try {
-                        $assignedToStaffId = $clientMatter->sel_person_assisting ?? (isset($targetRecipients[0]) ? $targetRecipients[0] : null);
-                        if ($assignedToStaffId) {
-                            $actionNote = new Note();
-                            $actionNote->user_id = $clientId;
-                            $actionNote->client_id = $clientMatter->client_id;
-                            $actionNote->matter_id = $clientMatterId;
-                            $actionNote->assigned_to = $assignedToStaffId;
-                            $actionNote->description = $actionMessage;
-                            $actionNote->action_date = now()->toDateString();
-                            $actionNote->task_group = 'Client Portal';
-                            $actionNote->type = 'client';
-                            $actionNote->is_action = 1;
-                            $actionNote->status = '0';
-                            $actionNote->pin = 0;
-                            $actionNote->unique_group_id = 'group_' . uniqid('', true);
-                            $actionNote->save();
-                        }
+                        $fallback = (int) ($clientMatter->sel_person_assisting ?? ($targetRecipients[0] ?? 0));
+                        ClientPortalActionNoteService::createGroupedForMatter(
+                            (int) $clientMatter->client_id,
+                            $clientMatterId,
+                            $actionMessage,
+                            $clientId,
+                            $clientMatter,
+                            $fallback > 0 ? $fallback : null
+                        );
                     } catch (\Exception $e) {
                         Log::warning('API send message: failed to create Client Portal action', [
                             'client_matter_id' => $clientMatterId,
@@ -1105,23 +1097,15 @@ class ClientPortalMessageController extends Controller
                     }
 
                     try {
-                        $assignedToStaffId = $clientMatter->sel_person_assisting ?? (isset($targetRecipients[0]) ? $targetRecipients[0] : null);
-                        if ($assignedToStaffId) {
-                            $actionNote = new Note();
-                            $actionNote->user_id = $clientId;
-                            $actionNote->client_id = $clientMatter->client_id;
-                            $actionNote->matter_id = $clientMatterId;
-                            $actionNote->assigned_to = $assignedToStaffId;
-                            $actionNote->description = $actionMessage;
-                            $actionNote->action_date = now()->toDateString();
-                            $actionNote->task_group = 'Client Portal';
-                            $actionNote->type = 'client';
-                            $actionNote->is_action = 1;
-                            $actionNote->status = '0';
-                            $actionNote->pin = 0;
-                            $actionNote->unique_group_id = 'group_' . uniqid('', true);
-                            $actionNote->save();
-                        }
+                        $fallback = (int) ($clientMatter->sel_person_assisting ?? ($targetRecipients[0] ?? 0));
+                        ClientPortalActionNoteService::createGroupedForMatter(
+                            (int) $clientMatter->client_id,
+                            $clientMatterId,
+                            $actionMessage,
+                            $clientId,
+                            $clientMatter,
+                            $fallback > 0 ? $fallback : null
+                        );
                     } catch (\Exception $e) {
                         Log::warning('Mark message read: failed to create Client Portal action', ['client_matter_id' => $clientMatterId, 'error' => $e->getMessage()]);
                     }

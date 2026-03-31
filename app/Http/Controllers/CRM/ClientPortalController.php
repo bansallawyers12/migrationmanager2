@@ -26,7 +26,7 @@ use App\Models\ClientQualification;
 use App\Models\ClientTestScore;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientVisaCountry;
-use App\Models\Note;
+use App\Services\ClientPortalActionNoteService;
 use App\Models\WorkflowStage;
 use App\Models\Message;
 use App\Models\MessageRecipient;
@@ -4112,8 +4112,8 @@ class ClientPortalController extends Controller
 	}
 
 	/**
-	 * Create an action (Note) so it appears in the Action page Client Portal tab.
-	 * assigned_to = Person Assisting for the client matter; fallback to current user if not set.
+	 * Create action(s) (Note) for the Action page Client Portal tab: Person Responsible and
+	 * Person Assisting each get a row with the same unique_group_id; the acting CRM user is omitted if they are PR/PA.
 	 *
 	 * @param ClientMatter $clientMatter
 	 * @param string $description
@@ -4121,25 +4121,15 @@ class ClientPortalController extends Controller
 	 */
 	private function createClientPortalAction(ClientMatter $clientMatter, string $description)
 	{
-		$assignedToStaffId = Auth::user()->id;
-		if (!empty($clientMatter->sel_person_assisting)) {
-			$assignedToStaffId = $clientMatter->sel_person_assisting;
-		}
-
-		$actionNote = new Note;
-		$actionNote->user_id = Auth::user()->id;
-		$actionNote->client_id = $clientMatter->client_id;
-		$actionNote->matter_id = $clientMatter->id; // so action_completed notification gets correct client_matter_id (module_id)
-		$actionNote->assigned_to = $assignedToStaffId;
-		$actionNote->description = $description;
-		$actionNote->action_date = now()->toDateString();
-		$actionNote->task_group = 'Client Portal';
-		$actionNote->type = 'client';
-		$actionNote->is_action = 1;
-		$actionNote->status = '0';
-		$actionNote->pin = 0;
-		$actionNote->unique_group_id = 'group_' . uniqid('', true);
-		$actionNote->save();
+		ClientPortalActionNoteService::createGroupedForMatter(
+			(int) $clientMatter->client_id,
+			(int) $clientMatter->id,
+			$description,
+			(int) Auth::user()->id,
+			$clientMatter,
+			(int) Auth::user()->id,
+			(int) Auth::user()->id
+		);
 	}
 
 	/**

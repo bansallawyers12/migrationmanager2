@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Events\NotificationCountUpdated;
 use App\Models\ClientMatter;
 use App\Models\Document;
-use App\Models\Note;
+use App\Services\ClientPortalActionNoteService;
 use App\Models\Notification;
 use App\Models\Staff;
 use Illuminate\Http\Request;
@@ -921,25 +921,17 @@ class ClientPortalWorkflowController extends Controller
         if (!$clientMatterModel) {
             return;
         }
-        $assignedToStaffId = $clientMatterModel->sel_person_assisting ?? $recipientIds->first();
-        if (!$assignedToStaffId) {
-            $assignedToStaffId = $recipientIds->first();
-        }
+        $fallbackStaffId = $recipientIds->first();
+        $fallbackStaffId = $fallbackStaffId ? (int) $fallbackStaffId : null;
         try {
-            $actionNote = new Note();
-            $actionNote->user_id = $clientId;
-            $actionNote->client_id = $clientMatterModel->client_id;
-            $actionNote->matter_id = $clientMatterId;
-            $actionNote->assigned_to = $assignedToStaffId;
-            $actionNote->description = $message;
-            $actionNote->action_date = now()->toDateString();
-            $actionNote->task_group = 'Client Portal';
-            $actionNote->type = 'client';
-            $actionNote->is_action = 1;
-            $actionNote->status = '0';
-            $actionNote->pin = 0;
-            $actionNote->unique_group_id = 'group_' . uniqid('', true);
-            $actionNote->save();
+            ClientPortalActionNoteService::createGroupedForMatter(
+                (int) $clientMatterModel->client_id,
+                $clientMatterId,
+                $message,
+                $clientId,
+                $clientMatterModel,
+                $fallbackStaffId
+            );
         } catch (\Exception $e) {
             Log::warning('Checklist upload: failed to create Action page entry', [
                 'client_matter_id' => $clientMatterId,
