@@ -7,21 +7,71 @@
             ?? \App\Models\Staff::find($fetchedData->user_id);
     }
     $followupYmd = $fetchedData->followup_date ? $fetchedData->followup_date->format('Y-m-d') : '';
+    $assigneeId = (int) ($fetchedData->user_id ?? 0);
+    $assigneeInStaffList = $assigneeId > 0 && $assignableStaff->firstWhere('id', $assigneeId) !== null;
+    $orphanAssignee = null;
+    if ($assigneeId > 0 && ! $assigneeInStaffList) {
+        $orphanAssignee = \App\Models\Staff::find($assigneeId);
+    }
 @endphp
+
+<style>
+    #leadPipelineCard .lead-pipeline-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    #leadPipelineCard .lead-pipeline-card-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        flex: 1;
+        min-width: 0;
+    }
+    #leadPipelineCard .lead-pipeline-open-edit--icon {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #leadPipelineCard .lead-pipeline-edit-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600;
+        color: #343a40;
+    }
+</style>
 
 <div class="card" id="leadPipelineCard"
      data-client-id="{{ $fetchedData->id }}"
      data-initial-stage="{{ $stageKey }}"
      data-initial-followup="{{ $followupYmd }}"
      data-initial-assign="{{ $fetchedData->user_id ?? '' }}">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <h3 style="margin: 0;"><i class="fas fa-route"></i> Lead pipeline</h3>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="leadPipelineToggleEdit" aria-expanded="false">
-            <i class="fas fa-pen"></i> Edit
-        </button>
-    </div>
 
-    <div id="leadPipelineView" class="lead-pipeline-view" style="margin-top: 12px;">
+    <div id="leadPipelineView" class="lead-pipeline-view" role="region" aria-label="Lead pipeline summary">
+        <div class="lead-pipeline-card-header">
+            <h3><i class="fas fa-route"></i> Lead pipeline</h3>
+            <button type="button"
+                    class="btn btn-primary btn-sm lead-pipeline-open-edit lead-pipeline-open-edit--icon"
+                    title="Edit pipeline"
+                    aria-label="Edit pipeline"
+                    aria-expanded="false"
+                    aria-controls="leadPipelineEdit">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
+        </div>
         <div class="field-group">
             <span class="field-label">Stage</span>
             <span class="field-value" id="leadPipelineStageDisplay">{{ $stageLabel }}</span>
@@ -52,7 +102,21 @@
         </div>
     </div>
 
-    <div id="leadPipelineEdit" class="lead-pipeline-edit" style="display: none; margin-top: 12px;">
+    <div id="leadPipelineEdit"
+         class="lead-pipeline-edit"
+         style="display: none;"
+         role="region"
+         aria-label="Edit lead pipeline"
+         aria-hidden="true">
+        <div class="lead-pipeline-edit-banner">
+            <span id="leadPipelineEditHeading"><i class="fas fa-edit text-primary me-1"></i>Editing pipeline</span>
+            <button type="button"
+                    class="btn btn-link btn-sm p-0 lead-pipeline-open-edit"
+                    aria-expanded="false"
+                    aria-label="Discard changes and close editor">
+                Close
+            </button>
+        </div>
         <div class="form-group">
             <label for="lead_pipeline_status_detail">Stage</label>
             <select id="lead_pipeline_status_detail" class="form-control">
@@ -72,10 +136,19 @@
         </div>
         <div class="form-group">
             <label for="lead_pipeline_assign_detail">Assigned to</label>
-            <select id="lead_pipeline_assign_detail" class="form-control">
+            <select id="lead_pipeline_assign_detail" class="form-control" aria-describedby="leadPipelineEditHeading">
                 <option value="">Not assigned</option>
+                @if($assigneeId > 0 && ! $assigneeInStaffList)
+                    @if($orphanAssignee)
+                        <option value="{{ $orphanAssignee->id }}" selected>
+                            {{ trim(($orphanAssignee->first_name ?? '') . ' ' . ($orphanAssignee->last_name ?? '')) }} (not in active list)
+                        </option>
+                    @else
+                        <option value="{{ $assigneeId }}" selected>Unknown assignee — choose another or clear</option>
+                    @endif
+                @endif
                 @foreach($assignableStaff as $st)
-                    <option value="{{ $st->id }}" {{ (int) ($fetchedData->user_id ?? 0) === (int) $st->id ? 'selected' : '' }}>
+                    <option value="{{ $st->id }}" {{ $assigneeInStaffList && (int) ($fetchedData->user_id ?? 0) === (int) $st->id ? 'selected' : '' }}>
                         {{ trim($st->first_name . ' ' . $st->last_name) }}
                     </option>
                 @endforeach
@@ -98,7 +171,7 @@
     var labels = @json($leadStageLabels);
     var viewEl = document.getElementById('leadPipelineView');
     var editEl = document.getElementById('leadPipelineEdit');
-    var toggleBtn = document.getElementById('leadPipelineToggleEdit');
+    var openEditBtns = card.querySelectorAll('.lead-pipeline-open-edit');
     var stageSel = document.getElementById('lead_pipeline_status_detail');
     var followWrap = document.getElementById('lead_pipeline_followup_wrap');
     var followInput = document.getElementById('lead_pipeline_followup_detail');
@@ -132,22 +205,38 @@
     }
 
     function setEditMode(on) {
-        if (!viewEl || !editEl || !toggleBtn) return;
+        if (!viewEl || !editEl) return;
+        var iconOpenBtn = card.querySelector('.lead-pipeline-open-edit--icon');
+        var viewTriggers = card.querySelectorAll('.lead-pipeline-open-edit:not(.btn-link)');
         if (on) {
             resetEditFromSnapshot();
             viewEl.style.display = 'none';
+            viewEl.setAttribute('aria-hidden', 'true');
             editEl.style.display = '';
-            toggleBtn.setAttribute('aria-expanded', 'true');
+            editEl.setAttribute('aria-hidden', 'false');
+            viewTriggers.forEach(function (b) {
+                b.setAttribute('aria-expanded', 'true');
+            });
             toggleFollowUi();
+            if (stageSel) {
+                setTimeout(function () { stageSel.focus(); }, 0);
+            }
         } else {
             viewEl.style.display = '';
+            viewEl.setAttribute('aria-hidden', 'false');
             editEl.style.display = 'none';
-            toggleBtn.setAttribute('aria-expanded', 'false');
+            editEl.setAttribute('aria-hidden', 'true');
+            viewTriggers.forEach(function (b) {
+                b.setAttribute('aria-expanded', 'false');
+            });
+            if (iconOpenBtn) {
+                setTimeout(function () { iconOpenBtn.focus(); }, 0);
+            }
         }
     }
 
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', function () {
+    openEditBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
             var open = editEl && editEl.style.display !== 'none';
             if (open) {
                 resetEditFromSnapshot();
@@ -156,7 +245,7 @@
                 setEditMode(true);
             }
         });
-    }
+    });
 
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function () {
@@ -186,9 +275,12 @@
 
     function monthNames(d) {
         var m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        var p = d.split('-');
+        var p = String(d).split('-');
         if (p.length !== 3) return d;
-        return parseInt(p[2], 10) + ' ' + m[parseInt(p[1], 10) - 1] + ' ' + p[0];
+        var day = parseInt(p[2], 10);
+        var mon = parseInt(p[1], 10);
+        if (isNaN(day) || isNaN(mon) || mon < 1 || mon > 12) return d;
+        return day + ' ' + m[mon - 1] + ' ' + p[0];
     }
 
     function toast(msg, ok) {
