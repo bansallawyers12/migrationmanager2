@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Lead;
-use App\Models\Admin;
 use App\Services\LeadFollowUpNoteService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;

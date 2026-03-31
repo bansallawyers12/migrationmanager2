@@ -2335,9 +2335,13 @@ class ClientPersonalDetailsController extends Controller
 
                 if ($request->has('followup_date')) {
                     $rawFd = $request->input('followup_date');
-                    $client->followup_date = ($rawFd === '' || $rawFd === null)
-                        ? null
-                        : Carbon::parse($rawFd)->format('Y-m-d H:i:s');
+                    if ($rawFd === '' || $rawFd === null) {
+                        if ($client->lead_status !== 'follow_up') {
+                            $client->followup_date = null;
+                        }
+                    } else {
+                        $client->followup_date = Carbon::parse($rawFd)->format('Y-m-d H:i:s');
+                    }
                 }
 
                 if ($client->lead_status !== 'follow_up') {

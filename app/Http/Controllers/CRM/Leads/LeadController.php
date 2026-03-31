@@ -1188,7 +1188,9 @@ class LeadController extends Controller
             if (array_key_exists('followup_date', $requestData)) {
                 $rawFd = $requestData['followup_date'];
                 if ($rawFd === '' || $rawFd === null) {
-                    $lead->followup_date = null;
+                    if ($lead->lead_status !== 'follow_up') {
+                        $lead->followup_date = null;
+                    }
                 } else {
                     $fd = $this->parseLeadDate(is_string($rawFd) ? $rawFd : '', false);
                     $lead->followup_date = $fd ? $fd->format('Y-m-d H:i:s') : null;

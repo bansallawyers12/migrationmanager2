@@ -2098,9 +2098,11 @@ window.saveBasicInfo = function() {
     const leadStageEl = document.getElementById('lead_pipeline_status_edit');
     if (leadStageEl) {
         formData.append('lead_status', leadStageEl.value);
-        const fuEl = document.getElementById('lead_followup_date_edit');
-        if (fuEl) {
-            formData.append('followup_date', fuEl.value || '');
+        if (leadStageEl.value === 'follow_up') {
+            const fuEl = document.getElementById('lead_followup_date_edit');
+            if (fuEl) {
+                formData.append('followup_date', fuEl.value || '');
+            }
         }
         const asEl = document.getElementById('assigned_staff_id_edit');
         if (asEl) {
