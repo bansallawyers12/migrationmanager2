@@ -26,7 +26,11 @@ class LeadAnalyticsService
         $qualified = $totalLeads; // lead_quality column removed
         $contacted = 0; // Follow-up system removed
         $interested = 0; // Follow-up system removed
-        $converted = (clone $query)->where('type', 'client')->count();
+        $converted = Admin::where('type', 'client')
+            ->where('lead_status', 'converted')
+            ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
+            ->count();
         
         return [
             'total_leads' => $totalLeads,
@@ -69,7 +73,7 @@ class LeadAnalyticsService
         
         $performance = [];
         foreach ($sources as $source) {
-            $converted = Admin::where('type', 'lead')
+            $converted = Admin::where('type', 'client')
                 ->where('source', $source->source)
                 ->where('lead_status', 'converted')
                 ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
@@ -174,7 +178,7 @@ class LeadAnalyticsService
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
             
-            $converted = Admin::where('type', 'lead')
+            $converted = Admin::where('type', 'client')
                 ->where('lead_status', 'converted')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count();
@@ -218,8 +222,13 @@ class LeadAnalyticsService
             'new_this_month' => Admin::where('type', 'lead')
                 ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->count(),
-            'converted' => (clone $query)->where('lead_status', 'converted')->count(),
-            'active' => (clone $query)->where('lead_status', 'active')->count(),
+            'converted' => Admin::where('type', 'client')
+                ->where('lead_status', 'converted')
+                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
+                ->count(),
+            'active_new' => (clone $query)->where('lead_status', 'new')->count(),
+            'active_follow_up' => (clone $query)->where('lead_status', 'follow_up')->count(),
             'cold' => 0, // lead_quality column removed
             'hot' => 0, // lead_quality column removed
             'avg_conversion_time' => $this->getAvgConversionTime($startDate, $endDate),
@@ -233,7 +242,7 @@ class LeadAnalyticsService
      */
     protected function getAvgConversionTime($startDate = null, $endDate = null)
     {
-        $convertedLeads = Admin::where('type', 'lead')
+        $convertedLeads = Admin::where('type', 'client')
             ->where('lead_status', 'converted')
             ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
