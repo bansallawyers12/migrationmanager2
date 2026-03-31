@@ -112,6 +112,28 @@ class ClientsController extends Controller
         ]);
     }
 
+    /**
+     * Default "not picked call" SMS body from sms_templates (alias not_picked_call), with client name filled in.
+     */
+    protected function notPickedCallSmsDefaultForClient(Admin $client): string
+    {
+        $rawFirst = trim((string) ($client->first_name ?? ''));
+        $first = $rawFirst !== ''
+            ? mb_convert_case(mb_strtolower($rawFirst), MB_CASE_TITLE, 'UTF-8')
+            : 'Client';
+
+        $rendered = $this->smsManager->renderTemplateByAlias('not_picked_call', [
+            'first_name' => $first,
+            'office_phone' => '0396021330',
+        ]);
+
+        if ($rendered !== null) {
+            return $rendered;
+        }
+
+        return "Hi {$first},\n\nWe tried reaching you but couldn't connect. Please call us at 0396021330 or let us know a suitable time.\n\nPlease do not reply via SMS.\n\nBansal Immigration";
+    }
+
 	/**
      * All Vendors.
      *
@@ -2105,6 +2127,7 @@ class ClientsController extends Controller
                     $matterNumber = $id1 ?? '';
                     $officePhone = $currentAdmin->phone ?? '';
                     $officeCountryCode = '+61';
+                    $notPickedCallSmsDefault = $this->notPickedCallSmsDefaultForClient($fetchedData);
                     
                     $encodeId = base64_encode(convert_uuencode($id));
                     $activeTab = $tab ?? 'companydetails';
@@ -2112,7 +2135,8 @@ class ClientsController extends Controller
                     return view('crm.companies.detail', compact(
                         'fetchedData', 'clientAddresses', 'clientContacts', 'emails',
                         'encodeId', 'id1', 'activeTab',
-                        'staffName', 'matterNumber', 'officePhone', 'officeCountryCode'
+                        'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
+                        'notPickedCallSmsDefault'
                     ));
                 }
 
@@ -2184,6 +2208,7 @@ class ClientsController extends Controller
                 $matterNumber = $id1 ?? '';
                 $officePhone = $currentAdmin->phone ?? '';
                 $officeCountryCode = '+61';
+                $notPickedCallSmsDefault = $this->notPickedCallSmsDefaultForClient($fetchedData);
 
                 // Employer nominations: only list companies this staff may open (cross-access / allocation).
                 $visibleNomineeNominations = $fetchedData->companyNominationsAsNominee
@@ -2203,7 +2228,7 @@ class ClientsController extends Controller
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
-                    'visibleNomineeNominations'
+                    'visibleNomineeNominations', 'notPickedCallSmsDefault'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -3840,14 +3865,71 @@ class ClientsController extends Controller
                 }
             }
 
-            // Delete pivot records (email labels)
-            DB::table('email_label_email_log')->where('email_log_id', $id)->delete();
+            $logClientId = (int) ($emailLog->client_id ?? 0);
+            $logMatterId = $emailLog->client_matter_id;
+            $attachmentCount = \App\Models\EmailLogAttachment::where('email_log_id', $id)->count();
 
-            // Delete attachments
-            \App\Models\EmailLogAttachment::where('email_log_id', $id)->delete();
+            $matterRef = null;
+            if (!empty($logMatterId)) {
+                $matterRef = DB::table('client_matters')
+                    ->where('id', $logMatterId)
+                    ->value('client_unique_matter_no');
+            }
 
-            // Delete the email log
-            $emailLog->delete();
+            $snapshot = [
+                'subject' => trim((string) ($emailLog->subject ?? '')),
+                'from_mail' => (string) ($emailLog->from_mail ?? ''),
+                'to_mail' => (string) ($emailLog->to_mail ?? ''),
+                'cc' => $emailLog->cc ?? null,
+                'mail_type' => $emailLog->mail_type ?? null,
+                'record_type' => $emailLog->type ?? null,
+            ];
+
+            $staffId = Auth::user()->id ?? Auth::id();
+
+            DB::transaction(function () use ($id, $logClientId, $logMatterId, $matterRef, $staffId, $attachmentCount, $snapshot) {
+                DB::table('email_label_email_log')->where('email_log_id', $id)->delete();
+                \App\Models\EmailLogAttachment::where('email_log_id', $id)->delete();
+
+                $deletedRows = \App\Models\EmailLog::where('id', $id)->delete();
+                if ($deletedRows !== 1) {
+                    throw new \RuntimeException('Email log could not be deleted.');
+                }
+
+                if ($logClientId <= 0 || !$staffId) {
+                    if ($logClientId > 0 && !$staffId) {
+                        Log::warning('Email log deleted without activity log: no authenticated staff id', [
+                            'email_log_id' => $id,
+                            'client_id' => $logClientId,
+                        ]);
+                    }
+
+                    return;
+                }
+
+                $description = $this->buildEmailLogDeletionActivityDescription(
+                    (int) $id,
+                    $snapshot,
+                    $attachmentCount,
+                    $matterRef !== null && $matterRef !== '' ? (string) $matterRef : null,
+                    $logMatterId !== null ? (int) $logMatterId : null
+                );
+
+                $activityAttrs = [
+                    'client_id' => $logClientId,
+                    'created_by' => $staffId,
+                    'subject' => 'Deleted email message',
+                    'description' => $description,
+                    'activity_type' => 'activity',
+                    'task_status' => 0,
+                    'pin' => 0,
+                    'source' => 'crm_emails',
+                ];
+                if (!empty($logMatterId)) {
+                    $activityAttrs['use_for'] = 'matter';
+                }
+                ActivitiesLog::create($activityAttrs);
+            });
 
             return response()->json([
                 'success' => true,
@@ -7793,6 +7875,122 @@ class ClientsController extends Controller
             });
         
         return response()->json(['results' => $results]);
+    }
+
+    /**
+     * HTML description for activities_logs when an email_logs row is deleted from the CRM Emails tab.
+     */
+    protected function buildEmailLogDeletionActivityDescription(
+        int $emailLogId,
+        array $snapshot,
+        int $attachmentCount,
+        ?string $matterReference,
+        ?int $matterInternalId
+    ): string {
+        $h = static function (?string $value): string {
+            return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        };
+
+        $displaySubject = ($snapshot['subject'] ?? '') !== '' ? $snapshot['subject'] : '(no subject)';
+        $direction = $this->humanizeEmailLogMailType($snapshot['mail_type'] ?? null);
+        $recordType = strtolower(trim((string) ($snapshot['record_type'] ?? '')));
+        $recordLabel = $recordType === 'lead' ? 'Lead' : ($recordType === 'client' ? 'Client' : '');
+
+        $lines = [];
+        $lines[] = '<p>Removed an email from the CRM Emails tab.</p>';
+        $lines[] = '<p><strong>Email log ID:</strong> ' . $h((string) $emailLogId) . '</p>';
+
+        if ($matterReference !== null && $matterReference !== '') {
+            $lines[] = '<p><strong>Matter:</strong> ' . $h($matterReference) . '</p>';
+        } elseif ($matterInternalId !== null && $matterInternalId > 0) {
+            $lines[] = '<p><strong>Matter ID:</strong> ' . $h((string) $matterInternalId) . '</p>';
+        }
+
+        if ($recordLabel !== '') {
+            $lines[] = '<p><strong>Record:</strong> ' . $h($recordLabel) . '</p>';
+        }
+
+        if ($direction !== '') {
+            $lines[] = '<p><strong>Direction:</strong> ' . $h($direction) . '</p>';
+        }
+
+        if ($attachmentCount > 0) {
+            $lines[] = '<p><strong>Attachments removed:</strong> ' . $h((string) $attachmentCount) . '</p>';
+        }
+
+        $lines[] = '<p><strong>Subject:</strong> ' . $h($displaySubject) . '</p>';
+
+        if (($snapshot['from_mail'] ?? '') !== '') {
+            $lines[] = '<p><strong>From:</strong> ' . $h($snapshot['from_mail']) . '</p>';
+        }
+        if (($snapshot['to_mail'] ?? '') !== '') {
+            $lines[] = '<p><strong>To:</strong> ' . $h($snapshot['to_mail']) . '</p>';
+        }
+
+        $ccLine = $this->formatEmailLogCcForActivityDescription($snapshot['cc'] ?? null);
+        if ($ccLine !== null && $ccLine !== '') {
+            $maxLen = 600;
+            if (strlen($ccLine) > $maxLen) {
+                $ccLine = substr($ccLine, 0, $maxLen) . '…';
+            }
+            $lines[] = '<p><strong>CC:</strong> ' . $h($ccLine) . '</p>';
+        }
+
+        return implode('', $lines);
+    }
+
+    /**
+     * @param mixed $mailType Raw mail_type from email_logs (string or int depending on source)
+     */
+    protected function humanizeEmailLogMailType($mailType): string
+    {
+        if ($mailType === null || $mailType === '') {
+            return '';
+        }
+        $s = is_string($mailType) ? strtolower(trim($mailType)) : (string) $mailType;
+
+        if ($s === 'sent' || $s === '1') {
+            return 'Sent';
+        }
+        if ($s === 'inbox' || $s === 'received' || $s === '0') {
+            return 'Received';
+        }
+
+        return ucfirst($s);
+    }
+
+    /**
+     * Normalize CC field (string or JSON array) for activity description.
+     */
+    protected function formatEmailLogCcForActivityDescription($cc): ?string
+    {
+        if ($cc === null) {
+            return null;
+        }
+        if (is_array($cc)) {
+            $flat = [];
+            array_walk_recursive($cc, function ($v) use (&$flat) {
+                if (is_string($v) && trim($v) !== '') {
+                    $flat[] = trim($v);
+                }
+            });
+
+            return $flat !== [] ? implode(', ', $flat) : null;
+        }
+
+        $trimmed = trim((string) $cc);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if ($trimmed[0] === '[' || $trimmed[0] === '{') {
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded)) {
+                return $this->formatEmailLogCcForActivityDescription($decoded);
+            }
+        }
+
+        return $trimmed;
     }
 
 }

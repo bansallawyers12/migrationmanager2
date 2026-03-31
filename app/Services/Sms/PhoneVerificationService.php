@@ -74,15 +74,22 @@ class PhoneVerificationService
             'max_attempts' => 3,
         ]);
 
-        // Send SMS
         $fullNumber = $contact->country_code . $contact->phone;
-        $message = "BANSAL IMMIGRATION: Your phone verification code is {$otpCode}. Please provide this code to our staff to verify your phone number. This code expires in {$this->otpValidMinutes} minutes.";
-        
-        // Use UnifiedSmsManager with proper context for activity logging
-        $smsResult = $this->smsManager->sendSms($fullNumber, $message, 'verification', [
+
+        $smsContext = [
             'client_id' => $contact->client_id,
             'contact_id' => $contactId,
-        ]);
+        ];
+
+        $smsResult = $this->smsManager->sendFromTemplateByAlias($fullNumber, 'phone_verification', [
+            'verification_code' => $otpCode,
+            'expiry_minutes' => (string) $this->otpValidMinutes,
+        ], $smsContext);
+
+        if (! $smsResult['success'] && ($smsResult['message'] ?? '') === 'Template not found or inactive') {
+            $message = "BANSAL IMMIGRATION: Your phone verification code is {$otpCode}. Please provide this code to our staff to verify your phone number. This code expires in {$this->otpValidMinutes} minutes.";
+            $smsResult = $this->smsManager->sendSms($fullNumber, $message, 'verification', $smsContext);
+        }
 
         if (!$smsResult['success']) {
             $verification->delete();

@@ -122,19 +122,36 @@ class NotificationService
                 default => '1300 859 368' // Fallback to original number
             };
 
-            // Message varies by meeting type
             $meetingType = strtolower(trim($appointment->meeting_type ?? ''));
-            $message = match ($meetingType) {
-                'in_person' => "BANSAL IMMIGRATION: Reminder - You have a scheduled In-Person appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
-                'phone' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Phone appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
-                'video' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Video Call appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
-                default => "BANSAL IMMIGRATION: Reminder - You have a scheduled appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+            $templateAlias = match ($meetingType) {
+                'in_person' => 'booking_reminder_in_person',
+                'phone' => 'booking_reminder_phone',
+                'video' => 'booking_reminder_video',
+                default => 'booking_reminder_default',
             };
 
-            $result = $this->smsManager->sendSms($phone, $message, 'reminder', [
+            $variables = [
+                'timeslot_full' => (string) $appointment->timeslot_full,
+                'location' => (string) $appointment->location,
+                'office_phone' => $officePhone,
+            ];
+
+            $context = [
                 'appointment_id' => $appointment->id,
                 'client_id' => $appointment->client_id,
-            ]);
+            ];
+
+            $result = $this->smsManager->sendFromTemplateByAlias($phone, $templateAlias, $variables, $context);
+
+            if (! $result['success'] && ($result['message'] ?? '') === 'Template not found or inactive') {
+                $message = match ($meetingType) {
+                    'in_person' => "BANSAL IMMIGRATION: Reminder - You have a scheduled In-Person appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    'phone' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Phone appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    'video' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Video Call appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                    default => "BANSAL IMMIGRATION: Reminder - You have a scheduled appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
+                };
+                $result = $this->smsManager->sendSms($phone, $message, 'reminder', $context);
+            }
 
             if ($result['success']) {
                 $appointment->update([

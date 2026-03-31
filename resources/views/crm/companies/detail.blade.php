@@ -1294,6 +1294,7 @@ $(document).ready(function() {
         activeTab: @json(($activeTab ?? 'companydetails')),
         matterRefNo: @json(($id1 ?? '')),
         clientFirstName: @json(($fetchedData->first_name ?? 'client')),
+        notPickedCallSmsDefault: @json($notPickedCallSmsDefault ?? ''),
         // SMS Template Variables
         staffName: @json(($staffName ?? '')),
         matterNumber: @json(($matterNumber ?? '')),

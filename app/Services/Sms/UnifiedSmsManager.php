@@ -165,9 +165,47 @@ class UnifiedSmsManager
      */
     public function sendVerificationCode($to, $code, $context = [])
     {
+        $result = $this->sendFromTemplateByAlias($to, 'phone_verification', [
+            'verification_code' => (string) $code,
+            'expiry_minutes' => '5',
+        ], $context);
+
+        if ($result['success']) {
+            return $result;
+        }
+
         $message = "BANSAL IMMIGRATION: Your verification code is {$code}. This code expires in 5 minutes.";
-        
+
         return $this->sendSms($to, $message, 'verification', $context);
+    }
+
+    /**
+     * Render an active template by alias (no send, no usage increment).
+     */
+    public function renderTemplateByAlias(string $alias, array $variables = []): ?string
+    {
+        $template = \App\Models\SmsTemplate::active()->byAlias($alias)->first();
+        if (!$template) {
+            return null;
+        }
+
+        return $this->replaceTemplateVariables($template->message, $variables);
+    }
+
+    /**
+     * Send SMS using template alias (Admin Console editable).
+     */
+    public function sendFromTemplateByAlias($to, string $alias, array $variables = [], array $context = [])
+    {
+        $template = \App\Models\SmsTemplate::active()->byAlias($alias)->first();
+        if (!$template) {
+            return [
+                'success' => false,
+                'message' => 'Template not found or inactive',
+            ];
+        }
+
+        return $this->sendFromTemplate($to, $template->id, $variables, $context);
     }
 
     /**
@@ -194,7 +232,9 @@ class UnifiedSmsManager
             // Update template usage count
             $template->increment('usage_count');
 
-            return $this->sendSms($to, $message, 'manual', $context);
+            $type = $this->resolveMessageTypeFromCategory($template->category);
+
+            return $this->sendSms($to, $message, $type, $context);
 
         } catch (\Exception $e) {
             Log::error('UnifiedSmsManager: Template error', [
@@ -209,13 +249,22 @@ class UnifiedSmsManager
         }
     }
 
+    protected function resolveMessageTypeFromCategory(?string $category): string
+    {
+        $category = $category ?? 'manual';
+
+        return in_array($category, ['verification', 'notification', 'manual', 'reminder'], true)
+            ? $category
+            : 'manual';
+    }
+
     /**
      * Replace template variables
      */
     protected function replaceTemplateVariables($message, $variables)
     {
         foreach ($variables as $key => $value) {
-            $message = str_replace('{' . $key . '}', $value, $message);
+            $message = str_replace('{' . $key . '}', (string) $value, $message);
         }
         
         return $message;
