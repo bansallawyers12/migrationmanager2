@@ -693,6 +693,37 @@
                                             <span class="text-danger">{{ $message }}</span>
                                         @enderror
                                 </div>
+                                <div class="form-group">
+                                    <label for="lead_pipeline_status">Lead stage</label>
+                                    <select id="lead_pipeline_status" name="lead_status" class="form-control">
+                                        @foreach(($leadStageLabels ?? []) as $val => $lbl)
+                                            <option value="{{ $val }}" {{ old('lead_status', 'new') === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('lead_status')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group" id="lead_followup_date_wrap" style="display: none;">
+                                    <label for="lead_followup_date">Follow-up date <span class="text-muted">(optional)</span></label>
+                                    <input type="date" id="lead_followup_date" name="followup_date" class="form-control" value="{{ old('followup_date') }}">
+                                    @error('followup_date')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group">
+                                    <label for="assigned_staff_id">Assigned to</label>
+                                    <select id="assigned_staff_id" name="assigned_staff_id" class="form-control">
+                                        @foreach(($assignableStaff ?? collect()) as $st)
+                                            <option value="{{ $st->id }}" {{ (string) old('assigned_staff_id', Auth::id()) === (string) $st->id ? 'selected' : '' }}>
+                                                {{ $st->first_name }} {{ $st->last_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('assigned_staff_id')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
                                 </div>
                             </div>
                             
@@ -1416,6 +1447,23 @@
         }
     }
     
+    </script>
+    <script>
+        (function () {
+            function syncLeadFollowupDateVisibility() {
+                var sel = document.getElementById('lead_pipeline_status');
+                var wrap = document.getElementById('lead_followup_date_wrap');
+                if (!sel || !wrap) return;
+                wrap.style.display = sel.value === 'follow_up' ? 'block' : 'none';
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                var sel = document.getElementById('lead_pipeline_status');
+                if (sel) {
+                    sel.addEventListener('change', syncLeadFollowupDateVisibility);
+                    syncLeadFollowupDateVisibility();
+                }
+            });
+        })();
     </script>
 @endpush
 

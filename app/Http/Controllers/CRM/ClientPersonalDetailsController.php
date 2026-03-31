@@ -33,6 +33,8 @@ use App\Models\Company;
 use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
+use App\Models\Lead;
+use App\Services\LeadFollowUpNoteService;
 use App\Traits\LogsClientActivity;
 
 /**
@@ -2318,6 +2320,37 @@ class ClientPersonalDetailsController extends Controller
                 $maritalStatus = 'Never Married';
             }
 
+            $previousLeadStatus = ($client->type === 'lead') ? $client->lead_status : null;
+
+            if ($client->type === 'lead') {
+                $request->validate([
+                    'lead_status' => 'sometimes|in:new,follow_up,not_qualified,hostile',
+                    'followup_date' => 'nullable|date',
+                    'assigned_staff_id' => 'nullable|exists:staff,id',
+                ]);
+
+                if ($request->has('lead_status')) {
+                    $client->lead_status = (string) $request->input('lead_status');
+                }
+
+                if ($request->has('followup_date')) {
+                    $rawFd = $request->input('followup_date');
+                    $client->followup_date = ($rawFd === '' || $rawFd === null)
+                        ? null
+                        : Carbon::parse($rawFd)->format('Y-m-d H:i:s');
+                }
+
+                if ($client->lead_status !== 'follow_up') {
+                    $client->followup_date = null;
+                }
+
+                $client->status = LeadFollowUpNoteService::adminsStatusForLeadStatus($client->lead_status);
+
+                if ($request->filled('assigned_staff_id')) {
+                    $client->user_id = (int) $request->input('assigned_staff_id');
+                }
+            }
+
             // Track changed fields for activity log with old and new values
             $changedFields = [];
             $fieldLabels = [
@@ -2376,6 +2409,13 @@ class ClientPersonalDetailsController extends Controller
             $client->gender = $validated['gender'] ?? null;
             $client->marital_status = $maritalStatus;
             $client->save();
+
+            if ($client->type === 'lead') {
+                $lead = Lead::find($client->id);
+                if ($lead) {
+                    app(LeadFollowUpNoteService::class)->syncNotesForLead($lead, $previousLeadStatus);
+                }
+            }
 
             // Log activity with specific changed fields
             if (!empty($changedFields)) {

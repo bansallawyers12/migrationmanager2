@@ -167,31 +167,41 @@
 								 </span>
 							</p>
 								@endif
-								@if($fetchedData->status != '')
-								    <p class="clearfix"> 
-								<span class="float-left">Status:</span>
-								<span class="float-right text-muted">
-								    {{@$fetchedData->status}}
-								 </span>
-							</p>
+								@php
+									$dStage = $fetchedData->lead_status ?: 'new';
+									$dLabels = ['new' => 'New', 'follow_up' => 'Follow up', 'not_qualified' => 'Not qualified', 'hostile' => 'Hostile'];
+									$dStageLabel = $dLabels[$dStage] ?? ucfirst(str_replace('_', ' ', $dStage));
+								@endphp
+								<p class="clearfix">
+									<span class="float-left">Lead stage:</span>
+									<span class="float-right text-muted">{{ $dStageLabel }}</span>
+								</p>
+								@if($fetchedData->lead_status === 'follow_up' && $fetchedData->followup_date)
+								<p class="clearfix">
+									<span class="float-left">Follow-up date:</span>
+									<span class="float-right text-muted">
+										{{ $fetchedData->followup_date instanceof \Carbon\Carbon ? $fetchedData->followup_date->format('d/m/Y') : date('d/m/Y', strtotime($fetchedData->followup_date)) }}
+									</span>
+								</p>
 								@endif
+								<p class="clearfix">
+									<span class="float-left">Record:</span>
+									<span class="float-right text-muted">{{ (int) $fetchedData->status === 1 ? 'Active' : 'Inactive' }}</span>
+								</p>
 								</div>
-								<?php
-									$assignee = null; // assignee column removed
-								?>
 								<div class="col-md-12"> 
 									<div class="client_assign client_info_tags"> 
 									<span class="">Assignee:</span>
-										@if(false && $assignee)
+										@if($fetchedData->assignedTo)
 										<div class="client_info">
-											<div class="cl_logo">{{substr(@$assignee->first_name, 0, 1)}}</div>
+											<div class="cl_logo">{{ substr($fetchedData->assignedTo->first_name, 0, 1) }}</div>
 											<div class="cl_name">
-												<span class="name">{{@$assignee->first_name}}</span>
-												<span class="email">{{@$assignee->email}}</span>
+												<span class="name">{{ $fetchedData->assignedTo->first_name }} {{ $fetchedData->assignedTo->last_name }}</span>
+												<span class="email">{{ $fetchedData->assignedTo->email }}</span>
 											</div>
 										</div>
 										@else
-											-
+											<span class="text-muted">—</span>
 										@endif
 									</div>
 								</div>

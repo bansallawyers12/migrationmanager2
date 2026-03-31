@@ -21,6 +21,7 @@ class Lead extends Admin
         'email', 
         'phone',
         'status',
+        'lead_status',
         'created_at', 
         'updated_at'
     ];
@@ -107,9 +108,12 @@ class Lead extends Admin
      */
     public function convertToClient()
     {
+        app(\App\Services\LeadFollowUpNoteService::class)->completeOpenFollowUpNotes((int) $this->id);
+
         // Mark lead as converted
         $this->type = 'client';
         $this->lead_status = 'converted';
+        $this->status = 1;
         $this->save();
         
         // Log the conversion in activities

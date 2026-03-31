@@ -278,7 +278,8 @@
                             'name' => request('name'),
                             'email' => request('email'),
                             'phone' => request('phone'),
-                            'status_filter' => request('status_filter'),
+                            'lead_stage_filter' => request('lead_stage_filter'),
+                            'include_inactive' => request('include_inactive'),
                             'quick_date_range' => request('quick_date_range'),
                             'from_date' => request('from_date'),
                             'to_date' => request('to_date'),
@@ -287,8 +288,6 @@
                         $activeLeadFilters = $leadFilters->filter(function ($value) {
                             return $value !== null && $value !== '';
                         })->count();
-                        $statusList = ($statusOptions ?? collect())->filter()->values();
-                        $fallbackStatuses = collect(['New', 'In Progress', 'Converted', 'Closed', 'Lost']);
                     @endphp
 
                     <div class="filter_panel">
@@ -338,23 +337,24 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="status_filter">Status</label>
-                                        <select name="status_filter" id="status_filter" class="form-control">
-                                            <option value="">All Statuses</option>
-                                            @if(($statusList ?? collect())->isNotEmpty())
-                                                @foreach($statusList as $status)
-                                                    <option value="{{ $status }}" {{ request('status_filter') == $status ? 'selected' : '' }}>
-                                                        {{ ucfirst($status) }}
-                                                    </option>
-                                                @endforeach
-                                            @else
-                                                @foreach($fallbackStatuses as $status)
-                                                    <option value="{{ \Illuminate\Support\Str::slug($status, '_') }}" {{ request('status_filter') == \Illuminate\Support\Str::slug($status, '_') ? 'selected' : '' }}>
-                                                        {{ $status }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
+                                        <label for="lead_stage_filter">Stage</label>
+                                        <select name="lead_stage_filter" id="lead_stage_filter" class="form-control">
+                                            <option value="">All stages</option>
+                                            @foreach(($leadStageLabels ?? []) as $stageVal => $stageLabel)
+                                                <option value="{{ $stageVal }}" {{ request('lead_stage_filter') === $stageVal ? 'selected' : '' }}>
+                                                    {{ $stageLabel }}
+                                                </option>
+                                            @endforeach
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="d-block">&nbsp;</label>
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" name="include_inactive" id="include_inactive" value="1" {{ request('include_inactive') ? 'checked' : '' }}>
+                                            <label class="custom-control-label" for="include_inactive">Include inactive (Not qualified / Hostile)</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -430,7 +430,7 @@
                                     <th class="sortable-header">@sortablelink('first_name', 'Name')</th>
                                     <th>Info</th>
                                     <th class="sortable-header">@sortablelink('created_at', 'Contact Date')</th>
-                                    <th class="sortable-header">@sortablelink('status', 'Status')</th>
+                                    <th class="sortable-header">@sortablelink('lead_status', 'Stage')</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -459,12 +459,16 @@
                                         <td>{{date('d/m/Y h:i:s a', strtotime($list->created_at))}}</td>
                                         <td>
                                             @php
-                                                $statusValue = @$list->status ?: config('constants.empty');
-                                                $statusSlug = \Illuminate\Support\Str::slug(strtolower($statusValue), '_');
+                                                $stageKey = $list->lead_status ?: 'new';
+                                                $stageLabel = ($leadStageLabels[$stageKey] ?? ucfirst(str_replace('_', ' ', $stageKey)));
+                                                $stageSlug = \Illuminate\Support\Str::slug($stageKey, '_');
                                             @endphp
-                                            <span class="status-badge {{ $statusSlug }}">
-                                                <i class="fas fa-circle"></i> {{ $statusValue }}
+                                            <span class="status-badge {{ $stageSlug }}">
+                                                <i class="fas fa-circle"></i> {{ $stageLabel }}
                                             </span>
+                                            @if($list->lead_status === 'follow_up' && $list->followup_date)
+                                                <br><small class="text-muted">Follow-up: {{ $list->followup_date->format('d/m/Y') }}</small>
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="action-buttons">
@@ -485,7 +489,7 @@
 
                                 @else
                                     <tr>
-                                        <td colspan="7" style="text-align: center; padding: 20px;">
+                                        <td colspan="6" style="text-align: center; padding: 20px;">
                                             No Record Found
                                         </td>
                                     </tr>

@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Lead;
 use App\Models\Admin;
+use App\Services\LeadFollowUpNoteService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -13,6 +14,8 @@ class LeadFactory extends Factory
 
     public function definition(): array
     {
+        $leadStatus = $this->faker->randomElement(['new', 'follow_up', 'not_qualified', 'hostile']);
+
         return [
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
@@ -21,8 +24,8 @@ class LeadFactory extends Factory
             'password' => bcrypt('password'),
             'type' => 'lead', // Lead type
             'user_id' => \App\Models\Staff::query()->value('id'), // Assigned to staff (null if no staff)
-            'lead_quality' => $this->faker->randomElement(['hot', 'warm', 'cold']),
-            'lead_status' => $this->faker->randomElement(['new', 'contacted', 'qualified', 'lost']),
+            'status' => LeadFollowUpNoteService::adminsStatusForLeadStatus($leadStatus),
+            'lead_status' => $leadStatus,
             'source' => $this->faker->optional()->randomElement(['website', 'referral', 'social_media', 'direct']),
             'remember_token' => Str::random(10),
             'is_archived' => 0,
@@ -36,13 +39,15 @@ class LeadFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'lead_status' => 'new',
+            'status' => 1,
         ]);
     }
 
-    public function qualified(): self
+    public function followUp(): self
     {
         return $this->state(fn (array $attributes) => [
-            'lead_status' => 'qualified',
+            'lead_status' => 'follow_up',
+            'status' => 1,
         ]);
     }
 
@@ -51,6 +56,7 @@ class LeadFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'lead_status' => 'converted',
             'type' => 'client',
+            'status' => 1,
         ]);
     }
 }

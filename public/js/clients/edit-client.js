@@ -1985,7 +1985,7 @@ window.cancelEdit = function(sectionType) {
  * Generic function to save section data via AJAX
  */
 window.saveSectionData = function(sectionName, formData, successCallback) {
-    const form = document.getElementById('editCompanyForm') || document.getElementById('editClientForm');
+    const form = document.getElementById('editCompanyForm') || document.getElementById('editClientForm') || document.getElementById('editLeadForm');
     if (!form) {
         showNotification('Form not found. Please refresh the page and try again.', 'error');
         return;
@@ -2094,6 +2094,19 @@ window.saveBasicInfo = function() {
     formData.append('age', document.getElementById('age').value);
     formData.append('gender', document.getElementById('gender').value);
     formData.append('marital_status', document.getElementById('maritalStatus').value);
+
+    const leadStageEl = document.getElementById('lead_pipeline_status_edit');
+    if (leadStageEl) {
+        formData.append('lead_status', leadStageEl.value);
+        const fuEl = document.getElementById('lead_followup_date_edit');
+        if (fuEl) {
+            formData.append('followup_date', fuEl.value || '');
+        }
+        const asEl = document.getElementById('assigned_staff_id_edit');
+        if (asEl) {
+            formData.append('assigned_staff_id', asEl.value);
+        }
+    }
     
     saveSectionData('basicInfo', formData, function() {
         // Update summary view on success
@@ -2126,6 +2139,36 @@ window.saveBasicInfo = function() {
                 <span class="summary-value">${document.getElementById('maritalStatus').value || 'Not set'}</span>
             </div>
         `;
+
+        if (leadStageEl) {
+            const stageText = leadStageEl.options[leadStageEl.selectedIndex]?.text || leadStageEl.value;
+            let extra = `
+            <div class="summary-item">
+                <span class="summary-label">Lead stage:</span>
+                <span class="summary-value">${stageText}</span>
+            </div>`;
+            const fuEl = document.getElementById('lead_followup_date_edit');
+            let fuDisplay = '—';
+            if (leadStageEl.value === 'follow_up' && fuEl && fuEl.value) {
+                const p = fuEl.value.split('-');
+                if (p.length === 3) {
+                    fuDisplay = `${p[2]}/${p[1]}/${p[0]}`;
+                }
+            }
+            extra += `
+            <div class="summary-item">
+                <span class="summary-label">Follow-up date:</span>
+                <span class="summary-value">${fuDisplay}</span>
+            </div>`;
+            const asEl = document.getElementById('assigned_staff_id_edit');
+            const asText = asEl ? (asEl.options[asEl.selectedIndex]?.text || '') : '';
+            extra += `
+            <div class="summary-item">
+                <span class="summary-label">Assigned to:</span>
+                <span class="summary-value">${asText || '—'}</span>
+            </div>`;
+            summaryGrid.innerHTML += extra;
+        }
         
         // Return to summary view
         cancelEdit('basicInfo');

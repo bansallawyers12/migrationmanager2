@@ -35,6 +35,8 @@ class Admin extends Authenticatable
         'country', 'state', 'city', 'address', 'zip',
         // Profile (profile_img removed - use avatar.png)
         'status', 'verified',
+        // Lead pipeline (admins.type = lead); clients may ignore
+        'lead_status', 'followup_date', 'user_id',
         // Company Lead/Client Flag (company data stored in companies table)
         'is_company',
         // API/Service Tokens
@@ -62,6 +64,10 @@ class Admin extends Authenticatable
 	*/
     protected $hidden = [
         'password', 'remember_token', 'cp_random_code'
+    ];
+
+    protected $casts = [
+        'followup_date' => 'datetime',
     ];
 
 	public $sortable = [

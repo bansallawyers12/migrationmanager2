@@ -314,6 +314,7 @@ class AssigneeController extends Controller
             'Urgent' => $groupedCounts['Urgent'] ?? 0,
             'Personal Action' => $groupedCounts['Personal Action'] ?? 0,
             'Client Portal' => $groupedCounts['Client Portal'] ?? 0,
+            'Follow Up' => $groupedCounts['Follow Up'] ?? 0,
         ];
 
         return $counts;
@@ -365,6 +366,8 @@ class AssigneeController extends Controller
                             $actionGroup = 'Personal Action';
                         } elseif ($actionGroup == 'client_portal') {
                             $actionGroup = 'Client Portal';
+                        } elseif ($actionGroup == 'follow_up') {
+                            $actionGroup = 'Follow Up';
                         } else {
                             $actionGroup = ucfirst($actionGroup);
                         }
@@ -579,7 +582,8 @@ class AssigneeController extends Controller
             'query' => 0,
             'urgent' => 0,
             'personal_action' => 0,
-            'client_portal' => 0
+            'client_portal' => 0,
+            'follow_up' => 0,
         ];
 
         $query = Note::where('status', '<>', '1')
@@ -598,6 +602,7 @@ class AssigneeController extends Controller
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
         $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
         $counts['client_portal'] = (clone $query)->where('task_group', 'Client Portal')->count();
+        $counts['follow_up'] = (clone $query)->where('task_group', 'Follow Up')->count();
 
         return response()->json($counts);
     }

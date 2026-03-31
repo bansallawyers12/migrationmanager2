@@ -99,6 +99,8 @@
                 <form id="editLeadForm" action="{{ route('leads.update', base64_encode(convert_uuencode($fetchedData->id))) }}" method="POST" enctype="multipart/form-data">
 				@csrf
                     @method('PUT')
+                    <input type="hidden" name="id" value="{{ $fetchedData->id }}">
+                    <input type="hidden" name="type" value="{{ $fetchedData->type }}">
 
                 <!-- Personal Section -->
                 <section id="personalSection" class="content-section">
@@ -139,6 +141,36 @@
                                     <span class="summary-label">Marital Status:</span>
                                     <span class="summary-value">{{ $fetchedData->marital_status ?: 'Not set' }}</span>
                                 </div>
+                                @if($fetchedData->type === 'lead')
+                                    @php
+                                        $sumStage = $fetchedData->lead_status ?: 'new';
+                                        $sumStageLabel = ($leadStageLabels[$sumStage] ?? ucfirst(str_replace('_', ' ', $sumStage)));
+                                    @endphp
+                                    <div class="summary-item">
+                                        <span class="summary-label">Lead stage:</span>
+                                        <span class="summary-value">{{ $sumStageLabel }}</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Follow-up date:</span>
+                                        <span class="summary-value">
+                                            @if($fetchedData->lead_status === 'follow_up' && $fetchedData->followup_date)
+                                                {{ $fetchedData->followup_date instanceof \Carbon\Carbon ? $fetchedData->followup_date->format('d/m/Y') : \Carbon\Carbon::parse($fetchedData->followup_date)->format('d/m/Y') }}
+                                            @else
+                                                —
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Assigned to:</span>
+                                        <span class="summary-value">
+                                            @if($fetchedData->assignedTo)
+                                                {{ $fetchedData->assignedTo->first_name }} {{ $fetchedData->assignedTo->last_name }}
+                                            @else
+                                                —
+                                            @endif
+                                        </span>
+                                    </div>
+                                @endif
                             </div>
 											</div>	
 											
@@ -213,6 +245,48 @@
                                         <span class="text-danger">{{ $message }}</span>
                                     @enderror
 													</div>
+                                @if($fetchedData->type === 'lead')
+                                    @php
+                                        $editStage = old('lead_status', $fetchedData->lead_status ?: 'new');
+                                        $editFu = old('followup_date');
+                                        if ($editFu === null && $fetchedData->followup_date) {
+                                            $editFu = $fetchedData->followup_date instanceof \Carbon\Carbon
+                                                ? $fetchedData->followup_date->format('Y-m-d')
+                                                : \Carbon\Carbon::parse($fetchedData->followup_date)->format('Y-m-d');
+                                        }
+                                    @endphp
+                                    <div class="form-group">
+                                        <label for="lead_pipeline_status_edit">Lead stage</label>
+                                        <select id="lead_pipeline_status_edit" name="lead_status" class="form-control">
+                                            @foreach(($leadStageLabels ?? []) as $val => $lbl)
+                                                <option value="{{ $val }}" {{ $editStage === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('lead_status')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div class="form-group" id="lead_followup_date_wrap_edit" style="display: none;">
+                                        <label for="lead_followup_date_edit">Follow-up date <span class="text-muted">(optional)</span></label>
+                                        <input type="date" id="lead_followup_date_edit" name="followup_date" class="form-control" value="{{ $editFu }}">
+                                        @error('followup_date')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="assigned_staff_id_edit">Assigned to</label>
+                                        <select id="assigned_staff_id_edit" name="assigned_staff_id" class="form-control">
+                                            @foreach(($assignableStaff ?? collect()) as $st)
+                                                <option value="{{ $st->id }}" {{ (string) old('assigned_staff_id', $fetchedData->user_id) === (string) $st->id ? 'selected' : '' }}>
+                                                    {{ $st->first_name }} {{ $st->last_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('assigned_staff_id')
+                                            <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                @endif
 													</div>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveBasicInfo()">Save</button>
@@ -1508,6 +1582,22 @@
             summaryView.style.display = 'block';
             summaryView.classList.remove('hidden');
         };
+
+        (function () {
+            function syncLeadFollowupDateEdit() {
+                var sel = document.getElementById('lead_pipeline_status_edit');
+                var wrap = document.getElementById('lead_followup_date_wrap_edit');
+                if (!sel || !wrap) return;
+                wrap.style.display = sel.value === 'follow_up' ? 'block' : 'none';
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                var sel = document.getElementById('lead_pipeline_status_edit');
+                if (sel) {
+                    sel.addEventListener('change', syncLeadFollowupDateEdit);
+                    syncLeadFollowupDateEdit();
+                }
+            });
+        })();
     </script>
     <script src="{{asset('js/clients/english-proficiency.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>

@@ -252,6 +252,7 @@
                                     </button>
                                     <button type="button">
                                         <a href="{{URL::to('/action_completed?group_type=Client Portal')}}" id="Client Portal" class="group_type {{ $task_group == 'Client Portal' ? 'active' : '' }}"><i class="fa fa-globe" aria-hidden="true"></i> Client Portal <span class="countAction">{{ $taskGroupCounts['Client Portal'] }}</span></a>
+                                        <a href="{{URL::to('/action_completed?group_type=Follow Up')}}" id="Follow Up" class="group_type {{ $task_group == 'Follow Up' ? 'active' : '' }}"><i class="fa fa-calendar-check-o" aria-hidden="true"></i> Follow up <span class="countAction">{{ $taskGroupCounts['Follow Up'] ?? 0 }}</span></a>
                                     </button>
                                 </div>
                             </div>

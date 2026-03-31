@@ -588,6 +588,7 @@
                 <button class="tab-button" data-filter="urgent">Urgent <span class="badge" id="urgent-count">0</span></button>
                 <button class="tab-button" data-filter="personal_action">Personal Action <span class="badge" id="personal-task-count">0</span></button>
                 <button class="tab-button" data-filter="client_portal">Client Portal <span class="badge" id="client-portal-count">0</span></button>
+                <button class="tab-button" data-filter="follow_up">Follow up <span class="badge" id="follow-up-count">0</span></button>
             </div>
 
             <!-- Header Controls (Only Search Bar) -->
@@ -1430,6 +1431,7 @@ $(function () {
                     $('#urgent-count').text(data.urgent || 0);
                     $('#personal-task-count').text(data.personal_action || 0);
                     $('#client-portal-count').text(data.client_portal || 0);
+                    $('#follow-up-count').text(data.follow_up || 0);
                 } else {
                     console.warn('Invalid badge count data received');
                 }

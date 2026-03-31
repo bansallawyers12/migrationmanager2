@@ -20,6 +20,8 @@ use Carbon\Carbon;
 use App\Traits\ClientHelpers;
 use App\Services\ClientReferenceService;
 use App\Support\StaffClientVisibility;
+use App\Services\LeadFollowUpNoteService;
+use App\Models\Staff;
 
 class LeadController extends Controller
 {
@@ -44,8 +46,6 @@ class LeadController extends Controller
         $roles = \App\Models\UserRole::find(Auth::user()->role); 
         $module_access = $this->decodeRoleModuleAccess($roles?->module_access); //dd(Auth::user()->role);
         
-        $statusOptions = collect();
-        $qualityOptions = collect();
         $perPage = 20;
         if ($this->staffRoleCanOpenLeadList($module_access)) { //dd('yes');
             // Using Lead model - automatically filters by type='lead' and is_deleted=null
@@ -91,8 +91,17 @@ class LeadController extends Controller
                 return $q->where('phone', 'LIKE', '%' . $request->input('phone') . '%');
             });
 
-            $query->when($request->filled('status_filter'), function ($q) use ($request) {
-                return $q->where('status', $request->input('status_filter'));
+            $query->when(! $request->boolean('include_inactive'), function ($q) use ($request) {
+                $inactiveStages = ['not_qualified', 'hostile'];
+                if ($request->filled('lead_stage_filter') && in_array($request->input('lead_stage_filter'), $inactiveStages, true)) {
+                    return $q;
+                }
+
+                return $q->where('status', 1);
+            });
+
+            $query->when($request->filled('lead_stage_filter'), function ($q) use ($request) {
+                return $q->where('lead_status', $request->input('lead_stage_filter'));
             });
 
             if ($request->filled('quick_date_range') || $request->filled('from_date') || $request->filled('to_date')) {
@@ -112,14 +121,12 @@ class LeadController extends Controller
                 $perPage = 20;
             }
 
-            $statusOptionsQuery = Lead::query()->where('is_archived', 0);
-            StaffClientVisibility::restrictLeadListQuery($statusOptionsQuery);
-            $statusOptions = $statusOptionsQuery
-                ->select('status')
-                ->distinct()
-                ->whereNotNull('status')
-                ->orderBy('status')
-                ->pluck('status');
+            $leadStageLabels = [
+                'new' => 'New',
+                'follow_up' => 'Follow up',
+                'not_qualified' => 'Not qualified',
+                'hostile' => 'Hostile',
+            ];
 
             $lists = $query->sortable(['id' => 'desc'])
                 ->paginate($perPage)
@@ -127,9 +134,15 @@ class LeadController extends Controller
         } else { //dd('no');
             $lists = Lead::whereNull('id')->whereNotNull('id')->sortable(['id' => 'desc'])->paginate($perPage);
             $totalData = 0;
+            $leadStageLabels = [
+                'new' => 'New',
+                'follow_up' => 'Follow up',
+                'not_qualified' => 'Not qualified',
+                'hostile' => 'Hostile',
+            ];
         }
         
-        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'statusOptions'));
+        return view('crm.leads.index', compact('lists', 'totalData', 'perPage', 'leadStageLabels'));
     }
 
     /**
@@ -344,7 +357,7 @@ class LeadController extends Controller
             }
             
             // Using Lead model with withArchived scope to include archived leads
-            $fetchedData = Lead::withArchived()->where('id', $id)->first();
+            $fetchedData = Lead::withArchived()->with('assignedTo')->where('id', $id)->first();
             
             if ($fetchedData) {
                 return view('crm.leads.detail', compact('fetchedData'));
@@ -363,8 +376,15 @@ class LeadController extends Controller
     {
         // Get countries for dropdowns
         $countries = \App\Models\Country::orderBy('name', 'asc')->get();
-        
-        return view('crm.leads.create', compact('countries'));
+        $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
+        $leadStageLabels = [
+            'new' => 'New',
+            'follow_up' => 'Follow up',
+            'not_qualified' => 'Not qualified',
+            'hostile' => 'Hostile',
+        ];
+
+        return view('crm.leads.create', compact('countries', 'assignableStaff', 'leadStageLabels'));
     }
 
     /**
@@ -489,6 +509,9 @@ class LeadController extends Controller
                         ],
                         'phone.0' => 'required|max:255',
                         'email.0' => 'required|email|max:255',
+                        'lead_status' => 'nullable|in:new,follow_up,not_qualified,hostile',
+                        'followup_date' => 'nullable|date',
+                        'assigned_staff_id' => 'nullable|exists:staff,id',
                     ];
                     
                     $validationMessages = [
@@ -508,6 +531,9 @@ class LeadController extends Controller
                         'dob' => 'required',
                         'phone.0' => 'required|max:255',
                         'email.0' => 'required|email|max:255',
+                        'lead_status' => 'nullable|in:new,follow_up,not_qualified,hostile',
+                        'followup_date' => 'nullable|date',
+                        'assigned_staff_id' => 'nullable|exists:staff,id',
                     ];
                     
                     $validationMessages = [
@@ -643,14 +669,33 @@ class LeadController extends Controller
                     }
                 }
 
+                $pipelineStatus = $requestData['lead_status'] ?? 'new';
+                if (! in_array($pipelineStatus, LeadFollowUpNoteService::pipelineStatuses(), true)) {
+                    $pipelineStatus = 'new';
+                }
+                $followupDb = null;
+                if ($pipelineStatus === 'follow_up' && ! empty($requestData['followup_date'])) {
+                    $fdParsed = $this->parseLeadDate($requestData['followup_date'], false);
+                    $followupDb = $fdParsed ? $fdParsed->format('Y-m-d H:i:s') : null;
+                }
+                if (in_array($pipelineStatus, ['not_qualified', 'hostile'], true)) {
+                    $followupDb = null;
+                }
+                $assignUserId = Auth::user()->id;
+                if (! empty($requestData['assigned_staff_id'])) {
+                    $assignUserId = (int) $requestData['assigned_staff_id'];
+                }
+
                 // Create new lead using DB query builder - only fields from simplified form
                 $adminData = [
                     // System fields
-                    'user_id' => Auth::user()->id,
+                    'user_id' => $assignUserId,
                     'password' => Hash::make('LEAD_PLACEHOLDER'), // Placeholder password for leads (NOT NULL constraint, will be overwritten if client portal activated)
                     'client_counter' => $client_current_counter,
                     'client_id' => $client_id,
-                    'status' => '1', // Default status: 1 (Active)
+                    'status' => LeadFollowUpNoteService::adminsStatusForLeadStatus($pipelineStatus),
+                    'lead_status' => $pipelineStatus,
+                    'followup_date' => $followupDb,
                     'type' => 'lead', // Lead type
                     'is_archived' => 0, // Not archived
                     'is_deleted' => null, // Not deleted
@@ -801,6 +846,11 @@ class LeadController extends Controller
                     }
                     Log::info('Company record created for admin ID: ' . $admin->id);
                 }
+
+                $leadForNote = Lead::find($admin->id);
+                if ($leadForNote) {
+                    app(LeadFollowUpNoteService::class)->syncNotesForLead($leadForNote, null);
+                }
                 
                 DB::commit();
                 Log::info('Transaction committed successfully');
@@ -854,7 +904,7 @@ class LeadController extends Controller
         }
         
         // Using Lead model - automatically handles filtering
-        $fetchedData = Lead::find($id);
+        $fetchedData = Lead::with('assignedTo')->find($id);
         
         if (!$fetchedData) {
             return Redirect::to('/leads')->with('error', 'Lead not found');
@@ -883,9 +933,18 @@ class LeadController extends Controller
             ->orderBy('title', 'ASC')
             ->get();
         
+        $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
+        $leadStageLabels = [
+            'new' => 'New',
+            'follow_up' => 'Follow up',
+            'not_qualified' => 'Not qualified',
+            'hostile' => 'Hostile',
+        ];
+
         return view('crm.leads.edit', compact(
-            'fetchedData', 'countries', 'clientContacts', 'emails', 
-            'visaCountries', 'clientPassports', 'clientAddresses', 'clientTravels', 'visaTypes'
+            'fetchedData', 'countries', 'clientContacts', 'emails',
+            'visaCountries', 'clientPassports', 'clientAddresses', 'clientTravels', 'visaTypes',
+            'assignableStaff', 'leadStageLabels'
         ));
     }
 
@@ -919,6 +978,9 @@ class LeadController extends Controller
             'last_name' => 'required|max:255',
             'gender' => 'required|max:255',
             'dob' => 'required',
+            'lead_status' => 'sometimes|in:new,follow_up,not_qualified,hostile',
+            'followup_date' => 'nullable|date',
+            'assigned_staff_id' => 'nullable|exists:staff,id',
         ]);
 
         // Custom validation for phone array
@@ -1059,6 +1121,8 @@ class LeadController extends Controller
         DB::beginTransaction();
         
         try {
+            $previousLeadStatus = $lead->lead_status;
+
             // Update lead data
             $lead->first_name = $requestData['first_name'];
             $lead->last_name = $requestData['last_name'];
@@ -1108,9 +1172,39 @@ class LeadController extends Controller
             $lead->phone = $lastPhone;
             $lead->email_type = $lastEmailType;
             $lead->email = $lastEmail;
-            $lead->status = $requestData['status'] ?? null;
             $lead->source = $requestData['lead_source'] ?? null;
             $lead->related_files = rtrim($related_files, ',');
+
+            if (array_key_exists('lead_status', $requestData)) {
+                $ls = (string) $requestData['lead_status'];
+                if (! in_array($ls, LeadFollowUpNoteService::pipelineStatuses(), true)) {
+                    DB::rollBack();
+
+                    return redirect()->back()->withInput()->withErrors(['lead_status' => 'Invalid lead status.']);
+                }
+                $lead->lead_status = $ls;
+            }
+
+            if (array_key_exists('followup_date', $requestData)) {
+                $rawFd = $requestData['followup_date'];
+                if ($rawFd === '' || $rawFd === null) {
+                    $lead->followup_date = null;
+                } else {
+                    $fd = $this->parseLeadDate(is_string($rawFd) ? $rawFd : '', false);
+                    $lead->followup_date = $fd ? $fd->format('Y-m-d H:i:s') : null;
+                }
+            }
+
+            if ($lead->lead_status !== 'follow_up') {
+                $lead->followup_date = null;
+            }
+
+            $lead->status = LeadFollowUpNoteService::adminsStatusForLeadStatus($lead->lead_status);
+
+            if (array_key_exists('assigned_staff_id', $requestData)) {
+                $asid = $requestData['assigned_staff_id'];
+                $lead->user_id = ($asid === '' || $asid === null) ? Auth::user()->id : (int) $asid;
+            }
 
             // Additional fields with null coalescing
             $lead->country_passport = $requestData['country_passport'] ?? null;
@@ -1122,6 +1216,8 @@ class LeadController extends Controller
             $lead->total_points = $requestData['total_points'] ?? null;
 
             $lead->save();
+
+            app(LeadFollowUpNoteService::class)->syncNotesForLead($lead, $previousLeadStatus);
             
             // Update phone numbers in client_contacts table (following ClientPersonalDetailsController pattern)
             if (isset($requestData['contact_type_hidden']) && is_array($requestData['contact_type_hidden'])) {
