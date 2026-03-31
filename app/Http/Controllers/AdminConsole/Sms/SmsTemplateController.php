@@ -37,34 +37,38 @@ class SmsTemplateController extends Controller
         return view('AdminConsole.features.sms.templates.create');
     }
 
+    protected const SYSTEM_CATEGORIES = ['verification', 'notification', 'manual', 'reminder'];
+
     /**
      * Store new template
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255|unique:sms_templates,title',
-            'message' => 'required|string|max:1600',
+            'title'       => 'required|string|max:255|unique:sms_templates,title',
+            'message'     => 'required|string|max:1600',
             'description' => 'nullable|string',
-            'variables' => 'nullable|string',  // Changed from 'array' to 'string' to accept JSON
-            'category' => 'nullable|string|max:100',
-            'is_active' => 'boolean',
+            'variables'   => 'nullable|string',
+            'category'    => ['nullable', 'string', \Illuminate\Validation\Rule::in(self::SYSTEM_CATEGORIES)],
+            'is_active'   => 'boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $template = SmsTemplate::create($request->all());
+        $template = SmsTemplate::create($request->only([
+            'title', 'message', 'description', 'variables', 'category', 'is_active',
+        ]));
 
         return response()->json([
             'success' => true,
             'message' => 'Template created successfully',
-            'data' => $template
+            'data' => $template,
         ]);
     }
 
@@ -86,28 +90,30 @@ class SmsTemplateController extends Controller
         $template = SmsTemplate::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255|unique:sms_templates,title,' . $id,
-            'message' => 'required|string|max:1600',
+            'title'       => 'required|string|max:255|unique:sms_templates,title,' . $id,
+            'message'     => 'required|string|max:1600',
             'description' => 'nullable|string',
-            'variables' => 'nullable|string',  // Changed from 'array' to 'string' to accept JSON
-            'category' => 'nullable|string|max:100',
-            'is_active' => 'boolean',
+            'variables'   => 'nullable|string',
+            'category'    => ['nullable', 'string', \Illuminate\Validation\Rule::in(self::SYSTEM_CATEGORIES)],
+            'is_active'   => 'boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $template->update($request->all());
+        $template->update($request->only([
+            'title', 'message', 'description', 'variables', 'category', 'is_active',
+        ]));
 
         return response()->json([
             'success' => true,
             'message' => 'Template updated successfully',
-            'data' => $template
+            'data' => $template,
         ]);
     }
 
@@ -117,12 +123,20 @@ class SmsTemplateController extends Controller
     public function destroy($id)
     {
         $template = SmsTemplate::findOrFail($id);
-        
-        // Check if template is in use
+
+        // System templates (those with an alias) are used by automated flows —
+        // they can be edited or deactivated but must not be deleted.
+        if (!empty($template->alias)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'System templates cannot be deleted. You may edit the message or deactivate the template instead.',
+            ], 422);
+        }
+
         if ($template->usage_count > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete template that has been used. Consider deactivating it instead.'
+                'message' => 'Cannot delete a template that has been used. Consider deactivating it instead.',
             ], 422);
         }
 
@@ -130,7 +144,7 @@ class SmsTemplateController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Template deleted successfully'
+            'message' => 'Template deleted successfully',
         ]);
     }
 

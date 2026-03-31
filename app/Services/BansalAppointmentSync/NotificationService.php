@@ -143,7 +143,7 @@ class NotificationService
 
             $result = $this->smsManager->sendFromTemplateByAlias($phone, $templateAlias, $variables, $context);
 
-            if (! $result['success'] && ($result['message'] ?? '') === 'Template not found or inactive') {
+            if (! $result['success'] && str_contains($result['message'] ?? '', 'Template not found')) {
                 $message = match ($meetingType) {
                     'in_person' => "BANSAL IMMIGRATION: Reminder - You have a scheduled In-Person appointment tomorrow at {$appointment->timeslot_full} at our {$appointment->location} office. Please be on time. If you need to reschedule, call us at {$officePhone}.",
                     'phone' => "BANSAL IMMIGRATION: Reminder - You have a scheduled Phone appointment tomorrow at {$appointment->timeslot_full} . Please be on time. If you need to reschedule, call us at {$officePhone}.",

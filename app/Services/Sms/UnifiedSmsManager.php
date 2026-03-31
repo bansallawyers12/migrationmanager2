@@ -8,7 +8,6 @@ use App\Helpers\PhoneValidationHelper;
 use App\Services\Sms\Contracts\SmsProviderInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * UnifiedSmsManager
@@ -170,13 +169,14 @@ class UnifiedSmsManager
             'expiry_minutes' => '5',
         ], $context);
 
-        if ($result['success']) {
-            return $result;
+        // Only fall back to raw message if the template itself is missing; do NOT
+        // retry if the provider already attempted delivery and failed.
+        if (!$result['success'] && $this->isTemplateMissingError($result)) {
+            $message = "BANSAL IMMIGRATION: Your verification code is {$code}. This code expires in 5 minutes.";
+            return $this->sendSms($to, $message, 'verification', $context);
         }
 
-        $message = "BANSAL IMMIGRATION: Your verification code is {$code}. This code expires in 5 minutes.";
-
-        return $this->sendSms($to, $message, 'verification', $context);
+        return $result;
     }
 
     /**
@@ -205,57 +205,67 @@ class UnifiedSmsManager
             ];
         }
 
-        return $this->sendFromTemplate($to, $template->id, $variables, $context);
+        return $this->sendFromTemplateModel($to, $template, $variables, $context);
     }
 
     /**
-     * Send SMS from template
+     * Send SMS from template by ID (public convenience method).
      */
     public function sendFromTemplate($to, $templateId, $variables = [], $context = [])
     {
         try {
             $template = \App\Models\SmsTemplate::find($templateId);
-            
+
             if (!$template || !$template->is_active) {
                 return [
                     'success' => false,
-                    'message' => 'Template not found or inactive'
+                    'message' => 'Template not found or inactive',
                 ];
             }
 
-            // Replace variables in message
-            $message = $this->replaceTemplateVariables($template->message, $variables);
-
-            // Add template ID to context
-            $context['template_id'] = $templateId;
-
-            // Update template usage count
-            $template->increment('usage_count');
-
-            $type = $this->resolveMessageTypeFromCategory($template->category);
-
-            return $this->sendSms($to, $message, $type, $context);
+            return $this->sendFromTemplateModel($to, $template, $variables, $context);
 
         } catch (\Exception $e) {
             Log::error('UnifiedSmsManager: Template error', [
                 'template_id' => $templateId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Template processing error'
+                'message' => 'Template processing error',
             ];
         }
     }
 
+    /**
+     * Core: render template body, increment usage, and send.
+     * Shared by sendFromTemplate and sendFromTemplateByAlias to avoid double DB fetch.
+     */
+    protected function sendFromTemplateModel($to, \App\Models\SmsTemplate $template, array $variables = [], array $context = []): array
+    {
+        $message = $this->replaceTemplateVariables($template->message, $variables);
+        $context['template_id'] = $template->id;
+        $template->increment('usage_count');
+        $type = $this->resolveMessageTypeFromCategory($template->category);
+
+        return $this->sendSms($to, $message, $type, $context);
+    }
+
     protected function resolveMessageTypeFromCategory(?string $category): string
     {
-        $category = $category ?? 'manual';
-
         return in_array($category, ['verification', 'notification', 'manual', 'reminder'], true)
             ? $category
             : 'manual';
+    }
+
+    /**
+     * Returns true when a result failure means the template row was missing/inactive
+     * (so callers know whether a raw-message fallback is appropriate).
+     */
+    protected function isTemplateMissingError(array $result): bool
+    {
+        return str_contains($result['message'] ?? '', 'Template not found');
     }
 
     /**

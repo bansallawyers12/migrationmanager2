@@ -38,7 +38,14 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="category">Category</label>
-                                            <input type="text" class="form-control" id="category" name="category" placeholder="e.g., Appointment, Reminder, Notification">
+                                            <select class="form-control" id="category" name="category">
+                                                <option value="">-- Select Category --</option>
+                                                <option value="notification">Notification</option>
+                                                <option value="reminder">Reminder</option>
+                                                <option value="verification">Verification</option>
+                                                <option value="manual">Manual</option>
+                                            </select>
+                                            <small class="form-text text-muted">Controls logging type and activity label.</small>
                                         </div>
                                     </div>
                                 </div>

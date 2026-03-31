@@ -424,6 +424,8 @@ Route::prefix('crm/access')->name('crm.access.')->group(function () {
     Route::get('/my-grants', [AccessGrantController::class, 'myGrantsPage'])->name('my-grants');
     Route::get('/my-grants/data', [AccessGrantController::class, 'myGrantsData'])->name('my-grants.data');
     Route::get('/dashboard', [AccessGrantController::class, 'dashboardPage'])->name('dashboard');
+    Route::get('/dashboard/stats', [AccessGrantController::class, 'dashboardStats'])->name('dashboard.stats');
+    Route::get('/dashboard/summary', [AccessGrantController::class, 'dashboardSummary'])->name('dashboard.summary');
     Route::get('/dashboard/data', [AccessGrantController::class, 'dashboardData'])->name('dashboard.data');
     Route::get('/dashboard/export', [AccessGrantController::class, 'dashboardExport'])->name('dashboard.export');
     Route::get('/queue/mini', [AccessGrantController::class, 'queueMini'])->name('queue.mini');

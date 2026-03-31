@@ -184,15 +184,18 @@ class SmsTemplate extends Model
     public function getPreviewAttribute()
     {
         $sampleData = [
-            'client_name' => 'John Smith',
-            'first_name' => 'John',
-            'matter_number' => 'M2024001',
-            'appointment_date' => '15 Oct 2025',
-            'appointment_time' => '10:00 AM',
-            'staff_name' => 'Sarah',
-            'office_phone' => '02 1234 5678',
+            'client_name'       => 'John Smith',
+            'first_name'        => 'John',
+            'matter_number'     => 'M2024001',
+            'appointment_date'  => '15 Oct 2025',
+            'appointment_time'  => '10:00 AM',
+            'timeslot_full'     => '10:00 AM – 10:30 AM',
+            'location'          => 'Melbourne',
+            'staff_name'        => 'Sarah',
+            'office_phone'      => '03 9602 1330',
             'verification_code' => '123456',
-            'invoice_number' => 'INV-2024-001',
+            'expiry_minutes'    => '5',
+            'invoice_number'    => 'INV-2024-001',
         ];
 
         return $this->replaceVariables($sampleData);

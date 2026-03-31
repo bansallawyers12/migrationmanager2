@@ -57,6 +57,7 @@ class Kernel extends ConsoleKernel
         // Visa Sheet Diagnostics
         '\App\Console\Commands\DiagnoseVisaSheet',
         '\App\Console\Commands\ExpireCrmAccessGrants',
+        '\App\Console\Commands\CacheAccessGrantGlobalCounts',
     ];
 
     /**
@@ -114,6 +115,7 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/age-updates.log'));
 
         $schedule->command('access:expire-grants')->hourly();
+        $schedule->command('access:cache-grant-stats')->hourly();
     }
 
     /**

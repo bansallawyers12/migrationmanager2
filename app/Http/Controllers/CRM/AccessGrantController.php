@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Console\Commands\CacheAccessGrantGlobalCounts;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Branch;
@@ -9,11 +10,14 @@ use App\Models\ClientAccessGrant;
 use App\Models\Team;
 use App\Services\CrmAccess\CrmAccessDeniedException;
 use App\Services\CrmAccess\CrmAccessService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccessGrantController extends Controller
@@ -177,6 +181,8 @@ class AccessGrantController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
+        Cache::forget(CacheAccessGrantGlobalCounts::CACHE_KEY);
+
         return response()->json(['grant' => $grant, 'message' => 'Approved.']);
     }
 
@@ -191,6 +197,8 @@ class AccessGrantController extends Controller
         } catch (CrmAccessDeniedException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+
+        Cache::forget(CacheAccessGrantGlobalCounts::CACHE_KEY);
 
         return response()->json(['grant' => $grant, 'message' => 'Rejected.']);
     }
@@ -223,15 +231,74 @@ class AccessGrantController extends Controller
         }
 
         $grantPlaceholder = 999999999;
+        $tz = config('app.timezone');
+        $now = Carbon::now($tz);
 
         return view('crm.access.dashboard', [
             'dataUrl' => route('crm.access.dashboard.data'),
+            'summaryUrl' => route('crm.access.dashboard.summary'),
+            'statsUrl' => route('crm.access.dashboard.stats'),
             'exportUrl' => route('crm.access.dashboard.export'),
             'queueUrl' => route('crm.access.queue.data'),
+            'presetRanges' => [
+                'today' => [$now->toDateString(), $now->toDateString()],
+                'yesterday' => (function () use ($now) {
+                    $d = $now->copy()->subDay();
+
+                    return [$d->toDateString(), $d->toDateString()];
+                })(),
+                'this_week' => [$now->copy()->startOfWeek()->toDateString(), $now->copy()->endOfWeek()->toDateString()],
+                'this_month' => [$now->copy()->startOfMonth()->toDateString(), $now->copy()->endOfMonth()->toDateString()],
+            ],
             'approveUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.approve', ['grant' => $grantPlaceholder])),
             'rejectUrlTpl' => str_replace((string) $grantPlaceholder, '__ID__', route('crm.access.reject', ['grant' => $grantPlaceholder])),
             'branches' => Branch::query()->orderBy('office_name')->get(['id', 'office_name']),
             'teams' => Team::query()->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function dashboardStats(): JsonResponse
+    {
+        $user = $this->requireStaff();
+        if (! $this->crmAccess->isApprover($user)) {
+            abort(403, 'Not authorized.');
+        }
+
+        $cached = Cache::get(CacheAccessGrantGlobalCounts::CACHE_KEY);
+        if ($cached === null) {
+            $cached = [
+                'pending_count' => ClientAccessGrant::query()->where('status', 'pending')->count(),
+                'active_count' => ClientAccessGrant::query()->where('status', 'active')->count(),
+            ];
+            Cache::put(CacheAccessGrantGlobalCounts::CACHE_KEY, $cached, CacheAccessGrantGlobalCounts::TTL_SECONDS);
+        }
+
+        return response()->json($cached);
+    }
+
+    public function dashboardSummary(Request $request): JsonResponse
+    {
+        $user = $this->requireStaff();
+        if (! $this->crmAccess->isApprover($user)) {
+            abort(403, 'Not authorized.');
+        }
+
+        $base = $this->validatedDashboardGrantQuery($request, false);
+        $total = (clone $base)->count();
+        $distinctRecords = (clone $base)->selectRaw('COUNT(DISTINCT admin_id) as c')->value('c') ?? 0;
+
+        $quickCount = (clone $base)->where('grant_type', 'quick')->count();
+        $supervisorCount = (clone $base)->where('grant_type', 'supervisor_approved')->count();
+        $exemptCount = (clone $base)->where('grant_type', 'exempt')->count();
+
+        return response()->json([
+            'filters' => [
+                'matching_rows' => $total,
+                'distinct_records' => (int) $distinctRecords,
+                'grant_type_quick' => $quickCount,
+                'grant_type_supervisor_approved' => $supervisorCount,
+                'grant_type_exempt' => $exemptCount,
+            ],
         ]);
     }
 
@@ -242,36 +309,25 @@ class AccessGrantController extends Controller
             abort(403, 'Not authorized.');
         }
 
-        $base = $this->dashboardFilteredQuery($request);
-        $total = (clone $base)->count();
-        $distinctRecords = (clone $base)->selectRaw('COUNT(DISTINCT admin_id) as c')->value('c') ?? 0;
-        $distinctStaff = (clone $base)->selectRaw('COUNT(DISTINCT staff_id) as c')->value('c') ?? 0;
+        $base = $this->validatedDashboardGrantQuery($request, true);
+        $perPage = min(max((int) $request->input('per_page', 50), 1), 100);
 
-        $quickCount = (clone $base)->where('grant_type', 'quick')->count();
-        $supervisorCount = (clone $base)->where('grant_type', 'supervisor_approved')->count();
-        $exemptCount = (clone $base)->where('grant_type', 'exempt')->count();
-
-        $pending = ClientAccessGrant::query()->where('status', 'pending')->count();
-        $active = ClientAccessGrant::query()->where('status', 'active')->count();
-
-        $rows = (clone $base)
+        $paginator = (clone $base)
             ->with(['staff:id,first_name,last_name,email', 'admin:id,first_name,last_name,type', 'approvedBy:id,first_name,last_name'])
             ->orderByDesc('created_at')
-            ->limit(500)
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
 
         return response()->json([
-            'pending_count' => $pending,
-            'active_count' => $active,
-            'filters' => [
-                'matching_rows' => $total,
-                'distinct_records' => (int) $distinctRecords,
-                'distinct_staff' => (int) $distinctStaff,
-                'grant_type_quick' => $quickCount,
-                'grant_type_supervisor_approved' => $supervisorCount,
-                'grant_type_exempt' => $exemptCount,
+            'rows' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
             ],
-            'rows' => $rows,
         ]);
     }
 
@@ -282,7 +338,7 @@ class AccessGrantController extends Controller
             abort(403, 'Not authorized.');
         }
 
-        $base = $this->dashboardFilteredQuery($request);
+        $base = $this->validatedDashboardGrantQuery($request, false);
         $filename = 'client_access_grants_' . now()->format('Y-m-d_His') . '.csv';
 
         return response()->streamDownload(function () use ($base) {
@@ -328,7 +384,22 @@ class AccessGrantController extends Controller
     /**
      * @return Builder<ClientAccessGrant>
      */
-    protected function dashboardFilteredQuery(Request $request): Builder
+    protected function validatedDashboardGrantQuery(Request $request, bool $forPaginatedList): Builder
+    {
+        $this->validateDashboardFilterInputs($request);
+        $this->assertDashboardNarrowingFilters($request);
+
+        if ($forPaginatedList) {
+            $request->validate([
+                'page' => ['sometimes', 'integer', 'min:1'],
+                'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            ]);
+        }
+
+        return $this->buildDashboardFilteredQuery($request);
+    }
+
+    protected function validateDashboardFilterInputs(Request $request): void
     {
         $request->validate([
             'staff_id' => ['nullable', 'integer', 'min:1'],
@@ -340,7 +411,34 @@ class AccessGrantController extends Controller
             'grant_type' => ['nullable', 'string', 'max:64'],
             'status' => ['nullable', 'string', 'max:32'],
         ]);
+    }
 
+    protected function assertDashboardNarrowingFilters(Request $request): void
+    {
+        $hasDateRange = $request->filled('date_from') && $request->filled('date_to');
+        $hasNarrowingId = $request->filled('staff_id')
+            || $request->filled('office_id')
+            || $request->filled('team_id')
+            || $request->filled('admin_id');
+
+        if (! $hasDateRange && ! $hasNarrowingId) {
+            throw ValidationException::withMessages([
+                'filters' => ['Set a date range (from and to) or choose staff, office, team, or record ID.'],
+            ]);
+        }
+
+        if ($hasDateRange && (string) $request->date_from > (string) $request->date_to) {
+            throw ValidationException::withMessages([
+                'date_to' => ['The end date must be on or after the start date.'],
+            ]);
+        }
+    }
+
+    /**
+     * @return Builder<ClientAccessGrant>
+     */
+    protected function buildDashboardFilteredQuery(Request $request): Builder
+    {
         $q = ClientAccessGrant::query();
 
         if ($request->filled('staff_id')) {

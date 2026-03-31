@@ -86,7 +86,7 @@ class PhoneVerificationService
             'expiry_minutes' => (string) $this->otpValidMinutes,
         ], $smsContext);
 
-        if (! $smsResult['success'] && ($smsResult['message'] ?? '') === 'Template not found or inactive') {
+        if (! $smsResult['success'] && str_contains($smsResult['message'] ?? '', 'Template not found')) {
             $message = "BANSAL IMMIGRATION: Your phone verification code is {$otpCode}. Please provide this code to our staff to verify your phone number. This code expires in {$this->otpValidMinutes} minutes.";
             $smsResult = $this->smsManager->sendSms($fullNumber, $message, 'verification', $smsContext);
         }

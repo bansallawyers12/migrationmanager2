@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\CrmAccess\CrmAccessService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class ExpireCrmAccessGrants extends Command
 {
@@ -15,6 +16,10 @@ class ExpireCrmAccessGrants extends Command
     {
         $n = $crmAccess->expireStaleGrants();
         $this->info("Expired {$n} grant(s).");
+
+        if ($n > 0) {
+            Cache::forget(CacheAccessGrantGlobalCounts::CACHE_KEY);
+        }
 
         return self::SUCCESS;
     }
