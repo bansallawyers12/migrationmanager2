@@ -372,6 +372,25 @@ class AssigneeController extends Controller
                             $actionGroup = ucfirst($actionGroup);
                         }
                         $query->where('notes.task_group', $actionGroup);
+
+                        // Super Admin Client Portal tab should show one row per grouped action.
+                        if (
+                            Auth::check()
+                            && Auth::user()->role == 1
+                            && $request->filter == 'client_portal'
+                        ) {
+                            $query->whereRaw(
+                                "notes.id IN (
+                                    SELECT MAX(grouped_notes.id)
+                                    FROM notes as grouped_notes
+                                    WHERE grouped_notes.status <> '1'
+                                        AND grouped_notes.type = 'client'
+                                        AND grouped_notes.is_action = 1
+                                        AND grouped_notes.task_group = 'Client Portal'
+                                    GROUP BY COALESCE(NULLIF(grouped_notes.unique_group_id, ''), CONCAT('note_', grouped_notes.id))
+                                )"
+                            );
+                        }
                     }
                 }
 
@@ -601,7 +620,12 @@ class AssigneeController extends Controller
         $counts['query'] = (clone $query)->where('task_group', 'Query')->count();
         $counts['urgent'] = (clone $query)->where('task_group', 'Urgent')->count();
         $counts['personal_action'] = (clone $query)->where('task_group', 'Personal Action')->count();
-        $counts['client_portal'] = (clone $query)->where('task_group', 'Client Portal')->count();
+        $counts['client_portal'] = Auth::user()->role == 1
+            ? (clone $query)
+                ->where('task_group', 'Client Portal')
+                ->distinct(DB::raw("COALESCE(NULLIF(unique_group_id, ''), CONCAT('note_', id))"))
+                ->count(DB::raw("COALESCE(NULLIF(unique_group_id, ''), CONCAT('note_', id))"))
+            : (clone $query)->where('task_group', 'Client Portal')->count();
         $counts['follow_up'] = (clone $query)->where('task_group', 'Follow Up')->count();
 
         return response()->json($counts);
