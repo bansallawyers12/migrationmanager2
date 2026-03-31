@@ -43,10 +43,7 @@ class LeadAssignmentController extends Controller
             if (! $lead) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
-            $role = (int) Auth::user()->role;
-            $fullAccess = in_array($role, StaffClientVisibility::leadFullAccessRoleIds(), true);
-            $isOwner = (int) ($lead->user_id ?? 0) === (int) Auth::user()->id;
-            if (! $fullAccess && ! $isOwner) {
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $lead->id, Auth::user())) {
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
         }

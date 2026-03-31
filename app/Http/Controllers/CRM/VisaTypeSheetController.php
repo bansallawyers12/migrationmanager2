@@ -303,9 +303,13 @@ class VisaTypeSheetController extends Controller
                 $q->whereNull('admins.type')->orWhere('admins.type', '!=', 'lead');
             });
 
-        // Person Assisting: restrict client matters to where they are assigned
+        // Person Assisting role: restrict to matters where they are MA / PR / PA
         if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
-            $clientQuery->where('cm.sel_person_assisting', $paId);
+            $clientQuery->where(function ($q) use ($paId) {
+                $q->where('cm.sel_migration_agent', $paId)
+                    ->orWhere('cm.sel_person_responsible', $paId)
+                    ->orWhere('cm.sel_person_assisting', $paId);
+            });
         }
 
         $clientQuery->select(
@@ -527,9 +531,13 @@ class VisaTypeSheetController extends Controller
             ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted');
 
-        // Person Assisting: restrict to matters where they are assigned
+        // Person Assisting role: restrict to matters where they are MA / PR / PA
         if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
-            $query->where('latest_matter.sel_person_assisting', $paId);
+            $query->where(function ($q) use ($paId) {
+                $q->where('latest_matter.sel_migration_agent', $paId)
+                    ->orWhere('latest_matter.sel_person_responsible', $paId)
+                    ->orWhere('latest_matter.sel_person_assisting', $paId);
+            });
         }
 
         $this->applyTabFilter($query, $tab, $config);

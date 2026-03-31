@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * Row-level visibility for CRM staff.
  *
+ * Matter allocation: access is granted when the staff member appears on any client_matters row
+ * for that CRM record (admins.id) as sel_migration_agent, sel_person_responsible, or
+ * sel_person_assisting — in addition to admins.user_id and active cross-access grants.
+ *
  * Cross-access grants and strict allocation are controlled by config/crm_access.php
  * (CRM_ACCESS_STRICT_ALLOCATION, exempt roles, approvers, quick access).
  */
@@ -171,8 +175,8 @@ final class StaffClientVisibility
             $q->whereExists(function ($sub) use ($staffId, $cmAlias) {
                 $sub->select(DB::raw('1'))
                     ->from('client_matters')
-                    ->whereColumn('client_matters.client_id', $cmAlias . '.client_id')
-                    ->where('client_matters.sel_person_assisting', $staffId);
+                    ->whereColumn('client_matters.client_id', $cmAlias . '.client_id');
+                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
             })->orWhere($adAlias . '.user_id', $staffId)
               ->orWhereExists(function ($sub) use ($staffId, $cmAlias) {
                   $sub->select(DB::raw('1'))
@@ -308,8 +312,8 @@ final class StaffClientVisibility
                 $q->whereExists(function ($sub) use ($staffId) {
                     $sub->select(DB::raw('1'))
                         ->from('client_matters')
-                        ->whereColumn('client_matters.client_id', 'admins.id')
-                        ->where('client_matters.sel_person_assisting', $staffId);
+                        ->whereColumn('client_matters.client_id', 'admins.id');
+                    self::whereClientMatterRowAssignedToStaff($sub, $staffId);
                 })->orWhere('admins.user_id', $staffId)
                   ->orWhereExists(function ($sub) use ($staffId) {
                       $sub->select(DB::raw('1'))
@@ -332,6 +336,12 @@ final class StaffClientVisibility
         $column = $query->getModel()->qualifyColumn('user_id');
         $query->where(function (Builder $q) use ($column, $staffId) {
             $q->where($column, $staffId)
+              ->orWhereExists(function ($sub) use ($staffId) {
+                  $sub->select(DB::raw('1'))
+                      ->from('client_matters')
+                      ->whereColumn('client_matters.client_id', 'admins.id');
+                  self::whereClientMatterRowAssignedToStaff($sub, $staffId);
+              })
               ->orWhereExists(function ($sub) use ($staffId) {
                   $sub->select(DB::raw('1'))
                       ->from('client_access_grants')
@@ -364,12 +374,12 @@ final class StaffClientVisibility
         $staffId = (int) $user->id;
 
         $query->where(function (Builder $q) use ($staffId) {
-            // Allocated by matter or user_id
+            // Allocated by matter (MA / PR / PA) or user_id
             $q->whereExists(function ($sub) use ($staffId) {
                 $sub->select(DB::raw('1'))
                     ->from('client_matters')
-                    ->whereColumn('client_matters.client_id', 'admins.id')
-                    ->where('client_matters.sel_person_assisting', $staffId);
+                    ->whereColumn('client_matters.client_id', 'admins.id');
+                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
             })->orWhere('admins.user_id', $staffId)
               // OR has an active cross-access grant
               ->orWhereExists(function ($sub) use ($staffId) {
@@ -492,8 +502,8 @@ final class StaffClientVisibility
                             $accessQ->whereExists(function ($sub) use ($staffId, $col, $table) {
                                 $sub->select(DB::raw('1'))
                                     ->from('client_matters')
-                                    ->whereColumn('client_matters.client_id', "{$table}.{$col}")
-                                    ->where('client_matters.sel_person_assisting', $staffId);
+                                    ->whereColumn('client_matters.client_id', "{$table}.{$col}");
+                                self::whereClientMatterRowAssignedToStaff($sub, $staffId);
                             })->orWhereExists(function ($sub) use ($staffId, $col, $table) {
                                 $sub->select(DB::raw('1'))
                                     ->from('admins')
@@ -546,8 +556,8 @@ final class StaffClientVisibility
                         $accessQ->whereExists(function ($sub) use ($staffId, $table) {
                             $sub->select(DB::raw('1'))
                                 ->from('client_matters')
-                                ->whereColumn('client_matters.client_id', "{$table}.client_id")
-                                ->where('client_matters.sel_person_assisting', $staffId);
+                                ->whereColumn('client_matters.client_id', "{$table}.client_id");
+                            self::whereClientMatterRowAssignedToStaff($sub, $staffId);
                         })->orWhereExists(function ($sub) use ($staffId, $table) {
                             $sub->select(DB::raw('1'))
                                 ->from('admins')
@@ -606,10 +616,7 @@ final class StaffClientVisibility
                     }
                 }
                 $staffId = (int) $user->id;
-                if (DB::table('client_matters')
-                    ->where('client_id', $adminId)
-                    ->where('sel_person_assisting', $staffId)
-                    ->exists()) {
+                if (self::clientHasAllocatingMatter($adminId, $staffId)) {
                     return true;
                 }
 
@@ -618,10 +625,7 @@ final class StaffClientVisibility
 
             // Strict mode: allocation-only regardless of role (PR 12 included).
             $staffId = (int) $user->id;
-            if (DB::table('client_matters')
-                ->where('client_id', $adminId)
-                ->where('sel_person_assisting', $staffId)
-                ->exists()) {
+            if (self::clientHasAllocatingMatter($adminId, $staffId)) {
                 return true;
             }
 
@@ -633,10 +637,7 @@ final class StaffClientVisibility
                 return true;
             }
             $staffId = (int) $user->id;
-            if (DB::table('client_matters')
-                ->where('client_id', $adminId)
-                ->where('sel_person_assisting', $staffId)
-                ->exists()) {
+            if (self::clientHasAllocatingMatter($adminId, $staffId)) {
                 return true;
             }
 
@@ -644,13 +645,44 @@ final class StaffClientVisibility
         }
 
         $staffId = (int) $user->id;
-        if (DB::table('client_matters')
-            ->where('client_id', $adminId)
-            ->where('sel_person_assisting', $staffId)
-            ->exists()) {
+        if (self::clientHasAllocatingMatter($adminId, $staffId)) {
             return true;
         }
 
         return (int) ($row->user_id ?? 0) === $staffId;
+    }
+
+    /**
+     * True when any client_matters row for this CRM client/lead (admins.id) lists the staff
+     * as migration agent, person responsible, or person assisting.
+     */
+    private static function clientHasAllocatingMatter(int $clientAdminId, int $staffId): bool
+    {
+        if ($clientAdminId <= 0 || $staffId <= 0) {
+            return false;
+        }
+
+        return DB::table('client_matters')
+            ->where('client_id', $clientAdminId)
+            ->where(function ($q) use ($staffId) {
+                $q->where('sel_migration_agent', $staffId)
+                    ->orWhere('sel_person_responsible', $staffId)
+                    ->orWhere('sel_person_assisting', $staffId);
+            })
+            ->exists();
+    }
+
+    /**
+     * For whereExists subqueries after ->from('client_matters') (table name must be `client_matters`, not aliased).
+     *
+     * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $sub
+     */
+    private static function whereClientMatterRowAssignedToStaff($sub, int $staffId): void
+    {
+        $sub->where(function ($w) use ($staffId) {
+            $w->where('client_matters.sel_migration_agent', $staffId)
+                ->orWhere('client_matters.sel_person_responsible', $staffId)
+                ->orWhere('client_matters.sel_person_assisting', $staffId);
+        });
     }
 }

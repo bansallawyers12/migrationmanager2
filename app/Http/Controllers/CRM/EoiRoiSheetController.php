@@ -222,14 +222,18 @@ class EoiRoiSheetController extends Controller
             ->whereNull('admins.is_deleted')
             ->whereNotNull('latest_eoi_matter.matter_id');
 
-        // Person Assisting: restrict to clients where they are assigned on the matter
+        // Person Assisting role: restrict to clients where they are MA / PR / PA on any matter
         if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(\Illuminate\Support\Facades\Auth::user())) {
             $query->where(function ($q) use ($paId) {
                 $q->whereExists(function ($sub) use ($paId) {
                     $sub->select(DB::raw('1'))
                         ->from('client_matters')
                         ->whereColumn('client_matters.client_id', 'admins.id')
-                        ->where('client_matters.sel_person_assisting', $paId);
+                        ->where(function ($w) use ($paId) {
+                            $w->where('client_matters.sel_migration_agent', $paId)
+                                ->orWhere('client_matters.sel_person_responsible', $paId)
+                                ->orWhere('client_matters.sel_person_assisting', $paId);
+                        });
                 })->orWhere('admins.user_id', $paId);
             });
         }

@@ -22,9 +22,10 @@ return [
     | Person Assisting role IDs (user_roles.id)
     |--------------------------------------------------------------------------
     |
-    | Staff with these roles only see clients/leads where they are set as
-    | Person Assisting on a matter (client_matters.sel_person_assisting) or
-    | assigned on the lead record (admins.user_id). Super admin (role 1) is
+    | Staff with these roles only see clients/leads where they appear on a matter
+    | as migration agent, person responsible, or person assisting (client_matters
+    | sel_migration_agent / sel_person_responsible / sel_person_assisting), or
+    | are assigned on the lead record (admins.user_id). Super admin (role 1) is
     | never restricted. Override via CRM_PERSON_ASSISTING_ROLE_IDS e.g. "13,21".
     |
     */
@@ -38,16 +39,17 @@ return [
     | Lead list / lead record full access (staff.role → user_roles.id)
     |--------------------------------------------------------------------------
     |
-    | These roles see every lead (list + detail). Everyone else only sees leads
-    | where admins.user_id = logged-in staff.id (and type=lead).
+    | These roles see every lead (list + detail). Everyone else sees leads where
+    | admins.user_id matches, or any client_matters row for that lead lists them as
+    | MA / PR / PA, or they have an active cross-access grant (see StaffClientVisibility).
     |
-    | Default mapping: 1 = Super Admin, 17 = Admin, 12 = PR.
+    | Default mapping: 1 = Super Admin, 17 = Admin, 12 = Person Responsible.
     | Override via CRM_LEAD_FULL_ACCESS_ROLE_IDS e.g. "1,17,12".
     |
     */
     'lead_full_access_role_ids' => array_values(array_filter(array_map(
         'intval',
-        explode(',', (string) env('CRM_LEAD_FULL_ACCESS_ROLE_IDS', '1,17'))
+        explode(',', (string) env('CRM_LEAD_FULL_ACCESS_ROLE_IDS', '1,12,17'))
     ), static fn (int $id) => $id > 0)),
 
     /*

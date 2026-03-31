@@ -228,17 +228,18 @@ class DashboardService
      */
     private function applyRoleBasedFiltering($query, $user)
     {
-        switch ($user->role) {
-            case 16: // Migration Agent
-                $query->where('client_matters.sel_migration_agent', $user->id);
-                break;
-            case 12: // Person Responsible
-                $query->where('client_matters.sel_person_responsible', $user->id);
-                break;
-            case 13: // Person Assisting
-                $query->where('client_matters.sel_person_assisting', $user->id);
-                break;
-            // Role 1 (Admin) sees all data
+        $role = (int) $user->role;
+        if ($role === 1) {
+            return;
+        }
+        // MA / PR / PA roles: any matter where they are assigned in any of the three roles
+        if (in_array($role, [12, 13, 16], true)) {
+            $uid = (int) $user->id;
+            $query->where(function ($q) use ($uid) {
+                $q->where('client_matters.sel_migration_agent', $uid)
+                    ->orWhere('client_matters.sel_person_responsible', $uid)
+                    ->orWhere('client_matters.sel_person_assisting', $uid);
+            });
         }
     }
 
