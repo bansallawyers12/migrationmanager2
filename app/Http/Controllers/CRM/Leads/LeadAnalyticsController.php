@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM\Leads;
 
 use App\Http\Controllers\Controller;
 use App\Services\LeadAnalyticsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,8 +30,8 @@ class LeadAnalyticsController extends Controller
         }
         
         // Get date range from request or default to last 30 days
-        $startDate = $request->get('start_date', now()->subDays(30));
-        $endDate = $request->get('end_date', now());
+        $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
+        $endDate   = $request->filled('end_date')   ? Carbon::parse($request->get('end_date'))->endOfDay()     : now()->endOfDay();
         
         // Get comprehensive statistics
         $dashboardStats = $this->analyticsService->getDashboardStats($startDate, $endDate);
@@ -78,9 +79,9 @@ class LeadAnalyticsController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
-        $startDate = $request->get('start_date', now()->subDays(30));
-        $endDate = $request->get('end_date', now());
-        
+        $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
+        $endDate   = $request->filled('end_date')   ? Carbon::parse($request->get('end_date'))->endOfDay()     : now()->endOfDay();
+
         $data = [
             'dashboard_stats' => $this->analyticsService->getDashboardStats($startDate, $endDate),
             'conversion_funnel' => $this->analyticsService->getConversionFunnel($startDate, $endDate),
@@ -104,9 +105,9 @@ class LeadAnalyticsController extends Controller
         }
         
         $agentIds = $request->get('agent_ids', []);
-        $startDate = $request->get('start_date', now()->subDays(30));
-        $endDate = $request->get('end_date', now());
-        
+        $startDate = $request->filled('start_date') ? Carbon::parse($request->get('start_date'))->startOfDay() : now()->subDays(30)->startOfDay();
+        $endDate   = $request->filled('end_date')   ? Carbon::parse($request->get('end_date'))->endOfDay()     : now()->endOfDay();
+
         $comparison = [];
         
         // Get performance for each agent

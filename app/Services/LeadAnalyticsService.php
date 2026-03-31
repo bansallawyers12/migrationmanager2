@@ -3,53 +3,43 @@
 namespace App\Services;
 
 use App\Models\Admin;
+use App\Models\Staff;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class LeadAnalyticsService
 {
     /**
-     * Get conversion funnel statistics
+     * Get conversion funnel statistics using actual pipeline stages
      */
     public function getConversionFunnel($startDate = null, $endDate = null)
     {
-        $query = Admin::where('type', 'lead');
-        
-        if ($startDate) {
-            $query->where('created_at', '>=', $startDate);
-        }
-        if ($endDate) {
-            $query->where('created_at', '<=', $endDate);
-        }
-        
-        $totalLeads = $query->count();
-        $qualified = $totalLeads; // lead_quality column removed
-        $contacted = 0; // Follow-up system removed
-        $interested = 0; // Follow-up system removed
+        $baseLeadQuery = fn() => Admin::where('type', 'lead')
+            ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate));
+
+        $totalLeads = $baseLeadQuery()->count();
+
+        $stageNew       = $baseLeadQuery()->where('lead_status', 'new')->count();
+        $stageFollowUp  = $baseLeadQuery()->where('lead_status', 'follow_up')->count();
+        $stageNotQual   = $baseLeadQuery()->where('lead_status', 'not_qualified')->count();
+        $stageHostile   = $baseLeadQuery()->where('lead_status', 'hostile')->count();
+
         $converted = Admin::where('type', 'client')
             ->where('lead_status', 'converted')
             ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
             ->count();
-        
+
+        $denominator = max($totalLeads, 1);
+
         return [
-            'total_leads' => $totalLeads,
-            'qualified' => [
-                'count' => $qualified,
-                'percentage' => $totalLeads > 0 ? round(($qualified / $totalLeads) * 100, 2) : 0
-            ],
-            'contacted' => [
-                'count' => $contacted,
-                'percentage' => $totalLeads > 0 ? round(($contacted / $totalLeads) * 100, 2) : 0
-            ],
-            'interested' => [
-                'count' => $interested,
-                'percentage' => $totalLeads > 0 ? round(($interested / $totalLeads) * 100, 2) : 0
-            ],
-            'converted' => [
-                'count' => $converted,
-                'percentage' => $totalLeads > 0 ? round(($converted / $totalLeads) * 100, 2) : 0
-            ],
+            'total_leads'   => $totalLeads,
+            'new'           => ['count' => $stageNew,      'percentage' => round(($stageNew      / $denominator) * 100, 2)],
+            'follow_up'     => ['count' => $stageFollowUp, 'percentage' => round(($stageFollowUp / $denominator) * 100, 2)],
+            'not_qualified' => ['count' => $stageNotQual,  'percentage' => round(($stageNotQual  / $denominator) * 100, 2)],
+            'hostile'       => ['count' => $stageHostile,  'percentage' => round(($stageHostile  / $denominator) * 100, 2)],
+            'converted'     => ['count' => $converted,     'percentage' => round(($converted      / $denominator) * 100, 2)],
         ];
     }
     
@@ -101,40 +91,50 @@ class LeadAnalyticsService
      */
     public function getAgentPerformance($startDate = null, $endDate = null)
     {
-        $agents = Admin::where('type', 'admin')
-            ->where(function($q) {
-                $q->where('role_type', 'agent')
-                  ->orWhere('role_type', 'team_lead');
-            })
-            ->get();
-        
+        $agents = Staff::where('status', 1)->get();
+
         $performance = [];
-        
+
         foreach ($agents as $agent) {
-            $assignedLeads = 0; // assignee column removed
-            $convertedLeads = 0; // assignee column removed
-            
-            $completedFollowups = 0; // Follow-up system removed
-            $overdueFollowups = 0; // Follow-up system removed
-            $avgResponseTime = 0; // Follow-up system removed
-            
+            $leadQuery = Admin::where('type', 'lead')->where('user_id', $agent->id)
+                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+                ->when($endDate,   fn($q) => $q->where('created_at', '<=', $endDate));
+
+            $assignedLeads = (clone $leadQuery)->count();
+
+            $convertedLeads = Admin::where('type', 'client')
+                ->where('lead_status', 'converted')
+                ->where('user_id', $agent->id)
+                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+                ->when($endDate,   fn($q) => $q->where('created_at', '<=', $endDate))
+                ->count();
+
+            $overdueFollowups = (clone $leadQuery)
+                ->where('lead_status', 'follow_up')
+                ->whereNotNull('followup_date')
+                ->where('followup_date', '<', now())
+                ->count();
+
+            $completedFollowups = DB::table('notes')
+                ->where('assigned_to', $agent->id)
+                ->where('task_group', 'Follow Up')
+                ->where('status', '1')
+                ->count();
+
             $performance[] = [
-                'agent_id' => $agent->id,
-                'agent_name' => $agent->first_name . ' ' . $agent->last_name,
-                'assigned_leads' => $assignedLeads,
-                'converted_leads' => $convertedLeads,
-                'conversion_rate' => $assignedLeads > 0 ? round(($convertedLeads / $assignedLeads) * 100, 2) : 0,
-                'completed_followups' => $completedFollowups,
-                'overdue_followups' => $overdueFollowups,
-                'avg_response_time_hours' => $avgResponseTime,
+                'agent_id'               => $agent->id,
+                'agent_name'             => $agent->first_name . ' ' . $agent->last_name,
+                'assigned_leads'         => $assignedLeads,
+                'converted_leads'        => $convertedLeads,
+                'conversion_rate'        => $assignedLeads > 0 ? round(($convertedLeads / $assignedLeads) * 100, 2) : 0,
+                'completed_followups'    => $completedFollowups,
+                'overdue_followups'      => $overdueFollowups,
+                'avg_response_time_hours' => 0,
             ];
         }
-        
-        // Sort by conversion rate descending
-        usort($performance, function($a, $b) {
-            return $b['conversion_rate'] <=> $a['conversion_rate'];
-        });
-        
+
+        usort($performance, fn($a, $b) => $b['conversion_rate'] <=> $a['conversion_rate']);
+
         return $performance;
     }
     
@@ -163,15 +163,15 @@ class LeadAnalyticsService
             };
             
             $startDate = match($period) {
-                'week' => $date->copy()->startOfWeek(),
-                'month' => $date->copy()->startOfMonth(),
-                'year' => $date->copy()->startOfYear(),
+                'week'  => $date->copy()->startOfWeek(),
+                'year'  => $date->copy()->startOfYear(),
+                default => $date->copy()->startOfMonth(),
             };
-            
+
             $endDate = match($period) {
-                'week' => $date->copy()->endOfWeek(),
-                'month' => $date->copy()->endOfMonth(),
-                'year' => $date->copy()->endOfYear(),
+                'week'  => $date->copy()->endOfWeek(),
+                'year'  => $date->copy()->endOfYear(),
+                default => $date->copy()->endOfMonth(),
             };
             
             $newLeads = Admin::where('type', 'lead')
@@ -217,23 +217,34 @@ class LeadAnalyticsService
             $query->where('created_at', '<=', $endDate);
         }
         
+        $active      = (clone $query)->where('status', 1)->count();
+        $activeNew   = (clone $query)->where('lead_status', 'new')->count();
+        $followUp    = (clone $query)->where('lead_status', 'follow_up')->count();
+
+        $converted = Admin::where('type', 'client')
+            ->where('lead_status', 'converted')
+            ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+            ->when($endDate,   fn($q) => $q->where('created_at', '<=', $endDate))
+            ->count();
+
+        $overdueFollowups = (clone $query)
+            ->where('lead_status', 'follow_up')
+            ->whereNotNull('followup_date')
+            ->where('followup_date', '<', now())
+            ->count();
+
         return [
-            'total_leads' => (clone $query)->count(),
-            'new_this_month' => Admin::where('type', 'lead')
+            'total_leads'        => (clone $query)->count(),
+            'new_this_month'     => Admin::where('type', 'lead')
                 ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->count(),
-            'converted' => Admin::where('type', 'client')
-                ->where('lead_status', 'converted')
-                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate))
-                ->count(),
-            'active_new' => (clone $query)->where('lead_status', 'new')->count(),
-            'active_follow_up' => (clone $query)->where('lead_status', 'follow_up')->count(),
-            'cold' => 0, // lead_quality column removed
-            'hot' => 0, // lead_quality column removed
+            'converted'          => $converted,
+            'active'             => $active,
+            'active_new'         => $activeNew,
+            'active_follow_up'   => $followUp,
+            'pending_followups'  => $followUp,
+            'overdue_followups'  => $overdueFollowups,
             'avg_conversion_time' => $this->getAvgConversionTime($startDate, $endDate),
-            'pending_followups' => 0, // Follow-up system removed
-            'overdue_followups' => 0, // Follow-up system removed
         ];
     }
     

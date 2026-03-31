@@ -242,8 +242,8 @@
             <div class="stat-value">{{ number_format($dashboardStats['new_this_month']) }}</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Hot Leads</div>
-            <div class="stat-value">{{ number_format($dashboardStats['hot']) }}</div>
+            <div class="stat-label">Pending Follow-ups</div>
+            <div class="stat-value">{{ number_format($dashboardStats['pending_followups']) }}</div>
         </div>
         <div class="stat-card red">
             <div class="stat-label">Overdue Follow-ups</div>
@@ -261,10 +261,10 @@
             <canvas id="funnelChart" height="300"></canvas>
         </div>
         
-        <!-- Lead Quality Distribution -->
+        <!-- Lead Stage Distribution -->
         <div class="chart-card">
             <div class="chart-header">
-                <h3 class="chart-title">Lead Quality Distribution</h3>
+                <h3 class="chart-title">Lead Stage Distribution</h3>
             </div>
             <canvas id="qualityChart" height="300"></canvas>
         </div>
@@ -367,32 +367,32 @@ const funnelCtx = document.getElementById('funnelChart').getContext('2d');
 const funnelChart = new Chart(funnelCtx, {
     type: 'bar',
     data: {
-        labels: ['Total Leads', 'Qualified', 'Contacted', 'Interested', 'Converted'],
-        datasets: [{
-            label: 'Count',
-            data: [
-                {{ $conversionFunnel['total_leads'] }},
-                {{ $conversionFunnel['qualified']['count'] }},
-                {{ $conversionFunnel['contacted']['count'] }},
-                {{ $conversionFunnel['interested']['count'] }},
-                {{ $conversionFunnel['converted']['count'] }}
-            ],
-            backgroundColor: [
-                'rgba(103, 119, 239, 0.8)',
-                'rgba(71, 195, 99, 0.8)',
-                'rgba(255, 164, 38, 0.8)',
-                'rgba(156, 39, 176, 0.8)',
-                'rgba(71, 195, 99, 1)'
-            ],
-            borderColor: [
-                'rgba(103, 119, 239, 1)',
-                'rgba(71, 195, 99, 1)',
-                'rgba(255, 164, 38, 1)',
-                'rgba(156, 39, 176, 1)',
-                'rgba(71, 195, 99, 1)'
-            ],
-            borderWidth: 2
-        }]
+        labels: ['New', 'Follow Up', 'Not Qualified', 'Hostile', 'Converted'],
+            datasets: [{
+                label: 'Count',
+                data: [
+                    {{ $conversionFunnel['new']['count'] }},
+                    {{ $conversionFunnel['follow_up']['count'] }},
+                    {{ $conversionFunnel['not_qualified']['count'] }},
+                    {{ $conversionFunnel['hostile']['count'] }},
+                    {{ $conversionFunnel['converted']['count'] }}
+                ],
+                backgroundColor: [
+                    'rgba(103, 119, 239, 0.8)',
+                    'rgba(255, 164, 38, 0.8)',
+                    'rgba(108, 117, 125, 0.8)',
+                    'rgba(252, 84, 75, 0.8)',
+                    'rgba(71, 195, 99, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(103, 119, 239, 1)',
+                    'rgba(255, 164, 38, 1)',
+                    'rgba(108, 117, 125, 1)',
+                    'rgba(252, 84, 75, 1)',
+                    'rgba(71, 195, 99, 1)'
+                ],
+                borderWidth: 2
+            }]
     },
     options: {
         responsive: true,
@@ -420,35 +420,33 @@ const funnelChart = new Chart(funnelCtx, {
     }
 });
 
-// Lead Quality Distribution Chart
+// Lead Stage Distribution Chart
 const qualityCtx = document.getElementById('qualityChart').getContext('2d');
 const qualityChart = new Chart(qualityCtx, {
     type: 'doughnut',
     data: {
-        labels: [
-            @foreach($leadQuality as $quality)
-                '{{ $quality["quality"] }}',
-            @endforeach
-        ],
+        labels: ['New', 'Follow Up', 'Not Qualified', 'Hostile', 'Converted'],
         datasets: [{
             data: [
-                @foreach($leadQuality as $quality)
-                    {{ $quality['count'] }},
-                @endforeach
+                {{ $conversionFunnel['new']['count'] }},
+                {{ $conversionFunnel['follow_up']['count'] }},
+                {{ $conversionFunnel['not_qualified']['count'] }},
+                {{ $conversionFunnel['hostile']['count'] }},
+                {{ $conversionFunnel['converted']['count'] }}
             ],
             backgroundColor: [
-                'rgba(252, 84, 75, 0.8)',
-                'rgba(255, 164, 38, 0.8)',
                 'rgba(103, 119, 239, 0.8)',
-                'rgba(71, 195, 99, 0.8)',
-                'rgba(156, 39, 176, 0.8)'
+                'rgba(255, 164, 38, 0.8)',
+                'rgba(108, 117, 125, 0.8)',
+                'rgba(252, 84, 75, 0.8)',
+                'rgba(71, 195, 99, 0.8)'
             ],
             borderColor: [
-                'rgba(252, 84, 75, 1)',
-                'rgba(255, 164, 38, 1)',
                 'rgba(103, 119, 239, 1)',
-                'rgba(71, 195, 99, 1)',
-                'rgba(156, 39, 176, 1)'
+                'rgba(255, 164, 38, 1)',
+                'rgba(108, 117, 125, 1)',
+                'rgba(252, 84, 75, 1)',
+                'rgba(71, 195, 99, 1)'
             ],
             borderWidth: 2
         }]
@@ -466,7 +464,7 @@ const qualityChart = new Chart(qualityCtx, {
                         let label = context.label || '';
                         let value = context.parsed || 0;
                         let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        let percentage = Math.round((value / total) * 100);
+                        let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                         return label + ': ' + value + ' (' + percentage + '%)';
                     }
                 }
