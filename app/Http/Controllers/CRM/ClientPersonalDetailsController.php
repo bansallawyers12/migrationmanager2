@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use App\Models\Admin;
 use App\Models\ClientAddress;
@@ -1815,6 +1816,8 @@ class ClientPersonalDetailsController extends Controller
                     return $this->saveTrainingSection($request, $client);
                 case 'nominations':
                     return $this->saveNominationsSection($request, $client);
+                case 'leadPipeline':
+                    return $this->saveLeadPipelineSection($request, $client);
                 default:
                     return response()->json([
                         'success' => false,
@@ -2268,6 +2271,120 @@ class ClientPersonalDetailsController extends Controller
             ]);
         }
         return response()->json(['success' => true, 'message' => 'Nominations updated successfully']);
+    }
+
+    /**
+     * Lead pipeline (stage, follow-up date, assignee) from client detail Personal tab — AJAX only.
+     */
+    private function saveLeadPipelineSection($request, $client)
+    {
+        if ($client->type !== 'lead') {
+            return response()->json(['success' => false, 'message' => 'Lead pipeline applies to leads only.'], 400);
+        }
+
+        // Only normalise assignee when the client actually sent the field (avoid clearing user_id on partial requests).
+        if ($request->has('assigned_staff_id')) {
+            $request->merge([
+                'assigned_staff_id' => ($request->input('assigned_staff_id') === '' || $request->input('assigned_staff_id') === null)
+                    ? null
+                    : (int) $request->input('assigned_staff_id'),
+            ]);
+        }
+
+        $pipelineStages = ['new', 'follow_up', 'not_qualified', 'hostile'];
+        $allowedStages = $pipelineStages;
+        $currentStage = (string) ($client->lead_status ?? '');
+        if ($currentStage !== '' && ! in_array($currentStage, $pipelineStages, true)) {
+            $allowedStages[] = $currentStage;
+        }
+
+        try {
+            $validated = $request->validate([
+                'lead_status' => ['required', Rule::in($allowedStages)],
+                'followup_date' => 'nullable|date',
+                'assigned_staff_id' => 'nullable|exists:staff,id',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        $previousLeadStatus = $client->lead_status;
+
+        $before = [
+            'Stage' => $client->lead_status,
+            'Follow-up date' => $client->followup_date ? $client->followup_date->format('Y-m-d') : null,
+            'Assigned to' => $client->user_id,
+        ];
+
+        $client->lead_status = $validated['lead_status'];
+
+        if ($request->has('followup_date')) {
+            $rawFd = $request->input('followup_date');
+            if ($rawFd === '' || $rawFd === null) {
+                if ($client->lead_status !== 'follow_up') {
+                    $client->followup_date = null;
+                }
+            } else {
+                $client->followup_date = Carbon::parse($rawFd)->format('Y-m-d H:i:s');
+            }
+        }
+
+        if ($client->lead_status !== 'follow_up') {
+            $client->followup_date = null;
+        }
+
+        $client->status = LeadFollowUpNoteService::adminsStatusForLeadStatus($client->lead_status);
+
+        if (array_key_exists('assigned_staff_id', $validated)) {
+            $client->user_id = $validated['assigned_staff_id'];
+        }
+
+        $client->save();
+
+        $lead = Lead::find($client->id);
+        if ($lead) {
+            app(LeadFollowUpNoteService::class)->syncNotesForLead($lead, $previousLeadStatus);
+        }
+
+        $after = [
+            'Stage' => $client->lead_status,
+            'Follow-up date' => $client->followup_date ? $client->followup_date->format('Y-m-d') : null,
+            'Assigned to' => $client->user_id,
+        ];
+
+        $changedFields = [];
+        foreach ($before as $label => $oldVal) {
+            $newVal = $after[$label] ?? null;
+            if ($label === 'Assigned to') {
+                if ((int) $oldVal !== (int) $newVal) {
+                    $changedFields[$label] = ['old' => $oldVal, 'new' => $newVal];
+                }
+            } elseif ($oldVal !== $newVal) {
+                $changedFields[$label] = ['old' => $oldVal, 'new' => $newVal];
+            }
+        }
+
+        if (! empty($changedFields)) {
+            $this->logClientActivityWithChanges(
+                $client->id,
+                'updated lead pipeline',
+                $changedFields,
+                'activity'
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead pipeline updated',
+            'lead_status' => $client->lead_status,
+            'followup_date' => $client->followup_date ? $client->followup_date->format('Y-m-d') : null,
+            'assigned_staff_id' => $client->user_id,
+            'record_status' => (int) $client->status,
+        ]);
     }
 
     private function saveBasicInfoSection($request, $client)

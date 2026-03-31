@@ -998,7 +998,13 @@
                         }
                     </style>
 
-
+                    @if(($fetchedData->type ?? '') === 'lead')
+                        @include('crm.clients.partials.lead_pipeline_card', [
+                            'fetchedData' => $fetchedData,
+                            'assignableStaff' => $assignableStaff ?? collect(),
+                            'leadStageLabels' => $leadStageLabels ?? [],
+                        ])
+                    @endif
 
                     <div class="card">
                         <div style="display: flex; justify-content: space-between; align-items: center;">

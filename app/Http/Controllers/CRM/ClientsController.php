@@ -2221,14 +2221,30 @@ class ClientsController extends Controller
                         return StaffClientVisibility::canAccessClientOrLead((int) $companyAdminId, Auth::user());
                     })
                     ->values();
-                
+
+                $assignableStaff = collect();
+                $leadStageLabels = [];
+                if (($fetchedData->type ?? '') === 'lead') {
+                    $assignableStaff = Staff::where('status', 1)
+                        ->orderBy('first_name')
+                        ->orderBy('last_name')
+                        ->get();
+                    $leadStageLabels = [
+                        'new' => 'New',
+                        'follow_up' => 'Follow up',
+                        'not_qualified' => 'Not qualified',
+                        'hostile' => 'Hostile',
+                    ];
+                }
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
                     'experiences', 'testScores', 'visaCountries', 'clientOccupations','ClientPoints', 'clientSpouseDetail',
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
-                    'visibleNomineeNominations', 'notPickedCallSmsDefault'
+                    'visibleNomineeNominations', 'notPickedCallSmsDefault',
+                    'assignableStaff', 'leadStageLabels'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
