@@ -256,6 +256,14 @@ Route::middleware(['auth:admin'])->group(function() {
 	// Client Portal, Office Visits, and Booking Appointments routes
 	require __DIR__ . '/client_portal.php';
 
+	/*---------- Front-Desk Check-In Wizard ----------*/
+	Route::prefix('front-desk/checkin')->name('front-desk.checkin.')->group(function () {
+		Route::get('/', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'index'])->name('index');
+		Route::post('/lookup', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'lookupContact'])->name('lookup');
+		Route::post('/appointments', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'getAppointments'])->name('appointments');
+		Route::post('/submit', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'submit'])->name('submit');
+	});
+
 	/*---------- Audit Logs ----------*/
 	Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('auditlogs.index');
 
