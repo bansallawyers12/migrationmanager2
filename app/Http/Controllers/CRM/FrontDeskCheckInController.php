@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\BookingAppointment;
@@ -12,19 +13,17 @@ use App\Models\Staff;
 use App\Services\FrontDesk\CheckInAppointmentService;
 use App\Services\FrontDesk\CheckInLookupService;
 use App\Services\FrontDesk\CheckInNotificationService;
+use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class FrontDeskCheckInController extends Controller
 {
-    /**
-     * Roles permitted to use the front-desk check-in wizard.
-     * 1 = Super Admin, 12 = Admin, 17 = Reception (exempt role per crm_access config).
-     */
-    private const ALLOWED_ROLES = [1, 12, 17];
+    use EnsuresCrmRecordAccess;
 
     public function __construct(
         private readonly CheckInLookupService      $lookup,
@@ -69,7 +68,13 @@ class FrontDeskCheckInController extends Controller
             $request->input('email')
         );
 
-        $data = $matches->map(fn (Admin $a) => $this->lookup->formatForWizard($a))->values();
+        /** @var Staff $user */
+        $user = Auth::guard('admin')->user();
+        $visible = $matches->filter(function (Admin $a) use ($user) {
+            return StaffClientVisibility::canAccessClientOrLead((int) $a->id, $user);
+        })->values();
+
+        $data = $visible->map(fn (Admin $a) => $this->lookup->formatForWizard($a))->values();
 
         return response()->json([
             'matches'          => $data,
@@ -90,7 +95,9 @@ class FrontDeskCheckInController extends Controller
         $request->validate(['admin_id' => 'required|integer|min:1']);
 
         $adminId = (int) $request->input('admin_id');
-        $appts   = $this->appointments->getTodaysAppointments($adminId);
+        $this->ensureCrmRecordAccess($adminId);
+
+        $appts = $this->appointments->getTodaysAppointments($adminId);
 
         $data = $appts->map(fn (BookingAppointment $a) => $this->appointments->formatForWizard($a))->values();
 
@@ -107,16 +114,49 @@ class FrontDeskCheckInController extends Controller
             return response()->json(['error' => 'Unauthorised'], 403);
         }
 
+        $reasonKeys = array_keys(FrontDeskCheckIn::visitReasons());
+
         $validated = $request->validate([
-            'phone'              => 'required|string|min:6|max:20',
-            'email'              => 'nullable|email|max:255',
-            'admin_id'           => 'nullable|integer',       // matched CRM record id (client or lead)
-            'admin_type'         => 'nullable|in:client,lead',
-            'appointment_id'     => 'nullable|integer',
-            'claimed_appointment'=> 'nullable|boolean',
-            'visit_reason'       => 'nullable|string|max:100',
-            'visit_notes'        => 'nullable|string|max:2000',
+            'phone'               => 'required|string|min:6|max:20',
+            'email'               => 'nullable|email|max:255',
+            'admin_id'            => 'nullable|integer|min:1',
+            'admin_type'          => ['nullable', 'string', Rule::in(['client', 'lead'])],
+            'appointment_id'      => 'nullable|integer|min:1',
+            'claimed_appointment' => 'nullable|boolean',
+            'visit_reason'        => ['nullable', 'string', 'max:100', Rule::in($reasonKeys)],
+            'visit_notes'         => 'nullable|string|max:2000',
         ]);
+
+        $rawAdminId = $validated['admin_id'] ?? null;
+        $adminId    = ($rawAdminId !== null && (int) $rawAdminId > 0) ? (int) $rawAdminId : null;
+        $adminType  = isset($validated['admin_type']) && $validated['admin_type'] !== ''
+            ? $validated['admin_type']
+            : null;
+
+        // Walk-in: both null. Matched record: both must be set.
+        if (($adminId === null) !== ($adminType === null)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Client selection is incomplete. Choose a match or walk-in.',
+                'errors'  => ['admin_id' => ['Match type and record must be sent together.']],
+            ], 422);
+        }
+
+        if ($adminId !== null && $adminType !== null) {
+            $exists = Admin::query()
+                ->where('id', $adminId)
+                ->where('type', $adminType)
+                ->whereNull('is_deleted')
+                ->exists();
+            if (! $exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected client or lead was not found.',
+                    'errors'  => ['admin_id' => ['Invalid or deleted record.']],
+                ], 422);
+            }
+            $this->ensureCrmRecordAccess($adminId);
+        }
 
         // "Other" reason requires notes
         if (($validated['visit_reason'] ?? null) === 'other' && empty($validated['visit_notes'])) {
@@ -128,8 +168,6 @@ class FrontDeskCheckInController extends Controller
         }
 
         $phoneNormalized = $this->lookup->normalizePhone($validated['phone']);
-        $adminId         = isset($validated['admin_id']) ? (int) $validated['admin_id'] : null;
-        $adminType       = $validated['admin_type'] ?? null;
 
         // Resolve client_id / lead_id
         $clientId = null;
@@ -178,21 +216,27 @@ class FrontDeskCheckInController extends Controller
 
             // Feed into the existing office-visit queue so the visitor
             // appears in /office-visits/waiting and staff can manage the session.
-            $queueAdminId  = $clientId ?? $leadId;   // null = walk-in
-            $contactType   = $clientId ? 'Client' : ($leadId ? 'Lead' : 'Client');
+            $queueAdminId  = $clientId ?? $leadId;   // null = walk-in (not yet in CRM)
+            $contactType   = $clientId ? 'Client' : ($leadId ? 'Lead' : 'Walk-in');
             $reasonLabel   = $validated['visit_reason']
                 ? (FrontDeskCheckIn::visitReasons()[$validated['visit_reason']] ?? $validated['visit_reason'])
                 : 'Front-desk check-in';
 
-            $checkinLog = CheckinLog::create([
-                'client_id'    => $queueAdminId,
-                'user_id'      => $notified?->id ?? $staff->id,
-                'visit_purpose'=> $reasonLabel,
-                'office'       => $staff->office_id,
-                'contact_type' => $contactType,
-                'status'       => 0,                 // waiting
-                'date'         => now()->toDateString(),
-            ]);
+            $checkinPayload = [
+                'client_id'     => $queueAdminId,
+                'user_id'       => $notified?->id ?? $staff->id,
+                'visit_purpose' => $reasonLabel,
+                'office'        => $staff->office_id,
+                'contact_type'  => $contactType,
+                'status'        => 0,                 // waiting
+                'date'          => now()->toDateString(),
+            ];
+            if ($queueAdminId === null) {
+                $checkinPayload['walk_in_phone'] = $phoneNormalized;
+                $checkinPayload['walk_in_email'] = $validated['email'] ?? null;
+            }
+
+            $checkinLog = CheckinLog::create($checkinPayload);
 
             CheckinHistory::create([
                 'subject'    => 'Check-in created via front-desk wizard',
@@ -235,13 +279,7 @@ class FrontDeskCheckInController extends Controller
     private function authorised(): bool
     {
         $user = Auth::guard('admin')->user();
-        if (!$user) {
-            return false;
-        }
-        $allowedRoles = array_merge(
-            self::ALLOWED_ROLES,
-            config('crm_access.exempt_role_ids', [])
-        );
-        return in_array((int) $user->role, $allowedRoles, true);
+
+        return $user instanceof Staff && $user->canAccessFrontDeskCheckIn();
     }
 }

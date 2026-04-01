@@ -4,6 +4,7 @@ namespace App\Services\FrontDesk;
 
 use App\Models\Admin;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class CheckInLookupService
 {
@@ -30,17 +31,30 @@ class CheckInLookupService
             return collect();
         }
 
+        $driver = DB::connection()->getDriverName();
+
         $query = Admin::whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
-            ->where(function ($q) use ($normalized, $phone) {
-                // PostgreSQL: REGEXP_REPLACE requires the 'g' flag for global replacement.
-                // COALESCE handles NULL phone columns gracefully.
-                $q->whereRaw(
-                    "REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') LIKE ?",
-                    ["%{$normalized}%"]
-                )
-                // Also try the original phone string as typed (partial match fallback)
-                ->orWhere('phone', 'like', '%' . trim($phone) . '%');
+            ->where(function ($q) use ($normalized, $phone, $driver) {
+                if ($driver === 'pgsql') {
+                    $q->whereRaw(
+                        "REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') LIKE ?",
+                        ["%{$normalized}%"]
+                    );
+                } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+                    // MySQL 8+ REGEXP_REPLACE replaces all matches by default (no 'g' flag).
+                    $q->whereRaw(
+                        'REGEXP_REPLACE(COALESCE(phone, \'\'), \'[^0-9]\', \'\') LIKE ?',
+                        ["%{$normalized}%"]
+                    );
+                } else {
+                    // SQLite and others: digits-only fallback (no server-side strip).
+                    $q->where('phone', 'like', '%' . $normalized . '%');
+                }
+                $trimmed = trim($phone);
+                if ($trimmed !== '') {
+                    $q->orWhere('phone', 'like', '%' . addcslashes($trimmed, '%_\\') . '%');
+                }
             });
 
         if (!empty($email)) {

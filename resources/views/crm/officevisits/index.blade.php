@@ -120,8 +120,26 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 													<td style="white-space: initial;"><a href="javascript:;">{{date('l',strtotime($list->created_at))}}</a><br>{{date('d/m/Y',strtotime($list->created_at))}}</td>
 													<td style="white-space: initial;"><?php if($list->sesion_start != ''){ echo date('h:i A',strtotime($list->sesion_start)); }else{ echo '-'; } ?></td>
 													<td style="white-space: initial;">
-														<?php $client = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $list->client_id)->first(); ?>
-														<a target="_blank" href="{{URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$client->id)))}}">{{@$client->first_name}} {{@$client->last_name}}</a><br>{{@$client->email}}
+														@php
+															$isWalkIn = ($list->contact_type === 'Walk-in') || empty($list->client_id);
+															$ovContact = null;
+															if (!$isWalkIn) {
+																if ($list->contact_type == 'Lead') {
+																	$ovContact = \App\Models\Lead::where('id', '=', $list->client_id)->first();
+																} else {
+																	$ovContact = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $list->client_id)->first();
+																}
+															}
+														@endphp
+														@if($isWalkIn)
+															<span class="text-muted">Walk-in</span>
+															@if(!empty($list->walk_in_phone))<br>{{ $list->walk_in_phone }}@endif
+															@if(!empty($list->walk_in_email))<br>{{ $list->walk_in_email }}@endif
+														@elseif($ovContact)
+															<a target="_blank" href="{{ URL::to('/clients/detail/'.base64_encode(convert_uuencode($ovContact->id))) }}">{{ $ovContact->first_name }} {{ $ovContact->last_name }}</a><br>{{ $ovContact->email }}
+														@else
+															<span class="text-muted">—</span>
+														@endif
 													</td>
 													<td style="white-space: initial;">{{$list->contact_type}}</td>
 													<td style="white-space: initial;">{{$list->visit_purpose}}</td>

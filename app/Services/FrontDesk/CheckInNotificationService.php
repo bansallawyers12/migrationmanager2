@@ -15,9 +15,9 @@ class CheckInNotificationService
      * Resolve the assignee for a check-in and send an in-app notification.
      *
      * Priority:
-     *  1. Appointment's assigned consultant staff (via assigned_by_admin_id)
-     *  2. Appointment's consultant's linked staff (if any)
-     *  3. The lead's user_id (assigned staff)
+     *  1. Appointment assigner (booking_appointments.assigned_by_admin_id → staff)
+     *  2. CRM record assignee (admins.user_id → staff), typical for leads
+     *  3. Client migration agent (admins.agent_id → staff) when type = client
      *
      * Returns the Staff notified, or null if no one could be resolved.
      */
@@ -94,14 +94,21 @@ class CheckInNotificationService
             }
         }
 
-        // 2. Via lead's assigned-to staff (user_id)
         $adminId = $checkIn->client_id ?? $checkIn->lead_id;
         if ($adminId) {
             $admin = \App\Models\Admin::find($adminId);
-            if ($admin && $admin->user_id) {
-                $staff = Staff::find($admin->user_id);
-                if ($staff) {
-                    return $staff;
+            if ($admin) {
+                if ($admin->user_id) {
+                    $staff = Staff::find($admin->user_id);
+                    if ($staff) {
+                        return $staff;
+                    }
+                }
+                if ($admin->type === 'client' && $admin->agent_id) {
+                    $staff = Staff::find($admin->agent_id);
+                    if ($staff) {
+                        return $staff;
+                    }
                 }
             }
         }

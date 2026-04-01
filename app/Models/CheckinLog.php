@@ -8,7 +8,25 @@ class CheckinLog extends Model
 {
 	use Sortable;
 
-	protected $fillable = ['id', 'client_id', 'user_id', 'visit_purpose', 'office', 'contact_type', 'status', 'date', 'sesion_start', 'sesion_end', 'wait_time', 'attend_time', 'wait_type', 'created_at', 'updated_at'];
+	protected $fillable = [
+        'id',
+        'client_id',
+        'walk_in_phone',
+        'walk_in_email',
+        'user_id',
+        'visit_purpose',
+        'office',
+        'contact_type',
+        'status',
+        'date',
+        'sesion_start',
+        'sesion_end',
+        'wait_time',
+        'attend_time',
+        'wait_type',
+        'created_at',
+        'updated_at',
+    ];
 	
 	public $sortable = ['id','created_at', 'updated_at'];
 	
@@ -19,9 +37,9 @@ class CheckinLog extends Model
     {
         if ($this->contact_type == 'Lead') {
             return $this->belongsTo(Lead::class, 'client_id');
-        } else {
-            return $this->belongsTo(Admin::class, 'client_id')->whereIn('type', ['client', 'lead']);
         }
+
+        return $this->belongsTo(Admin::class, 'client_id')->whereIn('type', ['client', 'lead']);
     }
     
     /**

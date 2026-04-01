@@ -511,9 +511,37 @@
     function post(url, data) {
         return fetch(url, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body:    JSON.stringify(data),
-        }).then(function (r) { return r.json(); });
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': CSRF,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(data),
+        }).then(function (r) {
+            return r.text().then(function (text) {
+                var j = {};
+                try {
+                    j = text ? JSON.parse(text) : {};
+                } catch (e) {
+                    return Promise.reject(new Error('Invalid server response.'));
+                }
+                if (!r.ok) {
+                    var msg = j.message || j.error;
+                    if (!msg && j.errors) {
+                        msg = Object.values(j.errors).flat().join(' ');
+                    }
+                    if (!msg) {
+                        msg = 'Request failed (' + r.status + ').';
+                    }
+                    var err = new Error(msg);
+                    err.payload = j;
+                    err.status = r.status;
+                    return Promise.reject(err);
+                }
+                return j;
+            });
+        });
     }
 
     /* ── Step 1: Lookup ─────────────────────────────────────── */
@@ -542,10 +570,10 @@
                 renderMatches(data.matches || []);
                 setStep(2);
             })
-            .catch(function () {
+            .catch(function (err) {
                 hide($('#fdLookupSpinner'));
                 $('#fdLookupBtn').disabled = false;
-                showAlert('Network error — please try again.');
+                showAlert(err && err.message ? err.message : 'Network error — please try again.');
             });
     });
 
@@ -698,9 +726,9 @@
                 }
                 renderAppointments(appts);
             })
-            .catch(function () {
+            .catch(function (err) {
                 hide($('#fdApptSpinner'));
-                showAlert('Could not load appointments. You may continue.');
+                showAlert(err && err.message ? err.message : 'Could not load appointments. You may continue.');
                 $('#fdStep4Next').disabled = false;
             });
     });
@@ -812,10 +840,10 @@
             } else {
                 showAlert(data.message || 'Could not save check-in. Please try again.');
             }
-        }).catch(function () {
+        }).catch(function (err) {
             hide($('#fdSubmitSpinner'));
             $('#fdSubmitBtn').disabled = false;
-            showAlert('Network error — please try again.');
+            showAlert(err && err.message ? err.message : 'Network error — please try again.');
         });
     });
 

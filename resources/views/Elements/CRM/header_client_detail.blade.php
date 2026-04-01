@@ -57,7 +57,7 @@
                 </div>
             </div>
             <a href="{{route('officevisits.waiting')}}" class="icon-btn" title="In Person"><i class="fas fa-user-check"></i></a>
-            @if(Auth::user() && in_array((int) Auth::user()->role, [1, 12, 17]))
+            @if(Auth::user() instanceof \App\Models\Staff && Auth::user()->canAccessFrontDeskCheckIn())
             <a href="{{ route('front-desk.checkin.index') }}" class="icon-btn {{ str_starts_with(Route::currentRouteName() ?? '', 'front-desk.checkin') ? 'active' : '' }}" title="Front-Desk Check-In"><i class="fas fa-clipboard-check"></i></a>
             @endif
             <a href="{{route('assignee.action')}}" class="icon-btn" title="Action"><i class="fas fa-tasks"></i></a>

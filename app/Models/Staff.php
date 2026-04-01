@@ -254,4 +254,28 @@ class Staff extends Authenticatable
         return in_array($sheetKey, $list, true);
     }
 
+    /**
+     * Role IDs allowed to open the front-desk check-in wizard (aligned with FrontDeskCheckInController).
+     */
+    public static function frontDeskCheckInRoleIds(): array
+    {
+        return array_values(array_unique(array_merge(
+            [1, 12, 17],
+            config('crm_access.exempt_role_ids', [])
+        )));
+    }
+
+    /**
+     * Whether this staff member may use the front-desk check-in feature.
+     */
+    public function canAccessFrontDeskCheckIn(): bool
+    {
+        $sid = (int) ($this->id ?? 0);
+        if ($sid > 0 && in_array($sid, config('crm_access.exempt_staff_ids', []), true)) {
+            return true;
+        }
+
+        return in_array((int) ($this->role ?? 0), self::frontDeskCheckInRoleIds(), true);
+    }
+
 }

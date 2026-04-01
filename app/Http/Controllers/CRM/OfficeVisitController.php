@@ -252,10 +252,13 @@ class OfficeVisitController extends Controller
 
 		if($CheckinLog){
 			ob_start();
-				if($CheckinLog->contact_type == 'Lead'){
-				    	$client = \App\Models\Lead::where('id', '=', $CheckinLog->client_id)->first();
-				}else{
-				    	$client = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $CheckinLog->client_id)->first();
+				$walkInDisplay = ($CheckinLog->contact_type === 'Walk-in' || !$CheckinLog->client_id);
+				if ($walkInDisplay) {
+					$client = null;
+				} elseif ($CheckinLog->contact_type == 'Lead') {
+					$client = \App\Models\Lead::where('id', '=', $CheckinLog->client_id)->first();
+				} else {
+					$client = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $CheckinLog->client_id)->first();
 				}
 
 			?>
@@ -282,9 +285,17 @@ class OfficeVisitController extends Controller
 					<div class="col-md-6">
 						<b>Contact</b>
 						<div class="clientinfo">
-							<a href="<?php echo \URL::to('/clients/detail/'.base64_encode(convert_uuencode(@$client->id))); ?>"><?php echo $client->first_name.' '.$client->last_name; ?></a>
-							<br>
-							<?php echo $client->email; ?>
+							<?php if ($walkInDisplay) { ?>
+								<span class="text-muted">Walk-in (not linked to a CRM record)</span>
+								<?php if (!empty($CheckinLog->walk_in_phone)) { ?><br><?php echo e($CheckinLog->walk_in_phone); ?><?php } ?>
+								<?php if (!empty($CheckinLog->walk_in_email)) { ?><br><?php echo e($CheckinLog->walk_in_email); ?><?php } ?>
+							<?php } elseif ($client) { ?>
+								<a href="<?php echo \URL::to('/clients/detail/'.base64_encode(convert_uuencode($client->id))); ?>"><?php echo e($client->first_name.' '.$client->last_name); ?></a>
+								<br>
+								<?php echo e($client->email); ?>
+							<?php } else { ?>
+								<span class="text-muted">Contact record unavailable</span>
+							<?php } ?>
 						</div>
 					</div>
 					<div class="col-md-6">
@@ -542,9 +553,19 @@ class OfficeVisitController extends Controller
 	    	$o->save();
 	    	
 	    	// Get client information for the notification
-	    	$client = $objs->contact_type == 'Lead' 
-	    	    ? \App\Models\Lead::find($objs->client_id)
-	    	    : Admin::whereIn('type', ['client', 'lead'])->find($objs->client_id);
+	    	if ($objs->contact_type === 'Walk-in' || !$objs->client_id) {
+	    	    $client = null;
+	    	    $notifyClientName = 'Walk-in';
+	    	    if (!empty($objs->walk_in_phone)) {
+	    	        $notifyClientName .= ' (' . $objs->walk_in_phone . ')';
+	    	    }
+	    	} elseif ($objs->contact_type == 'Lead') {
+	    	    $client = \App\Models\Lead::find($objs->client_id);
+	    	    $notifyClientName = $client ? $client->first_name . ' ' . $client->last_name : 'Unknown lead';
+	    	} else {
+	    	    $client = Admin::whereIn('type', ['client', 'lead'])->find($objs->client_id);
+	    	    $notifyClientName = $client ? $client->first_name . ' ' . $client->last_name : 'Unknown client';
+	    	}
 	    	
 	    	// Broadcast real-time notification via Reverb (wrap in try-catch)
 	    	try {
@@ -556,7 +577,7 @@ class OfficeVisitController extends Controller
 	    	            'checkin_id' => $objs->id,
 	    	            'message' => $o->message,
 	    	            'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-	    	            'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
+	    	            'client_name' => $notifyClientName,
 	    	            'visit_purpose' => $objs->visit_purpose,
 	    	            'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
 	    	            'url' => $o->url
