@@ -9,6 +9,15 @@ class SmsTemplate extends Model
 {
     use Sortable;
 
+    protected static function booted(): void
+    {
+        static::creating(function (SmsTemplate $model) {
+            if ($model->usage_count === null) {
+                $model->usage_count = 0;
+            }
+        });
+    }
+
     protected $fillable = [
         'title',
         'message',

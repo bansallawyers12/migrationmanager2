@@ -262,6 +262,7 @@ Route::middleware(['auth:admin'])->group(function() {
 		Route::post('/lookup', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'lookupContact'])->name('lookup');
 		Route::post('/appointments', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'getAppointments'])->name('appointments');
 		Route::post('/submit', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'submit'])->name('submit');
+		Route::post('/create-lead', [\App\Http\Controllers\CRM\FrontDeskCheckInController::class, 'createLead'])->name('create-lead');
 	});
 
 	/*---------- Audit Logs ----------*/

@@ -69,7 +69,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 						<div class="card-header">
 							<h4 style="color:#666;">In Person</h4>
 							<div class="card-header-action">
-								<a href="javascript:;" class="btn btn-primary opencheckin">Create In Person</a>
+								<a href="{{ route('front-desk.checkin.index') }}" class="btn btn-primary">Create In Person</a>
 							</div>
 						</div>
 						<div class="card-body">
