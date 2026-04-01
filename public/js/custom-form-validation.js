@@ -2566,7 +2566,7 @@ function customValidate(formName, savetype = '')
 										(responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')));
 									var msg = isCsrf
 										? 'Security token expired. Refresh the page and try again.'
-										: 'Access denied. If you are logged in, refresh the page and try again.';
+										: '555Access denied. If you are logged in, refresh the page and try again111.';
 									$('.custom-error-msg').html('<span class="alert alert-warning">' + msg + '</span>');
 									return;
 								}
