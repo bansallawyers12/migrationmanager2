@@ -124,6 +124,129 @@
 .fd-summary-label { color: #6c757d; min-width: 130px; font-weight: 500; }
 .fd-summary-value { color: #212529; font-weight: 600; }
 
+/* ── Step titles & lead copy (WCAG-friendly contrast) ─────── */
+.fd-wizard-wrapper .fd-step-title {
+    color: #1a237e;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+.fd-wizard-wrapper .fd-lead-question {
+    color: #212529;
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.45;
+}
+
+/* ── Step 4: Yes / No — equal visual weight, always readable ─ */
+.fd-appt-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.fd-choice-btn {
+    flex: 1 1 220px;
+    min-width: min(100%, 200px);
+    padding: 14px 18px;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.35;
+    border-radius: 10px;
+    border: 2px solid;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    text-align: center;
+}
+.fd-choice-btn:focus {
+    outline: 3px solid rgba(25, 118, 210, 0.45);
+    outline-offset: 2px;
+}
+.fd-choice-yes {
+    background: #e3f2fd;
+    border-color: #1976d2;
+    color: #0d47a1;
+}
+.fd-choice-yes:hover {
+    background: #bbdefb;
+    border-color: #1565c0;
+    color: #082c5a;
+}
+.fd-choice-yes.fd-choice--selected {
+    background: #1565c0;
+    border-color: #0d47a1;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(21, 101, 192, 0.35);
+}
+.fd-choice-yes.fd-choice--selected:hover {
+    background: #0d47a1;
+    color: #fff;
+}
+.fd-choice-no {
+    background: #eceff1;
+    border-color: #607d8b;
+    color: #263238;
+}
+.fd-choice-no:hover {
+    background: #cfd8dc;
+    border-color: #546e7a;
+    color: #1c2429;
+}
+.fd-choice-no.fd-choice--selected {
+    background: #455a64;
+    border-color: #37474f;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(69, 90, 100, 0.35);
+}
+.fd-choice-no.fd-choice--selected:hover {
+    background: #37474f;
+    color: #fff;
+}
+
+/* ── Primary actions in wizard (consistent, high contrast) ─ */
+.fd-wizard-wrapper .fd-btn-action {
+    background: #1565c0;
+    border: 2px solid #0d47a1;
+    color: #fff !important;
+    font-weight: 600;
+}
+.fd-wizard-wrapper .fd-btn-action:hover:not(:disabled) {
+    background: #0d47a1;
+    border-color: #082c5a;
+    color: #fff !important;
+}
+.fd-wizard-wrapper .fd-btn-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.fd-wizard-wrapper .fd-btn-confirm {
+    background: #2e7d32;
+    border: 2px solid #1b5e20;
+    color: #fff !important;
+    font-weight: 600;
+}
+.fd-wizard-wrapper .fd-btn-confirm:hover {
+    background: #1b5e20;
+    border-color: #145214;
+    color: #fff !important;
+}
+
+.fd-wizard-wrapper .fd-btn-walkin {
+    background: #fff;
+    border: 2px solid #78909c;
+    color: #37474f;
+    font-weight: 600;
+}
+.fd-wizard-wrapper .fd-btn-walkin:hover {
+    background: #eceff1;
+    border-color: #546e7a;
+    color: #263238;
+}
+.fd-wizard-wrapper .fd-btn-walkin.active {
+    background: #fff8e1;
+    border-color: #f9a825;
+    color: #e65100;
+    box-shadow: 0 0 0 2px rgba(249, 168, 37, 0.35);
+}
+
 /* ── Appointment cards ──────────────────────────────────── */
 .fd-appt-card {
     border: 2px solid #e8eaed;
@@ -183,7 +306,7 @@
 
             {{-- ── STEP 1: Phone + Email ─────────────────────────── --}}
             <div class="fd-wizard-step active" id="fdStep1">
-                <h6 class="mb-3 text-muted font-weight-bold" style="text-transform:uppercase;font-size:.78rem;letter-spacing:.5px;">Step 1 — Contact Details</h6>
+                <h6 class="fd-step-title mb-3 text-uppercase small">Step 1 — Contact Details</h6>
                 <div class="form-group">
                     <label for="fdPhone" class="font-weight-600">Phone <span class="text-danger">*</span></label>
                     <input type="tel" class="form-control form-control-lg" id="fdPhone" placeholder="e.g. 0412 345 678" maxlength="20" autocomplete="off">
@@ -194,7 +317,7 @@
                     <input type="email" class="form-control" id="fdEmail" placeholder="e.g. john@example.com" autocomplete="off">
                 </div>
                 <div class="text-right">
-                    <button class="btn btn-primary btn-lg px-5" id="fdLookupBtn">
+                    <button type="button" class="btn btn-lg px-5 fd-btn-action" id="fdLookupBtn">
                         <i class="fas fa-search mr-2"></i>Look Up
                     </button>
                 </div>
@@ -206,20 +329,20 @@
 
             {{-- ── STEP 2: Match selection ───────────────────────── --}}
             <div class="fd-wizard-step" id="fdStep2">
-                <h6 class="mb-1 text-muted font-weight-bold" style="text-transform:uppercase;font-size:.78rem;letter-spacing:.5px;">Step 2 — Select Match</h6>
+                <h6 class="fd-step-title mb-1 text-uppercase small">Step 2 — Select Match</h6>
                 <p class="text-muted small mb-3" id="fdMatchSubtitle"></p>
                 <div id="fdMatchList"></div>
 
                 <div class="border-top pt-3 mt-2">
                     <p class="text-muted small mb-2">Not in the list?</p>
-                    <button class="btn btn-outline-secondary btn-sm" id="fdWalkInBtn">
+                    <button type="button" class="btn btn-sm fd-btn-walkin" id="fdWalkInBtn">
                         <i class="fas fa-user-slash mr-1"></i>Continue as Walk-In (no CRM record)
                     </button>
                 </div>
 
                 <div class="text-right mt-4">
                     <button class="btn btn-light mr-2" id="fdStep2Back"><i class="fas fa-arrow-left mr-1"></i>Back</button>
-                    <button class="btn btn-primary" id="fdStep2Next" disabled>
+                    <button type="button" class="btn fd-btn-action" id="fdStep2Next" disabled>
                         Confirm Selection <i class="fas fa-arrow-right ml-1"></i>
                     </button>
                 </div>
@@ -227,11 +350,11 @@
 
             {{-- ── STEP 3: Confirm details ───────────────────────── --}}
             <div class="fd-wizard-step" id="fdStep3">
-                <h6 class="mb-3 text-muted font-weight-bold" style="text-transform:uppercase;font-size:.78rem;letter-spacing:.5px;">Step 3 — Confirm Details</h6>
+                <h6 class="fd-step-title mb-3 text-uppercase small">Step 3 — Confirm Details</h6>
                 <div id="fdConfirmSummary"></div>
                 <div class="text-right mt-4">
                     <button class="btn btn-light mr-2" id="fdStep3Back"><i class="fas fa-arrow-left mr-1"></i>Back</button>
-                    <button class="btn btn-success" id="fdStep3Next">
+                    <button type="button" class="btn fd-btn-confirm" id="fdStep3Next">
                         Details Correct <i class="fas fa-check ml-1"></i>
                     </button>
                 </div>
@@ -239,15 +362,15 @@
 
             {{-- ── STEP 4: Has appointment? ──────────────────────── --}}
             <div class="fd-wizard-step" id="fdStep4">
-                <h6 class="mb-3 text-muted font-weight-bold" style="text-transform:uppercase;font-size:.78rem;letter-spacing:.5px;">Step 4 — Appointment</h6>
-                <p class="mb-4">Does the visitor have a scheduled appointment today?</p>
+                <h6 class="fd-step-title mb-3 text-uppercase small">Step 4 — Appointment</h6>
+                <p class="fd-lead-question mb-4">Does the visitor have a scheduled appointment today?</p>
 
-                <div class="d-flex gap-3 mb-4" style="gap:12px;">
-                    <button class="btn btn-outline-primary btn-lg flex-fill" id="fdHasApptYes">
-                        <i class="fas fa-calendar-check mr-2"></i>Yes, has appointment
+                <div class="fd-appt-choices mb-4">
+                    <button type="button" class="fd-choice-btn fd-choice-yes" id="fdHasApptYes">
+                        <i class="fas fa-calendar-check mr-2" aria-hidden="true"></i>Yes, has appointment
                     </button>
-                    <button class="btn btn-outline-secondary btn-lg flex-fill" id="fdHasApptNo">
-                        <i class="fas fa-calendar-times mr-2"></i>No appointment
+                    <button type="button" class="fd-choice-btn fd-choice-no" id="fdHasApptNo">
+                        <i class="fas fa-calendar-times mr-2" aria-hidden="true"></i>No appointment
                     </button>
                 </div>
 
@@ -264,7 +387,7 @@
 
                 <div class="text-right mt-4">
                     <button class="btn btn-light mr-2" id="fdStep4Back"><i class="fas fa-arrow-left mr-1"></i>Back</button>
-                    <button class="btn btn-primary" id="fdStep4Next" disabled>
+                    <button type="button" class="btn fd-btn-action" id="fdStep4Next" disabled>
                         Continue <i class="fas fa-arrow-right ml-1"></i>
                     </button>
                 </div>
@@ -272,7 +395,7 @@
 
             {{-- ── STEP 5: Reason ────────────────────────────────── --}}
             <div class="fd-wizard-step" id="fdStep5">
-                <h6 class="mb-3 text-muted font-weight-bold" style="text-transform:uppercase;font-size:.78rem;letter-spacing:.5px;">Step 5 — Visit Reason</h6>
+                <h6 class="fd-step-title mb-3 text-uppercase small">Step 5 — Visit Reason</h6>
 
                 <div class="form-group">
                     <label class="font-weight-600">Reason for Visit <span class="text-muted">(optional)</span></label>
@@ -295,7 +418,7 @@
 
                 <div class="text-right mt-4">
                     <button class="btn btn-light mr-2" id="fdStep5Back"><i class="fas fa-arrow-left mr-1"></i>Back</button>
-                    <button class="btn btn-success btn-lg px-5" id="fdSubmitBtn">
+                    <button type="button" class="btn btn-lg px-5 fd-btn-confirm" id="fdSubmitBtn">
                         <i class="fas fa-paper-plane mr-2"></i>Submit Check-In
                     </button>
                 </div>
@@ -311,7 +434,7 @@
                     <i class="fas fa-check-circle"></i>
                     <h5>Check-In Recorded!</h5>
                     <p id="fdSuccessMsg" class="mb-4"></p>
-                    <button class="btn btn-primary" id="fdStartOver">
+                    <button type="button" class="btn fd-btn-action" id="fdStartOver">
                         <i class="fas fa-redo mr-2"></i>New Check-In
                     </button>
                     <a href="{{ route('officevisits.waiting') }}" class="btn btn-outline-secondary ml-2">
@@ -536,15 +659,15 @@
         hide($('#fdApptSection'));
         $('#fdStep4Next').disabled = true;
         document.querySelectorAll('.fd-appt-card').forEach(function(c){ c.remove(); });
-        $('#fdHasApptYes').classList.remove('btn-primary');   $('#fdHasApptYes').classList.add('btn-outline-primary');
-        $('#fdHasApptNo').classList.remove('btn-secondary'); $('#fdHasApptNo').classList.add('btn-outline-secondary');
+        $('#fdHasApptYes').classList.remove('fd-choice--selected');
+        $('#fdHasApptNo').classList.remove('fd-choice--selected');
         state.appointmentId = null;
         state.claimedAppointment = false;
     }
 
     $('#fdHasApptYes').addEventListener('click', function () {
-        $('#fdHasApptYes').classList.add('btn-primary'); $('#fdHasApptYes').classList.remove('btn-outline-primary');
-        $('#fdHasApptNo').classList.remove('btn-secondary'); $('#fdHasApptNo').classList.add('btn-outline-secondary');
+        $('#fdHasApptYes').classList.add('fd-choice--selected');
+        $('#fdHasApptNo').classList.remove('fd-choice--selected');
         state.claimedAppointment = true;
 
         show($('#fdApptSection'), 'block');
@@ -583,8 +706,8 @@
     });
 
     $('#fdHasApptNo').addEventListener('click', function () {
-        $('#fdHasApptNo').classList.add('btn-secondary'); $('#fdHasApptNo').classList.remove('btn-outline-secondary');
-        $('#fdHasApptYes').classList.remove('btn-primary'); $('#fdHasApptYes').classList.add('btn-outline-primary');
+        $('#fdHasApptNo').classList.add('fd-choice--selected');
+        $('#fdHasApptYes').classList.remove('fd-choice--selected');
         state.claimedAppointment = false;
         state.appointmentId = null;
         hide($('#fdApptSection'));
