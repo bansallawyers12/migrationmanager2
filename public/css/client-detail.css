@@ -1330,8 +1330,50 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
    Google review reminder modal — high-contrast actions (WCAG AA friendly)
    Theme overrides were washing out btn-outline-secondary (near-invisible text).
    -------------------------------------------------------------------------- */
+.google-review-reminder-modal .modal-header {
+    align-items: flex-start;
+}
+
 .google-review-reminder-modal .modal-title {
     color: #1a1a1a;
+    padding-right: 0.5rem;
+}
+
+.google-review-reminder-modal .grr-modal-close-btn {
+    color: #1a1a1a !important;
+    opacity: 1 !important;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0.15rem 0.45rem;
+    margin: -0.15rem -0.35rem 0 auto;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 0.25rem;
+    text-shadow: none;
+}
+
+.google-review-reminder-modal .grr-modal-close-btn:hover {
+    color: #000000 !important;
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.google-review-reminder-modal .grr-modal-close-btn:focus-visible {
+    outline: 3px solid #0d6efd;
+    outline-offset: 2px;
+    border-color: #0d6efd;
+}
+
+.google-review-reminder-modal .grr-modal-close-btn:disabled {
+    color: #6c757d !important;
+    background-color: #e9ecef !important;
+    cursor: not-allowed;
+}
+
+.google-review-reminder-modal .grr-modal-hint {
+    color: #3d3d3d;
+    line-height: 1.45;
 }
 
 .google-review-reminder-modal .grr-modal-text {
@@ -1409,6 +1451,30 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 .google-review-reminder-modal .grr-btn-received:focus-visible {
     outline: 3px solid #9fd4b1;
     outline-offset: 2px;
+}
+
+.google-review-reminder-modal .grr-btn-sms {
+    color: #ffffff !important;
+    background-color: #0b7285 !important;
+    border-color: #086972 !important;
+}
+
+.google-review-reminder-modal .grr-btn-sms:hover,
+.google-review-reminder-modal .grr-btn-sms:focus-visible {
+    color: #ffffff !important;
+    background-color: #086972 !important;
+    border-color: #05505c !important;
+}
+
+.google-review-reminder-modal .grr-btn-sms:focus-visible {
+    outline: 3px solid #21b5ce;
+    outline-offset: 2px;
+}
+
+.google-review-reminder-modal .grr-btn-sms:disabled {
+    color: #e8f6f8 !important;
+    background-color: #5a939e !important;
+    border-color: #4a7d87 !important;
 }
 
 .google-review-reminder-modal .grr-btn:disabled {

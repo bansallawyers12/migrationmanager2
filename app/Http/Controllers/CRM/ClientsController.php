@@ -66,6 +66,7 @@ use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
 use App\Models\EmailTemplate;
+use App\Models\SmsTemplate;
 
 use Illuminate\Support\Facades\Http;
 
@@ -2341,7 +2342,7 @@ class ClientsController extends Controller
 
         $validated = $request->validate([
             'client_id' => 'required|integer|min:1',
-            'action' => 'required|in:snooze,not_interested,review_received',
+            'action' => 'required|in:snooze,snooze_one_day,not_interested,review_received',
         ]);
 
         $admin = Admin::query()
@@ -2365,6 +2366,9 @@ class ClientsController extends Controller
             case 'snooze':
                 $admin->google_review_reminder_snooze_until = Carbon::now()->addWeek();
                 break;
+            case 'snooze_one_day':
+                $admin->google_review_reminder_snooze_until = Carbon::now()->addDay();
+                break;
             case 'not_interested':
                 $admin->google_review_reminder_status = Admin::GOOGLE_REVIEW_REMINDER_NOT_INTERESTED;
                 $admin->google_review_reminder_snooze_until = null;
@@ -2378,6 +2382,103 @@ class ClientsController extends Controller
         $admin->save();
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Send SMS with Google review link from the client/lead detail reminder modal.
+     * Resolves sms_templates by title config('crm.google_review_sms_template_title') (default "Google review link"),
+     * then by alias config('crm.google_review_sms_template_alias'). Variables: first_name, last_name, review_link.
+     */
+    public function sendGoogleReviewReminderSms(Request $request)
+    {
+        if ($this->currentStaffIsExcludedFromGoogleReviewReminder()) {
+            return response()->json(['ok' => false, 'message' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'client_id' => 'required|integer|min:1',
+        ]);
+
+        $admin = Admin::query()
+            ->where('id', $validated['client_id'])
+            ->whereIn('type', ['client', 'lead'])
+            ->first();
+
+        if (! $admin || $admin->is_company) {
+            return response()->json(['ok' => false, 'message' => 'Record not found'], 404);
+        }
+
+        if ((int) ($admin->is_archived ?? 0) === 1) {
+            return response()->json(['ok' => false, 'message' => 'Record not found'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $admin->id, Auth::user())) {
+            return response()->json(['ok' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $rawPhone = trim((string) ($admin->country_code ?? '')).trim((string) ($admin->phone ?? ''));
+        if ($rawPhone === '') {
+            return response()->json(['ok' => false, 'message' => 'No phone number on file for this contact'], 422);
+        }
+
+        $rawFirst = trim((string) ($admin->first_name ?? ''));
+        $firstDisplay = $rawFirst !== ''
+            ? mb_convert_case(mb_strtolower($rawFirst), MB_CASE_TITLE, 'UTF-8')
+            : 'there';
+
+        $reviewUrl = (string) config('crm.google_review_sms_review_url', '');
+        if ($reviewUrl === '') {
+            $reviewUrl = 'https://YOUR_GOOGLE_REVIEW_LINK';
+        }
+
+        $variables = [
+            'first_name' => $firstDisplay,
+            'last_name' => trim((string) ($admin->last_name ?? '')),
+            'review_link' => $reviewUrl,
+        ];
+
+        $templateTitle = (string) config('crm.google_review_sms_template_title', 'Google review link');
+        // Case-insensitive title match so "Google Review Link" / "google review link" etc. all work.
+        $template = SmsTemplate::active()
+            ->whereRaw('lower(title) = ?', [mb_strtolower($templateTitle)])
+            ->orderBy('id')
+            ->first();
+
+        if (! $template) {
+            $templateAlias = (string) config('crm.google_review_sms_template_alias', 'google_review_link');
+            if ($templateAlias !== '') {
+                $template = SmsTemplate::active()
+                    ->byAlias($templateAlias)
+                    ->orderBy('id')
+                    ->first();
+            }
+        }
+
+        if ($template) {
+            $result = $this->smsManager->sendFromTemplate(
+                $rawPhone,
+                (int) $template->id,
+                $variables,
+                ['client_id' => (int) $admin->id]
+            );
+        } else {
+            $fallback = "Hi {$firstDisplay},\n\nPlease leave us a Google review when you can: {$reviewUrl}\n\nPlease do not reply to this SMS.\n\nBansal Immigration";
+            $result = $this->smsManager->sendSms($rawPhone, $fallback, 'notification', [
+                'client_id' => (int) $admin->id,
+            ]);
+        }
+
+        if ($result['success'] ?? false) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Review link sent by SMS',
+            ]);
+        }
+
+        return response()->json([
+            'ok' => false,
+            'message' => $result['message'] ?? $result['error'] ?? 'Failed to send SMS',
+        ], 422);
     }
 
     //Update session to be complete

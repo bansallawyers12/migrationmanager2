@@ -1047,16 +1047,23 @@ use App\Http\Controllers\Controller;
 </div>
 
 @if($showGoogleReviewReminderModal ?? false)
-<div class="modal fade custom_modal google-review-reminder-modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="googleReviewReminderModalLabel" aria-describedby="googleReviewReminderModalDesc" data-backdrop="static" data-keyboard="false" data-auto-open="1">
+<div class="modal fade custom_modal google-review-reminder-modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="googleReviewReminderModalLabel" aria-describedby="googleReviewReminderModalDesc googleReviewReminderModalHint" data-backdrop="static" data-keyboard="false" data-auto-open="1">
 	<div class="modal-dialog modal-dialog-centered" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2" aria-hidden="true"></i>Google review reminder</h5>
+				<button type="button" class="close grr-modal-close-btn js-google-review-reminder" data-action="snooze_one_day" aria-label="Close and remind again tomorrow" title="Close — ask again tomorrow">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
 			<div class="modal-body">
-				<p class="mb-0 grr-modal-text" id="googleReviewReminderModalDesc">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
+				<p class="mb-2 grr-modal-text" id="googleReviewReminderModalDesc">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
+				<p class="mb-0 small grr-modal-hint" id="googleReviewReminderModalHint">Closing with the × button above hides this until tomorrow (one-day snooze).</p>
 			</div>
 			<div class="modal-footer flex-wrap justify-content-stretch gap-2 grr-modal-footer">
+				<button type="button" class="btn w-100 m-0 js-google-review-send-sms grr-btn grr-btn-sms">
+					<i class="fas fa-sms mr-1" aria-hidden="true"></i>Send SMS with review link
+				</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-not-interested" data-action="not_interested">Not interested</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-snooze" data-action="snooze">Remind me in 1 week</button>
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-received" data-action="review_received">Review received</button>
@@ -1778,7 +1785,12 @@ $(function () {
     if (!clientId || clientId < 1) { return; }
     var token = $('meta[name="csrf-token"]').attr('content');
     var postUrl = @json(route('clients.google-review-reminder'));
+    var postSmsUrl = @json(route('clients.google-review-reminder.sms'));
     var submitting = false;
+
+    function grrAllControls() {
+        return $modal.find('.js-google-review-reminder, .js-google-review-send-sms');
+    }
     var reminderDelayMs = @json((int) config('crm.google_review_reminder_modal_delay_ms', 60000));
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         reminderDelayMs = Math.min(reminderDelayMs, 400);
@@ -1790,7 +1802,8 @@ $(function () {
         clearTimeout(grrShowTimer);
     });
     $modal.on('shown.bs.modal', function () {
-        var $first = $modal.find('.js-google-review-reminder').first();
+        var $sms = $modal.find('.grr-modal-footer .js-google-review-send-sms');
+        var $first = $sms.length ? $sms : $modal.find('.grr-modal-footer .js-google-review-reminder').first();
         if ($first.length) {
             $first.trigger('focus');
         }
@@ -1798,7 +1811,7 @@ $(function () {
     $modal.off('click.grr', '.js-google-review-reminder').on('click.grr', '.js-google-review-reminder', function () {
         if (submitting) { return; }
         var action = $(this).data('action');
-        var $btns = $modal.find('.js-google-review-reminder');
+        var $btns = grrAllControls();
         submitting = true;
         $btns.prop('disabled', true);
         $.ajax({
@@ -1815,19 +1828,21 @@ $(function () {
                 if (res && res.ok) {
                     $modal.modal('hide');
                     if (typeof iziToast !== 'undefined') {
-                        iziToast.success({ message: 'Saved', position: 'topRight' });
+                        var toastMessages = {
+                            snooze_one_day: 'Reminder snoozed until tomorrow',
+                            snooze: 'Reminder snoozed for 1 week',
+                            not_interested: 'Noted — won\'t be reminded again',
+                            review_received: 'Great! Review marked as received'
+                        };
+                        iziToast.success({ message: toastMessages[action] || 'Saved', position: 'topRight' });
                     }
                 } else {
-                    submitting = false;
-                    $btns.prop('disabled', false);
                     if (typeof iziToast !== 'undefined') {
                         iziToast.error({ message: (res && res.message) ? res.message : 'Could not save', position: 'topRight' });
                     }
                 }
             },
             error: function (xhr) {
-                submitting = false;
-                $btns.prop('disabled', false);
                 var msg = 'Could not save';
                 var j = xhr.responseJSON;
                 if (j) {
@@ -1842,6 +1857,54 @@ $(function () {
                 if (typeof iziToast !== 'undefined') {
                     iziToast.error({ message: msg, position: 'topRight' });
                 }
+            },
+            complete: function () {
+                submitting = false;
+                $btns.prop('disabled', false);
+            }
+        });
+    });
+
+    $modal.off('click.grr-sms', '.js-google-review-send-sms').on('click.grr-sms', '.js-google-review-send-sms', function () {
+        if (submitting) { return; }
+        var $btns = grrAllControls();
+        submitting = true;
+        $btns.prop('disabled', true);
+        $.ajax({
+            url: postSmsUrl,
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
+            data: { client_id: clientId, _token: token },
+            success: function (res) {
+                if (res && res.ok) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ message: res.message || 'SMS sent successfully', position: 'topRight' });
+                    }
+                    if (typeof loadActivities === 'function') {
+                        loadActivities();
+                    }
+                } else {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ message: (res && res.message) ? res.message : 'SMS failed', position: 'topRight' });
+                    }
+                }
+            },
+            error: function (xhr) {
+                var msg = 'SMS failed';
+                var j = xhr.responseJSON;
+                if (j && j.message) { msg = j.message; }
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                }
+            },
+            complete: function () {
+                submitting = false;
+                grrAllControls().prop('disabled', false);
             }
         });
     });
