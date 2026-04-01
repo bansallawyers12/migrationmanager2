@@ -1326,3 +1326,105 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     }
 }
 
+/* --------------------------------------------------------------------------
+   Google review reminder modal — high-contrast actions (WCAG AA friendly)
+   Theme overrides were washing out btn-outline-secondary (near-invisible text).
+   -------------------------------------------------------------------------- */
+.google-review-reminder-modal .modal-title {
+    color: #1a1a1a;
+}
+
+.google-review-reminder-modal .grr-modal-text {
+    color: #1a1a1a;
+    line-height: 1.5;
+    font-size: 1rem;
+}
+
+.google-review-reminder-modal .grr-modal-footer .grr-btn {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.55rem 0.85rem;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 0.375rem;
+    min-height: 44px;
+    box-shadow: none;
+}
+
+.google-review-reminder-modal .grr-btn-not-interested {
+    color: #141414 !important;
+    background-color: #ffffff !important;
+    border-color: #3d3d3d !important;
+}
+
+.google-review-reminder-modal .grr-btn-not-interested:hover,
+.google-review-reminder-modal .grr-btn-not-interested:focus {
+    color: #ffffff !important;
+    background-color: #3d3d3d !important;
+    border-color: #1a1a1a !important;
+}
+
+.google-review-reminder-modal .grr-btn-not-interested:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.google-review-reminder-modal .grr-btn-snooze {
+    color: #0a4a9c !important;
+    background-color: #ffffff !important;
+    border-color: #0d6efd !important;
+}
+
+.google-review-reminder-modal .grr-btn-snooze:hover,
+.google-review-reminder-modal .grr-btn-snooze:focus {
+    color: #ffffff !important;
+    background-color: #0d6efd !important;
+    border-color: #0a58ca !important;
+}
+
+.google-review-reminder-modal .grr-btn-snooze:focus {
+    outline: 2px solid #0a4a9c;
+    outline-offset: 2px;
+}
+
+.google-review-reminder-modal .grr-btn-received {
+    color: #ffffff !important;
+    background-color: #146c43 !important;
+    border-color: #0f5132 !important;
+}
+
+.google-review-reminder-modal .grr-btn-received:hover,
+.google-review-reminder-modal .grr-btn-received:focus {
+    color: #ffffff !important;
+    background-color: #0f5132 !important;
+    border-color: #0d3d26 !important;
+}
+
+.google-review-reminder-modal .grr-btn-received:focus {
+    outline: 2px solid #75b798;
+    outline-offset: 2px;
+}
+
+.google-review-reminder-modal .grr-btn:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+.google-review-reminder-modal .grr-btn-not-interested:disabled {
+    color: #5c5c5c !important;
+    background-color: #e8e8e8 !important;
+    border-color: #8a8a8a !important;
+}
+
+.google-review-reminder-modal .grr-btn-snooze:disabled {
+    color: #4a6fa5 !important;
+    background-color: #e7eef8 !important;
+    border-color: #6c8cc4 !important;
+}
+
+.google-review-reminder-modal .grr-btn-received:disabled {
+    color: #f0fff4 !important;
+    background-color: #6ea88c !important;
+    border-color: #5a9076 !important;
+}
+

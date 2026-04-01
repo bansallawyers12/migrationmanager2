@@ -1047,19 +1047,19 @@ use App\Http\Controllers\Controller;
 </div>
 
 @if($showGoogleReviewReminderModal ?? false)
-<div class="modal fade custom_modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-labelledby="googleReviewReminderModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false" data-auto-open="1">
+<div class="modal fade custom_modal google-review-reminder-modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-labelledby="googleReviewReminderModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false" data-auto-open="1">
 	<div class="modal-dialog modal-dialog-centered" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2"></i>Google review reminder</h5>
+				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2" aria-hidden="true"></i>Google review reminder</h5>
 			</div>
 			<div class="modal-body">
-				<p class="mb-0">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
+				<p class="mb-0 grr-modal-text">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
 			</div>
-			<div class="modal-footer flex-wrap justify-content-stretch gap-2">
-				<button type="button" class="btn btn-outline-secondary flex-grow-1 m-0 js-google-review-reminder" data-action="not_interested">Not interested</button>
-				<button type="button" class="btn btn-outline-primary flex-grow-1 m-0 js-google-review-reminder" data-action="snooze">Remind me in 1 week</button>
-				<button type="button" class="btn btn-success flex-grow-1 m-0 js-google-review-reminder" data-action="review_received">Review received</button>
+			<div class="modal-footer flex-wrap justify-content-stretch gap-2 grr-modal-footer">
+				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-not-interested" data-action="not_interested">Not interested</button>
+				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-snooze" data-action="snooze">Remind me in 1 week</button>
+				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-received" data-action="review_received">Review received</button>
 			</div>
 		</div>
 	</div>
