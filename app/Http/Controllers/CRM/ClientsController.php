@@ -2277,8 +2277,29 @@ class ClientsController extends Controller
         return $this->googleReviewCrmTemplateExistsCache;
     }
 
+    /**
+     * Roles in config `crm.google_review_reminder_exclude_role_ids` must not see
+     * the reminder modal or change reminder state via API (Calling, Accounts, etc.).
+     */
+    protected function currentStaffIsExcludedFromGoogleReviewReminder(): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        $roleId = (int) ($user->role ?? 0);
+        $excluded = config('crm.google_review_reminder_exclude_role_ids', [14, 15]);
+
+        return $roleId > 0 && in_array($roleId, $excluded, true);
+    }
+
     protected function shouldShowGoogleReviewReminderModal(Admin $record): bool
     {
+        if ($this->currentStaffIsExcludedFromGoogleReviewReminder()) {
+            return false;
+        }
+
         if ($record->is_company) {
             return false;
         }
@@ -2314,6 +2335,10 @@ class ClientsController extends Controller
 
     public function updateGoogleReviewReminder(Request $request)
     {
+        if ($this->currentStaffIsExcludedFromGoogleReviewReminder()) {
+            return response()->json(['ok' => false, 'message' => 'Forbidden'], 403);
+        }
+
         $validated = $request->validate([
             'client_id' => 'required|integer|min:1',
             'action' => 'required|in:snooze,not_interested,review_received',

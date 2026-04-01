@@ -1779,9 +1779,10 @@ $(function () {
     var token = $('meta[name="csrf-token"]').attr('content');
     var postUrl = @json(route('clients.google-review-reminder'));
     var submitting = false;
+    var reminderDelayMs = @json((int) config('crm.google_review_reminder_modal_delay_ms', 60000));
     setTimeout(function () {
         $modal.modal('show');
-    }, 400);
+    }, reminderDelayMs);
     $modal.off('click.grr', '.js-google-review-reminder').on('click.grr', '.js-google-review-reminder', function () {
         if (submitting) { return; }
         var action = $(this).data('action');
