@@ -1351,6 +1351,12 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     box-shadow: none;
 }
 
+@supports selector(:focus-visible) {
+    .google-review-reminder-modal .grr-btn:focus:not(:focus-visible) {
+        outline: none;
+    }
+}
+
 .google-review-reminder-modal .grr-btn-not-interested {
     color: #141414 !important;
     background-color: #ffffff !important;
@@ -1358,14 +1364,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .google-review-reminder-modal .grr-btn-not-interested:hover,
-.google-review-reminder-modal .grr-btn-not-interested:focus {
+.google-review-reminder-modal .grr-btn-not-interested:focus-visible {
     color: #ffffff !important;
     background-color: #3d3d3d !important;
     border-color: #1a1a1a !important;
 }
 
-.google-review-reminder-modal .grr-btn-not-interested:focus {
-    outline: 2px solid #0d6efd;
+.google-review-reminder-modal .grr-btn-not-interested:focus-visible {
+    outline: 3px solid #0d6efd;
     outline-offset: 2px;
 }
 
@@ -1376,14 +1382,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .google-review-reminder-modal .grr-btn-snooze:hover,
-.google-review-reminder-modal .grr-btn-snooze:focus {
+.google-review-reminder-modal .grr-btn-snooze:focus-visible {
     color: #ffffff !important;
     background-color: #0d6efd !important;
     border-color: #0a58ca !important;
 }
 
-.google-review-reminder-modal .grr-btn-snooze:focus {
-    outline: 2px solid #0a4a9c;
+.google-review-reminder-modal .grr-btn-snooze:focus-visible {
+    outline: 3px solid #0a4a9c;
     outline-offset: 2px;
 }
 
@@ -1394,14 +1400,14 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .google-review-reminder-modal .grr-btn-received:hover,
-.google-review-reminder-modal .grr-btn-received:focus {
+.google-review-reminder-modal .grr-btn-received:focus-visible {
     color: #ffffff !important;
     background-color: #0f5132 !important;
     border-color: #0d3d26 !important;
 }
 
-.google-review-reminder-modal .grr-btn-received:focus {
-    outline: 2px solid #75b798;
+.google-review-reminder-modal .grr-btn-received:focus-visible {
+    outline: 3px solid #9fd4b1;
     outline-offset: 2px;
 }
 
@@ -1423,8 +1429,20 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 }
 
 .google-review-reminder-modal .grr-btn-received:disabled {
-    color: #f0fff4 !important;
-    background-color: #6ea88c !important;
-    border-color: #5a9076 !important;
+    color: #ffffff !important;
+    background-color: #5a9076 !important;
+    border-color: #4a7a63 !important;
+}
+
+@media (max-width: 576px) {
+    .google-review-reminder-modal .grr-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .google-review-reminder-modal .grr-modal-footer .grr-btn {
+        width: 100%;
+        max-width: none;
+    }
 }
 

@@ -1047,14 +1047,14 @@ use App\Http\Controllers\Controller;
 </div>
 
 @if($showGoogleReviewReminderModal ?? false)
-<div class="modal fade custom_modal google-review-reminder-modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-labelledby="googleReviewReminderModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false" data-auto-open="1">
+<div class="modal fade custom_modal google-review-reminder-modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="googleReviewReminderModalLabel" aria-describedby="googleReviewReminderModalDesc" data-backdrop="static" data-keyboard="false" data-auto-open="1">
 	<div class="modal-dialog modal-dialog-centered" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2" aria-hidden="true"></i>Google review reminder</h5>
 			</div>
 			<div class="modal-body">
-				<p class="mb-0 grr-modal-text">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
+				<p class="mb-0 grr-modal-text" id="googleReviewReminderModalDesc">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
 			</div>
 			<div class="modal-footer flex-wrap justify-content-stretch gap-2 grr-modal-footer">
 				<button type="button" class="btn flex-grow-1 m-0 js-google-review-reminder grr-btn grr-btn-not-interested" data-action="not_interested">Not interested</button>
@@ -1780,9 +1780,21 @@ $(function () {
     var postUrl = @json(route('clients.google-review-reminder'));
     var submitting = false;
     var reminderDelayMs = @json((int) config('crm.google_review_reminder_modal_delay_ms', 60000));
-    setTimeout(function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        reminderDelayMs = Math.min(reminderDelayMs, 400);
+    }
+    var grrShowTimer = setTimeout(function () {
         $modal.modal('show');
     }, reminderDelayMs);
+    $(window).on('pagehide.grr', function () {
+        clearTimeout(grrShowTimer);
+    });
+    $modal.on('shown.bs.modal', function () {
+        var $first = $modal.find('.js-google-review-reminder').first();
+        if ($first.length) {
+            $first.trigger('focus');
+        }
+    });
     $modal.off('click.grr', '.js-google-review-reminder').on('click.grr', '.js-google-review-reminder', function () {
         if (submitting) { return; }
         var action = $(this).data('action');
