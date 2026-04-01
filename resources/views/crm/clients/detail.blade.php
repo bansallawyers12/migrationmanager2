@@ -58,7 +58,12 @@ use App\Http\Controllers\Controller;
                         <a href="javascript:;" class="create_note_d" datatype="note" title="Add Notes"><i class="fas fa-plus"></i></a>
                         <a href="javascript:;" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" class="clientemail" title="Compose Mail"><i class="fa fa-envelope"></i></a>
                         @php
-                            $googleReviewTemplate = \App\Models\EmailTemplate::crm()->where('alias', 'google_review')->orWhere('name', 'like', '%Google Review%')->orderBy('id')->first();
+                            $googleReviewTemplate = \App\Models\EmailTemplate::crm()
+                                ->where(function ($q) {
+                                    $q->where('alias', 'google_review')->orWhere('name', 'like', '%Google Review%');
+                                })
+                                ->orderBy('id')
+                                ->first();
                         @endphp
                         <a href="javascript:;" class="send-google-review" data-id="{{@$fetchedData->id}}" data-email="{{@$fetchedData->email}}" data-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" data-template-id="{{ optional($googleReviewTemplate)->id ?? '' }}" title="Send Google Review"><i class="fab fa-google"></i></a>
                         <a href="javascript:;" class="send-sms-btn" data-client-id="{{@$fetchedData->id}}" data-client-name="{{@$fetchedData->first_name}} {{@$fetchedData->last_name}}" title="Send SMS"><i class="fas fa-sms"></i></a>
@@ -1041,6 +1046,26 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
+@if($showGoogleReviewReminderModal ?? false)
+<div class="modal fade custom_modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-labelledby="googleReviewReminderModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false" data-auto-open="1">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2"></i>Google review reminder</h5>
+			</div>
+			<div class="modal-body">
+				<p class="mb-0">Has this contact been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
+			</div>
+			<div class="modal-footer flex-wrap justify-content-stretch gap-2">
+				<button type="button" class="btn btn-outline-secondary flex-grow-1 m-0 js-google-review-reminder" data-action="not_interested">Not interested</button>
+				<button type="button" class="btn btn-outline-primary flex-grow-1 m-0 js-google-review-reminder" data-action="snooze">Remind me in 1 week</button>
+				<button type="button" class="btn btn-success flex-grow-1 m-0 js-google-review-reminder" data-action="review_received">Review received</button>
+			</div>
+		</div>
+	</div>
+</div>
+@endif
+
 @endsection
 @push('scripts')
 <!-- TinyMCE Editor -->
@@ -1743,5 +1768,72 @@ $('#sendSmsForm').on('submit', function(e) {
     });
 });
 </script>
+
+@if($showGoogleReviewReminderModal ?? false)
+<script>
+$(function () {
+    var $modal = $('#googleReviewReminderModal');
+    if (!$modal.length) { return; }
+    var clientId = parseInt($('.crm-container').data('client-id'), 10);
+    if (!clientId || clientId < 1) { return; }
+    var token = $('meta[name="csrf-token"]').attr('content');
+    var postUrl = @json(route('clients.google-review-reminder'));
+    var submitting = false;
+    setTimeout(function () {
+        $modal.modal('show');
+    }, 400);
+    $modal.off('click.grr', '.js-google-review-reminder').on('click.grr', '.js-google-review-reminder', function () {
+        if (submitting) { return; }
+        var action = $(this).data('action');
+        var $btns = $modal.find('.js-google-review-reminder');
+        submitting = true;
+        $btns.prop('disabled', true);
+        $.ajax({
+            url: postUrl,
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
+            data: { client_id: clientId, action: action, _token: token },
+            success: function (res) {
+                if (res && res.ok) {
+                    $modal.modal('hide');
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ message: 'Saved', position: 'topRight' });
+                    }
+                } else {
+                    submitting = false;
+                    $btns.prop('disabled', false);
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ message: (res && res.message) ? res.message : 'Could not save', position: 'topRight' });
+                    }
+                }
+            },
+            error: function (xhr) {
+                submitting = false;
+                $btns.prop('disabled', false);
+                var msg = 'Could not save';
+                var j = xhr.responseJSON;
+                if (j) {
+                    if (j.message) { msg = j.message; }
+                    if (j.errors && typeof j.errors === 'object') {
+                        var keys = Object.keys(j.errors);
+                        if (keys.length && j.errors[keys[0]] && j.errors[keys[0]][0]) {
+                            msg = j.errors[keys[0]][0];
+                        }
+                    }
+                }
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                }
+            }
+        });
+    });
+});
+</script>
+@endif
 
 @endpush

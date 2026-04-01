@@ -65,6 +65,7 @@ use App\Models\ClientPassportInformation;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientCharacter;
 use App\Models\ClientRelationship;
+use App\Models\EmailTemplate;
 
 use Illuminate\Support\Facades\Http;
 
@@ -93,6 +94,10 @@ class ClientsController extends Controller
     
     protected $openAiClient;
     protected $smsManager;
+
+    /** @var bool|null Cached for the current request only */
+    protected $googleReviewCrmTemplateExistsCache = null;
+
     /**
      * Create a new controller instance.
      *
@@ -2237,6 +2242,8 @@ class ClientsController extends Controller
                     ];
                 }
 
+                $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
@@ -2244,7 +2251,7 @@ class ClientsController extends Controller
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
-                    'assignableStaff', 'leadStageLabels'
+                    'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
@@ -2254,8 +2261,99 @@ class ClientsController extends Controller
         }
     }
 
+    protected function googleReviewCrmTemplateExists(): bool
+    {
+        if ($this->googleReviewCrmTemplateExistsCache !== null) {
+            return $this->googleReviewCrmTemplateExistsCache;
+        }
 
+        $this->googleReviewCrmTemplateExistsCache = EmailTemplate::crm()
+            ->where(function ($q) {
+                $q->where('alias', 'google_review')
+                    ->orWhere('name', 'like', '%Google Review%');
+            })
+            ->exists();
 
+        return $this->googleReviewCrmTemplateExistsCache;
+    }
+
+    protected function shouldShowGoogleReviewReminderModal(Admin $record): bool
+    {
+        if ($record->is_company) {
+            return false;
+        }
+        if ((int) ($record->is_archived ?? 0) === 1) {
+            return false;
+        }
+        if (! in_array($record->type, ['client', 'lead'], true)) {
+            return false;
+        }
+        if (trim((string) $record->email) === '') {
+            return false;
+        }
+
+        $status = strtolower(trim((string) ($record->google_review_reminder_status ?? '')));
+        if (in_array($status, [
+            Admin::GOOGLE_REVIEW_REMINDER_NOT_INTERESTED,
+            Admin::GOOGLE_REVIEW_REMINDER_REVIEW_RECEIVED,
+        ], true)) {
+            return false;
+        }
+
+        $until = $record->google_review_reminder_snooze_until;
+        if ($until && $until->isFuture()) {
+            return false;
+        }
+
+        if (! $this->googleReviewCrmTemplateExists()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function updateGoogleReviewReminder(Request $request)
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|integer|min:1',
+            'action' => 'required|in:snooze,not_interested,review_received',
+        ]);
+
+        $admin = Admin::query()
+            ->where('id', $validated['client_id'])
+            ->whereIn('type', ['client', 'lead'])
+            ->first();
+
+        if (! $admin || $admin->is_company) {
+            return response()->json(['ok' => false, 'message' => 'Record not found'], 404);
+        }
+
+        if ((int) ($admin->is_archived ?? 0) === 1) {
+            return response()->json(['ok' => false, 'message' => 'Record not found'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $admin->id, Auth::user())) {
+            return response()->json(['ok' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        switch ($validated['action']) {
+            case 'snooze':
+                $admin->google_review_reminder_snooze_until = Carbon::now()->addWeek();
+                break;
+            case 'not_interested':
+                $admin->google_review_reminder_status = Admin::GOOGLE_REVIEW_REMINDER_NOT_INTERESTED;
+                $admin->google_review_reminder_snooze_until = null;
+                break;
+            case 'review_received':
+                $admin->google_review_reminder_status = Admin::GOOGLE_REVIEW_REMINDER_REVIEW_RECEIVED;
+                $admin->google_review_reminder_snooze_until = null;
+                break;
+        }
+
+        $admin->save();
+
+        return response()->json(['ok' => true]);
+    }
 
     //Update session to be complete
     public function updatesessioncompleted(Request $request,CheckinLog $checkinLog)

@@ -13,6 +13,12 @@ class Admin extends Authenticatable
 {
     use Notifiable, Sortable, HasFactory, HasApiTokens; // Add HasApiTokens
 
+    /** Staff reminder on client/lead detail — never show modal again */
+    public const GOOGLE_REVIEW_REMINDER_NOT_INTERESTED = 'not_interested';
+
+    /** Client has left a review — never show modal again */
+    public const GOOGLE_REVIEW_REMINDER_REVIEW_RECEIVED = 'review_received';
+
 	// The authentication guard for admin
     protected $guard = 'admin';
 
@@ -53,6 +59,9 @@ class Admin extends Authenticatable
         'marital_status',
         // Client/Lead Tags
         'tagname',
+        // Google review staff reminder (client/lead detail)
+        'google_review_reminder_status',
+        'google_review_reminder_snooze_until',
         // Timestamps
         'created_at', 'updated_at'
     ];
@@ -68,6 +77,7 @@ class Admin extends Authenticatable
 
     protected $casts = [
         'followup_date' => 'datetime',
+        'google_review_reminder_snooze_until' => 'datetime',
     ];
 
 	public $sortable = [
