@@ -35,6 +35,8 @@ class Admin extends Authenticatable
         'role',
         // Type: 'client' or 'lead' for CRM (replaces role=7 for clients/leads)
         'type',
+        // CRM reference (unique per client/lead — format: PREFIX+YEAR+COUNTER)
+        'client_id', 'client_counter',
         // Contact Information
         'phone', 'country_code',
         // Address

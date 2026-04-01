@@ -19,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
@@ -315,16 +316,26 @@ class FrontDeskCheckInController extends Controller
             $ref = $this->refService->generateClientReference($validated['first_name']);
 
             $lead = Admin::create([
-                'first_name'     => $validated['first_name'],
-                'last_name'      => $validated['last_name'] ?? null,
-                'phone'          => $validated['phone'],
-                'email'          => $validated['email'] ?? null,
-                'type'           => 'lead',
-                'client_id'      => $ref['client_id'],
-                'client_counter' => $ref['client_counter'],
-                'user_id'        => $staff->id,
-                'status'         => 1,
-                'is_archived'    => 0,
+                'first_name'          => $validated['first_name'],
+                'last_name'           => $validated['last_name'] ?? null,
+                'phone'               => $validated['phone'],
+                'email'               => $validated['email'] ?? null,
+                'type'                => 'lead',
+                'client_id'           => $ref['client_id'],
+                'client_counter'      => $ref['client_counter'],
+                'user_id'             => $staff->id,
+                'password'            => Hash::make('LEAD_PLACEHOLDER'),
+                'status'              => 1,
+                'lead_status'         => 'new',
+                'is_archived'         => 0,
+                'is_deleted'          => null,
+                'verified'            => 0,
+                'cp_status'           => 0,
+                'cp_code_verify'      => 0,
+                'australian_study'    => 0,
+                'specialist_education'=> 0,
+                'regional_study'      => 0,
+                'is_company'          => 0,
             ]);
 
             $checkIn = FrontDeskCheckIn::create([
