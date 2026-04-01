@@ -49,7 +49,9 @@ class MatterEmailTemplateController extends Controller
 	}
 	
 	public function create(Request $request, $matterId = NULL)
-	{	//dd($matterId);
+	{
+		$matterId = $matterId ?: $request->query('matter_id');
+
 		return view('AdminConsole.features.matteremailtemplate.create', compact(['matterId']));	
 	}
 	

@@ -208,7 +208,7 @@
 													?>
 													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.edit', [$Template_info->id, $list->id])}}"><i class="far fa-edit"></i> Edit First Email</a>
 													@else
-													<a class="dropdown-item has-icon" href="{{route('adminconsole.features.matteremailtemplate.create', @$list->id)}}"><i class="far fa-edit"></i> Create First Email</a>
+													<a class="dropdown-item has-icon" href="{{ route('adminconsole.features.matteremailtemplate.create', ['matter_id' => @$list->id]) }}"><i class="far fa-edit"></i> Create First Email</a>
 													@endif
 
 													<a class="dropdown-item has-icon" href="{{route('upload_checklists.matter', @$list->id)}}"><i class="fas fa-list"></i> Matter Checklist</a>
