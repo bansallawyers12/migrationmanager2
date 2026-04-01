@@ -6,8 +6,8 @@
 /* ── Wizard container ───────────────────────────────────── */
 .fd-wizard-wrapper {
     max-width: 700px;
-    margin: 30px auto;
-    padding: 0 15px;
+    margin: 0 auto;
+    padding: 90px 15px 40px; /* 90px top clears the fixed 70px topbar */
 }
 .fd-card {
     background: #fff;
@@ -59,8 +59,7 @@
     background: #dee2e6;
     z-index: 0;
 }
-.fd-step.done:not(:last-child)::after,
-.fd-step.active:not(:last-child)::after {
+.fd-step.done:not(:last-child)::after {
     background: #1e3a5f;
 }
 .fd-step-circle {
@@ -351,7 +350,8 @@
 
     /* ── DOM helpers ────────────────────────────────────────── */
     function $(sel) { return document.querySelector(sel); }
-    function show(el) { if (el) el.style.display = ''; }
+    // Always set an explicit 'block' so CSS-class-hidden elements (e.g. .fd-spinner) are shown.
+    function show(el, display) { if (el) el.style.display = display || 'block'; }
     function hide(el) { if (el) el.style.display = 'none'; }
     function showAlert(msg) {
         var el = $('#fdGlobalAlert');
@@ -547,17 +547,20 @@
         $('#fdHasApptNo').classList.remove('btn-secondary'); $('#fdHasApptNo').classList.add('btn-outline-secondary');
         state.claimedAppointment = true;
 
-        show($('#fdApptSection'));
+        show($('#fdApptSection'), 'block');
 
         if (!state.adminId) {
-            $('#fdApptList').innerHTML = '<p class="text-muted">Walk-in visitors cannot be matched to a specific appointment.</p>';
+            $('#fdApptList').innerHTML =
+                '<p class="text-muted"><i class="fas fa-info-circle mr-1"></i>' +
+                'Walk-in visitor — no CRM record to match an appointment against. ' +
+                'The visit will still be recorded.</p>';
             hide($('#fdApptSpinner'));
-            show($('#fdApptNoneMsg'));
+            hide($('#fdApptNoneMsg'));
             $('#fdStep4Next').disabled = false;
             return;
         }
 
-        show($('#fdApptSpinner'));
+        show($('#fdApptSpinner'), 'block');
         hide($('#fdApptNoneMsg'));
         $('#fdApptList').innerHTML = '';
 

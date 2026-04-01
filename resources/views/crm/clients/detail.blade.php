@@ -1041,6 +1041,26 @@ use App\Http\Controllers\Controller;
 	</div>
 </div>
 
+@if(!empty($showGoogleReviewReminderModal))
+<div class="modal fade custom_modal" id="googleReviewReminderModal" tabindex="-1" role="dialog" aria-labelledby="googleReviewReminderModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false" data-auto-open="1">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="googleReviewReminderModalLabel"><i class="fab fa-google mr-2"></i>Google review reminder</h5>
+			</div>
+			<div class="modal-body">
+				<p class="mb-0">Has this client been asked to leave a Google review? Choose an option so we know whether to remind you next time you open their record.</p>
+			</div>
+			<div class="modal-footer flex-wrap justify-content-stretch gap-2">
+				<button type="button" class="btn btn-outline-secondary flex-grow-1 m-0 js-google-review-reminder" data-action="not_interested">Not interested</button>
+				<button type="button" class="btn btn-outline-primary flex-grow-1 m-0 js-google-review-reminder" data-action="snooze">Remind me in 1 week</button>
+				<button type="button" class="btn btn-success flex-grow-1 m-0 js-google-review-reminder" data-action="review_received">Review received</button>
+			</div>
+		</div>
+	</div>
+</div>
+@endif
+
 @endsection
 @push('scripts')
 <!-- TinyMCE Editor -->
@@ -1743,5 +1763,56 @@ $('#sendSmsForm').on('submit', function(e) {
     });
 });
 </script>
+
+@if(!empty($showGoogleReviewReminderModal))
+<script>
+$(function () {
+    var $modal = $('#googleReviewReminderModal');
+    if (!$modal.length) { return; }
+    var clientId = $('.crm-container').data('client-id');
+    if (!clientId) { return; }
+    var token = $('meta[name="csrf-token"]').attr('content');
+    setTimeout(function () {
+        $modal.modal('show');
+    }, 400);
+    $modal.on('click', '.js-google-review-reminder', function () {
+        var action = $(this).data('action');
+        var $btns = $modal.find('.js-google-review-reminder').prop('disabled', true);
+        $.ajax({
+            url: '{{ route('clients.google-review-reminder') }}',
+            type: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json'
+            },
+            data: { client_id: clientId, action: action, _token: token },
+            success: function (res) {
+                if (res && res.ok) {
+                    $modal.modal('hide');
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ message: 'Saved', position: 'topRight' });
+                    }
+                } else {
+                    $btns.prop('disabled', false);
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ message: (res && res.message) ? res.message : 'Could not save', position: 'topRight' });
+                    }
+                }
+            },
+            error: function (xhr) {
+                $btns.prop('disabled', false);
+                var msg = 'Could not save';
+                if (xhr.responseJSON && xhr.responseJSON.message) { msg = xhr.responseJSON.message; }
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ message: msg, position: 'topRight' });
+                }
+            }
+        });
+    });
+});
+</script>
+@endif
 
 @endpush

@@ -176,6 +176,37 @@ class FrontDeskCheckInController extends Controller
             // Send notification to the assignee / consultant
             $notified = $this->notifier->notify($checkIn, $staff);
 
+            // Feed into the existing office-visit queue so the visitor
+            // appears in /office-visits/waiting and staff can manage the session.
+            $queueAdminId  = $clientId ?? $leadId;   // null = walk-in
+            $contactType   = $clientId ? 'Client' : ($leadId ? 'Lead' : 'Client');
+            $reasonLabel   = $validated['visit_reason']
+                ? (FrontDeskCheckIn::visitReasons()[$validated['visit_reason']] ?? $validated['visit_reason'])
+                : 'Front-desk check-in';
+
+            $checkinLog = CheckinLog::create([
+                'client_id'    => $queueAdminId,
+                'user_id'      => $notified?->id ?? $staff->id,
+                'visit_purpose'=> $reasonLabel,
+                'office'       => $staff->office_id,
+                'contact_type' => $contactType,
+                'status'       => 0,                 // waiting
+                'date'         => now()->toDateString(),
+            ]);
+
+            CheckinHistory::create([
+                'subject'    => 'Check-in created via front-desk wizard',
+                'created_by' => $staff->id,
+                'checkin_id' => $checkinLog->id,
+            ]);
+
+            // Store the queue record id in the audit row for easy cross-reference
+            $checkIn->update([
+                'metadata' => array_merge($checkIn->metadata ?? [], [
+                    'checkin_log_id' => $checkinLog->id,
+                ]),
+            ]);
+
             DB::commit();
 
             return response()->json([

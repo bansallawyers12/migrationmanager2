@@ -53,6 +53,9 @@ class Admin extends Authenticatable
         'marital_status',
         // Client/Lead Tags
         'tagname',
+        // Google review staff reminder (client/lead detail)
+        'google_review_reminder_status',
+        'google_review_reminder_snooze_until',
         // Timestamps
         'created_at', 'updated_at'
     ];
@@ -68,6 +71,7 @@ class Admin extends Authenticatable
 
     protected $casts = [
         'followup_date' => 'datetime',
+        'google_review_reminder_snooze_until' => 'datetime',
     ];
 
 	public $sortable = [

@@ -21,9 +21,10 @@ class CheckInLookupService
      * Returns a Collection of Admin models (type = client|lead).
      * When $email is provided the query is ANDed so the result set is narrower.
      */
-    public function lookup(string $phone, ?string $email = null): Collection
+    public function lookup(string $rawPhone, ?string $email = null): Collection
     {
-        $normalized = $this->normalizePhone($phone);
+        $normalized = $this->normalizePhone($rawPhone);
+        $phone      = $rawPhone;   // kept for fallback LIKE clause
 
         if (empty($normalized)) {
             return collect();
@@ -31,11 +32,15 @@ class CheckInLookupService
 
         $query = Admin::whereIn('type', ['client', 'lead'])
             ->whereNull('is_deleted')
-            ->where(function ($q) use ($normalized) {
-                // Match stored phone after stripping non-digits via REGEXP_REPLACE (MySQL 8+)
-                // Fallback: also try literal phone column value
-                $q->whereRaw("REGEXP_REPLACE(phone, '[^0-9]', '') LIKE ?", ["%{$normalized}%"])
-                  ->orWhere('phone', 'like', "%{$normalized}%");
+            ->where(function ($q) use ($normalized, $phone) {
+                // PostgreSQL: REGEXP_REPLACE requires the 'g' flag for global replacement.
+                // COALESCE handles NULL phone columns gracefully.
+                $q->whereRaw(
+                    "REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '', 'g') LIKE ?",
+                    ["%{$normalized}%"]
+                )
+                // Also try the original phone string as typed (partial match fallback)
+                ->orWhere('phone', 'like', '%' . trim($phone) . '%');
             });
 
         if (!empty($email)) {
