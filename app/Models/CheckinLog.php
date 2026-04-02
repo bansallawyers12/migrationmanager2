@@ -29,6 +29,19 @@ class CheckinLog extends Model
     ];
 	
 	public $sortable = ['id','created_at', 'updated_at'];
+
+	/**
+	 * Linked client or lead on admins. Uses a direct admins query so Contact Name still resolves when
+	 * contact_type/Lead global scope would miss the row (e.g. client_id points at type client, or soft-deleted lead).
+	 */
+	public function resolveCrmContact(): ?Admin
+	{
+		if ($this->contact_type === 'Walk-in' || empty($this->client_id)) {
+			return null;
+		}
+
+		return Admin::whereIn('type', ['client', 'lead'])->where('id', $this->client_id)->first();
+	}
 	
 	/**
      * Get the client associated with this checkin log

@@ -253,13 +253,7 @@ class OfficeVisitController extends Controller
 		if($CheckinLog){
 			ob_start();
 				$walkInDisplay = ($CheckinLog->contact_type === 'Walk-in' || !$CheckinLog->client_id);
-				if ($walkInDisplay) {
-					$client = null;
-				} elseif ($CheckinLog->contact_type == 'Lead') {
-					$client = \App\Models\Lead::where('id', '=', $CheckinLog->client_id)->first();
-				} else {
-					$client = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $CheckinLog->client_id)->first();
-				}
+				$client = $walkInDisplay ? null : $CheckinLog->resolveCrmContact();
 
 			?>
 			<div class="row">
@@ -289,10 +283,17 @@ class OfficeVisitController extends Controller
 								<span class="text-muted">Walk-in (not linked to a CRM record)</span>
 								<?php if (!empty($CheckinLog->walk_in_phone)) { ?><br><?php echo e($CheckinLog->walk_in_phone); ?><?php } ?>
 								<?php if (!empty($CheckinLog->walk_in_email)) { ?><br><?php echo e($CheckinLog->walk_in_email); ?><?php } ?>
-							<?php } elseif ($client) { ?>
-								<a href="<?php echo \URL::to('/clients/detail/'.base64_encode(convert_uuencode($client->id))); ?>"><?php echo e($client->first_name.' '.$client->last_name); ?></a>
+							<?php } elseif ($client) {
+								$clientLabel = trim($client->first_name.' '.$client->last_name);
+								if ($clientLabel === '') {
+									$clientLabel = $client->email ?? $client->phone ?? 'Contact #'.$client->id;
+								}
+								?>
+								<a href="<?php echo \URL::to('/clients/detail/'.base64_encode(convert_uuencode($client->id))); ?>"><?php echo e($clientLabel); ?></a>
+								<?php if (!empty($client->email) && trim($client->first_name.' '.$client->last_name) !== '') { ?>
 								<br>
 								<?php echo e($client->email); ?>
+								<?php } ?>
 							<?php } else { ?>
 								<span class="text-muted">Contact record unavailable</span>
 							<?php } ?>
@@ -747,17 +748,16 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', 0);
-
-		$totalData 	= $query->count();	//for all data
-		if($request->has('office')){
-			$office 		= 	$request->input('office');
-			if(trim($office) != '')
-			{
+		$query = CheckinLog::where('status', '=', 0);
+		$this->applyOfficeVisitUserScope($query);
+		if ($request->has('office')) {
+			$office = $request->input('office');
+			if (trim((string) $office) != '') {
 				$query->where('office', '=', $office);
 			}
 		}
-		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
+		$totalData = (clone $query)->count();
+		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
 		$activeTab = 'waiting';
 		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
@@ -771,17 +771,16 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '2');
-
-		$totalData 	= $query->count();	//for all data
-		if($request->has('office')){
-			$office 		= 	$request->input('office');
-			if(trim($office) != '')
-			{
+		$query = CheckinLog::where('status', '=', '2');
+		$this->applyOfficeVisitUserScope($query);
+		if ($request->has('office')) {
+			$office = $request->input('office');
+			if (trim((string) $office) != '') {
 				$query->where('office', '=', $office);
 			}
 		}
-		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
+		$totalData = (clone $query)->count();
+		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
 		$activeTab = 'attending';
 		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
@@ -795,22 +794,32 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query 		= CheckinLog::where('status', '=', '1');
-
-		$totalData 	= $query->count();	//for all data
-		if($request->has('office')){
-			$office 		= 	$request->input('office');
-			if(trim($office) != '')
-			{
+		$query = CheckinLog::where('status', '=', '1');
+		$this->applyOfficeVisitUserScope($query);
+		if ($request->has('office')) {
+			$office = $request->input('office');
+			if (trim((string) $office) != '') {
 				$query->where('office', '=', $office);
 			}
 		}
-		$lists		= $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
+		$totalData = (clone $query)->count();
+		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		$activeTab = 'completed';
 		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
 	}
 	public function create(Request $request){
 		return view('crm.officevisits.create');
+	}
+
+	/**
+	 * Align list queries with tab badge counts in officevisits/index: roles 1 and 14 see all rows; others only their assignee.
+	 */
+	private function applyOfficeVisitUserScope($query): void
+	{
+		$user = Auth::user();
+		if ($user && ! in_array((int) $user->role, [1, 14], true)) {
+			$query->where('user_id', $user->id);
+		}
 	}
 
 }

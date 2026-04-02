@@ -51,7 +51,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 .card-header-action .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .card-body table.table tbody tr td:last-child a:hover, .card .card-body table.table tbody tr td:last-child .btn:hover, .card .card-body table.table tbody tr td.last_td a:hover {
 	color: #ffffff !important;
-}+
+}
 </style>
 
 <!-- Main Content -->
@@ -122,13 +122,11 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 													<td style="white-space: initial;">
 														@php
 															$isWalkIn = ($list->contact_type === 'Walk-in') || empty($list->client_id);
-															$ovContact = null;
-															if (!$isWalkIn) {
-																if ($list->contact_type == 'Lead') {
-																	$ovContact = \App\Models\Lead::where('id', '=', $list->client_id)->first();
-																} else {
-																	$ovContact = \App\Models\Admin::whereIn('type', ['client', 'lead'])->where('id', '=', $list->client_id)->first();
-																}
+															$ovContact = $isWalkIn ? null : $list->resolveCrmContact();
+															$ovName = $ovContact ? trim(($ovContact->first_name ?? '') . ' ' . ($ovContact->last_name ?? '')) : '';
+															$ovPrimary = $ovContact && $ovName !== '' ? $ovName : null;
+															if ($ovContact && $ovPrimary === null) {
+																$ovPrimary = $ovContact->email ?? $ovContact->phone ?? ('Contact #' . $ovContact->id);
 															}
 														@endphp
 														@if($isWalkIn)
@@ -136,7 +134,10 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 															@if(!empty($list->walk_in_phone))<br>{{ $list->walk_in_phone }}@endif
 															@if(!empty($list->walk_in_email))<br>{{ $list->walk_in_email }}@endif
 														@elseif($ovContact)
-															<a target="_blank" href="{{ URL::to('/clients/detail/'.base64_encode(convert_uuencode($ovContact->id))) }}">{{ $ovContact->first_name }} {{ $ovContact->last_name }}</a><br>{{ $ovContact->email }}
+															<a target="_blank" href="{{ URL::to('/clients/detail/'.base64_encode(convert_uuencode($ovContact->id))) }}">{{ $ovPrimary }}</a>
+															@if($ovName !== '' && !empty($ovContact->email))
+																<br>{{ $ovContact->email }}
+															@endif
 														@else
 															<span class="text-muted">—</span>
 														@endif
