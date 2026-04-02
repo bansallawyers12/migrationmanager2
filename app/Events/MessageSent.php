@@ -92,14 +92,16 @@ class MessageSent implements ShouldBroadcastNow
 
         $timestamp = $message['sent_at'] ?? $message['created_at'] ?? now()->toISOString();
 
+        $viewer = $this->deriveViewerFlags($message, $recipientIds);
+
         return [
             'id' => (int) ($message['id'] ?? 0),
             'message' => (string) ($message['message'] ?? ''),
             'sender' => (string) ($message['sender'] ?? $message['sender_name'] ?? ''),
             'sender_id' => (int) ($message['sender_id'] ?? 0),
             'sender_shortname' => (string) ($message['sender_shortname'] ?? $message['sender_initials'] ?? ''),
-            'is_sender' => array_key_exists('is_sender', $message) ? (bool) $message['is_sender'] : false,
-            'is_recipient' => array_key_exists('is_recipient', $message) ? (bool) $message['is_recipient'] : true,
+            'is_sender' => $viewer['is_sender'],
+            'is_recipient' => $viewer['is_recipient'],
             'recipient_ids' => array_values($recipientIds),
             'recipient_count' => (int) ($message['recipient_count'] ?? count($recipientIds)),
             'sent_at' => $timestamp,
@@ -109,6 +111,47 @@ class MessageSent implements ShouldBroadcastNow
             'created_at' => $message['created_at'] ?? $timestamp,
             'updated_at' => $message['updated_at'] ?? ($message['created_at'] ?? $timestamp),
             'attachments' => is_array($message['attachments'] ?? null) ? $message['attachments'] : [],
+        ];
+    }
+
+    /**
+     * Per-subscriber flags: private channels use targetUserId; matter/general channels keep payload or defaults.
+     *
+     * @param  array  $message  Raw message array
+     * @param  array  $recipientRows  recipient_ids or recipients entries
+     */
+    private function deriveViewerFlags(array $message, array $recipientRows): array
+    {
+        if ($this->targetUserId === null) {
+            return [
+                'is_sender' => array_key_exists('is_sender', $message) ? (bool) $message['is_sender'] : false,
+                'is_recipient' => array_key_exists('is_recipient', $message) ? (bool) $message['is_recipient'] : true,
+            ];
+        }
+
+        $targetId = (int) $this->targetUserId;
+        $senderId = (int) ($message['sender_id'] ?? 0);
+        $isSender = $senderId !== 0 && $senderId === $targetId;
+
+        $isRecipient = false;
+        foreach ($recipientRows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $rid = $row['recipient_id'] ?? null;
+            if ($rid !== null && (int) $rid === $targetId) {
+                $isRecipient = true;
+                break;
+            }
+        }
+
+        if (! $isRecipient && isset($message['recipient_id']) && (int) $message['recipient_id'] === $targetId) {
+            $isRecipient = true;
+        }
+
+        return [
+            'is_sender' => $isSender,
+            'is_recipient' => $isRecipient,
         ];
     }
 
