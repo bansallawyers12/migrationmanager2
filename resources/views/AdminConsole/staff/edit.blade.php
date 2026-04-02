@@ -156,6 +156,8 @@
                                     $_quickActor = auth()->guard('admin')->user();
                                     $_canQuick = $_quickActor instanceof \App\Models\Staff
                                         && app(\App\Services\CrmAccess\CrmAccessService::class)->canManageStaffQuickAccess($_quickActor);
+                                    $_isSuperAdminActor = $_quickActor instanceof \App\Models\Staff
+                                        && (int) ($_quickActor->role ?? 0) === 1;
                                 @endphp
                                 @if($_canQuick)
                                 <div class="form-group">
@@ -168,6 +170,23 @@
                                     <small class="text-muted d-block mt-1">Super Admin or access approver. Turning off revokes active quick and pending supervisor grants immediately.</small>
                                 </div>
                                 @endif
+
+                                <div class="form-group">
+                                    @if($_isSuperAdminActor)
+                                        <input type="hidden" name="grant_super_admin_access" value="0">
+                                    @endif
+                                    <label class="d-flex align-items-center mb-0">
+                                        <input type="checkbox" name="grant_super_admin_access" value="1" class="mr-2"
+                                            @if(old('grant_super_admin_access', $fetchedData->grant_super_admin_access ?? false)) checked @endif
+                                            @if(!$_isSuperAdminActor) disabled @endif>
+                                        <span>Do u want this user to grant Super admin access level?</span>
+                                    </label>
+                                    @if($_isSuperAdminActor)
+                                        <small class="text-muted d-block mt-1">Unchecked by default. When enabled, this user gets the same elevated CRM access currently granted through configured approver staff IDs.</small>
+                                    @else
+                                        <small class="text-muted d-block mt-1">Only Superadmin role user can provide this access.</small>
+                                    @endif
+                                </div>
 
                                 <div class="form-group">
                                     <label for="role">Permission</label>
@@ -317,6 +336,20 @@ $(document).ready(function() {
 			$('#agent_details_section').slideUp();
 		}
 	});
+
+    var $grantSuperAdminAccess = $('input[name="grant_super_admin_access"][type="checkbox"]');
+    if ($grantSuperAdminAccess.length) {
+        $grantSuperAdminAccess.on('change', function() {
+            var isChecked = $(this).is(':checked');
+            var message = isChecked
+                ? 'Are you sure you want to grant Super admin access level to this user?'
+                : 'Are you sure you want to remove Super admin access level from this user?';
+
+            if (!window.confirm(message)) {
+                $(this).prop('checked', !isChecked);
+            }
+        });
+    }
 });
 </script>
 @endsection

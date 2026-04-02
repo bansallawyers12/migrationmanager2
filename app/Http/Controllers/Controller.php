@@ -6,8 +6,11 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\View;
 
 use App\Mail\CommonMail;
 use App\Mail\InvoiceEmailManager;
@@ -16,7 +19,6 @@ use App\Mail\MultipleattachmentEmailManager;
 use App\Models\UserRole;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 
-use Auth;
 //use Mail;
 use Illuminate\Support\Facades\Mail;
 
@@ -33,7 +35,7 @@ class Controller extends BaseController
             'email' => env('APP_EMAIL', ''),
             'logo' => env('APP_LOGO', 'logo.png'),
         ];
-        \View::share('siteData', $siteData);
+        View::share('siteData', $siteData);
         //$this->middleware('guest:admin')->except('logout');
 	//	exec('php public_html/development/artisan view:clear');
     }
@@ -117,7 +119,7 @@ class Controller extends BaseController
 		// email_templates table has been deleted - using fallback content
 		$email_template	= 	DB::table('email_templates')->where('alias', $alias)->first();
 		if(!$email_template) {
-			\Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
+			Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
 			// Use a simple fallback email content
 			$emailContent = 'Email template content is no longer available. Please contact support.';
 		} else {
@@ -137,7 +139,7 @@ class Controller extends BaseController
 
 			return true;
 		} catch (\Exception $e) {
-			\Log::error('Email sending failed: ' . $e->getMessage());
+			Log::error('Email sending failed: ' . $e->getMessage());
 			return false;
 		}
 
@@ -156,7 +158,7 @@ class Controller extends BaseController
 			
 			return true;
 		} catch (\Exception $e) {
-			\Log::error('Email sending failed: ' . $e->getMessage());
+			Log::error('Email sending failed: ' . $e->getMessage());
 			return false;
 		}
 
@@ -166,7 +168,7 @@ class Controller extends BaseController
 		// email_templates table has been deleted - using fallback content
 		$email_template	= 	DB::table('email_templates')->where('alias', $alias)->first();
 		if(!$email_template) {
-			\Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
+			Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
 			// Use a simple fallback email content
 			$emailContent = 'Email template content is no longer available. Please contact support.';
 		} else {
@@ -186,7 +188,7 @@ class Controller extends BaseController
 			
 			return true;
 		} catch (\Exception $e) {
-			\Log::error('Email sending failed: ' . $e->getMessage());
+			Log::error('Email sending failed: ' . $e->getMessage());
 			return false;
 		}
 
@@ -197,7 +199,7 @@ class Controller extends BaseController
 		// email_templates table has been deleted - using fallback content
 		$email_template	= 	DB::table('email_templates')->where('alias', $alias)->first();
 		if(!$email_template) {
-			\Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
+			Log::warning('Email template not found for alias: ' . $alias . ' - email_templates table has been deleted');
 			// Use a simple fallback email content
 			$emailContent = 'Email template content is no longer available. Please contact support.';
 		} else {
@@ -217,7 +219,7 @@ class Controller extends BaseController
 			
 			return true;
 		} catch (\Exception $e) {
-			\Log::error('Email sending failed: ' . $e->getMessage());
+			Log::error('Email sending failed: ' . $e->getMessage());
 			return false;
 		}
 
@@ -232,7 +234,7 @@ class Controller extends BaseController
 			
 			return true;
 		} catch (\Exception $e) {
-			\Log::error('Email sending failed: ' . $e->getMessage());
+			Log::error('Email sending failed: ' . $e->getMessage());
 			return false;
 		}
 
@@ -246,12 +248,9 @@ class Controller extends BaseController
 		}
 
 		// CRM access approvers get the same unrestricted admin console access as Super Admin
-		$actorId = (int) (Auth::id() ?? 0);
-		if ($actorId > 0) {
-			$approverIds = config('crm_access.approver_staff_ids', []);
-			if (in_array($actorId, $approverIds, true)) {
-				return;
-			}
+		$actor = Auth::user();
+		if ($actor instanceof \App\Models\Staff && app(\App\Services\CrmAccess\CrmAccessService::class)->hasAdminConsoleLikeSuperAdminAccess($actor)) {
+			return;
 		}
 
 		$userrole = UserRole::where('usertype', $role)->first();
@@ -509,8 +508,18 @@ class Controller extends BaseController
     $ago = new \DateTime($datetime);
     $diff = $now->diff($ago);
 
-    $diff->w = floor($diff->d / 7);
-    $diff->d -= $diff->w * 7;
+    $weeks = (int) floor($diff->d / 7);
+    $days = $diff->d - ($weeks * 7);
+
+    $values = array(
+        'y' => $diff->y,
+        'm' => $diff->m,
+        'w' => $weeks,
+        'd' => $days,
+        'h' => $diff->h,
+        'i' => $diff->i,
+        's' => $diff->s,
+    );
 
     $string = array(
         'y' => 'year',
@@ -522,8 +531,8 @@ class Controller extends BaseController
         's' => 'second',
     );
     foreach ($string as $k => &$v) {
-        if ($diff->$k) {
-            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        if (!empty($values[$k])) {
+            $v = $values[$k] . ' ' . $v . ($values[$k] > 1 ? 's' : '');
         } else {
             unset($string[$k]);
         }
@@ -620,7 +629,7 @@ public function create_captcha($data = '', $img_path = '', $img_url = '', $font_
 					$word .= $pool[random_int(0, $rand_max)];
 				}
 			}
-			catch (Exception $e)
+			catch (\Exception $e)
 			{
 				// This means fallback to the next possible
 				// alternative to random_int()
@@ -644,11 +653,16 @@ public function create_captcha($data = '', $img_path = '', $img_url = '', $font_
 
 		// We'll try using the operating system's PRNG first,
 		// which we can access through CI_Security::get_random_bytes()
-		$security = get_instance()->security;
+		$ciInstance = function_exists('get_instance') ? call_user_func('get_instance') : null;
+		$security = is_object($ciInstance) && isset($ciInstance->security) ? $ciInstance->security : null;
+		if (! $security || ! method_exists($security, 'get_random_bytes'))
+		{
+			$word = '';
+		}
 
 		// To avoid numerous get_random_bytes() calls, we'll
 		// just try fetching as much bytes as we need at once.
-		if (($bytes = $security->get_random_bytes($pool_length)) !== FALSE)
+		if ($word === '' && ($bytes = $security->get_random_bytes($pool_length)) !== FALSE)
 		{
 			$byte_index = $word_index = 0;
 			while ($word_index < $word_length)
@@ -725,16 +739,17 @@ public function create_captcha($data = '', $img_path = '', $img_url = '', $font_
 	// ----------------------------------
 
 	is_array($colors) OR $colors = $defaults['colors'];
+	$allocatedColors = array();
 
 	foreach (array_keys($defaults['colors']) as $key)
 	{
 		// Check for a possible missing value
-		is_array($colors[$key]) OR $colors[$key] = $defaults['colors'][$key];
-		$colors[$key] = imagecolorallocate($im, $colors[$key][0], $colors[$key][1], $colors[$key][2]);
+		$rgb = (isset($colors[$key]) && is_array($colors[$key])) ? $colors[$key] : $defaults['colors'][$key];
+		$allocatedColors[$key] = imagecolorallocate($im, $rgb[0], $rgb[1], $rgb[2]);
 	}
 
 	// Create the rectangle
-	ImageFilledRectangle($im, 0, 0, $img_width, $img_height, $colors['background']);
+	ImageFilledRectangle($im, 0, 0, $img_width, $img_height, $allocatedColors['background']);
 
 	// -----------------------------------
 	//  Create the spiral pattern
@@ -788,19 +803,19 @@ public function create_captcha($data = '', $img_path = '', $img_url = '', $font_
 		if ($use_font === FALSE)
 		{
 			$y = mt_rand(0 , $img_height / 2);
-			imagestring($im, $font_size, $x, $y, $word[$i], $colors['text']);
+			imagestring($im, $font_size, $x, $y, $word[$i], $allocatedColors['text']);
 			$x += ($font_size * 2);
 		}
 		else
 		{
 			$y = mt_rand($img_height / 2, $img_height - 3);
-			imagettftext($im, $font_size, $angle, $x, $y, $colors['text'], $font_path, $word[$i]);
+			imagettftext($im, $font_size, $angle, $x, $y, $allocatedColors['text'], $font_path, $word[$i]);
 			$x += $font_size;
 		}
 	}
 
 	// Create the border
-	imagerectangle($im, 0, 0, $img_width - 1, $img_height - 1, $colors['border']);
+	imagerectangle($im, 0, 0, $img_width - 1, $img_height - 1, $allocatedColors['border']);
 
 	// -----------------------------------
 	//  Generate the image

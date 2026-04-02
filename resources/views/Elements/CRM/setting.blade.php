@@ -6,9 +6,8 @@
 
 			// CRM access approvers get full admin console menu access (same as Super Admin)
 			$_settingUser = Auth::user();
-			$_isApproverOrAdmin = (int) ($_settingUser->role ?? 0) === 1
-				|| ($_settingUser instanceof \App\Models\Staff
-					&& in_array((int) $_settingUser->id, config('crm_access.approver_staff_ids', []), true));
+			$_isApproverOrAdmin = $_settingUser instanceof \App\Models\Staff
+				&& app(\App\Services\CrmAccess\CrmAccessService::class)->hasAdminConsoleLikeSuperAdminAccess($_settingUser);
 			if ($_isApproverOrAdmin) {
 				// Ensure the gated numeric keys are present so all guarded menu items show
 				$module_access['1'] = true;

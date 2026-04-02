@@ -77,35 +77,27 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         $this->assertTrue(\App\Support\StaffClientVisibility::isExemptFromAllocation($staff));
     }
 
-    public function test_exempt_staff_ids_can_differ_from_approvers_when_configured(): void
+    public function test_db_granted_super_admin_access_is_exempt_even_when_exempt_ids_differ(): void
     {
-        $prevApprovers = config('crm_access.approver_staff_ids');
         $prevExempt = config('crm_access.exempt_staff_ids');
         try {
-            config([
-                'crm_access.approver_staff_ids' => [36718],
-                'crm_access.exempt_staff_ids' => [50001],
-            ]);
+            config(['crm_access.exempt_staff_ids' => [50001]]);
             $exemptOnly = new Staff(['role' => 13]);
             $exemptOnly->id = 50001;
             $this->assertTrue((new CrmAccessService())->isExemptRole($exemptOnly));
 
-            $approverOnly = new Staff(['role' => 13]);
+            $approverOnly = new Staff(['role' => 13, 'grant_super_admin_access' => true]);
             $approverOnly->id = 36718;
             $this->assertTrue((new CrmAccessService())->isApprover($approverOnly));
-            $this->assertFalse((new CrmAccessService())->isExemptRole($approverOnly));
+            $this->assertTrue((new CrmAccessService())->isExemptRole($approverOnly));
         } finally {
-            config([
-                'crm_access.approver_staff_ids' => $prevApprovers,
-                'crm_access.exempt_staff_ids' => $prevExempt,
-            ]);
+            config(['crm_access.exempt_staff_ids' => $prevExempt]);
         }
     }
 
     public function test_can_manage_staff_quick_access_for_approver(): void
     {
-        config(['crm_access.approver_staff_ids' => [36718]]);
-        $approver = new Staff(['role' => 13, 'status' => 1]);
+        $approver = new Staff(['role' => 13, 'status' => 1, 'grant_super_admin_access' => true]);
         $approver->id = 36718;
         $svc = new CrmAccessService();
         $this->assertTrue($svc->isApprover($approver));
@@ -114,7 +106,6 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
 
     public function test_can_manage_staff_quick_access_denied_for_regular_staff(): void
     {
-        config(['crm_access.approver_staff_ids' => [99999]]);
         $staff = new Staff(['id' => 1, 'role' => 13, 'status' => 1]);
         $svc = new CrmAccessService();
         $this->assertFalse($svc->canManageStaffQuickAccess($staff));
@@ -133,7 +124,7 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
     public function test_non_approver_non_admin_is_not_approver(): void
     {
         $staff = new Staff(['id' => 1, 'role' => 13]);
-        // id 1 is not in configured approver list
+        // No grant_super_admin_access flag and not role 1
         $this->assertFalse((new CrmAccessService())->isApprover($staff));
     }
 
@@ -341,13 +332,10 @@ class CrmAccessServiceQuickOnlyTest extends TestCase
         // Override config to empty array (simulates misconfigured .env)
         config(['crm_access.exempt_role_ids' => []]);
 
-        // isExemptFromAllocation reads config directly
+        // Role 1 remains exempt because it is treated as super-admin-level access directly.
         $staff = new Staff(['role' => 1]);
-        // With an empty list the method returns false — that is the known gap.
-        // The config file now ships with a hardcoded fallback so the empty list
-        // never reaches production; this test documents the in-memory behaviour.
         $result = \App\Support\StaffClientVisibility::isExemptFromAllocation($staff);
-        $this->assertFalse($result, 'In-memory override to [] disables exemption — confirms config fallback is critical');
+        $this->assertTrue($result, 'Role 1 should remain exempt even if exempt_role_ids is overridden in memory');
 
         // Restore
         config(['crm_access.exempt_role_ids' => [1, 17]]);

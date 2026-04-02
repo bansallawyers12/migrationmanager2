@@ -239,6 +239,14 @@ class StaffController extends Controller
                 return redirect()->route('adminconsole.staff.active')->with('error', 'Staff not found.');
             }
 
+            $crmAccess = app(CrmAccessService::class);
+            $actor = Auth::user();
+            $isSuperAdminActor = $actor instanceof Staff && (int) ($actor->role ?? 0) === 1;
+
+            if (! $isSuperAdminActor && $request->has('grant_super_admin_access')) {
+                return redirect()->back()->withInput()->with('error', 'Only Superadmin role user can provide this access.');
+            }
+
             $prevQuickEnabled = (bool) ($obj->quick_access_enabled ?? false);
             $prevStatus = (int) ($obj->status ?? 1);
 
@@ -284,10 +292,12 @@ class StaffController extends Controller
                 $obj->password = Hash::make(@$requestData['password']);
             }
 
-            $crmAccess = app(CrmAccessService::class);
-            $actor = Auth::user();
             if ($actor instanceof Staff && $crmAccess->canManageStaffQuickAccess($actor)) {
                 $obj->quick_access_enabled = $request->boolean('quick_access_enabled');
+            }
+
+            if ($isSuperAdminActor) {
+                $obj->grant_super_admin_access = $request->boolean('grant_super_admin_access') ? 1 : null;
             }
 
             $saved = $obj->save();

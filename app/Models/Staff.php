@@ -55,6 +55,7 @@ class Staff extends Authenticatable
         'business_email',
         'tax_number',
         'quick_access_enabled',
+        'grant_super_admin_access',
     ];
 
     /**
@@ -73,6 +74,7 @@ class Staff extends Authenticatable
         'show_dashboard_per' => 'integer',
         'is_migration_agent' => 'integer',
         'quick_access_enabled' => 'boolean',
+        'grant_super_admin_access' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

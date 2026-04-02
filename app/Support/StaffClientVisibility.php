@@ -94,6 +94,10 @@ final class StaffClientVisibility
             return false;
         }
 
+        if ($user instanceof Staff && app(CrmAccessService::class)->hasGrantedSuperAdminLevelAccess($user)) {
+            return true;
+        }
+
         $staffId = (int) ($user->id ?? 0);
         if ($staffId > 0 && in_array($staffId, config('crm_access.exempt_staff_ids', []), true)) {
             return true;

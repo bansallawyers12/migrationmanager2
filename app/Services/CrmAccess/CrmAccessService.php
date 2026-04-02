@@ -11,12 +11,31 @@ use App\Models\Staff;
 use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CrmAccessService
 {
+    public function hasGrantedSuperAdminLevelAccess(Staff $user): bool
+    {
+        if ((int) ($user->role ?? 0) === 1) {
+            return true;
+        }
+
+        return (bool) ($user->grant_super_admin_access ?? false);
+    }
+
+    public function hasAdminConsoleLikeSuperAdminAccess(Staff $user): bool
+    {
+        return $this->hasGrantedSuperAdminLevelAccess($user);
+    }
+
     public function isExemptRole(Staff $user): bool
     {
+        if ($this->hasGrantedSuperAdminLevelAccess($user)) {
+            return true;
+        }
+
         $staffId = (int) ($user->id ?? 0);
         if ($staffId > 0 && in_array($staffId, config('crm_access.exempt_staff_ids', []), true)) {
             return true;
@@ -32,29 +51,17 @@ class CrmAccessService
      */
     public function canManageStaffQuickAccess(Staff $actor): bool
     {
-        return (int) ($actor->role ?? 0) === 1 || $this->isApprover($actor);
+        return $this->hasAdminConsoleLikeSuperAdminAccess($actor);
     }
 
     public function isApprover(Staff $user): bool
     {
-        if ((int) ($user->role ?? 0) === 1) {
-            return true;
-        }
-
-        return in_array((int) $user->id, config('crm_access.approver_staff_ids', []), true);
+        return $this->hasAdminConsoleLikeSuperAdminAccess($user);
     }
 
     /** @return list<int> */
     public function getApproverStaffIds(): array
     {
-        $configuredRaw = config('crm_access.approver_staff_ids', []);
-        $configured = Staff::query()
-            ->whereIn('id', $configuredRaw)
-            ->where('status', 1)
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
         $roleOneIds = Staff::query()
             ->where('role', 1)
             ->where('status', 1)
@@ -62,7 +69,14 @@ class CrmAccessService
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        return array_values(array_unique(array_merge($roleOneIds, $configured)));
+        $dbGrantedIds = Staff::query()
+            ->where('grant_super_admin_access', 1)
+            ->where('status', 1)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_unique(array_merge($roleOneIds, $dbGrantedIds)));
     }
 
     public function hasActiveGrant(Staff $user, int $adminId): bool
@@ -320,7 +334,7 @@ class CrmAccessService
                     ->count();
                 broadcast(new NotificationCountUpdated((int) $receiverId, $unreadCount, $msg, $url));
             } catch (\Throwable $e) {
-                \Log::warning('access_request notification failed', ['e' => $e->getMessage()]);
+                Log::warning('access_request notification failed', ['e' => $e->getMessage()]);
             }
         }
 
@@ -339,7 +353,7 @@ class CrmAccessService
                 sentAt: $sentAt
             ));
         } catch (\Throwable $e) {
-            \Log::warning('access_request BroadcastNotificationCreated failed', ['e' => $e->getMessage()]);
+            Log::warning('access_request BroadcastNotificationCreated failed', ['e' => $e->getMessage()]);
         }
     }
 
@@ -380,7 +394,7 @@ class CrmAccessService
                 ->count();
             broadcast(new NotificationCountUpdated($receiverId, $unreadCount, $msg, $notifUrl));
         } catch (\Throwable $e) {
-            \Log::warning('access_request result notification failed', ['e' => $e->getMessage()]);
+            Log::warning('access_request result notification failed', ['e' => $e->getMessage()]);
         }
 
         // Rich real-time toast for the requester
@@ -398,7 +412,7 @@ class CrmAccessService
                 sentAt: Carbon::now()
             ));
         } catch (\Throwable $e) {
-            \Log::warning('access_request result BroadcastNotificationCreated failed', ['e' => $e->getMessage()]);
+            Log::warning('access_request result BroadcastNotificationCreated failed', ['e' => $e->getMessage()]);
         }
     }
 }
