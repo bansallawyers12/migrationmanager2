@@ -2386,8 +2386,9 @@ class ClientsController extends Controller
 
     /**
      * Send SMS with Google review link from the client/lead detail reminder modal.
-     * Resolves sms_templates by title config('crm.google_review_sms_template_title') (default "Google review link"),
-     * then by alias config('crm.google_review_sms_template_alias'). Variables: first_name, last_name, review_link.
+     * Resolves sms_templates by title config('crm.google_review_sms_template_title') (default "Google_review_link"),
+     * then legacy title "Google review link", then alias config('crm.google_review_sms_template_alias').
+     * Variables: first_name, last_name, review_link.
      */
     public function sendGoogleReviewReminderSms(Request $request)
     {
@@ -2437,12 +2438,23 @@ class ClientsController extends Controller
             'review_link' => $reviewUrl,
         ];
 
-        $templateTitle = (string) config('crm.google_review_sms_template_title', 'Google review link');
-        // Case-insensitive title match so "Google Review Link" / "google review link" etc. all work.
-        $template = SmsTemplate::active()
-            ->whereRaw('lower(title) = ?', [mb_strtolower($templateTitle)])
-            ->orderBy('id')
-            ->first();
+        $configuredTitle = trim((string) config('crm.google_review_sms_template_title', 'Google_review_link')) ?: 'Google_review_link';
+        $titlesToTry = array_values(array_unique(array_filter(
+            [$configuredTitle, 'Google_review_link', 'Google review link'],
+            static fn (string $t): bool => $t !== ''
+        )));
+
+        $template = null;
+        foreach ($titlesToTry as $tryTitle) {
+            $found = SmsTemplate::active()
+                ->whereRaw('lower(title) = ?', [mb_strtolower($tryTitle)])
+                ->orderBy('id')
+                ->first();
+            if ($found) {
+                $template = $found;
+                break;
+            }
+        }
 
         if (! $template) {
             $templateAlias = (string) config('crm.google_review_sms_template_alias', 'google_review_link');
