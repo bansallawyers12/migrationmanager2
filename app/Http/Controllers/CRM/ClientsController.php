@@ -2386,9 +2386,9 @@ class ClientsController extends Controller
 
     /**
      * Send SMS with Google review link from the client/lead detail reminder modal.
-     * Resolves sms_templates by title config('crm.google_review_sms_template_title') (default "Google_review_link"),
-     * then legacy title "Google review link", then alias config('crm.google_review_sms_template_alias').
-     * Variables: first_name, last_name, review_link.
+     * Looks up the active SMS template by title "Google_review_link" (case-insensitive),
+     * falling back to the legacy title "Google review link". No env/config involvement.
+     * Available template variables: {first_name}, {last_name}.
      */
     public function sendGoogleReviewReminderSms(Request $request)
     {
@@ -2427,25 +2427,13 @@ class ClientsController extends Controller
             ? mb_convert_case(mb_strtolower($rawFirst), MB_CASE_TITLE, 'UTF-8')
             : 'there';
 
-        $reviewUrl = (string) config('crm.google_review_sms_review_url', '');
-        if ($reviewUrl === '') {
-            $reviewUrl = 'https://YOUR_GOOGLE_REVIEW_LINK';
-        }
-
         $variables = [
             'first_name' => $firstDisplay,
-            'last_name' => trim((string) ($admin->last_name ?? '')),
-            'review_link' => $reviewUrl,
+            'last_name'  => trim((string) ($admin->last_name ?? '')),
         ];
 
-        $configuredTitle = trim((string) config('crm.google_review_sms_template_title', 'Google_review_link')) ?: 'Google_review_link';
-        $titlesToTry = array_values(array_unique(array_filter(
-            [$configuredTitle, 'Google_review_link', 'Google review link'],
-            static fn (string $t): bool => $t !== ''
-        )));
-
         $template = null;
-        foreach ($titlesToTry as $tryTitle) {
+        foreach (['Google_review_link', 'Google review link'] as $tryTitle) {
             $found = SmsTemplate::active()
                 ->whereRaw('lower(title) = ?', [mb_strtolower($tryTitle)])
                 ->orderBy('id')
@@ -2457,28 +2445,18 @@ class ClientsController extends Controller
         }
 
         if (! $template) {
-            $templateAlias = (string) config('crm.google_review_sms_template_alias', 'google_review_link');
-            if ($templateAlias !== '') {
-                $template = SmsTemplate::active()
-                    ->byAlias($templateAlias)
-                    ->orderBy('id')
-                    ->first();
-            }
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Google review SMS template not found. Please ensure an active SMS template titled "Google_review_link" exists in the Admin Console.',
+            ], 422);
         }
 
-        if ($template) {
-            $result = $this->smsManager->sendFromTemplate(
-                $rawPhone,
-                (int) $template->id,
-                $variables,
-                ['client_id' => (int) $admin->id]
-            );
-        } else {
-            $fallback = "Hi {$firstDisplay},\n\nPlease leave us a Google review when you can: {$reviewUrl}\n\nPlease do not reply to this SMS.\n\nBansal Immigration";
-            $result = $this->smsManager->sendSms($rawPhone, $fallback, 'notification', [
-                'client_id' => (int) $admin->id,
-            ]);
-        }
+        $result = $this->smsManager->sendFromTemplate(
+            $rawPhone,
+            (int) $template->id,
+            $variables,
+            ['client_id' => (int) $admin->id]
+        );
 
         if ($result['success'] ?? false) {
             return response()->json([

@@ -81,7 +81,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Lead list: “assigned leads only” roles (staff.role → user_roles.id)
+    | Lead list: "assigned leads only" roles (staff.role → user_roles.id)
     |--------------------------------------------------------------------------
     |
     | These roles may open /leads without client module keys 20–23. They only
@@ -142,31 +142,6 @@ return [
         30 * 60 * 1000,
         max(0, (int) env('CRM_GOOGLE_REVIEW_REMINDER_DELAY_MS', 60000))
     ),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Google review SMS (reminder modal → “Send SMS with review link”)
-    |--------------------------------------------------------------------------
-    |
-    | Primary: SMS template title (case-insensitive), default "Google_review_link".
-    | Also tries legacy title "Google review link" if the configured title is missing.
-    | Fallback: template alias CRM_GOOGLE_REVIEW_SMS_TEMPLATE_ALIAS (google_review_link).
-    | Message placeholders: {first_name} {last_name} {review_link}
-    |
-    | Review URL: CRM_GOOGLE_REVIEW_SMS_REVIEW_URL in .env
-    |
-    */
-    'google_review_sms_template_title' => trim((string) env('CRM_GOOGLE_REVIEW_SMS_TEMPLATE_TITLE', 'Google_review_link')) ?: 'Google_review_link',
-
-    'google_review_sms_template_alias' => trim((string) env(
-        'CRM_GOOGLE_REVIEW_SMS_TEMPLATE_ALIAS',
-        'google_review_link'
-    )) ?: 'google_review_link',
-
-    'google_review_sms_review_url' => trim((string) env(
-        'CRM_GOOGLE_REVIEW_SMS_REVIEW_URL',
-        'https://YOUR_GOOGLE_REVIEW_LINK'
-    )),
 
     /*
     |--------------------------------------------------------------------------
