@@ -1,12 +1,17 @@
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Kyslik\ColumnSortable\Sortable;
 
 class CheckinLog extends Model
 {
 	use Sortable;
+
+	/** @var int[] Roles that see all in-person queues (lists, tab counts, waiting badge). */
+	public const OFFICE_VISIT_GLOBAL_VIEW_ROLES = [1, 14];
 
 	protected $fillable = [
         'id',
@@ -41,6 +46,78 @@ class CheckinLog extends Model
 		}
 
 		return Admin::whereIn('type', ['client', 'lead'])->where('id', $this->client_id)->first();
+	}
+
+	/**
+	 * Human-readable contact line for notifications and UI (walk-in includes phone when set).
+	 *
+	 * @param  Admin|null  $preloadedContact  Optional row from a batch keyed by client_id (avoids N+1).
+	 */
+	public function contactDisplayLabel(?Admin $preloadedContact = null): string
+	{
+		if ($this->contact_type === 'Walk-in' || empty($this->client_id)) {
+			$label = 'Walk-in';
+			if (! empty($this->walk_in_phone)) {
+				$label .= ' (' . $this->walk_in_phone . ')';
+			}
+			return $label;
+		}
+
+		$contact = $preloadedContact ?? $this->resolveCrmContact();
+
+		return self::labelForCrmContact($contact);
+	}
+
+	public static function labelForCrmContact(?Admin $contact): string
+	{
+		if (! $contact) {
+			return 'Unknown Client';
+		}
+		$name = trim(($contact->first_name ?? '') . ' ' . ($contact->last_name ?? ''));
+		if ($name !== '') {
+			return $name;
+		}
+
+		return $contact->email ?? $contact->phone ?? ('Contact #' . $contact->id);
+	}
+
+	public function scopeForOfficeVisitViewer(Builder $query): Builder
+	{
+		$user = Auth::user();
+		if ($user && ! in_array((int) $user->role, self::OFFICE_VISIT_GLOBAL_VIEW_ROLES, true)) {
+			$query->where('user_id', $user->id);
+		}
+
+		return $query;
+	}
+
+	/**
+	 * Tab badge counts aligned with filtered lists: viewer scope + optional branch.
+	 *
+	 * @return array{waiting: int, attending: int, completed: int}
+	 */
+	public static function officeVisitTabCounts(?int $officeFilter = null): array
+	{
+		$out = [];
+		foreach ([0 => 'waiting', 2 => 'attending', 1 => 'completed'] as $status => $key) {
+			$q = static::query()->where('status', $status)->forOfficeVisitViewer();
+			if ($officeFilter !== null && $officeFilter > 0) {
+				$q->where('office', $officeFilter);
+			}
+			$out[$key] = $q->count();
+		}
+
+		return $out;
+	}
+
+	public static function inPersonWaitingCountForViewer(?int $officeFilter = null): int
+	{
+		$q = static::query()->where('status', 0)->forOfficeVisitViewer();
+		if ($officeFilter !== null && $officeFilter > 0) {
+			$q->where('office', $officeFilter);
+		}
+
+		return $q->count();
 	}
 	
 	/**

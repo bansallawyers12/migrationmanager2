@@ -5,7 +5,6 @@ use App\Models\ClientMatter;
 use App\Models\Note;
 use App\Models\Notification;
 use App\Models\CheckinLog;
-use App\Models\Admin;
 use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
 use App\Models\WorkflowStage;
@@ -391,11 +390,6 @@ class DashboardService
                 continue;
             }
 
-            // Get client information
-            $client = $checkinLog->contact_type == 'Lead' 
-                ? \App\Models\Lead::find($checkinLog->client_id)
-                : Admin::whereIn('type', ['client', 'lead'])->find($checkinLog->client_id);
-
             $data[] = [
                 'id' => $notification->id,
                 'checkin_id' => $checkinLog->id,
@@ -403,9 +397,7 @@ class DashboardService
                 'sender_name' => $notification->sender 
                     ? $notification->sender->first_name . ' ' . $notification->sender->last_name 
                     : 'System',
-                'client_name' => $client 
-                    ? $client->first_name . ' ' . $client->last_name 
-                    : 'Unknown Client',
+                'client_name' => $checkinLog->contactDisplayLabel(),
                 'visit_purpose' => $checkinLog->visit_purpose,
                 'created_at' => $notification->created_at->format('d/m/Y h:i A'),
                 'url' => $notification->url

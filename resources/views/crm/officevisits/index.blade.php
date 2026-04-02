@@ -4,15 +4,8 @@
 
 @php
 	$baseUrl = '/office-visits/' . $activeTab;
-	if(\Auth::user()->role == 1 || \Auth::user()->role == 14){
-		$InPersonCount_waiting_type = \App\Models\CheckinLog::where('status',0)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_attending_type = \App\Models\CheckinLog::where('status',2)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_completed_type = \App\Models\CheckinLog::where('status',1)->orderBy('created_at', 'desc')->count();
-	} else {
-		$InPersonCount_waiting_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',0)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_attending_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',2)->orderBy('created_at', 'desc')->count();
-		$InPersonCount_completed_type = \App\Models\CheckinLog::where('user_id',Auth::user()->id)->where('status',1)->orderBy('created_at', 'desc')->count();
-	}
+	$officeVisitQuerySuffix = request()->except('page', 't');
+	$officeVisitQuerySuffix = ! empty($officeVisitQuerySuffix) ? '?' . http_build_query($officeVisitQuerySuffix) : '';
 @endphp
 
 <style>
@@ -75,13 +68,13 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 						<div class="card-body">
 							<ul class="nav nav-pills" id="checkin_tabs" role="tablist">
 								<li class="nav-item">
-									<a class="nav-link {{ $activeTab === 'waiting' ? 'active' : '' }}" id="waiting-tab" href="{{ URL::to('/office-visits/waiting') }}">Waiting <span class="countAction">{{ $InPersonCount_waiting_type }}</span></a>
+									<a class="nav-link {{ $activeTab === 'waiting' ? 'active' : '' }}" id="waiting-tab" href="{{ URL::to('/office-visits/waiting') }}{{ $officeVisitQuerySuffix }}">Waiting <span class="countAction">{{ $InPersonCount_waiting_type }}</span></a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link {{ $activeTab === 'attending' ? 'active' : '' }}" id="attending-tab" href="{{ URL::to('/office-visits/attending') }}">Attending <span class="countAction">{{ $InPersonCount_attending_type }}</span></a>
+									<a class="nav-link {{ $activeTab === 'attending' ? 'active' : '' }}" id="attending-tab" href="{{ URL::to('/office-visits/attending') }}{{ $officeVisitQuerySuffix }}">Attending <span class="countAction">{{ $InPersonCount_attending_type }}</span></a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link {{ $activeTab === 'completed' ? 'active' : '' }}" id="completed-tab" href="{{ URL::to('/office-visits/completed') }}">Completed <span class="countAction">{{ $InPersonCount_completed_type }}</span></a>
+									<a class="nav-link {{ $activeTab === 'completed' ? 'active' : '' }}" id="completed-tab" href="{{ URL::to('/office-visits/completed') }}{{ $officeVisitQuerySuffix }}">Completed <span class="countAction">{{ $InPersonCount_completed_type }}</span></a>
 								</li>
 							</ul>
 							<div class="tab-content" id="checkinContent">
@@ -124,17 +117,13 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 															$isWalkIn = ($list->contact_type === 'Walk-in') || empty($list->client_id);
 															$ovContact = $isWalkIn ? null : $list->resolveCrmContact();
 															$ovName = $ovContact ? trim(($ovContact->first_name ?? '') . ' ' . ($ovContact->last_name ?? '')) : '';
-															$ovPrimary = $ovContact && $ovName !== '' ? $ovName : null;
-															if ($ovContact && $ovPrimary === null) {
-																$ovPrimary = $ovContact->email ?? $ovContact->phone ?? ('Contact #' . $ovContact->id);
-															}
 														@endphp
 														@if($isWalkIn)
 															<span class="text-muted">Walk-in</span>
 															@if(!empty($list->walk_in_phone))<br>{{ $list->walk_in_phone }}@endif
 															@if(!empty($list->walk_in_email))<br>{{ $list->walk_in_email }}@endif
 														@elseif($ovContact)
-															<a target="_blank" href="{{ URL::to('/clients/detail/'.base64_encode(convert_uuencode($ovContact->id))) }}">{{ $ovPrimary }}</a>
+															<a target="_blank" href="{{ URL::to('/clients/detail/'.base64_encode(convert_uuencode($ovContact->id))) }}">{{ \App\Models\CheckinLog::labelForCrmContact($ovContact) }}</a>
 															@if($ovName !== '' && !empty($ovContact->email))
 																<br>{{ $ovContact->email }}
 															@endif

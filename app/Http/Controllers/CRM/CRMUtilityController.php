@@ -1648,24 +1648,9 @@ public function getChapters(Request $request)
             return response()->json(['notifications' => [], 'count' => 0]);
         }
 
-        // Separate client IDs by type (Lead vs Admin)
-        $leadIds = [];
-        $adminIds = [];
-        foreach ($checkinLogs as $log) {
-            if ($log->contact_type == 'Lead') {
-                $leadIds[] = $log->client_id;
-            } else {
-                $adminIds[] = $log->client_id;
-            }
-        }
-
-        // Batch-load all leads and admins (eliminates N+1)
-        $leads = !empty($leadIds) 
-            ? \App\Models\Lead::whereIn('id', $leadIds)->get()->keyBy('id')
-            : collect();
-        
-        $admins = !empty($adminIds)
-            ? \App\Models\Admin::whereIn('type', ['client', 'lead'])->whereIn('id', $adminIds)->get()->keyBy('id')
+        $clientIds = $checkinLogs->pluck('client_id')->filter()->unique()->values();
+        $contacts = $clientIds->isNotEmpty()
+            ? \App\Models\Admin::whereIn('type', ['client', 'lead'])->whereIn('id', $clientIds)->get()->keyBy('id')
             : collect();
 
         // Build response data
@@ -1677,10 +1662,7 @@ public function getChapters(Request $request)
                 continue;
             }
 
-            // Get client from pre-loaded collection
-            $client = $checkinLog->contact_type == 'Lead' 
-                ? $leads->get($checkinLog->client_id)
-                : $admins->get($checkinLog->client_id);
+            $preloaded = $checkinLog->client_id ? $contacts->get($checkinLog->client_id) : null;
 
             $data[] = [
                 'id' => $notification->id,
@@ -1689,9 +1671,7 @@ public function getChapters(Request $request)
                 'sender_name' => $notification->sender 
                     ? $notification->sender->first_name . ' ' . $notification->sender->last_name 
                     : 'System',
-                'client_name' => $client 
-                    ? $client->first_name . ' ' . $client->last_name 
-                    : 'Unknown Client',
+                'client_name' => $checkinLog->contactDisplayLabel($preloaded),
                 'visit_purpose' => $checkinLog->visit_purpose,
                 'created_at' => $notification->created_at->format('d/m/Y h:i A'),
                 'url' => $notification->url
@@ -1706,8 +1686,8 @@ public function getChapters(Request $request)
      */
     public function fetchInPersonWaitingCount(Request $request)
     {
-        $InPersonwaitingCount = \App\Models\CheckinLog::where('status', 0)->count();
-        
+        $InPersonwaitingCount = \App\Models\CheckinLog::inPersonWaitingCountForViewer();
+
         return response()->json(['InPersonwaitingCount' => $InPersonwaitingCount]);
     }
 

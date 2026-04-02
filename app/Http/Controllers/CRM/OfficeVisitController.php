@@ -154,11 +154,6 @@ class OfficeVisitController extends Controller
 				throw new \Exception('Failed to save notification.');
 			}
 
-				// Get client information for the notification
-				$client = $contactType == 'Lead' 
-					? \App\Models\Lead::find($contactId)
-					: Admin::whereIn('type', ['client', 'lead'])->find($contactId);
-
 				// Broadcast real-time notification via Reverb (wrap in try-catch to prevent failures)
 				try {
 					broadcast(new OfficeVisitNotificationCreated(
@@ -169,7 +164,7 @@ class OfficeVisitController extends Controller
 							'checkin_id' => $obj->id,
 							'message' => $notification->message,
 							'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-							'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
+							'client_name' => $obj->contactDisplayLabel(),
 							'visit_purpose' => $obj->visit_purpose,
 							'created_at' => $notification->created_at ? $notification->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
 							'url' => $notification->url
@@ -193,8 +188,7 @@ class OfficeVisitController extends Controller
 					throw new \Exception('Failed to save check-in history.');
 				}
 
-				// Optional: log client activity for check-in (Client only; Lead uses different id space)
-				if ($contactType === 'Client') {
+				if ($contactType === 'Client' || $contactType === 'Lead') {
 					ActivitiesLog::create([
 						'client_id' => $contactId,
 						'created_by' => Auth::user()->id,
@@ -284,13 +278,11 @@ class OfficeVisitController extends Controller
 								<?php if (!empty($CheckinLog->walk_in_phone)) { ?><br><?php echo e($CheckinLog->walk_in_phone); ?><?php } ?>
 								<?php if (!empty($CheckinLog->walk_in_email)) { ?><br><?php echo e($CheckinLog->walk_in_email); ?><?php } ?>
 							<?php } elseif ($client) {
-								$clientLabel = trim($client->first_name.' '.$client->last_name);
-								if ($clientLabel === '') {
-									$clientLabel = $client->email ?? $client->phone ?? 'Contact #'.$client->id;
-								}
+								$clientLabel = CheckinLog::labelForCrmContact($client);
+								$hasName = trim($client->first_name.' '.$client->last_name) !== '';
 								?>
 								<a href="<?php echo \URL::to('/clients/detail/'.base64_encode(convert_uuencode($client->id))); ?>"><?php echo e($clientLabel); ?></a>
-								<?php if (!empty($client->email) && trim($client->first_name.' '.$client->last_name) !== '') { ?>
+								<?php if ($hasName && !empty($client->email)) { ?>
 								<br>
 								<?php echo e($client->email); ?>
 								<?php } ?>
@@ -553,21 +545,8 @@ class OfficeVisitController extends Controller
 	    	$o->sender_status = 1;     // Mark as sent by sender
 	    	$o->save();
 	    	
-	    	// Get client information for the notification
-	    	if ($objs->contact_type === 'Walk-in' || !$objs->client_id) {
-	    	    $client = null;
-	    	    $notifyClientName = 'Walk-in';
-	    	    if (!empty($objs->walk_in_phone)) {
-	    	        $notifyClientName .= ' (' . $objs->walk_in_phone . ')';
-	    	    }
-	    	} elseif ($objs->contact_type == 'Lead') {
-	    	    $client = \App\Models\Lead::find($objs->client_id);
-	    	    $notifyClientName = $client ? $client->first_name . ' ' . $client->last_name : 'Unknown lead';
-	    	} else {
-	    	    $client = Admin::whereIn('type', ['client', 'lead'])->find($objs->client_id);
-	    	    $notifyClientName = $client ? $client->first_name . ' ' . $client->last_name : 'Unknown client';
-	    	}
-	    	
+	    	$notifyClientName = $objs->contactDisplayLabel();
+
 	    	// Broadcast real-time notification via Reverb (wrap in try-catch)
 	    	try {
 	    	    broadcast(new OfficeVisitNotificationCreated(
@@ -636,11 +615,6 @@ class OfficeVisitController extends Controller
 		        $o->sender_status = 1;     // Mark as sent by sender
 		        $o->save();
 		        
-		        // Get client information for the notification
-		        $client = $obj->contact_type == 'Lead' 
-		            ? \App\Models\Lead::find($obj->client_id)
-		            : Admin::whereIn('type', ['client', 'lead'])->find($obj->client_id);
-		        
 		        // Broadcast real-time notification via Reverb (wrap in try-catch)
 		        try {
 		            broadcast(new OfficeVisitNotificationCreated(
@@ -651,7 +625,7 @@ class OfficeVisitController extends Controller
 		                    'checkin_id' => $obj->id,
 		                    'message' => $o->message,
 		                    'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-		                    'client_name' => $client ? $client->first_name . ' ' . $client->last_name : 'Unknown Client',
+		                    'client_name' => $obj->contactDisplayLabel(),
 		                    'visit_purpose' => $obj->visit_purpose,
 		                    'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
 		                    'url' => $o->url
@@ -672,22 +646,17 @@ class OfficeVisitController extends Controller
 		$objs->checkin_id = $request->id;
 		$saved = $objs->save();
 		if($saved){
-			// Optional: log client activity for attend session (Client only)
-			// Use client relationship id so value fits activities_logs.client_id (varchar(20))
-			if ($obj->contact_type === 'Client') {
-				$clientForLog = $obj->client;
-				$clientIdForLog = $clientForLog ? $clientForLog->id : null;
-				if ($clientIdForLog !== null) {
-					ActivitiesLog::create([
-						'client_id' => $clientIdForLog,
-						'created_by' => Auth::user()->id,
-						'subject' => 'Office visit session started',
-						'description' => 'Session started for office visit (check-in #' . $obj->id . ')',
-						'activity_type' => 'office_visit_attend',
-						'task_status' => 0,
-						'pin' => 0,
-					]);
-				}
+			$crmForLog = $obj->resolveCrmContact();
+			if ($crmForLog) {
+				ActivitiesLog::create([
+					'client_id' => $crmForLog->id,
+					'created_by' => Auth::user()->id,
+					'subject' => 'Office visit session started',
+					'description' => 'Session started for office visit (check-in #' . $obj->id . ')',
+					'activity_type' => 'office_visit_attend',
+					'task_status' => 0,
+					'pin' => 0,
+				]);
 			}
 			$response['status'] 	= 	true;
 			$response['message']	=	'saved successfully';
@@ -714,22 +683,17 @@ class OfficeVisitController extends Controller
 		$objs->checkin_id = $request->id;
 		$saved = $objs->save();
 		if($saved){
-			// Optional: log client activity for completed session (Client only)
-			// Use client relationship id so value fits activities_logs.client_id (varchar(20))
-			if ($obj->contact_type === 'Client') {
-				$clientForLog = $obj->client;
-				$clientIdForLog = $clientForLog ? $clientForLog->id : null;
-				if ($clientIdForLog !== null) {
-					ActivitiesLog::create([
-						'client_id' => $clientIdForLog,
-						'created_by' => Auth::user()->id,
-						'subject' => 'Office visit session completed',
-						'description' => 'Session completed for office visit (check-in #' . $obj->id . ')',
-						'activity_type' => 'office_visit_complete',
-						'task_status' => 0,
-						'pin' => 0,
-					]);
-				}
+			$crmForLog = $obj->resolveCrmContact();
+			if ($crmForLog) {
+				ActivitiesLog::create([
+					'client_id' => $crmForLog->id,
+					'created_by' => Auth::user()->id,
+					'subject' => 'Office visit session completed',
+					'description' => 'Session completed for office visit (check-in #' . $obj->id . ')',
+					'activity_type' => 'office_visit_complete',
+					'task_status' => 0,
+					'pin' => 0,
+				]);
 			}
 			$response['status'] 	= 	true;
 			$response['message']	=	'saved successfully';
@@ -748,19 +712,24 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query = CheckinLog::where('status', '=', 0);
-		$this->applyOfficeVisitUserScope($query);
-		if ($request->has('office')) {
-			$office = $request->input('office');
-			if (trim((string) $office) != '') {
-				$query->where('office', '=', $office);
-			}
+		$officeId = $this->officeFilterFromRequest($request);
+		$query = CheckinLog::where('status', '=', 0)->forOfficeVisitViewer();
+		if ($officeId !== null) {
+			$query->where('office', '=', $officeId);
 		}
 		$totalData = (clone $query)->count();
 		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
 		$activeTab = 'waiting';
-		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
+		$tabCounts = CheckinLog::officeVisitTabCounts($officeId);
+		return view('crm.officevisits.index', array_merge(
+			compact('lists', 'totalData', 'activeTab'),
+			[
+				'InPersonCount_waiting_type' => $tabCounts['waiting'],
+				'InPersonCount_attending_type' => $tabCounts['attending'],
+				'InPersonCount_completed_type' => $tabCounts['completed'],
+			]
+		));
 	}
 	public function attending(Request $request)
 	{
@@ -771,19 +740,24 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query = CheckinLog::where('status', '=', '2');
-		$this->applyOfficeVisitUserScope($query);
-		if ($request->has('office')) {
-			$office = $request->input('office');
-			if (trim((string) $office) != '') {
-				$query->where('office', '=', $office);
-			}
+		$officeId = $this->officeFilterFromRequest($request);
+		$query = CheckinLog::where('status', '=', '2')->forOfficeVisitViewer();
+		if ($officeId !== null) {
+			$query->where('office', '=', $officeId);
 		}
 		$totalData = (clone $query)->count();
 		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 
 		$activeTab = 'attending';
-		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
+		$tabCounts = CheckinLog::officeVisitTabCounts($officeId);
+		return view('crm.officevisits.index', array_merge(
+			compact('lists', 'totalData', 'activeTab'),
+			[
+				'InPersonCount_waiting_type' => $tabCounts['waiting'],
+				'InPersonCount_attending_type' => $tabCounts['attending'],
+				'InPersonCount_completed_type' => $tabCounts['completed'],
+			]
+		));
 	}
 	public function completed(Request $request)
 	{
@@ -794,32 +768,39 @@ class OfficeVisitController extends Controller
     	       $ovv->save();
     	    }
 	    }
-		$query = CheckinLog::where('status', '=', '1');
-		$this->applyOfficeVisitUserScope($query);
-		if ($request->has('office')) {
-			$office = $request->input('office');
-			if (trim((string) $office) != '') {
-				$query->where('office', '=', $office);
-			}
+		$officeId = $this->officeFilterFromRequest($request);
+		$query = CheckinLog::where('status', '=', '1')->forOfficeVisitViewer();
+		if ($officeId !== null) {
+			$query->where('office', '=', $officeId);
 		}
 		$totalData = (clone $query)->count();
 		$lists = $query->with('assignee')->sortable(['id' => 'desc'])->paginate(config('constants.limit'));
 		$activeTab = 'completed';
-		return view('crm.officevisits.index', compact('lists', 'totalData', 'activeTab'));
+		$tabCounts = CheckinLog::officeVisitTabCounts($officeId);
+		return view('crm.officevisits.index', array_merge(
+			compact('lists', 'totalData', 'activeTab'),
+			[
+				'InPersonCount_waiting_type' => $tabCounts['waiting'],
+				'InPersonCount_attending_type' => $tabCounts['attending'],
+				'InPersonCount_completed_type' => $tabCounts['completed'],
+			]
+		));
 	}
 	public function create(Request $request){
 		return view('crm.officevisits.create');
 	}
 
-	/**
-	 * Align list queries with tab badge counts in officevisits/index: roles 1 and 14 see all rows; others only their assignee.
-	 */
-	private function applyOfficeVisitUserScope($query): void
+	private function officeFilterFromRequest(Request $request): ?int
 	{
-		$user = Auth::user();
-		if ($user && ! in_array((int) $user->role, [1, 14], true)) {
-			$query->where('user_id', $user->id);
+		if (! $request->has('office')) {
+			return null;
 		}
+		$office = $request->input('office');
+		if (trim((string) $office) === '') {
+			return null;
+		}
+
+		return (int) $office;
 	}
 
 }

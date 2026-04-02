@@ -244,8 +244,8 @@ class DashboardController extends Controller
      */
     public function fetchInPersonWaitingCount(Request $request)
     {
-        $InPersonwaitingCount = \App\Models\CheckinLog::where('status', 0)->count();
-        
+        $InPersonwaitingCount = \App\Models\CheckinLog::inPersonWaitingCountForViewer();
+
         return response()->json(['InPersonwaitingCount' => $InPersonwaitingCount]);
     }
 
