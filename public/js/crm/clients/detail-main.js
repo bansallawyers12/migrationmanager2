@@ -764,6 +764,25 @@ $(document).ready(function() {
 
 
 
+    // Convert Lead to Client modal: re-init Select2 with dropdownParent so dropdowns render inside modal
+    $(document).on('shown.bs.modal', '#convertLeadToClientModal', function(){
+
+        var $modal = $(this);
+
+        $('#sel_migration_agent_id, #sel_person_responsible_id, #sel_person_assisting_id, #sel_office_id, #sel_matter_id').each(function(){
+
+            var $el = $(this);
+
+            if ($el.data('select2')) $el.select2('destroy');
+
+            $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+
+        });
+
+    });
+
+
+
     // Tags modal: add tag pill(s) from input on comma or Enter
 
     $(document).on('keydown', '#tags_modal_container #tag_input', function(e){
