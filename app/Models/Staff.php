@@ -256,11 +256,13 @@ class Staff extends Authenticatable
 
     /**
      * Role IDs allowed to open the front-desk check-in wizard (aligned with FrontDeskCheckInController).
+     *
+     * @see config('crm.front_desk_checkin_role_ids') — default includes role 14 (Calling / Reception).
      */
     public static function frontDeskCheckInRoleIds(): array
     {
         return array_values(array_unique(array_merge(
-            [1, 12, 17],
+            config('crm.front_desk_checkin_role_ids', [1, 12, 14, 17]),
             config('crm_access.exempt_role_ids', [])
         )));
     }

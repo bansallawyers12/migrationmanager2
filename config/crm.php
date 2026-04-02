@@ -167,4 +167,22 @@ return [
         'https://YOUR_GOOGLE_REVIEW_LINK'
     )),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Front-desk check-in wizard (header icon + /front-desk/checkin)
+    |--------------------------------------------------------------------------
+    |
+    | staff.role values (user_roles.id) that may open the wizard. Default includes
+    | 1 = Super Admin, 12 = Person Responsible, 14 = Calling / Reception,
+    | 17 = Admin. Exempt roles from crm_access (CRM_ACCESS_EXEMPT_ROLE_IDS) are
+    | merged in at runtime. Override via CRM_FRONT_DESK_CHECKIN_ROLE_IDS e.g. "1,14,17".
+    |
+    */
+    'front_desk_checkin_role_ids' => (($__fdCheckinRoles = array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_FRONT_DESK_CHECKIN_ROLE_IDS', '1,12,14,17'))
+    ), static fn (int $id) => $id > 0))) !== []
+        ? $__fdCheckinRoles
+        : [1, 12, 14, 17]),
+
 ];
