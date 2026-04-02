@@ -3,15 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Kyslik\ColumnSortable\Sortable;
 
 class CheckinLog extends Model
 {
 	use Sortable;
-
-	/** @var int[] Roles that see all in-person queues (lists, tab counts, waiting badge). */
-	public const OFFICE_VISIT_GLOBAL_VIEW_ROLES = [1, 14];
 
 	protected $fillable = [
         'id',
@@ -83,16 +79,11 @@ class CheckinLog extends Model
 
 	public function scopeForOfficeVisitViewer(Builder $query): Builder
 	{
-		$user = Auth::user();
-		if ($user && ! in_array((int) $user->role, self::OFFICE_VISIT_GLOBAL_VIEW_ROLES, true)) {
-			$query->where('user_id', $user->id);
-		}
-
 		return $query;
 	}
 
 	/**
-	 * Tab badge counts aligned with filtered lists: viewer scope + optional branch.
+	 * Tab badge counts aligned with list queries (optional branch filter only).
 	 *
 	 * @return array{waiting: int, attending: int, completed: int}
 	 */
