@@ -583,10 +583,10 @@ class ClientPortalWorkflowController extends Controller
 
             // Validate file name characters
             $originalName = $file->getClientOriginalName();
-            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $originalName)) {
+            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $originalName)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.'
+                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.'
                 ], 422);
             }
 
@@ -741,11 +741,11 @@ class ClientPortalWorkflowController extends Controller
 
                 // Validate file name
                 $originalName = $file->getClientOriginalName();
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $originalName)) {
+                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $originalName)) {
                     $errors[] = [
                         'index'   => $index,
                         'file'    => $originalName,
-                        'message' => 'Invalid file name characters. Only letters, numbers, dashes, underscores, spaces, dots, and dollar signs are allowed.'
+                        'message' => 'Invalid file name characters. Only letters, numbers, dashes, underscores, spaces, dots, dollar signs, parentheses, commas, ampersands, and plus signs are allowed.'
                     ];
                     continue;
                 }

@@ -7602,11 +7602,11 @@ success: function(response) {
 
 
 
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
 
             if (!validNameRegex.test(file.name)) {
 
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
 
                 $(this).val('');
 
@@ -7886,9 +7886,9 @@ success: function(response) {
             var form = $('#' + formId);
             
             // Validate filename
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
             if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                 return false;
             }
             
@@ -7968,9 +7968,9 @@ success: function(response) {
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             
             // Validate filename
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
             if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                 return false;
             }
             
@@ -8185,13 +8185,13 @@ success: function(response) {
 
             // Allowed: letters, numbers, dash, underscore, space, dot, dollar sign
 
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
 
 
 
             if (!validNameRegex.test(fileName)) {
 
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
 
                 $(this).val(''); // Clear the file input
 

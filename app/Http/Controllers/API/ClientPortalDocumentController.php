@@ -575,10 +575,10 @@ class ClientPortalDocumentController extends Controller
 
             // Validate file name
             $fileName = $file->getClientOriginalName();
-            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $fileName)) {
+            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.'
+                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.'
                 ], 422);
             }
 

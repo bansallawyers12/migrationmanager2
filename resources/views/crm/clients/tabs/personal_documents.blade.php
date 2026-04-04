@@ -436,9 +436,9 @@
                                 }
                                 
                                 // Validate filename
-                                var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+                                var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                                 if (!validNameRegex.test(file.name)) {
-                                    alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                                    alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                                     return false;
                                 }
                                 
@@ -621,9 +621,9 @@
                             }
                             
                             // Validate filename
-                            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$]+$/;
+                            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
                             if (!validNameRegex.test(file.name)) {
-                                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.");
+                                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
                                 return false;
                             }
                             

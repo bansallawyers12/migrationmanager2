@@ -373,8 +373,8 @@ class ClientDocumentsController extends Controller
                 $size = $file->getSize();
                 $fileName = $file->getClientOriginalName();
     
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $fileName)) {
-                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.';
+                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
+                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.';
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
@@ -1017,8 +1017,8 @@ class ClientDocumentsController extends Controller
                 $fileName = $file->getClientOriginalName();
                 
                 // Allow only letters, numbers, underscores, dashes, spaces, dots, and dollar signs
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $fileName)) {
-                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), and dollar signs ($). Please rename the file and try again.';
+                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
+                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.';
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
@@ -3083,7 +3083,7 @@ class ClientDocumentsController extends Controller
                     $size = $file->getSize();
                     
                     // Validate filename
-                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $fileName)) {
+                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
                         $errors[] = "File '{$fileName}' has invalid characters in name";
                         continue;
                     }
@@ -3265,7 +3265,7 @@ class ClientDocumentsController extends Controller
                     $size = $file->getSize();
                     
                     // Validate filename
-                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$]+$/', $fileName)) {
+                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
                         $errors[] = "File '{$fileName}' has invalid characters in name";
                         continue;
                     }
