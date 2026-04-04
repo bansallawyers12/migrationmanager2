@@ -24,7 +24,10 @@ use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
+use App\Support\StaffClientVisibility;
 use App\Support\WorkflowStageFreeze;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Log;
 
 class CRMUtilityController extends Controller
 {
@@ -1148,10 +1151,10 @@ public function getChapters(Request $request)
 		$requestData['subject'] = str_replace('__AMP__', '&', $requestData['subject'] ?? '');
 		//echo '<pre>'; print_r($requestData); die;
 
-		// Gate on the associated client or lead record
+		// Compose email: explicit CRM record access + structured deny message + audit log
 		$associatedAdminId = $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
 		if ($associatedAdminId) {
-			$this->ensureCrmRecordAccess((int) $associatedAdminId);
+			$this->assertComposeEmailCanAccessCrmRecord($request, (int) $associatedAdminId);
 		}
 
 		$user_id = @Auth::user()->id;
@@ -1431,6 +1434,15 @@ public function getChapters(Request $request)
                     $ccarray
                 );
 
+                Log::info('Compose email sent successfully', [
+                    'staff_id' => Auth::guard('admin')->id(),
+                    'email_log_id' => $obj->id,
+                    'crm_admin_id' => $obj->client_id,
+                    'recipient_admin_or_agent_id' => $l,
+                    'recipient_email' => $client->email ?? null,
+                    'mail_type' => $requestData['type'] ?? 'client',
+                ]);
+
                 // Store full email to S3 for archival (HTML snapshot + attachments)
                 try {
                     $attachmentTuples = [];
@@ -1454,6 +1466,12 @@ public function getChapters(Request $request)
                 }
                 return redirect()->back()->with('success', 'Email sent successfully!');
             } catch (\Exception $e) {
+                Log::error('Compose email send failed', [
+                    'staff_id' => Auth::guard('admin')->id(),
+                    'crm_admin_id' => $requestData['client_id'] ?? $requestData['lead_id'] ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+
                 // Return JSON response for AJAX requests, redirect for regular form submissions
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
@@ -1489,6 +1507,52 @@ public function getChapters(Request $request)
             }
             return redirect()->back()->with('success', 'Email Sent Successfully');
         }
+	}
+
+	/**
+	 * Same visibility rules as EnsuresCrmRecordAccess::ensureCrmRecordAccess, with a compose-email-specific
+	 * JSON message and logging so staff see a clear denial and support can trace failures.
+	 */
+	private function assertComposeEmailCanAccessCrmRecord(Request $request, int $adminId): void
+	{
+		if ($adminId <= 0) {
+			return;
+		}
+
+		$row = Admin::query()
+			->where('id', $adminId)
+			->whereIn('type', ['client', 'lead'])
+			->first(['id', 'type']);
+
+		if (! $row) {
+			return;
+		}
+
+		$user = Auth::guard('admin')->user();
+		if (StaffClientVisibility::canAccessClientOrLead($adminId, $user)) {
+			return;
+		}
+
+		Log::warning('Compose email denied: staff not authorized for CRM record', [
+			'staff_id' => optional($user)->id,
+			'crm_admin_id' => $adminId,
+			'record_type' => $row->type,
+			'ip' => $request->ip(),
+			'user_agent' => substr((string) $request->userAgent(), 0, 500),
+		]);
+
+		$payload = [
+			'status' => false,
+			'success' => false,
+			'message' => 'You are not authorized to send email.',
+			'error_type' => 'compose_email_forbidden',
+		];
+
+		if ($request->expectsJson() || $request->ajax()) {
+			throw new HttpResponseException(response()->json($payload, 403));
+		}
+
+		abort(403, 'You are not authorized to send email.');
 	}
 
 		public function getpartnerajax(Request $request){

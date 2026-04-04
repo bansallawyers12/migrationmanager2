@@ -2448,8 +2448,8 @@ function customValidate(formName, savetype = '')
 						});
                     }
 
-					else if(formName == 'sendmail'){
-						var myform = document.querySelector('form[name="sendmail"]');
+					else if(formName == 'sendmail' || formName == 'add-compose'){
+						var myform = document.querySelector('form[name="' + formName + '"]');
 						if(!myform){
 							$('.popuploader').hide();
 							$('.custom-error-msg').html('<span class="alert alert-danger">Form not found. Please refresh the page and try again.</span>');
@@ -2464,6 +2464,11 @@ function customValidate(formName, savetype = '')
 							return false;
 						}
 						
+						// Persist TinyMCE (and similar) into textareas before FormData — required for AJAX submit
+						if (typeof tinymce !== 'undefined' && typeof tinymce.triggerSave === 'function') {
+							tinymce.triggerSave();
+						}
+
 						// Create FormData from form
 						var fd = new FormData(myform);
 						// Explicitly set the CSRF token in FormData (overwrites any stale token from form)
@@ -2475,7 +2480,7 @@ function customValidate(formName, savetype = '')
 						}
 						
 						// Use same-origin URL to avoid 403 from wrong domain (e.g. APP_URL vs current host)
-						var actionAttr = $("form[name='" + formName + "']").attr('action') || '';
+						var actionAttr = $("form[name=\"" + formName + "\"]").attr('action') || '';
 						var sendmailUrl = actionAttr;
 						try {
 							if (actionAttr.indexOf('http') === 0) {
@@ -2558,16 +2563,21 @@ function customValidate(formName, savetype = '')
 									setTimeout(function(){ location.reload(); }, 1500);
 									return;
 								}
-								// 403 Forbidden - show message without auto-reload so user can refresh and retry
+								// 403 Forbidden — compose email uses compose_email_forbidden + clear message; other 403s fall back
 								if(xhr.status === 403){
 									var responseText = xhr.responseText || '';
 									var responseJSON = xhr.responseJSON || {};
 									var isCsrf = responseText.includes('CSRF') || responseText.includes('csrf') ||
 										(responseJSON.message && (responseJSON.message.includes('CSRF') || responseJSON.message.includes('csrf')));
-									var msg = isCsrf
-										? 'Security token expired. Refresh the page and try again.'
-										: '555Access denied. If you are logged in, refresh the page and try again111.';
+									if (isCsrf) {
+										$('.custom-error-msg').html('<span class="alert alert-warning">Security token expired. Refresh the page and try again.</span>');
+										return;
+									}
+									var msg = (responseJSON.message && String(responseJSON.message).trim() !== '')
+										? responseJSON.message
+										: 'You are not authorized to send email.';
 									$('.custom-error-msg').html('<span class="alert alert-warning">' + msg + '</span>');
+									alert(msg);
 									return;
 								}
 								if(xhr.status === 422){
