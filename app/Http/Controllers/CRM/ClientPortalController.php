@@ -390,18 +390,6 @@ class ClientPortalController extends Controller
                                 'error' => $e->getMessage()
                             ]);
                         }
-                        
-                        if ($senderId) {
-                            try {
-                                broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
-                            } catch (\Exception $e) {
-                                Log::warning('Failed to broadcast message to sender', [
-                                    'sender_id' => $senderId,
-                                    'message_id' => $messageId,
-                                    'error' => $e->getMessage()
-                                ]);
-                            }
-                        }
                     }
                 }
 
@@ -606,18 +594,6 @@ class ClientPortalController extends Controller
                                 'message_id' => $messageId,
                                 'error' => $e->getMessage()
                             ]);
-                        }
-                        
-                        if ($senderId) {
-                            try {
-                                broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
-                            } catch (\Exception $e) {
-                                Log::warning('Failed to broadcast message to sender', [
-                                    'sender_id' => $senderId,
-                                    'message_id' => $messageId,
-                                    'error' => $e->getMessage()
-                                ]);
-                            }
                         }
                     }
                 }
@@ -6135,7 +6111,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 					]]
 				];
 
-				// Broadcast to client and sender (with error handling)
+				// Broadcast to client only; sender uses HTTP response + addMessageToDisplay (no socket echo).
 				if (class_exists('\App\Events\MessageSent')) {
 					try {
 						broadcast(new \App\Events\MessageSent($messageForBroadcast, $clientId));
@@ -6145,16 +6121,6 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 							'message_id' => $messageId,
 							'error' => $e->getMessage(),
 							'broadcast_driver' => config('broadcasting.default')
-						]);
-					}
-					
-					try {
-						broadcast(new \App\Events\MessageSent($messageForBroadcast, $senderId));
-					} catch (\Exception $e) {
-						Log::warning('Failed to broadcast message to sender', [
-							'sender_id' => $senderId,
-							'message_id' => $messageId,
-							'error' => $e->getMessage()
 						]);
 					}
 				}

@@ -184,16 +184,7 @@ class ClientPortalMessageController extends Controller
                     ]);
                 }
 
-                // Also broadcast to sender (so they see their own message)
-                try {
-                    broadcast(new MessageSent($messageForBroadcast, $senderId));
-                } catch (\Exception $e) {
-                    Log::warning('Failed to broadcast message to sender', [
-                        'sender_id' => $senderId,
-                        'message_id' => $messageId,
-                        'error' => $e->getMessage()
-                    ]);
-                }
+                // Sender does not receive MessageSent on their channel; clients use HTTP response / UI state.
 
                 // Send notification to client
                 $notificationMessage = 'New message from ' . ($sender ? $sender->first_name . ' ' . $sender->last_name : 'Agent') . ' for matter ' . ($clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId);
@@ -503,16 +494,7 @@ class ClientPortalMessageController extends Controller
                         }
                     }
 
-                    // Also broadcast to sender (so they see their own message)
-                    try {
-                        broadcast(new MessageSent($messageForBroadcast, $clientId));
-                    } catch (\Exception $e) {
-                        Log::warning('Failed to broadcast message to sender', [
-                            'sender_id' => $clientId,
-                            'message_id' => $messageId,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
+                    // Sender does not receive MessageSent on their channel; mobile app uses HTTP response.
                 } catch (\Exception $e) {
                     // Log error but don't fail the message sending
                     Log::error('Broadcast error (message still saved)', [
