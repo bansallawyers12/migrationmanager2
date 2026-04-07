@@ -4,6 +4,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Kyslik\ColumnSortable\Sortable;
 
 class ClientMatter extends Model
@@ -297,7 +299,7 @@ class ClientMatter extends Model
                 }
             }
             foreach ($patterns as $p) {
-                if (str_contains($title, strtolower(trim((string) $p)))) {
+                if (Str::contains($title, strtolower(trim((string) $p)))) {
                     return $sheetType;
                 }
             }
@@ -309,7 +311,7 @@ class ClientMatter extends Model
      * When a checklist is sent for this matter, update the sheet reference table and log reminder.
      * Works for TR, Visitor, Student, PR, Employer Sponsored (by subclass).
      */
-    public function recordChecklistSent(int $staffId = null): bool
+    public function recordChecklistSent(?int $staffId = null): bool
     {
         $sheetType = $this->getVisaSheetType();
         if (!$sheetType) {
@@ -370,7 +372,7 @@ class ClientMatter extends Model
         // Log when department_reference or other_reference are being changed
         static::updating(function ($model) {
             if ($model->isDirty('department_reference') || $model->isDirty('other_reference')) {
-                \Log::info('ClientMatter references being updated', [
+                Log::info('ClientMatter references being updated', [
                     'matter_id' => $model->id,
                     'client_id' => $model->client_id,
                     'old_department_reference' => $model->getOriginal('department_reference'),
@@ -387,7 +389,7 @@ class ClientMatter extends Model
         // Log when model is saved
         static::saved(function ($model) {
             if ($model->wasChanged('department_reference') || $model->wasChanged('other_reference')) {
-                \Log::info('ClientMatter references saved', [
+                Log::info('ClientMatter references saved', [
                     'matter_id' => $model->id,
                     'client_id' => $model->client_id,
                     'department_reference' => $model->department_reference,
