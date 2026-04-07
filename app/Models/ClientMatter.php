@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Kyslik\ColumnSortable\Sortable;
 
 class ClientMatter extends Model
@@ -91,6 +92,57 @@ class ClientMatter extends Model
     public function workflow()
     {
         return $this->belongsTo(Workflow::class, 'workflow_id');
+    }
+
+    /**
+     * Stages belonging to this matter's workflow template (workflow_stages.workflow_id = client_matters.workflow_id).
+     */
+    public function workflowStages()
+    {
+        return $this->hasMany(WorkflowStage::class, 'workflow_id', 'workflow_id')
+            ->orderByRaw('COALESCE(sort_order, id) ASC');
+    }
+
+    /**
+     * Stages shown in dashboard row dropdown. Scoped to workflow_id when set; otherwise all stages (legacy).
+     * Includes the current stage if it would be missing (e.g. after workflow template change).
+     *
+     * @param  Collection<int, WorkflowStage>|null  $fallbackAllStages  Full list from dashboard when workflow_id is null.
+     */
+    public function stagesForDashboardDropdown(?Collection $fallbackAllStages = null): Collection
+    {
+        if ($this->workflow_id === null) {
+            if ($fallbackAllStages !== null) {
+                return $fallbackAllStages->values();
+            }
+
+            return WorkflowStage::query()
+                ->orderByRaw('COALESCE(sort_order, id) ASC')
+                ->get();
+        }
+
+        $stages = $this->relationLoaded('workflowStages')
+            ? $this->workflowStages
+            : $this->workflowStages()->get();
+
+        if ($this->workflow_stage_id) {
+            $current = $this->relationLoaded('workflowStage')
+                ? $this->workflowStage
+                : null;
+
+            if (! $current) {
+                $current = WorkflowStage::query()->find($this->workflow_stage_id);
+            }
+
+            if ($current && ! $stages->contains('id', $current->id)) {
+                $stages = $stages->concat(collect([$current]));
+            }
+        }
+
+        return $stages
+            ->unique('id')
+            ->sortBy(fn (WorkflowStage $stage) => [(int) ($stage->sort_order ?? $stage->id), $stage->id])
+            ->values();
     }
 
     /**

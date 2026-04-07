@@ -56,7 +56,8 @@ class DashboardService
             'personResponsible', // Load full person responsible record
             'personAssisting',  // Load full person assisting record
             'workflowStage',    // Load workflow stage
-            'matter'            // Load matter type
+            'workflowStages',   // Stages for this matter's workflow (dashboard dropdown)
+            'matter',            // Load matter type
         ]);
 
         // Apply role-based filtering
@@ -347,9 +348,20 @@ class DashboardService
     public function updateClientMatterStage($itemId, $stageId): array
     {
         $item = ClientMatter::find($itemId);
-        
-        if (!$item) {
+
+        if (! $item) {
             return ['success' => false, 'message' => 'Matter not found!'];
+        }
+
+        $stage = WorkflowStage::find($stageId);
+
+        if (! $stage) {
+            return ['success' => false, 'message' => 'Stage not found!'];
+        }
+
+        if ($item->workflow_id !== null
+            && (int) $stage->workflow_id !== (int) $item->workflow_id) {
+            return ['success' => false, 'message' => 'This stage is not part of this matter\'s workflow.'];
         }
 
         $item->workflow_stage_id = $stageId;

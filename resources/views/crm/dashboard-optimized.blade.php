@@ -307,7 +307,7 @@
                                 </td>
                                 <td class="col-stage">
                                     <select class="form-select stageCls stage-select-enhanced" id="stage_{{ $matter->id }}" aria-label="Change stage for matter {{ $matter->client_unique_matter_no }}">
-                                        @foreach($workflowStages as $stage)
+                                        @foreach($matter->stagesForDashboardDropdown($workflowStages) as $stage)
                                             <option value="{{ $stage->id }}" {{ $matter->workflow_stage_id == $stage->id ? 'selected' : '' }}>
                                                 {{ $stage->name }}
                                             </option>
