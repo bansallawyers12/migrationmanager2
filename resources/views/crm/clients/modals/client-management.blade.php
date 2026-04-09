@@ -569,39 +569,7 @@
         }
     }
 
-    /* Loading State */
-    .popuploader {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-
-    .popuploader > div {
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    .popuploader i {
-        font-size: 32px;
-        color: #667eea;
-        margin-bottom: 15px;
-    }
-
-    .popuploader p {
-        margin: 0;
-        font-weight: 500;
-        color: #2d3748;
-    }
+    /* Loading overlay: single .popuploader lives in layouts (components/crm-popuploader) */
 
     /* Enhanced Tooltip Styling */
     .tooltip-inner {
@@ -800,14 +768,6 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Loading overlay for the modal -->
-<div class="popuploader" style="display: none;">
-    <div style="background: white; padding: 20px; border-radius: 5px; display: inline-block;">
-        <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: #007bff;"></i>
-        <p style="margin-top: 10px; margin-bottom: 0;">Processing...</p>
     </div>
 </div>
 

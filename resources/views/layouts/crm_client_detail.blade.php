@@ -1651,7 +1651,7 @@
         </div>
     </div>
     <div class="loader"></div>
-    <div class="popuploader" style="display: none;"></div>
+    @include('components.crm-popuploader')
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg" style="height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; display: block !important; overflow: hidden !important;"></div>

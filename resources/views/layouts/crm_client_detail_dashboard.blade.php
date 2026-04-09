@@ -676,7 +676,7 @@
         </div>
     </div>
     <div class="loader"></div>
-    <div class="popuploader" style="display: none;"></div>
+    @include('components.crm-popuploader')
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg"></div>

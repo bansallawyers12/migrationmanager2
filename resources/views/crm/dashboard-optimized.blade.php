@@ -366,14 +366,7 @@
 
     {{-- Modals --}}
     @include('components.dashboard.modals')
-    
-    {{-- Loading Overlay --}}
-    <div class="popuploader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 5px; display: inline-block;">
-            <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: #007bff;"></i>
-            <p style="margin-top: 10px; margin-bottom: 0;">Processing...</p>
-        </div>
-    </div>
+    {{-- Full-page loader: layouts/crm_client_detail_dashboard @include('components.crm-popuploader') --}}
 @endsection
 
 @push('styles')
