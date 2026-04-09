@@ -649,7 +649,8 @@
             margin-left: 0 !important;
             transition: margin-left 0.3s ease;
             position: relative;
-            z-index: 1;
+            /* Do not set z-index here: it creates a stacking context below .main-topbar (z-index: 1000),
+               which traps fixed Bootstrap modals (e.g. Move Document) under the navbar. */
             height: auto;
             max-height: none;
         }
