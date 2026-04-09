@@ -221,14 +221,16 @@
             overflow-y: auto !important;
             overflow-x: hidden !important;
         }
-        /* Client Navigation Sidebar */
+        /* Client Navigation Sidebar — flex column + scrollable nav so last items (e.g. Client Portal) stay reachable */
         .client-navigation-sidebar {
             flex: 0 0 260px;
             background: #fafbfc;
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             max-height: calc(100vh - 100px);
-            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
             position: sticky;
             top: 20px;
             border: 1px solid #e8eaed;
@@ -236,6 +238,7 @@
         
         
         .sidebar-header {
+            flex-shrink: 0;
             padding: 16px 14px 12px;
             border-bottom: 1px solid #e8eaed;
             background: #ffffff;
@@ -572,6 +575,12 @@
         }
         
         .client-sidebar-nav {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
             padding: 6px;
         }
         
@@ -1065,6 +1074,11 @@
                 flex-wrap: wrap;
                 gap: 8px;
                 padding: 12px;
+                flex: none;
+                min-height: unset;
+                overflow-x: visible;
+                overflow-y: visible;
+                overscroll-behavior: auto;
             }
             
             .client-nav-button {
@@ -1111,6 +1125,9 @@
                 flex: 0 0 auto;
                 width: 100%;
                 max-height: none;
+                min-height: unset;
+                display: flex;
+                flex-direction: column;
                 position: relative;
                 top: auto;
                 margin-bottom: 20px;
