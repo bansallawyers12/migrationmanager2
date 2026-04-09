@@ -195,7 +195,12 @@
 					data:{'id': id, 'table' : table},
 					success:function(resp) {
 						$('.popuploader').hide();
-						var obj = $.parseJSON(resp);
+						try {
+							var obj = $.parseJSON(resp);
+						} catch (e) {
+							$("#loader").hide();
+							return;
+						}
 						if(obj.status == 1) {
 							$("#id_"+id).remove();
 							$("#quid_"+id).remove();
@@ -221,6 +226,10 @@
 							var html = errorMessage(obj.message);
 							$(".custom-error-msg").html(html);
 						}
+						$("#loader").hide();
+					},
+					error: function() {
+						$('.popuploader').hide();
 						$("#loader").hide();
 					},
 					beforeSend: function() {
@@ -253,7 +262,12 @@
 					data:{'id': id, 'table' : table, 'col' : col},
 					success:function(resp) {
 						$('.popuploader').hide();
-						var obj = $.parseJSON(resp);
+						try {
+							var obj = $.parseJSON(resp);
+						} catch (e) {
+							$("#loader").hide();
+							return;
+						}
 						if(obj.status == 1) {
 							$("#id_"+id).remove();
 							
@@ -267,6 +281,10 @@
 							var html = errorMessage(obj.message);
 							$(".custom-error-msg").html(html);
 						}
+						$("#loader").hide();
+					},
+					error: function() {
+						$('.popuploader').hide();
 						$("#loader").hide();
 					},
 					beforeSend: function() {
@@ -302,32 +320,39 @@
 			url:site_url+'/update_action',
 			data:{'id': id, 'current_status' : current_status, 'table': table, 'colname':col},
 			success:function(resp) {
-				var obj = $.parseJSON(resp);
-				if(obj.status == 1) {
-					//show success msg 
-						var html = successMessage(obj.message);
+				try {
+					var obj = $.parseJSON(resp);
+					if(obj.status == 1) {
+						//show success msg 
+							var html = successMessage(obj.message);
+							$(".custom-error-msg").html(html);
+						
+						//change status
+							if(current_status == 1){
+								var updated_status = 0;
+							} else {
+								var updated_status = 1;
+							}
+						
+							$(".change-status[data-id="+id+"]").attr('data-status', updated_status);
+						$('#id_'+id).remove();
+					} else{
+						var html = errorMessage(obj.message);
 						$(".custom-error-msg").html(html);
-					
-					//change status
-						if(current_status == 1){
-							var updated_status = 0;
-						} else {
-							var updated_status = 1;
-						}
-					
-						$(".change-status[data-id="+id+"]").attr('data-status', updated_status);
-					$('#id_'+id).remove();
-				} else{
-					var html = errorMessage(obj.message);
-					$(".custom-error-msg").html(html);
-					
-					//not change status
-						if(current_status == 1){
-							$(".change-status[data-id="+id+"]").prop('checked', true);
-						} else {
-							$(".change-status[data-id="+id+"]").prop('checked', false);
-						}
+						
+						//not change status
+							if(current_status == 1){
+								$(".change-status[data-id="+id+"]").prop('checked', true);
+							} else {
+								$(".change-status[data-id="+id+"]").prop('checked', false);
+							}
+					}
+				} catch (e) {
+					console.error('updateStatus parse error', e);
 				}
+				$(".popuploader").hide();
+			},
+			error: function() {
 				$(".popuploader").hide();
 			},
 			beforeSend: function() {

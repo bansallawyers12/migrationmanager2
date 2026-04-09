@@ -851,8 +851,14 @@
                             success: function(res){
                                 $('.popuploader').hide();
                                 $('.showchecindetail').html(res);
+                            },
+                            error: function(){
+                                $('.popuploader').hide();
                             }
                         });
+                    },
+                    error: function(){
+                        $('.popuploader').hide();
                     }
                 });
             });
@@ -875,8 +881,14 @@
                             success: function(res){
                                 $('.popuploader').hide();
                                 $('.showchecindetail').html(res);
+                            },
+                            error: function(){
+                                $('.popuploader').hide();
                             }
                         });
+                    },
+                    error: function(){
+                        $('.popuploader').hide();
                     }
                 });
             });
@@ -889,7 +901,12 @@
                     type:'POST',
                     data:{id: appliid,waitcountdata: $('#waitcountdata').val()},
                     success: function(response){
-                        var obj = $.parseJSON(response);
+                        try {
+                            var obj = $.parseJSON(response);
+                        } catch (e) {
+                            $('.popuploader').hide();
+                            return;
+                        }
                         if(obj.status){
                             $.ajax({
                                 url: site_url+'/get-checkin-detail',
@@ -898,11 +915,19 @@
                                 success: function(res){
                                     $('.popuploader').hide();
                                     $('.showchecindetail').html(res);
+                                },
+                                error: function(){
+                                    $('.popuploader').hide();
                                 }
                             });
                             $('.checindata #id_'+appliid).remove();
                             alert(obj.message);
+                        } else {
+                            $('.popuploader').hide();
                         }
+                    },
+                    error: function(){
+                        $('.popuploader').hide();
                     }
                 });
             });
@@ -915,15 +940,24 @@
                     type:'POST',
                     data:{id: appliid,attendcountdata: $('#attendcountdata').val()},
                     success: function(response){
-                        var obj = $.parseJSON(response);
+                        try {
+                            var obj = $.parseJSON(response);
+                        } catch (e) {
+                            $('.popuploader').hide();
+                            return;
+                        }
                         if(obj.status){
                             $('.popuploader').hide();
                             $('#checkindetailmodal').modal('hide');
                             $('.checindata #id_'+appliid).remove();
                             alert('Session is completed successfully');
                         } else {
+                            $('.popuploader').hide();
                             alert(obj.message);
                         }
+                    },
+                    error: function(){
+                        $('.popuploader').hide();
                     }
                 });
             });
@@ -939,6 +973,9 @@
                     success: function(responses){
                         $('.popuploader').hide();
                         $('.showchecindetail').html(responses);
+                    },
+                    error: function(){
+                        $('.popuploader').hide();
                     }
                 });
             });

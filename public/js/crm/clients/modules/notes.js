@@ -238,6 +238,9 @@
                     if (!res || !res.status) return;
                     $('#view_note .modal-body .note_content h5').html(res.data.title);
                     $("#view_note .modal-body .note_content p").html(res.data.description);
+                },
+                error: function() {
+                    $('.popuploader').hide();
                 }
             });
         });
@@ -258,6 +261,9 @@
                     if (!res || !res.status) return;
                     $('#view_matter_note .modal-body .note_content h5').html(res.data.title);
                     $("#view_matter_note .modal-body .note_content p").html(res.data.description);
+                },
+                error: function() {
+                    $('.popuploader').hide();
                 }
             });
         });

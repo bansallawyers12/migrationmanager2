@@ -1048,15 +1048,18 @@ $(document).ready(function() {
                                                 $this.val(dateStr);
                                                 // Trigger AJAX call when date changes (same as old daterangepicker)
                                                 if (dateStr && clientMatterId) {
-                                                    $('#popuploader').show();
+                                                    $('.popuploader').show();
                                                     $.ajax({
                                                         url: window.ClientDetailConfig.urls.updateIntake,
                                                         method: "GET",
                                                         dataType: "json",
                                                         data: {from: dateStr, appid: clientMatterId},
                                                         success: function(result) {
-                                                            $('#popuploader').hide();
+                                                            $('.popuploader').hide();
 
+                                                        },
+                                                        error: function() {
+                                                            $('.popuploader').hide();
                                                         }
                                                     });
                                                 }
@@ -1073,7 +1076,7 @@ $(document).ready(function() {
                                 showDropdowns: true,
                             }, function(start, end, label) {
 
-                                $('#popuploader').show();
+                                $('.popuploader').show();
 
                                 $.ajax({
 
@@ -1087,7 +1090,7 @@ $(document).ready(function() {
 
                                     success:function(result) {
 
-                                        $('#popuploader').hide();
+                                        $('.popuploader').hide();
 
 
                                     }
@@ -1114,7 +1117,7 @@ $(document).ready(function() {
 
                             }, function(start, end, label) {
 
-                                $('#popuploader').show();
+                                $('.popuploader').show();
 
                                 $.ajax({
 
@@ -1128,7 +1131,7 @@ $(document).ready(function() {
 
                                     success:function(result) {
 
-                                        $('#popuploader').hide();
+                                        $('.popuploader').hide();
 
 
 
@@ -1156,7 +1159,7 @@ $(document).ready(function() {
 
                             }, function(start, end, label) {
 
-                                $('#popuploader').show();
+                                $('.popuploader').show();
 
                                 $.ajax({
 
@@ -1170,7 +1173,7 @@ $(document).ready(function() {
 
                                     success:function(result) {
 
-                                        $('#popuploader').hide();
+                                        $('.popuploader').hide();
 
                                         var obj = result;
 
@@ -1209,7 +1212,7 @@ $(document).ready(function() {
 
                             }, function(start, end, label) {
 
-                                $('#popuploader').show();
+                                $('.popuploader').show();
 
                                 $.ajax({
 
@@ -1223,7 +1226,7 @@ $(document).ready(function() {
 
                                     success:function(result) {
 
-                                        $('#popuploader').hide();
+                                        $('.popuploader').hide();
 
                                         var obj = result;
 
@@ -1257,6 +1260,7 @@ $(document).ready(function() {
                             console.error('Error loading client portal details:', error);
 
                             $('#client_portal-tab').html('<h4>Error loading client portal details. Please try again.</h4>');
+                            $('.popuploader').hide();
 
                         }
 
@@ -1265,6 +1269,7 @@ $(document).ready(function() {
                 } else {
 
                     $('#client_portal-tab').html('<h4>Error upserting matter. Please try again.</h4>');
+                    $('.popuploader').hide();
 
                 }
 
@@ -1275,6 +1280,7 @@ $(document).ready(function() {
                 console.error('Error upserting matter:', error);
 
                 $('#client_portal-tab').html('<h4>Error upserting matter. Please try again.</h4>');
+                $('.popuploader').hide();
 
             }
 
@@ -1622,6 +1628,10 @@ success: function(response) {
 
                         $('#reassign_client_matter_id').html(matterlist);
 
+                    },
+
+                    error: function() {
+                        $('.popuploader').hide();
                     }
 
                 });
@@ -1734,6 +1744,10 @@ success: function(response) {
 
                         $('#reassign_sent_client_matter_id').html(matterlist);
 
+                    },
+
+                    error: function() {
+                        $('.popuploader').hide();
                     }
 
                 });
@@ -5417,6 +5431,10 @@ success: function(response) {
 
                         $('#mobileNumber').append(contactlist);
 
+                    },
+
+                    error: function() {
+                        $('.popuploader').hide();
                     }
 
                 });
@@ -5777,7 +5795,10 @@ success: function(response) {
                 success: function(responses){
                     try {
                         var ress = safeParseJsonResponse(responses);
-                        if (!ress) return;
+                        if (!ress) {
+                            $('.popuploader').hide();
+                            return;
+                        }
 
                     var html = '';
 
@@ -5865,6 +5886,10 @@ success: function(response) {
                         $('.popuploader').hide();
                     }
 
+                },
+
+                error: function() {
+                    $('.popuploader').hide();
                 }
 
             });
@@ -5908,7 +5933,10 @@ success: function(response) {
                 success: function(response){
 
                     var obj = safeParseJsonResponse(response);
-                    if (!obj) return;
+                    if (!obj) {
+                        $('.popuploader').hide();
+                        return;
+                    }
                     if(obj.status){
 
                         alert(obj.message);
@@ -5918,9 +5946,14 @@ success: function(response) {
                     }else{
 
                         alert(obj.message);
+                        $('.popuploader').hide();
 
                     }
 
+                },
+
+                error: function() {
+                    $('.popuploader').hide();
                 }
 
             });
@@ -6489,6 +6522,10 @@ success: function(response) {
 
                     }
 
+                },
+
+                error: function() {
+                    $('.popuploader').hide();
                 }
 
             });
@@ -6533,7 +6570,7 @@ success: function(response) {
 
                 success:function(response){
 
-                    //$('.popuploader').hide();
+                    $('.popuploader').hide();
 
                     var res = safeParseJsonResponse(response);
                     if (!res) return;
@@ -6555,6 +6592,10 @@ success: function(response) {
 
                     }
 
+                },
+
+                error: function() {
+                    $('.popuploader').hide();
                 }
 
             });
@@ -6600,6 +6641,7 @@ success: function(response) {
                             getallnotes();
 
                         }
+                        $('.popuploader').hide();
 
                     } else {
 
@@ -6662,7 +6704,12 @@ success: function(response) {
                 success:function(response){
 
                     getallactivities();
+                    $('.popuploader').hide();
 
+                },
+
+                error: function() {
+                    $('.popuploader').hide();
                 }
 
             });
@@ -7494,6 +7541,10 @@ success: function(response) {
 
                     $("#intrested_branch").val('').trigger('change');
 
+                    },
+
+                    error: function() {
+                        $('.popuploader').hide();
                     }
 
                 });
@@ -7538,6 +7589,10 @@ success: function(response) {
 
                 $("#edit_intrested_branch").val('').trigger('change');
 
+                },
+
+                error: function() {
+                    $('.popuploader').hide();
                 }
 
             });

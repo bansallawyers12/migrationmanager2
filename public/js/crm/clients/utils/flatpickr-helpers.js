@@ -83,7 +83,7 @@
                 $this.val(dateStr);
 
                 if (dateStr && ajaxUrl) {
-                    $('#popuploader').show();
+                    $('.popuploader').show();
                     var ajaxData = ajaxDataCallback ? ajaxDataCallback(dateStr) : { from: dateStr };
                     $.ajax({
                         url: ajaxUrl,
@@ -91,7 +91,10 @@
                         dataType: 'json',
                         data: ajaxData,
                         success: function() {
-                            $('#popuploader').hide();
+                            $('.popuploader').hide();
+                        },
+                        error: function() {
+                            $('.popuploader').hide();
                         }
                     });
                 }
