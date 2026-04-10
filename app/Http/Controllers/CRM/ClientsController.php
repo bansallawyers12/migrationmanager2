@@ -7349,22 +7349,23 @@ class ClientsController extends Controller
 
             // Use ConsultantAssignmentService to assign consultant
             $consultantAssigner = app(\App\Services\BansalAppointmentSync\ConsultantAssignmentService::class);
+            $specificServiceForCalendar = match ((int) $serviceId) {
+                1 => 'paid-consultation',
+                2 => 'consultation',
+                3 => 'overseas-enquiry',
+                default => 'consultation',
+            };
             $appointmentDataForConsultant = [
                 'noe_id' => $requestData['noe_id'],
                 'service_id' => $serviceId,
                 'location' => $location,
                 'inperson_address' => $requestData['inperson_address'],
+                'enquiry_type' => $serviceTypeMapping['enquiry_type'],
+                'service_type' => $serviceTypeMapping['service_type'],
+                'enquiry_details' => $requestData['description'] ?? '',
+                'specific_service' => $specificServiceForCalendar,
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
-
-            // Prevent new bookings from being assigned to Ajay calendar (transfer-only calendar)
-            if ($consultant && $consultant->calendar_type === 'ajay') {
-                return response()->json([
-                    'status' => false,
-                    'success' => false,
-                    'message' => 'New bookings cannot be created in Ajay Calendar. Only transfers from other calendars are allowed.'
-                ], 422);
-            }
 
             // Consultant is nullable, but log if not found
             if (!$consultant) {

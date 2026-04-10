@@ -150,27 +150,21 @@ class AppointmentSyncService
         // These are needed by assignConsultant() to determine calendar type
         $serviceId = $this->mapServiceId($appointmentData);
         $noeId = $this->mapNoeId($appointmentData);
-        $location = $appointmentData['location'] ?? null;
+        $rawLocation = $appointmentData['location'] ?? null;
+        $location = $rawLocation ? strtolower(trim((string) $rawLocation)) : null;
         $inpersonAddress = $location ? $this->mapInpersonAddress($location) : null;
-        
+
         // Prepare appointment data with calculated values for consultant assignment
         $appointmentDataForConsultant = array_merge($appointmentData, [
             'service_id' => $serviceId,
             'noe_id' => $noeId,
             'inperson_address' => $inpersonAddress,
+            'location' => $location,
+            'specific_service' => $appointmentData['specific_service'] ?? null,
         ]);
 
         // Assign consultant (now has access to service_id and noe_id)
         $consultant = $this->consultantAssigner->assignConsultant($appointmentDataForConsultant);
-        
-        // Safety check: Never assign to Ajay calendar during sync (transfer-only calendar)
-        if ($consultant && $consultant->calendar_type === 'ajay') {
-            Log::warning('Prevented auto-assignment to Ajay calendar during sync', [
-                'bansal_id' => $bansalId,
-                'consultant_id' => $consultant->id
-            ]);
-            $consultant = null; // Don't assign consultant if it's Ajay calendar
-        }
 
         // Map status
         $status = $this->mapStatus($appointmentData['status'] ?? 'pending');
@@ -191,7 +185,7 @@ class AppointmentSyncService
             'appointment_datetime' => Carbon::parse($appointmentData['appointment_datetime']),
             'timeslot_full' => $appointmentData['appointment_time'] ?? null,
             'duration_minutes' => $appointmentData['duration_minutes'] ?? 15,
-            'location' => $appointmentData['location'],
+            'location' => $location ?? $appointmentData['location'],
             'inperson_address' => $inpersonAddress,
             'meeting_type' => $this->mapMeetingType($appointmentData['meeting_type'] ?? null),
             'preferred_language' => $appointmentData['preferred_language'] ?? 'English',
@@ -250,9 +244,10 @@ class AppointmentSyncService
      */
     protected function mapInpersonAddress(string $location): ?int
     {
-        return match($location) {
+        return match (strtolower(trim($location))) {
             'adelaide' => 1,
-            'melbourne' => 2
+            'melbourne' => 2,
+            default => null,
         };
     }
 
@@ -289,7 +284,11 @@ class AppointmentSyncService
     {
         $serviceType = $appointmentData['service_type'] ?? null;
 
-        return match($serviceType) {
+        if ($serviceType === null || $serviceType === '') {
+            return null;
+        }
+
+        return match ($serviceType) {
             'permanent-residency' => 1,
             'temporary-residency' => 2,
             'jrp-skill-assessment' => 3,
@@ -297,7 +296,8 @@ class AppointmentSyncService
             'education-visa' => 5,
             'complex-matters' => 6,
             'visa-cancellation' => 7,
-            'international-migration' => 8
+            'international-migration' => 8,
+            default => null,
         };
     }
 
