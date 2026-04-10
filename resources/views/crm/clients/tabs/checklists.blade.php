@@ -412,6 +412,7 @@
 }
 
 .checklist-add-wrapper { position: relative; }
+/* Outer shell must not clip Select2: dropdown is appended here with dropdownParent. */
 .checklist-create-dropdown {
     position: fixed;
     top: 50%;
@@ -419,8 +420,7 @@
     transform: translate(-50%, -50%);
     min-width: 420px;
     max-width: 520px;
-    max-height: 90vh;
-    overflow-y: auto;
+    overflow: visible;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -430,6 +430,17 @@
 .checklist-create-dropdown .dropdown-arrow { display: none; }
 .checklist-create-dropdown .dropdown-body {
     padding: 24px;
+    max-height: calc(90vh - 48px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+/* Select2 menus for this panel use dropdownParent: body (see initChecklistSelect2).
+   Fixes invisible lists caused by transform on the panel + global custom.css width:200px on all .select2-dropdown. */
+.select2-container--default .select2-dropdown.select2-checklist-create-dropdown {
+    z-index: 100060 !important;
+    width: min(520px, 92vw) !important;
+    min-width: 260px !important;
+    box-sizing: border-box;
 }
 .checklist-create-dropdown .dropdown-title { color: #334155; }
 
@@ -764,24 +775,50 @@
         var $dropdown = $('#checklist-create-dropdown');
         var $matterSelect = $('#checklist_matter_select');
 
+        function destroyChecklistSelect2() {
+            if (typeof $.fn.select2 === 'undefined') {
+                return;
+            }
+            $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office').each(function() {
+                var $el = $(this);
+                if ($el.data('select2')) {
+                    $el.select2('destroy');
+                }
+            });
+        }
+
         // Toggle dropdown on plus button click
         $btnAdd.on('click', function(e) {
             e.stopPropagation();
             $dropdown.toggle();
             if ($dropdown.is(':visible')) {
                 initChecklistSelect2();
+            } else {
+                destroyChecklistSelect2();
             }
         });
 
-        // Close dropdown when clicking outside
+        // Close panel when clicking outside (do not close while using this panel's Select2 menu)
         $(document).on('click', function(e) {
-            if (!$dropdown.is(e.target) && $dropdown.has(e.target).length === 0 && !$btnAdd.is(e.target)) {
-                $dropdown.hide();
+            if (!$dropdown.is(':visible')) {
+                return;
             }
+            if ($btnAdd.is(e.target) || $btnAdd.has(e.target).length) {
+                return;
+            }
+            if ($dropdown.is(e.target) || $dropdown.has(e.target).length) {
+                return;
+            }
+            if ($(e.target).closest('.select2-dropdown').length && $dropdown.find('.select2-container--open').length) {
+                return;
+            }
+            destroyChecklistSelect2();
+            $dropdown.hide();
         });
 
         // Cancel button
         $dropdown.on('click', '.btn-cancel-checklist', function() {
+            destroyChecklistSelect2();
             $dropdown.hide();
         });
 
@@ -829,19 +866,24 @@
             $('#sel_office_id_lead').val(officeId).trigger('change');
             $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
             $('#costAssignmentCreateFormModelLead').modal('show');
+            destroyChecklistSelect2();
             $dropdown.hide();
         });
 
         function initChecklistSelect2() {
-            if (typeof $.fn.select2 !== 'undefined') {
-                var $fields = $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
-                $fields.each(function() {
-                    var $el = $(this);
-                    if (!$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ dropdownParent: $dropdown, width: '100%' });
-                    }
-                });
+            if (typeof $.fn.select2 === 'undefined') {
+                return;
             }
+            destroyChecklistSelect2();
+            var $fields = $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
+            $fields.each(function() {
+                $(this).select2({
+                    dropdownParent: $('body'),
+                    width: '100%',
+                    dropdownCssClass: 'select2-checklist-create-dropdown',
+                    minimumResultsForSearch: 0
+                });
+            });
         }
 
         // Accordion toggle functionality
