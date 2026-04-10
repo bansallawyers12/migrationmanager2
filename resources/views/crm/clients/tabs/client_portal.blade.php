@@ -6335,7 +6335,13 @@ $('#moveDocumentSubmitBtn').on('click', function () {
     $.ajax({
         url: '/documents/move',
         method: 'POST',
-        data: { document_id: documentId, target_type: targetType, target_id: targetId, _token: $('meta[name="csrf-token"]').attr('content') },
+        data: {
+            document_id: documentId,
+            target_type: targetType,
+            target_id: targetId,
+            target_matter_id: targetType === 'visa' ? ($('#moveDocumentMatterId').val() || '') : '',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
         success: function (response) {
             $btn.prop('disabled', false).text('Move Document');
             if (response.status) {

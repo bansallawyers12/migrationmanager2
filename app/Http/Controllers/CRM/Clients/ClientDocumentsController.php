@@ -1673,6 +1673,7 @@ class ClientDocumentsController extends Controller
                 'document_id' => 'required|integer',
                 'target_type' => 'required|in:personal,visa,nomination',
                 'target_id' => 'required|integer', // Category ID for both personal and visa
+                'target_matter_id' => 'nullable|integer', // Client matter id when moving to visa (e.g. Personal → Visa)
             ]);
             
             $documentId = $request->document_id;
@@ -1733,9 +1734,22 @@ class ClientDocumentsController extends Controller
                 $document->type       = 'client';
                 $document->doc_type   = 'visa';
                 $document->folder_name = $targetId; // Category ID
-                // Preserve document's matter when target category is global (client_matter_id null)
-                // so the document stays visible in the matter-filtered visa documents view
-                $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
+                // When the UI sends target_matter_id (e.g. Personal → Visa), scope the document to that matter.
+                // Otherwise keep previous behaviour: category row matter, else existing document matter.
+                $requestedMatterRaw = $request->input('target_matter_id');
+                if ($requestedMatterRaw !== null && $requestedMatterRaw !== '') {
+                    $requestedMatterId = (int) $requestedMatterRaw;
+                    $clientMatter = ClientMatter::where('id', $requestedMatterId)
+                        ->where('client_id', $document->client_id)
+                        ->first();
+                    if (! $clientMatter) {
+                        $response['message'] = 'The selected matter does not belong to this client.';
+                        return response()->json($response);
+                    }
+                    $document->client_matter_id = $requestedMatterId;
+                } else {
+                    $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
+                }
                 $document->cp_list_id = null;       // Remove from workflow checklist scope
                 
                 $targetName = $category->title;

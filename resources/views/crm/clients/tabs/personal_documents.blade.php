@@ -995,6 +995,11 @@
                             return;
                         }
                     } else if (targetType === 'visa') {
+                        const matterIdForMove = $('#moveVisaMatterId').val();
+                        if (!matterIdForMove) {
+                            $error.text('Please select a visa matter').show();
+                            return;
+                        }
                         targetId = $('#moveVisaCategoryId').val();
                         if (!targetId) {
                             $error.text('Please select a visa category').show();
@@ -1014,7 +1019,8 @@
                             _token: '{{ csrf_token() }}',
                             document_id: currentMoveDocumentId,
                             target_type: targetType,
-                            target_id: targetId
+                            target_id: targetId,
+                            target_matter_id: targetType === 'visa' ? $('#moveVisaMatterId').val() : ''
                         },
                         success: function(response) {
                             if (response.status) {
