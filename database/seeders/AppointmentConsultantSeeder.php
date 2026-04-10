@@ -45,7 +45,7 @@ class AppointmentConsultantSeeder extends Seeder
         
         $consultants = [
             [
-                'name' => 'Arun Kumar (Pr_complex matters)',
+                'name' => 'Arun Kumar (Employer sponsored calendar)',
                 'email' => 'arun@bansalimmigration.com',
                 'calendar_type' => 'paid',
                 'location' => 'melbourne',

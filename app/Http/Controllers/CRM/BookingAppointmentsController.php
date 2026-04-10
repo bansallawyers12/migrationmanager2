@@ -320,7 +320,7 @@ class BookingAppointmentsController extends Controller
         $appointments = $appointmentsQuery->get();
 
         $calendarTitle = match($type) {
-            'paid' => 'Pr_complex matters',
+            'paid' => 'Employer sponsored calendar',
             'jrp' => 'JRP/Skill Assessment',
             'education' => 'Education/Student Visa',
             'tourist' => 'Tourist Visa',

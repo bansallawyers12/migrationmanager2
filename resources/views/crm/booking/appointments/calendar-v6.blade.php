@@ -17,7 +17,7 @@
                 <div class="btn-group ml-2" role="group">
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}" 
                        class="btn btn-sm {{ $type === 'paid' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="far fa-calendar-check"></i> Pr_complex matters
+                        <i class="far fa-calendar-check"></i> Employer sponsored calendar
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}" 
                        class="btn btn-sm {{ $type === 'jrp' ? 'btn-primary' : 'btn-outline-primary' }}">

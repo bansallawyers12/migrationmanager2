@@ -94,7 +94,7 @@ class AppointmentConsultant extends Model
     {
         return Attribute::make(
             get: fn () => match($this->calendar_type) {
-                'paid' => 'Pr_complex matters',
+                'paid' => 'Employer sponsored calendar',
                 'jrp' => 'JRP/Skill Assessment',
                 'education' => 'Education/Student Visa',
                 'tourist' => 'Tourist Visa',
