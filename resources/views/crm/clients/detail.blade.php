@@ -1647,7 +1647,7 @@ $('.send-sms-btn').on('click', function() {
     
     // Load SMS templates
     $.ajax({
-        url: '{{ route("adminconsole.features.sms.templates.active") }}',
+        url: '{{ route("clients.sms.templates.active") }}',
         type: 'GET',
         dataType: 'json',
         success: function(response) {
@@ -1734,7 +1734,7 @@ $('#sendSmsForm').on('submit', function(e) {
     };
     
     $.ajax({
-        url: '{{ route("adminconsole.features.sms.send") }}',
+        url: '{{ route("clients.sms.send") }}',
         type: 'POST',
         data: formData,
         success: function(response) {

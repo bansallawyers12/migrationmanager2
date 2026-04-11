@@ -128,7 +128,7 @@ $(document).ready(function() {
     
     function loadTemplates() {
         $.ajax({
-            url: '{{ route("adminconsole.features.sms.templates.active") }}',
+            url: '{{ route("clients.sms.templates.active") }}',
             method: 'GET',
             success: function(response) {
                 if (response.success) {

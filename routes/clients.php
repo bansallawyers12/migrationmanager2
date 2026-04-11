@@ -20,6 +20,7 @@ use App\Http\Controllers\CRM\Form956Controller;
 use App\Http\Controllers\CRM\UploadChecklistController;
 use App\Http\Controllers\CRM\SendGridSendersController;
 use App\Http\Controllers\CRM\AccessGrantController;
+use App\Http\Controllers\AdminConsole\Sms\SmsTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +102,10 @@ Route::get('/clients/get-onlyclientrecipients', [ClientsController::class, 'geto
 Route::get('/clients/get-allclients', [ClientsController::class, 'getallclients'])->name('clients.getallclients');
 Route::get('/clients/change_assignee', [ClientsController::class, 'change_assignee']);
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
+/** Active SMS templates for CRM (all authenticated staff); not behind Admin Console middleware. */
+Route::get('/clients/sms-templates-active', [SmsTemplateController::class, 'active'])->name('clients.sms.templates.active');
+/** Send a manual SMS from the CRM (all authenticated staff); not behind Admin Console middleware. */
+Route::post('/clients/sms/send', [\App\Http\Controllers\AdminConsole\Sms\SmsSendController::class, 'send'])->name('clients.sms.send');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
 Route::get('/crm/sendgrid-senders', [SendGridSendersController::class, 'senders'])->name('crm.sendgrid.senders');
 Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clients.sendmail');
