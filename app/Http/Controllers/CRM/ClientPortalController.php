@@ -4901,6 +4901,8 @@ class ClientPortalController extends Controller
 			return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
 		}
 
+		$matterNo = $matter->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
+
 		$stage     = DB::table('workflow_stages')->where('name', $wfStage)->first();
 		$wfStageId = $stage ? $stage->id : null;
 
@@ -4923,13 +4925,33 @@ class ClientPortalController extends Controller
 				'updated_at'        => $now,
 			]);
 			$inserted[] = DB::table('cp_doc_checklists')->where('id', $newId)->first();
+
+			if ($allowClient === 1 && !empty($matter->client_id) && Schema::hasTable('cp_action_requires')) {
+				$itemMessage = 'New checklist "' . $name . '" added for matter ' . $matterNo;
+				DB::table('cp_action_requires')->insert([
+					'type'                => 'checklist_upload',
+					'client_id'           => (int) $matter->client_id,
+					'client_matter_id'    => $clientMatterId,
+					'checklist_id'        => (int) $newId,
+					'sender_id'           => $userId,
+					'receiver_id'         => (int) $matter->client_id,
+					'module_id'           => $clientMatterId,
+					'url'                 => '/documents?allowed_checklist_id=' . $newId,
+					'notification_type'   => 'checklist_added',
+					'message'             => $itemMessage,
+					'created_at'          => $now,
+					'updated_at'          => $now,
+					'sender_status'       => 1,
+					'receiver_status'     => 0,
+					'seen'                => 0,
+				]);
+			}
 		}
 
 		$count = count($inserted);
 
 		// When "Allow For Client" is set, notify client (in-app notification + push) so they see new checklist(s)
 		if ($count > 0 && $allowClient === 1 && !empty($matter->client_id)) {
-			$matterNo = $matter->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
 			$namesPreview = implode(', ', array_slice($names, 0, 3));
 			if ($count > 3) {
 				$namesPreview .= '...';
@@ -4985,7 +5007,6 @@ class ClientPortalController extends Controller
 		// Create action for Action page Client Portal tab so it appears in the list
 		$clientMatter = ClientMatter::find($clientMatterId);
 		if ($clientMatter) {
-			$matterNo = $clientMatter->client_unique_matter_no ?? 'ID: ' . $clientMatterId;
 			$namesPreview = implode(', ', array_slice($names, 0, 5));
 			if (count($names) > 5) {
 				$namesPreview .= '...';

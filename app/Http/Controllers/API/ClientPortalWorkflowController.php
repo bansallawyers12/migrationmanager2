@@ -12,6 +12,7 @@ use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -629,6 +630,8 @@ class ClientPortalWorkflowController extends Controller
                 'updated_at'      => now(),
             ]);
 
+            $this->markCpActionRequiresSeenForChecklistUpload($clientId, $clientMatterId, $allowedChecklistId);
+
             $this->notifyStaffAndCreateActionForChecklistUpload($clientId, $clientMatterId, [$checklistItem->cp_checklist_name ?? 'checklist']);
 
             return response()->json([
@@ -811,6 +814,8 @@ class ClientPortalWorkflowController extends Controller
                     's3_path'              => $filePath,
                     'uploaded_at'          => now()->toISOString(),
                 ];
+
+                $this->markCpActionRequiresSeenForChecklistUpload($clientId, $clientMatterId, $allowedChecklistId);
             }
 
             $uploadedCount = count($uploadedDocuments);
@@ -855,6 +860,35 @@ class ClientPortalWorkflowController extends Controller
                 'message' => 'Failed to upload documents',
                 'error'   => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * After a successful allowed-checklist upload, set seen = 1 on the matching cp_action_requires row.
+     */
+    private function markCpActionRequiresSeenForChecklistUpload(int $clientId, int $clientMatterId, int $checklistId): void
+    {
+        try {
+            if (! Schema::hasTable('cp_action_requires') || ! Schema::hasColumn('cp_action_requires', 'checklist_id')) {
+                return;
+            }
+
+            DB::table('cp_action_requires')
+                ->where('client_id', $clientId)
+                ->where('client_matter_id', $clientMatterId)
+                ->where('checklist_id', $checklistId)
+                ->where('type', 'checklist_upload')
+                ->update([
+                    'seen'       => 1,
+                    'updated_at' => now(),
+                ]);
+        } catch (\Exception $e) {
+            Log::warning('cp_action_requires seen update failed after checklist upload', [
+                'client_id'          => $clientId,
+                'client_matter_id'   => $clientMatterId,
+                'checklist_id'       => $checklistId,
+                'error'              => $e->getMessage(),
+            ]);
         }
     }
 
