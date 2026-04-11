@@ -10809,6 +10809,82 @@
 					]
 				}
 			]
+		},
+		{
+			"name": "Action Required",
+			"item": [
+				{
+					"name": "List Action Required",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Use token from login response"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/action-required?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"action-required"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Per page (default 20, max 100)"
+								}
+							]
+						},
+						"description": "Lists unread action-required rows (`seen` = 0) for the authenticated client across all matters. Query: `page`, `limit` (default 20)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Action Required",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Use token from login response"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/action-required/unread",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"action-required",
+								"unread"
+							]
+						},
+						"description": "Returns `unread_count` (rows with `seen` = 0) and `latest_unread` (single most recent unread row, or null)."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [

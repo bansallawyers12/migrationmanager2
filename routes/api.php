@@ -232,6 +232,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages/{id}/read', [ClientPortalMessageController::class, 'markAsRead']);
     Route::get('/messages/{id}', [ClientPortalMessageController::class, 'getMessageDetails']);
 
+    // Action Required (cp_action_requires) — register /action-required/unread before /action-required
+    Route::get('/action-required/unread', [ClientPortalNotificationController::class, 'actionRequiredUnread']);
+    Route::get('/action-required', [ClientPortalNotificationController::class, 'actionRequiredIndex']);
+
     // Notifications routes (client portal) — specific paths before /notifications/{id}
     Route::get('/notifications', [ClientPortalNotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [ClientPortalNotificationController::class, 'unreadCount']);
