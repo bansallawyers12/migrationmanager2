@@ -49,6 +49,7 @@ Route::get('/visa-types', [ClientPortalCommonListingController::class, 'getVisaT
 
 // Search Occupations API (public route)
 Route::get('/search-occupation', [ClientPortalCommonListingController::class, 'searchOccupationDetail']);
+Route::get('/occupation-result', [ClientPortalCommonListingController::class, 'getOccupationResult']);
 
 // Appointment Variable Lists API (public route)
 Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
