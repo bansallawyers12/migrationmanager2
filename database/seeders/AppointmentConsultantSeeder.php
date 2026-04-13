@@ -45,13 +45,13 @@ class AppointmentConsultantSeeder extends Seeder
         
         $consultants = [
             [
-                'name' => 'Arun Kumar (Employer sponsored calendar)',
+                'name' => 'Arun Kumar (Employer Sponsored Calendar)',
                 'email' => 'arun@bansalimmigration.com',
                 'calendar_type' => 'paid',
                 'location' => 'melbourne',
                 'specializations' => json_encode([1, 6, 7, 8]),
                 'is_active' => true,
-                'show_in_filter' => false,
+                'show_in_filter' => true,
             ],
             [
                 'name' => 'Shubham/Yadwinder (JRP)',
@@ -107,12 +107,21 @@ class AppointmentConsultantSeeder extends Seeder
                 'is_active' => true,
                 'show_in_filter' => true,
             ],
+            [
+                'name' => 'Arun Calendar',
+                'email' => null,
+                'calendar_type' => 'arun',
+                'location' => 'melbourne',
+                'specializations' => json_encode([]),
+                'is_active' => true,
+                'show_in_filter' => true,
+            ],
         ];
 
-        // Insert consultants in order so they get IDs 1-7
+        // Insert consultants in order so they get IDs 1-8
         foreach ($consultants as $index => $consultant) {
             AppointmentConsultant::create([
-                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6, 7
+                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6, 7, 8
                 'name' => $consultant['name'],
                 'email' => $consultant['email'],
                 'calendar_type' => $consultant['calendar_type'],
@@ -131,7 +140,7 @@ class AppointmentConsultantSeeder extends Seeder
                 ->update(['consultant_id' => $newId]);
         }
         
-        $this->command->info('✓ Created 7 appointment consultants with IDs 1-7 (including Ajay Calendar and Kunal Calendar)');
+        $this->command->info('✓ Created 8 appointment consultants with IDs 1-8 (including Ajay, Kunal, and Arun Calendar)');
         $this->command->info('✓ Updated all appointments to reference new consultant IDs');
     }
 }

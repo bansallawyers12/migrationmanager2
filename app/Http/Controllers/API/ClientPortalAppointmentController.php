@@ -365,7 +365,7 @@ class ClientPortalAppointmentController extends BaseController
             'cancellation' => 'Visa Cancellation/NOICC/Refusals',
             'international' => 'Outside Australia',
             'eoi' => 'EOI/ROI',
-            'employer_sponsored' => 'Employer sponsored',
+            'employer_sponsored' => 'Employer Sponsored',
             'visa_cancellation' => 'Visa Cancellation/NOICC/Refusals',
             'india_uk_canada_europe' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA',
             default => ucfirst(str_replace('_', ' ', $appointment->enquiry_type ?? 'General'))

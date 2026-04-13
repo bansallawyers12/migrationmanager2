@@ -28,7 +28,7 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}">
-                        <i class="far fa-calendar-check mr-2"></i> Employer sponsored calendar
+                        <i class="far fa-calendar-check mr-2"></i> Employer Sponsored Calendar
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}">
                         <i class="far fa-calendar mr-2"></i> JRP Calendar
@@ -47,6 +47,9 @@
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}">
                         <i class="fas fa-calendar-alt mr-2"></i> Kunal Calendar
+                    </a>
+                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'arun']) }}">
+                        <i class="fas fa-calendar-alt mr-2"></i> Arun Calendar
                     </a>
                     @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                     <div class="dropdown-divider"></div>

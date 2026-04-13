@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Rename user-facing labels for calendar_type "paid" (internal key unchanged).
+     * Align stored consultant names with "Employer Sponsored Calendar" capitalization.
      */
     public function up(): void
     {
@@ -15,37 +15,28 @@ return new class extends Migration
             return;
         }
 
-        $from = 'Pr_complex matters';
-        $to = 'Employer Sponsored Calendar';
-
         DB::table('appointment_consultants')
             ->where('calendar_type', 'paid')
-            ->where('name', 'like', '%'.$from.'%')
+            ->where('name', 'like', '%Employer sponsored calendar%')
             ->update([
                 'name' => DB::raw(
-                    "REPLACE(name, '".str_replace("'", "''", $from)."', '".str_replace("'", "''", $to)."')"
+                    "REPLACE(name, 'Employer sponsored calendar', 'Employer Sponsored Calendar')"
                 ),
             ]);
     }
 
-    /**
-     * Restore previous display label text where it was updated by this migration.
-     */
     public function down(): void
     {
         if (! Schema::hasTable('appointment_consultants')) {
             return;
         }
 
-        $from = 'Employer Sponsored Calendar';
-        $to = 'Pr_complex matters';
-
         DB::table('appointment_consultants')
             ->where('calendar_type', 'paid')
-            ->where('name', 'like', '%'.$from.'%')
+            ->where('name', 'like', '%Employer Sponsored Calendar%')
             ->update([
                 'name' => DB::raw(
-                    "REPLACE(name, '".str_replace("'", "''", $from)."', '".str_replace("'", "''", $to)."')"
+                    "REPLACE(name, 'Employer Sponsored Calendar', 'Employer sponsored calendar')"
                 ),
             ]);
     }

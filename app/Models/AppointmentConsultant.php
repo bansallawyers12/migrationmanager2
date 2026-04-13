@@ -66,7 +66,8 @@ class AppointmentConsultant extends Model
     }
 
     /**
-     * Consultants shown in CRM appointment list filter and calendar transfer dropdowns.
+     * Consultants included in CRM appointment list filter and calendar transfer dropdowns.
+     * Set show_in_filter to false on a row to hide it from those UIs (rare).
      */
     public function scopeShownInFilter($query)
     {
@@ -104,25 +105,31 @@ class AppointmentConsultant extends Model
     {
         return Attribute::make(
             get: fn () => match($this->calendar_type) {
-                'paid' => 'Employer sponsored calendar',
+                'paid' => 'Employer Sponsored Calendar',
                 'jrp' => 'JRP/Skill Assessment',
                 'education' => 'Education/Student Visa',
                 'tourist' => 'Tourist Visa',
                 'adelaide' => 'Adelaide Office',
                 'ajay' => 'Ajay Calendar',
                 'kunal' => 'Kunal Calendar',
+                'arun' => 'Arun Calendar',
                 default => ucfirst($this->calendar_type)
             }
         );
     }
 
     /**
-     * CRM-facing label: hides personal names for consultants excluded from CRM lists (e.g. employer-sponsored slot).
+     * CRM-facing label: use calendar type title for employer-sponsored (paid); for hidden rows use type title;
+     * otherwise use the consultant name (e.g. team calendars).
      */
     protected function crmDisplayLabel(): Attribute
     {
         return Attribute::make(
             get: function () {
+                if ($this->calendar_type === 'paid') {
+                    return $this->calendar_type_display;
+                }
+
                 if ($this->show_in_filter === false) {
                     return $this->calendar_type_display;
                 }

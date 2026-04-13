@@ -17,7 +17,7 @@
                 <div class="btn-group ml-2" role="group">
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'paid']) }}" 
                        class="btn btn-sm {{ $type === 'paid' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        <i class="far fa-calendar-check"></i> Employer sponsored calendar
+                        <i class="far fa-calendar-check"></i> Employer Sponsored Calendar
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'jrp']) }}" 
                        class="btn btn-sm {{ $type === 'jrp' ? 'btn-primary' : 'btn-outline-primary' }}">
@@ -42,6 +42,10 @@
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'kunal']) }}" 
                        class="btn btn-sm {{ $type === 'kunal' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-calendar-alt"></i> Kunal Calendar
+                    </a>
+                    <a href="{{ route('booking.appointments.calendar', ['type' => 'arun']) }}" 
+                       class="btn btn-sm {{ $type === 'arun' ? 'btn-primary' : 'btn-outline-primary' }}">
+                        <i class="fas fa-calendar-alt"></i> Arun Calendar
                     </a>
                 </div>
             </div>

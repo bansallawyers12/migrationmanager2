@@ -219,7 +219,7 @@ html, body {
                                             <div class="col-8 info-value">
                                                 @if($appointment->consultant)
                                                     {{ $appointment->consultant->crm_display_label }}
-                                                    @if($appointment->consultant->show_in_filter !== false)
+                                                    @if($appointment->consultant->show_in_filter !== false && $appointment->consultant->crm_display_label !== $appointment->consultant->calendar_type_display)
                                                         <br><small class="text-muted">{{ $appointment->consultant->calendar_type_display }}</small>
                                                     @endif
                                                 @else

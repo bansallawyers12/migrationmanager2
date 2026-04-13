@@ -84,7 +84,7 @@ class ConsultantAssignmentService
             return 'jrp';
         }
 
-        // Outside Australia / international migration → Employer sponsored calendar
+        // Outside Australia / international migration → Employer Sponsored Calendar
         if ($noeId === 8) {
             return 'paid';
         }
@@ -94,7 +94,7 @@ class ConsultantAssignmentService
             return 'kunal';
         }
 
-        // Employer sponsored (494, 482, 186, DAMA)
+        // Employer Sponsored (494, 482, 186, DAMA)
         if ($noeId === 10) {
             return 'paid';
         }
@@ -137,12 +137,12 @@ class ConsultantAssignmentService
             return 'kunal';
         }
 
-        // Employer sponsored (494, 482, 186, 407, DAMA, etc.)
+        // Employer Sponsored (494, 482, 186, 407, DAMA, etc.)
         if (preg_match('/\b(482|494|186|407)\b|dama|employer\s+sponsored|sponsored\s+visa|labour\s+agreement|tss\b|subclass\s*(482|494|186|407)/i', $haystack)) {
             return 'paid';
         }
 
-        // Legacy PR / default → Employer sponsored calendar (replaces old PR calendar)
+        // Legacy PR / default → Employer Sponsored Calendar (replaces old PR calendar)
         return 'paid';
     }
 
