@@ -217,6 +217,7 @@ $consultantsArray = $consultants->groupBy('id')->map(function($group) {
     return [
         'id' => $consultant->id,
         'name' => $consultant->name,
+        'crm_display_label' => $consultant->crm_display_label,
         'calendar_type' => $consultant->calendar_type,
     ];
 })->values()->toArray();
@@ -359,7 +360,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             location: apt.location,
                             meeting_type: apt.meeting_type,
                             preferred_language: apt.preferred_language || 'English',
-                            consultant: apt.consultant?.name || 'Not Assigned',
+                            consultant_id: apt.consultant?.id ?? null,
+                            consultant: apt.consultant?.crm_display_label ?? apt.consultant?.name ?? 'Not Assigned',
+                            consultant_name_raw: apt.consultant?.name ?? '',
+                            consultant_calendar_type: apt.consultant?.calendar_type ?? '',
                             is_paid: apt.is_paid,
                             payment_status: apt.is_paid ? 'Paid' : 'Free',
                             final_amount: apt.final_amount,
@@ -552,9 +556,23 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 }
                                             });
                                         }
+                                        const currentId = props.consultant_id != null ? Number(props.consultant_id) : null;
+                                        if (currentId && !seenIds.has(currentId)) {
+                                            seenIds.add(currentId);
+                                            uniqueConsultants.push({
+                                                id: currentId,
+                                                name: props.consultant_name_raw || props.consultant,
+                                                crm_display_label: props.consultant,
+                                                calendar_type: props.consultant_calendar_type || ''
+                                            });
+                                        }
                                         return uniqueConsultants.map(consultant => {
-                                            const isSelected = props.consultant && props.consultant.includes(consultant.name);
-                                            return `<option value="${consultant.id}" ${isSelected ? 'selected' : ''}>${consultant.name} (${consultant.calendar_type})</option>`;
+                                            const isSelected = currentId != null && Number(consultant.id) === currentId;
+                                            const label = consultant.crm_display_label || consultant.name;
+                                            const typeSuffix = (consultant.calendar_type && consultant.calendar_type !== 'paid')
+                                                ? ` (${consultant.calendar_type})`
+                                                : '';
+                                            return `<option value="${consultant.id}" ${isSelected ? 'selected' : ''}>${label}${typeSuffix}</option>`;
                                         }).join('');
                                     })()}
                                 </select>

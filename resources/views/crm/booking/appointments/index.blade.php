@@ -192,7 +192,7 @@ html, body {
                                         <option value="">All Consultants</option>
                                         @foreach($consultants as $consultant)
                                             <option value="{{ $consultant->id }}" {{ request('consultant_id') == $consultant->id ? 'selected' : '' }}>
-                                                {{ $consultant->name }}
+                                                {{ $consultant->crm_display_label }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -290,7 +290,7 @@ html, body {
                                     </td>
                                     <td>
                                         @if($appointment->consultant)
-                                            {{ $appointment->consultant->name }}
+                                            {{ $appointment->consultant->crm_display_label }}
                                         @else
                                             <span class="text-muted">Not Assigned</span>
                                         @endif

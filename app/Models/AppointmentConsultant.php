@@ -23,6 +23,7 @@ class AppointmentConsultant extends Model
         'location',
         'specializations',
         'is_active',
+        'show_in_filter',
     ];
 
     /**
@@ -33,6 +34,7 @@ class AppointmentConsultant extends Model
         return [
             'specializations' => 'array',
             'is_active' => 'boolean',
+            'show_in_filter' => 'boolean',
         ];
     }
 
@@ -61,6 +63,14 @@ class AppointmentConsultant extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Consultants shown in CRM appointment list filter and calendar transfer dropdowns.
+     */
+    public function scopeShownInFilter($query)
+    {
+        return $query->where('show_in_filter', true);
     }
 
     /**
@@ -102,6 +112,22 @@ class AppointmentConsultant extends Model
                 'ajay' => 'Ajay Calendar',
                 'kunal' => 'Kunal Calendar',
                 default => ucfirst($this->calendar_type)
+            }
+        );
+    }
+
+    /**
+     * CRM-facing label: hides personal names for consultants excluded from CRM lists (e.g. employer-sponsored slot).
+     */
+    protected function crmDisplayLabel(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->show_in_filter === false) {
+                    return $this->calendar_type_display;
+                }
+
+                return $this->name;
             }
         );
     }

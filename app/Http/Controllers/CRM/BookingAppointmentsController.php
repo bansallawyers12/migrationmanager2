@@ -105,8 +105,12 @@ class BookingAppointmentsController extends Controller
                 ->toArray();
         }
         
-        // Get consultants for filter
-        $consultants = AppointmentConsultant::active()->get();
+        // List filter: all active consultants; labels use crm_display_label (e.g. Employer sponsored calendar, not personal names)
+        $calendarOrder = ['paid' => 1, 'jrp' => 2, 'education' => 3, 'tourist' => 4, 'adelaide' => 5, 'ajay' => 6, 'kunal' => 7];
+        $consultants = AppointmentConsultant::active()
+            ->get()
+            ->sortBy(fn ($c) => $calendarOrder[$c->calendar_type] ?? 99)
+            ->values();
         
         $statsBase = BookingAppointment::query();
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
@@ -215,6 +219,8 @@ class BookingAppointmentsController extends Controller
                         'consultant' => $appointment->consultant ? [
                             'id' => $appointment->consultant->id,
                             'name' => $appointment->consultant->name,
+                            'crm_display_label' => $appointment->consultant->crm_display_label,
+                            'calendar_type' => $appointment->consultant->calendar_type,
                         ] : null,
                     ];
                 })
@@ -244,7 +250,7 @@ class BookingAppointmentsController extends Controller
             })
             ->addColumn('consultant_info', function ($appointment) {
                 return $appointment->consultant 
-                    ? '<span class="badge badge-info">' . e($appointment->consultant->name) . '</span>'
+                    ? '<span class="badge badge-info">' . e($appointment->consultant->crm_display_label) . '</span>'
                     : '<span class="badge badge-secondary">Unassigned</span>';
             })
             ->addColumn('status_badge', function ($appointment) {
@@ -275,7 +281,7 @@ class BookingAppointmentsController extends Controller
     {
         $appointment = BookingAppointment::with(['client', 'consultant', 'assignedBy'])->findOrFail($id);
         $this->assertBookingAppointmentAccess($appointment);
-        $consultants = AppointmentConsultant::active()->get();
+        $consultants = AppointmentConsultant::active()->shownInFilter()->get();
         $latestClientMatter = null;
 
         if ($appointment->client_id) {
@@ -349,9 +355,9 @@ class BookingAppointmentsController extends Controller
             'no_show' => (clone $calendarStatsBase())->where('status', 'no_show')->count(),
         ];
 
-        // Get all active consultants for transfer dropdown (including Ajay calendar for transfers)
+        // Get active consultants for transfer dropdown (including Ajay calendar for transfers)
         // Use distinct() to ensure no duplicates
-        $consultants = AppointmentConsultant::active()->distinct()->get();
+        $consultants = AppointmentConsultant::active()->shownInFilter()->distinct()->get();
 
         // Use FullCalendar v6 version
         return view('crm.booking.appointments.calendar-v6', compact('type', 'appointments', 'calendarTitle', 'stats', 'consultants'));
@@ -510,7 +516,7 @@ class BookingAppointmentsController extends Controller
                 $activityLog->client_id = $appointment->client_id;
                 $activityLog->created_by = Auth::id();
                 $activityLog->subject = 'Booking appointment consultant reassigned';
-                $activityLog->description = '<p><strong>Consultant assigned:</strong> ' . ($consultant ? e($consultant->name) : 'N/A') . '</p>';
+                $activityLog->description = '<p><strong>Consultant assigned:</strong> ' . ($consultant ? e($consultant->crm_display_label) : 'N/A') . '</p>';
                 $activityLog->task_status = 0;
                 $activityLog->pin = 0;
                 $activityLog->save();
@@ -1267,6 +1273,7 @@ class BookingAppointmentsController extends Controller
                 'consultant' => $appointment->consultant ? [
                     'id' => $appointment->consultant->id,
                     'name' => $appointment->consultant->name,
+                    'crm_display_label' => $appointment->consultant->crm_display_label,
                     'calendar_type' => $appointment->consultant->calendar_type,
                 ] : null,
                 'synced_from_bansal_at' => $appointment->synced_from_bansal_at?->format('d/m/Y h:i A'),

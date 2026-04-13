@@ -51,6 +51,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'melbourne',
                 'specializations' => json_encode([1, 6, 7, 8]),
                 'is_active' => true,
+                'show_in_filter' => false,
             ],
             [
                 'name' => 'Shubham/Yadwinder (JRP)',
@@ -59,6 +60,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'melbourne',
                 'specializations' => json_encode([2, 3]),
                 'is_active' => true,
+                'show_in_filter' => true,
             ],
             [
                 'name' => 'Education Team',
@@ -67,6 +69,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'melbourne',
                 'specializations' => json_encode([5]),
                 'is_active' => true,
+                'show_in_filter' => true,
             ],
             [
                 'name' => 'Tourist Visa Team',
@@ -75,6 +78,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'melbourne',
                 'specializations' => json_encode([4]),
                 'is_active' => true,
+                'show_in_filter' => true,
             ],
             [
                 'name' => 'Adelaide Office',
@@ -83,6 +87,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'adelaide',
                 'specializations' => json_encode([1, 2, 3, 4, 5, 6, 7, 8]),
                 'is_active' => true,
+                'show_in_filter' => true,
             ],
             [
                 'name' => 'Ajay Calendar',
@@ -91,6 +96,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'melbourne',
                 'specializations' => json_encode([]), // Transfer-only calendar, no specializations needed
                 'is_active' => true,
+                'show_in_filter' => true,
             ],
             [
                 'name' => 'Kunal Calendar',
@@ -99,6 +105,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => 'melbourne',
                 'specializations' => json_encode([]),
                 'is_active' => true,
+                'show_in_filter' => true,
             ],
         ];
 
@@ -112,6 +119,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'location' => $consultant['location'],
                 'specializations' => json_decode($consultant['specializations'], true),
                 'is_active' => $consultant['is_active'],
+                'show_in_filter' => $consultant['show_in_filter'] ?? true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

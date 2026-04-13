@@ -218,8 +218,10 @@ html, body {
                                             <div class="col-4 info-label">Consultant:</div>
                                             <div class="col-8 info-value">
                                                 @if($appointment->consultant)
-                                                    {{ $appointment->consultant->name }}
-                                                    <br><small class="text-muted">{{ $appointment->consultant->calendar_type }}</small>
+                                                    {{ $appointment->consultant->crm_display_label }}
+                                                    @if($appointment->consultant->show_in_filter !== false)
+                                                        <br><small class="text-muted">{{ $appointment->consultant->calendar_type_display }}</small>
+                                                    @endif
                                                 @else
                                                     <span class="text-muted">Not Assigned</span>
                                                 @endif
