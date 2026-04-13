@@ -37,14 +37,16 @@
                                 <div class="col-sm-9">
                                     <select class="form-control enquiry_item" name="noe_id" data-valid="required">
                                         <option value="">Select</option>
-										<option value="1">Permanent Residency Appointment</option>
-										<option value="2">Temporary Residency Appointment</option>
+										<option value="1">GSM Visas: 491, 190, 189, 191</option>
+										<option value="9">EOI/ROI</option>
+										<option value="2">TR: 485 visa</option>
+										<option value="10">Employer Sponsored Visas: 494, 482, 186, DAMA</option>
 										<option value="3">JRP/Skill Assessment</option>
 										<option value="4">Tourist Visa</option>
 										<option value="5">Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)</option>
-										<option value="6">Complex matters: AAT, Protection visa, Federal Case</option>
+										<option value="6">Complex matters: ART, Protection visa, Federal Case</option>
 										<option value="7">Visa Cancellation/ NOICC/ Visa refusals</option>
-										<option value="8">INDIA/UK/CANADA/EUROPE TO AUSTRALIA</option>
+										<option value="8">Anyone who is outside Australia</option>
 									</select>
                                 </div>
                             </div>
@@ -883,7 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (selectedValue) {
 				document.getElementById('services').style.display = 'block';
 				
-				// Hide Free Consultation if Nature of Enquiry is "INDIA/UK/CANADA/EUROPE TO AUSTRALIA" (value="8")
+				// Hide Free Consultation if Nature of Enquiry is "Anyone who is outside Australia" (value="8")
 				// Show Free Consultation for all other options
 				const freeConsultationService = document.querySelector('.service-free-consultation');
 				if (freeConsultationService) {

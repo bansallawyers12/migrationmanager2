@@ -290,6 +290,7 @@ class AppointmentSyncService
 
         return match ($serviceType) {
             'permanent-residency' => 1,
+            'gsm-visas' => 1,
             'temporary-residency' => 2,
             'jrp-skill-assessment' => 3,
             'tourist-visa' => 4,
@@ -297,6 +298,8 @@ class AppointmentSyncService
             'complex-matters' => 6,
             'visa-cancellation' => 7,
             'international-migration' => 8,
+            'eoi-roi' => 9,
+            'employer-sponsored' => 10,
             default => null,
         };
     }
@@ -534,21 +537,25 @@ class AppointmentSyncService
         // Determine enquiry title based on noe_id
         $enquiryTitle = 'Appointment';
         if ($noeId == 1) {
-            $enquiryTitle = 'Permanent Residency Appointment';
+            $enquiryTitle = 'GSM Visas: 491, 190, 189, 191';
         } elseif ($noeId == 2) {
-            $enquiryTitle = 'Temporary Residency Appointment';
+            $enquiryTitle = 'TR: 485 visa';
         } elseif ($noeId == 3) {
             $enquiryTitle = 'JRP/Skill Assessment';
         } elseif ($noeId == 4) {
             $enquiryTitle = 'Tourist Visa';
         } elseif ($noeId == 5) {
-            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
+            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)';
         } elseif ($noeId == 6) {
-            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
+            $enquiryTitle = 'Complex matters: ART, Protection visa, Federal Case';
         } elseif ($noeId == 7) {
             $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
         } elseif ($noeId == 8) {
-            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
+            $enquiryTitle = 'Anyone who is outside Australia';
+        } elseif ($noeId == 9) {
+            $enquiryTitle = 'EOI/ROI';
+        } elseif ($noeId == 10) {
+            $enquiryTitle = 'Employer Sponsored Visas: 494, 482, 186, DAMA';
         }
 
         // Format meeting type

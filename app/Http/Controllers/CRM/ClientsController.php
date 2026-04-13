@@ -7218,7 +7218,7 @@ class ClientsController extends Controller
             // Validate required fields
             $validator = Validator::make($requestData, [
                 'client_id' => 'required|exists:admins,id',
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8',
+                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10',
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
@@ -7267,14 +7267,16 @@ class ClientsController extends Controller
             // Map NOE ID to service_type/enquiry_type
             // Note: enquiry_type values must match what Bansal API expects (e.g., 'pr_complex' not 'pr')
             $noeToServiceType = [
-                1 => ['service_type' => 'Permanent Residency', 'enquiry_type' => 'pr_complex'],  // API expects 'pr_complex'
-                2 => ['service_type' => 'Temporary Residency', 'enquiry_type' => 'tr'],
+                1 => ['service_type' => 'GSM Visas: 491, 190, 189, 191', 'enquiry_type' => 'pr_complex'],
+                2 => ['service_type' => 'TR: 485 visa', 'enquiry_type' => 'tr'],
                 3 => ['service_type' => 'JRP/Skill Assessment', 'enquiry_type' => 'jrp'],
                 4 => ['service_type' => 'Tourist Visa', 'enquiry_type' => 'tourist'],
                 5 => ['service_type' => 'Education/Student Visa', 'enquiry_type' => 'education'],
-                6 => ['service_type' => 'Complex Matters (AAT, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
+                6 => ['service_type' => 'Complex Matters (ART, Protection visa, Federal Case)', 'enquiry_type' => 'complex'],
                 7 => ['service_type' => 'Visa Cancellation/NOICC/Refusals', 'enquiry_type' => 'cancellation'],
-                8 => ['service_type' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA', 'enquiry_type' => 'international'],
+                8 => ['service_type' => 'Anyone who is outside Australia', 'enquiry_type' => 'international'],
+                9 => ['service_type' => 'EOI/ROI', 'enquiry_type' => 'eoi'],
+                10 => ['service_type' => 'Employer Sponsored Visas: 494, 482, 186, DAMA', 'enquiry_type' => 'employer_sponsored'],
             ];
             $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
 
@@ -7766,21 +7768,25 @@ class ClientsController extends Controller
         // Determine enquiry title based on noe_id
         $enquiryTitle = 'Appointment';
         if ($noeId == 1) {
-            $enquiryTitle = 'Permanent Residency Appointment';
+            $enquiryTitle = 'GSM Visas: 491, 190, 189, 191';
         } elseif ($noeId == 2) {
-            $enquiryTitle = 'Temporary Residency Appointment';
+            $enquiryTitle = 'TR: 485 visa';
         } elseif ($noeId == 3) {
             $enquiryTitle = 'JRP/Skill Assessment';
         } elseif ($noeId == 4) {
             $enquiryTitle = 'Tourist Visa';
         } elseif ($noeId == 5) {
-            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa';
+            $enquiryTitle = 'Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)';
         } elseif ($noeId == 6) {
-            $enquiryTitle = 'Complex matters: AAT, Protection visa, Federal Case';
+            $enquiryTitle = 'Complex matters: ART, Protection visa, Federal Case';
         } elseif ($noeId == 7) {
             $enquiryTitle = 'Visa Cancellation/ NOICC/ Visa refusals';
         } elseif ($noeId == 8) {
-            $enquiryTitle = 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA';
+            $enquiryTitle = 'Anyone who is outside Australia';
+        } elseif ($noeId == 9) {
+            $enquiryTitle = 'EOI/ROI';
+        } elseif ($noeId == 10) {
+            $enquiryTitle = 'Employer Sponsored Visas: 494, 482, 186, DAMA';
         }
 
         // Format meeting type

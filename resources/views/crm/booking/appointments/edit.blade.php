@@ -109,14 +109,16 @@
                                 <p class="mb-0">
                                     @php
                                         $noeMap = [
-                                            1 => 'Permanent Residency Appointment',
-                                            2 => 'Temporary Residency Appointment',
+                                            1 => 'GSM Visas: 491, 190, 189, 191',
+                                            9 => 'EOI/ROI',
+                                            2 => 'TR: 485 visa',
+                                            10 => 'Employer Sponsored Visas: 494, 482, 186, DAMA',
                                             3 => 'JRP/Skill Assessment',
                                             4 => 'Tourist Visa',
-                                            5 => 'Education/Course Change/Student Visa/Student Dependent Visa',
-                                            6 => 'Complex matters: AAT, Protection visa, Federal Case',
+                                            5 => 'Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)',
+                                            6 => 'Complex matters: ART, Protection visa, Federal Case',
                                             7 => 'Visa Cancellation/ NOICC/ Visa refusals',
-                                            8 => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA',
+                                            8 => 'Anyone who is outside Australia',
                                         ];
                                         $noeDisplay = $appointment->noe_id ? ($noeMap[$appointment->noe_id] ?? 'N/A') : 'N/A';
                                     @endphp

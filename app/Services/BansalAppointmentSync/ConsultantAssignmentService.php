@@ -89,24 +89,31 @@ class ConsultantAssignmentService
             return 'paid';
         }
 
-        // Permanent residency / PR bucket → split by sub-service (EOI/ROI, GSM, employer-sponsored, default PR)
-        if ($noeId === 1) {
-            return $this->melbournePrCalendarType($appointment, $serviceId);
+        // EOI / ROI
+        if ($noeId === 9) {
+            return 'kunal';
         }
 
-        // Unknown NOE: try PR text classification, else employer-sponsored as safe default for Melbourne
+        // Employer sponsored (494, 482, 186, DAMA)
+        if ($noeId === 10) {
+            return 'paid';
+        }
+
+        // GSM (491, 190, 189, 191) → Kunal calendar (explicit NOE; not overseas/employer split)
+        if ($noeId === 1) {
+            return 'kunal';
+        }
+
+        // Unknown NOE: classify from text (EOI/GSM/employer keywords), else employer-sponsored (legacy PR)
         if ($noeId === null) {
-            $fromText = $this->melbournePrCalendarType($appointment, $serviceId);
-            if ($fromText !== 'paid') {
-                return $fromText;
-            }
+            return $this->melbournePrCalendarType($appointment, $serviceId);
         }
 
         return 'paid';
     }
 
     /**
-     * PR / general skilled / employer streams for Melbourne.
+     * Classify Melbourne calendar when `noe_id` is missing (sync/legacy): EOI/GSM → kunal, employer keywords → paid, else paid (old PR bucket).
      */
     protected function melbournePrCalendarType(array $appointment, $serviceId): string
     {
@@ -169,6 +176,7 @@ class ConsultantAssignmentService
 
         $fromSlug = match ($s) {
             'permanent-residency' => 1,
+            'gsm-visas' => 1,
             'temporary-residency' => 2,
             'jrp-skill-assessment' => 3,
             'tourist-visa' => 4,
@@ -176,6 +184,8 @@ class ConsultantAssignmentService
             'complex-matters' => 6,
             'visa-cancellation' => 7,
             'international-migration' => 8,
+            'eoi-roi' => 9,
+            'employer-sponsored' => 10,
             default => null,
         };
 
@@ -186,13 +196,16 @@ class ConsultantAssignmentService
         // Display-style labels from CRM / API
         return match (true) {
             str_contains($s, 'permanent') && str_contains($s, 'residency') => 1,
+            str_contains($s, 'gsm') || (str_contains($s, '491') && str_contains($s, '190')) => 1,
             str_contains($s, 'temporary') && str_contains($s, 'residency') => 2,
             str_contains($s, 'jrp') || str_contains($s, 'skill assessment') => 3,
             str_contains($s, 'tourist') => 4,
             str_contains($s, 'education') || str_contains($s, 'student') => 5,
-            str_contains($s, 'complex') || str_contains($s, 'aat') || str_contains($s, 'protection') || str_contains($s, 'federal case') => 6,
+            str_contains($s, 'complex') || str_contains($s, 'aat') || str_contains($s, 'art,') || str_contains($s, 'protection') || str_contains($s, 'federal case') => 6,
             str_contains($s, 'cancellation') || str_contains($s, 'refusal') || str_contains($s, 'noicc') => 7,
-            str_contains($s, 'india') || str_contains($s, 'international') || str_contains($s, 'europe') || str_contains($s, 'canada') => 8,
+            str_contains($s, 'outside australia') || str_contains($s, 'india') || str_contains($s, 'international') || str_contains($s, 'europe') || str_contains($s, 'canada') => 8,
+            (str_contains($s, 'eoi') || str_contains($s, 'roi')) && ! str_contains($s, 'employer') => 9,
+            str_contains($s, 'employer sponsored') || str_contains($s, '494') || str_contains($s, '482') || str_contains($s, '186') || str_contains($s, 'dama') => 10,
             default => null,
         };
     }
