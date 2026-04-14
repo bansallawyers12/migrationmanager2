@@ -79,6 +79,11 @@ class ConsultantAssignmentService
             return 'ajay';
         }
 
+        // Family visas / Citizenship → Ajay (Melbourne)
+        if (in_array($noeId, [11, 12], true)) {
+            return 'ajay';
+        }
+
         // TR (485) + JRP / Skill assessment → same JRP calendar (paid or free)
         if (in_array($noeId, [2, 3], true)) {
             return 'jrp';
@@ -186,6 +191,8 @@ class ConsultantAssignmentService
             'international-migration' => 8,
             'eoi-roi' => 9,
             'employer-sponsored' => 10,
+            'family-visas' => 11,
+            'citizenship' => 12,
             default => null,
         };
 

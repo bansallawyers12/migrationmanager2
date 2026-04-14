@@ -300,6 +300,8 @@ class AppointmentSyncService
             'international-migration' => 8,
             'eoi-roi' => 9,
             'employer-sponsored' => 10,
+            'family-visas' => 11,
+            'citizenship' => 12,
             default => null,
         };
     }
@@ -556,6 +558,10 @@ class AppointmentSyncService
             $enquiryTitle = 'EOI/ROI';
         } elseif ($noeId == 10) {
             $enquiryTitle = 'Employer Sponsored Visas: 494, 482, 186, DAMA';
+        } elseif ($noeId == 11) {
+            $enquiryTitle = 'Family Visas (Parent Visa, Partner Visa, Child Visa)';
+        } elseif ($noeId == 12) {
+            $enquiryTitle = 'Citizenship';
         }
 
         // Format meeting type

@@ -118,6 +118,8 @@
                                             5 => 'Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)',
                                             6 => 'Complex matters: ART, Protection visa, Federal Case',
                                             7 => 'Visa Cancellation/ NOICC/ Visa refusals',
+                                            11 => 'Family Visas (Parent Visa, Partner Visa, Child Visa)',
+                                            12 => 'Citizenship',
                                             8 => 'Anyone who is outside Australia',
                                         ];
                                         $noeDisplay = $appointment->noe_id ? ($noeMap[$appointment->noe_id] ?? 'N/A') : 'N/A';

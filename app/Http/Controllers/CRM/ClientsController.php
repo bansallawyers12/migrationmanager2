@@ -7218,7 +7218,7 @@ class ClientsController extends Controller
             // Validate required fields
             $validator = Validator::make($requestData, [
                 'client_id' => 'required|exists:admins,id',
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10',
+                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12',
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
@@ -7234,6 +7234,15 @@ class ClientsController extends Controller
                     'status' => false,
                     'message' => 'Validation failed: ' . $validator->errors()->first(),
                     'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // NOE 6 & 7: paid Comprehensive Migration Advice only (form service_id 2)
+            if (in_array((int) $requestData['noe_id'], [6, 7], true) && (int) $requestData['service_id'] !== 2) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'For this nature of enquiry, only Comprehensive Migration Advice is available.',
+                    'errors' => ['service_id' => ['Only Comprehensive Migration Advice is available for this nature of enquiry.']],
                 ], 422);
             }
 
@@ -7277,6 +7286,8 @@ class ClientsController extends Controller
                 8 => ['service_type' => 'Anyone who is outside Australia', 'enquiry_type' => 'international'],
                 9 => ['service_type' => 'EOI/ROI', 'enquiry_type' => 'eoi'],
                 10 => ['service_type' => 'Employer Sponsored Visas: 494, 482, 186, DAMA', 'enquiry_type' => 'employer_sponsored'],
+                11 => ['service_type' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)', 'enquiry_type' => 'family_visas'],
+                12 => ['service_type' => 'Citizenship', 'enquiry_type' => 'citizenship'],
             ];
             $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
 
@@ -7787,6 +7798,10 @@ class ClientsController extends Controller
             $enquiryTitle = 'EOI/ROI';
         } elseif ($noeId == 10) {
             $enquiryTitle = 'Employer Sponsored Visas: 494, 482, 186, DAMA';
+        } elseif ($noeId == 11) {
+            $enquiryTitle = 'Family Visas (Parent Visa, Partner Visa, Child Visa)';
+        } elseif ($noeId == 12) {
+            $enquiryTitle = 'Citizenship';
         }
 
         // Format meeting type

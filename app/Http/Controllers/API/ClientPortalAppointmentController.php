@@ -135,6 +135,14 @@ class ClientPortalAppointmentController extends BaseController
                         'name' => 'Visa Cancellation/ NOICC/ Visa refusals'
                     ],
                     [
+                        'id' => 11,
+                        'name' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)'
+                    ],
+                    [
+                        'id' => 12,
+                        'name' => 'Citizenship'
+                    ],
+                    [
                         'id' => 8,
                         'name' => 'Anyone who is outside Australia'
                     ]
@@ -368,6 +376,8 @@ class ClientPortalAppointmentController extends BaseController
             'employer_sponsored' => 'Employer Sponsored',
             'visa_cancellation' => 'Visa Cancellation/NOICC/Refusals',
             'india_uk_canada_europe' => 'INDIA/UK/CANADA/EUROPE TO AUSTRALIA',
+            'family_visas' => 'Family Visas',
+            'citizenship' => 'Citizenship',
             default => ucfirst(str_replace('_', ' ', $appointment->enquiry_type ?? 'General'))
         };
 
@@ -441,7 +451,7 @@ class ClientPortalAppointmentController extends BaseController
             
             // Validate required fields
             $validator = Validator::make($requestData, [
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10',
+                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12',
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string', // Accept string format (dd/mm/yyyy), validate after conversion
                 'appoint_time' => 'required|string',
@@ -453,6 +463,14 @@ class ClientPortalAppointmentController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            if (in_array((int) $requestData['noe_id'], [6, 7], true) && (int) $requestData['service_id'] !== 2) {
+                return $this->sendError(
+                    'For this nature of enquiry, only Comprehensive Migration Advice is available.',
+                    ['service_id' => ['Only Comprehensive Migration Advice is available for this nature of enquiry.']],
+                    422
+                );
             }
 
             // Get client information - logged in user_id is the client_id
@@ -495,6 +513,8 @@ class ClientPortalAppointmentController extends BaseController
                 8 => ['service_type' => 'Anyone who is outside Australia', 'enquiry_type' => 'international'],
                 9 => ['service_type' => 'EOI/ROI', 'enquiry_type' => 'eoi'],
                 10 => ['service_type' => 'Employer Sponsored Visas: 494, 482, 186, DAMA', 'enquiry_type' => 'employer_sponsored'],
+                11 => ['service_type' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)', 'enquiry_type' => 'family_visas'],
+                12 => ['service_type' => 'Citizenship', 'enquiry_type' => 'citizenship'],
             ];
             $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
 
@@ -824,7 +844,7 @@ class ClientPortalAppointmentController extends BaseController
 
             // Validate required fields (same as addAppointment + full_name, email, phone)
             $validator = Validator::make($requestData, [
-                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10',
+                'noe_id' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12',
                 'service_id' => 'required|integer|in:1,2,3',
                 'appoint_date' => 'required|string',
                 'appoint_time' => 'required|string',
@@ -839,6 +859,14 @@ class ClientPortalAppointmentController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError('Validation failed: ' . $validator->errors()->first(), $validator->errors(), 422);
+            }
+
+            if (in_array((int) $requestData['noe_id'], [6, 7], true) && (int) $requestData['service_id'] !== 2) {
+                return $this->sendError(
+                    'For this nature of enquiry, only Comprehensive Migration Advice is available.',
+                    ['service_id' => ['Only Comprehensive Migration Advice is available for this nature of enquiry.']],
+                    422
+                );
             }
 
             $email = strtolower(trim($requestData['email']));
@@ -881,6 +909,8 @@ class ClientPortalAppointmentController extends BaseController
                 8 => ['service_type' => 'Anyone who is outside Australia', 'enquiry_type' => 'international'],
                 9 => ['service_type' => 'EOI/ROI', 'enquiry_type' => 'eoi'],
                 10 => ['service_type' => 'Employer Sponsored Visas: 494, 482, 186, DAMA', 'enquiry_type' => 'employer_sponsored'],
+                11 => ['service_type' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)', 'enquiry_type' => 'family_visas'],
+                12 => ['service_type' => 'Citizenship', 'enquiry_type' => 'citizenship'],
             ];
             $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex'];
 

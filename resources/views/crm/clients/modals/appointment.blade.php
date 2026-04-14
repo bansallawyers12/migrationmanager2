@@ -46,6 +46,8 @@
 										<option value="5">Education/Course Change/Student Visa/Student Dependent Visa (for education selection only)</option>
 										<option value="6">Complex matters: ART, Protection visa, Federal Case</option>
 										<option value="7">Visa Cancellation/ NOICC/ Visa refusals</option>
+										<option value="11">Family Visas (Parent Visa, Partner Visa, Child Visa)</option>
+										<option value="12">Citizenship</option>
 										<option value="8">Anyone who is outside Australia</option>
 									</select>
                                 </div>
@@ -72,7 +74,7 @@
 										</div>
 									</div>
 
-										<div class="col-md-6 mb-3">
+										<div class="col-md-6 mb-3 service-comprehensive-advice">
 											<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="2">
 												<div class="d-flex align-items-center">
 													<input type="radio" class="services_item mt-1" name="radioGroup" value="2" id="service_2">
@@ -88,7 +90,7 @@
 										</div>
 
 
-										<div class="col-md-6 mb-3">
+										<div class="col-md-6 mb-3 service-overseas-enquiry">
 											<div class="service-card-compact" style="border: 1.5px solid #dee2e6; border-radius: 8px; padding: 14px; background-color: #ffffff; cursor: pointer;" data-service-id="3">
 												<div class="d-flex align-items-center">
 													<input type="radio" class="services_item mt-1" name="radioGroup" value="3" id="service_3">
@@ -791,6 +793,80 @@ function toggleVideoCallOption(serviceId) {
 	}
 }
 
+/**
+ * NOE 6 & 7: only Comprehensive Migration Advice (paid). NOE 8: hide Free only (existing).
+ */
+function applyServiceVisibilityForNatureOfEnquiry(selectedValue) {
+	const freeWrap = document.querySelector('.service-free-consultation');
+	const paidWrap = document.querySelector('.service-comprehensive-advice');
+	const overseasWrap = document.querySelector('.service-overseas-enquiry');
+	if (!freeWrap || !paidWrap || !overseasWrap) {
+		return;
+	}
+
+	const showWrap = function (el) {
+		el.style.display = '';
+	};
+	const hideWrap = function (el) {
+		el.style.display = 'none';
+	};
+
+	if (selectedValue === '6' || selectedValue === '7') {
+		hideWrap(freeWrap);
+		showWrap(paidWrap);
+		hideWrap(overseasWrap);
+		var r1 = document.getElementById('service_1');
+		var r2 = document.getElementById('service_2');
+		var r3 = document.getElementById('service_3');
+		if (r1) {
+			r1.checked = false;
+		}
+		if (r3) {
+			r3.checked = false;
+		}
+		if (r2) {
+			r2.checked = true;
+			document.getElementById('service_id').value = '2';
+			toggleVideoCallOption('2');
+		}
+		document.querySelectorAll('#create_appoint .service-card-compact').forEach(function (c) {
+			c.classList.remove('selected');
+		});
+		var paidCard = paidWrap.querySelector('.service-card-compact');
+		if (paidCard) {
+			paidCard.classList.add('selected');
+		}
+		if (typeof $ !== 'undefined') {
+			$('#appointment_details').show();
+		} else {
+			document.getElementById('appointment_details').style.display = 'block';
+		}
+		return;
+	}
+
+	if (selectedValue === '8') {
+		hideWrap(freeWrap);
+		showWrap(paidWrap);
+		showWrap(overseasWrap);
+		var freeConsultationRadio = document.getElementById('service_1');
+		if (freeConsultationRadio && freeConsultationRadio.checked) {
+			freeConsultationRadio.checked = false;
+			document.getElementById('service_id').value = '';
+			var freeConsultationCard = freeWrap.querySelector('.service-card-compact');
+			if (freeConsultationCard) {
+				freeConsultationCard.classList.remove('selected');
+			}
+			document.getElementById('appointment_details').style.display = 'none';
+			document.getElementById('info').style.display = 'none';
+		}
+		return;
+	}
+
+	showWrap(freeWrap);
+	showWrap(paidWrap);
+	showWrap(overseasWrap);
+}
+
 // Auto-select radio when card is clicked using event delegation
 document.addEventListener('DOMContentLoaded', function() {
 	// Initialize Video Call option as hidden when modal opens
@@ -809,10 +885,18 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (enquirySelect) {
 			enquirySelect.value = '';
 		}
-		// Show Free Consultation service by default when modal opens
+		// Show all service cards (undo NOE 6/7/8 visibility) when modal opens
 		const freeConsultationService = document.querySelector('.service-free-consultation');
+		const paidServiceWrap = document.querySelector('.service-comprehensive-advice');
+		const overseasServiceWrap = document.querySelector('.service-overseas-enquiry');
 		if (freeConsultationService) {
 			freeConsultationService.style.display = 'block';
+		}
+		if (paidServiceWrap) {
+			paidServiceWrap.style.display = '';
+		}
+		if (overseasServiceWrap) {
+			overseasServiceWrap.style.display = '';
 		}
 		// Reset service selection
 		document.querySelectorAll('.services_item').forEach(radio => {
@@ -836,10 +920,17 @@ document.addEventListener('DOMContentLoaded', function() {
 	
 	// Reset form when modal is hidden
 	$(document).on('hidden.bs.modal', '#create_appoint', function() {
-		// Show Free Consultation service by default when modal is closed (for next open)
 		const freeConsultationService = document.querySelector('.service-free-consultation');
+		const paidServiceWrap = document.querySelector('.service-comprehensive-advice');
+		const overseasServiceWrap = document.querySelector('.service-overseas-enquiry');
 		if (freeConsultationService) {
 			freeConsultationService.style.display = 'block';
+		}
+		if (paidServiceWrap) {
+			paidServiceWrap.style.display = '';
+		}
+		if (overseasServiceWrap) {
+			overseasServiceWrap.style.display = '';
 		}
 	});
 	
@@ -884,33 +975,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			var selectedValue = e.target.value;
 			if (selectedValue) {
 				document.getElementById('services').style.display = 'block';
-				
-				// Hide Free Consultation if Nature of Enquiry is "Anyone who is outside Australia" (value="8")
-				// Show Free Consultation for all other options
-				const freeConsultationService = document.querySelector('.service-free-consultation');
-				if (freeConsultationService) {
-					if (selectedValue === '8') {
-						// Hide Free Consultation for INDIA/UK/CANADA/EUROPE TO AUSTRALIA
-						freeConsultationService.style.display = 'none';
-						// Uncheck Free Consultation if it was selected
-						const freeConsultationRadio = document.getElementById('service_1');
-						if (freeConsultationRadio && freeConsultationRadio.checked) {
-							freeConsultationRadio.checked = false;
-							document.getElementById('service_id').value = '';
-							// Remove selected class from Free Consultation card
-							const freeConsultationCard = freeConsultationService.querySelector('.service-card-compact');
-							if (freeConsultationCard) {
-								freeConsultationCard.classList.remove('selected');
-							}
-							// Hide appointment details if Free Consultation was selected
-							document.getElementById('appointment_details').style.display = 'none';
-							document.getElementById('info').style.display = 'none';
-						}
-					} else {
-						// Show Free Consultation for all other options
-						freeConsultationService.style.display = 'block';
-					}
-				}
+				applyServiceVisibilityForNatureOfEnquiry(selectedValue);
 			} else {
 				document.getElementById('services').style.display = 'none';
 				document.getElementById('appointment_details').style.display = 'none';
