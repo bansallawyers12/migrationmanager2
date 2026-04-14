@@ -627,6 +627,8 @@ class ClientPortalAppointmentController extends BaseController
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'] ?? '',
                 'specific_service' => $specificServiceForCalendar,
+                'preferred_language' => $preferredLanguage,
+                'is_paid' => ($serviceId == 2) ? false : true,
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
@@ -997,6 +999,8 @@ class ClientPortalAppointmentController extends BaseController
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'] ?? '',
                 'specific_service' => $specificServiceForCalendar,
+                'preferred_language' => $preferredLanguage,
+                'is_paid' => ($serviceId == 2) ? false : true,
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 

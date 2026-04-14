@@ -96,7 +96,7 @@ class ConsultantAssignmentService
 
         // EOI / ROI
         if ($noeId === 9) {
-            return 'kunal';
+            return $this->melbournePunjabiGsmEoiCalendarOverride($appointment) ?? 'kunal';
         }
 
         // Employer Sponsored (494, 482, 186, DAMA)
@@ -106,7 +106,7 @@ class ConsultantAssignmentService
 
         // GSM (491, 190, 189, 191) → Kunal calendar (explicit NOE; not overseas/employer split)
         if ($noeId === 1) {
-            return 'kunal';
+            return $this->melbournePunjabiGsmEoiCalendarOverride($appointment) ?? 'kunal';
         }
 
         // Unknown NOE: classify from text (EOI/GSM/employer keywords), else employer-sponsored (legacy PR)
@@ -134,12 +134,12 @@ class ConsultantAssignmentService
 
         // EOI / ROI
         if (preg_match('/\beoi\b|expression\s+of\s+interest|\broi\b|points\s+table|skillselect/i', $haystack)) {
-            return 'kunal';
+            return $this->melbournePunjabiGsmEoiCalendarOverride($appointment, true) ?? 'kunal';
         }
 
         // GSM subclasses / general skilled
         if (preg_match('/\b(491|190|189|191)\b|gsm|general\s+skilled|skilled\s+nominated|subclass\s*(491|190|189|191)/i', $haystack)) {
-            return 'kunal';
+            return $this->melbournePunjabiGsmEoiCalendarOverride($appointment, true) ?? 'kunal';
         }
 
         // Employer Sponsored (494, 482, 186, 407, DAMA, etc.)
@@ -160,6 +160,80 @@ class ConsultantAssignmentService
         ];
 
         return strtolower(implode(' ', array_filter($parts, fn ($p) => $p !== null && $p !== '')));
+    }
+
+    /**
+     * Melbourne + Punjabi + GSM or EOI/ROI: free → JRP calendar; paid → Employer Sponsored calendar.
+     * Otherwise returns null and callers keep existing behaviour (e.g. Kunal).
+     *
+     * @param  bool  $legacyGsmOrEoiFromText  When true, treat missing NOE as GSM/EOI if matched from enquiry text only.
+     */
+    protected function melbournePunjabiGsmEoiCalendarOverride(array $appointment, bool $legacyGsmOrEoiFromText = false): ?string
+    {
+        if (! $this->isPreferredLanguagePunjabi($appointment)) {
+            return null;
+        }
+
+        $noeId = $this->resolveNoeId($appointment);
+        $isGsmOrEoi = in_array($noeId, [1, 9], true)
+            || ($legacyGsmOrEoiFromText && $noeId === null);
+
+        if (! $isGsmOrEoi) {
+            return null;
+        }
+
+        $bucket = $this->resolveFreeVsPaidForPunjabiGsmEoiOverride($appointment);
+        if ($bucket === null) {
+            return null;
+        }
+
+        return $bucket === 'free' ? 'jrp' : 'paid';
+    }
+
+    protected function isPreferredLanguagePunjabi(array $appointment): bool
+    {
+        $lang = strtolower(trim((string) ($appointment['preferred_language'] ?? '')));
+
+        return $lang === 'punjabi';
+    }
+
+    /**
+     * @return 'free'|'paid'|null null = unknown; callers fall back to default calendar (e.g. kunal)
+     */
+    protected function resolveFreeVsPaidForPunjabiGsmEoiOverride(array $appointment): ?string
+    {
+        $serviceId = $appointment['service_id'] ?? null;
+        if ($serviceId !== null && $serviceId !== '') {
+            $sid = (int) $serviceId;
+            if ($sid === 2) {
+                return 'free';
+            }
+            if ($sid === 1 || $sid === 3) {
+                return 'paid';
+            }
+        }
+
+        $specific = $appointment['specific_service'] ?? null;
+        if ($specific !== null && $specific !== '') {
+            if ($specific === 'consultation') {
+                return 'free';
+            }
+            if (in_array($specific, ['paid-consultation', 'overseas-enquiry'], true)) {
+                return 'paid';
+            }
+        }
+
+        if (array_key_exists('is_paid', $appointment)) {
+            $isPaid = $appointment['is_paid'];
+            if ($isPaid === true || $isPaid === 1 || $isPaid === '1') {
+                return 'paid';
+            }
+            if ($isPaid === false || $isPaid === 0 || $isPaid === '0') {
+                return 'free';
+            }
+        }
+
+        return null;
     }
 
     /**

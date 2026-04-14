@@ -7377,6 +7377,8 @@ class ClientsController extends Controller
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'] ?? '',
                 'specific_service' => $specificServiceForCalendar,
+                'preferred_language' => $requestData['preferred_language'],
+                'is_paid' => ($serviceId == 2) ? false : true,
             ];
             $consultant = $consultantAssigner->assignConsultant($appointmentDataForConsultant);
 
