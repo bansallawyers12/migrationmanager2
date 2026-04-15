@@ -2,14 +2,30 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\Matter;
 use App\Models\AnzscoOccupation;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ClientPortalCommonListingController extends BaseController
 {
+    /**
+     * Bansal CRM API (same source as blog / postcode / occupation-finder proxies).
+     *
+     * @return array{baseUrl: string, apiToken: ?string, timeout: int}
+     */
+    private function getBansalApiConfig(): array
+    {
+        return [
+            'baseUrl' => config('services.bansal_api.url', 'https://www.bansalimmigration.com.au/api/crm'),
+            'apiToken' => config('services.bansal_api.token'),
+            'timeout' => (int) config('services.bansal_api.timeout', 30),
+        ];
+    }
+
     /**
      * Get list of all countries
      * 
@@ -120,54 +136,92 @@ class ClientPortalCommonListingController extends BaseController
      */
     public function searchOccupationDetail(Request $request)
     {
-        try {
-            $q = trim((string) $request->input('q', ''));
-            $perPage = min(max(1, (int) $request->input('limit', 20)), 50);
-            $page = max(1, (int) $request->input('page', 1));
+        $q = trim((string) $request->input('q', ''));
+        $perPage = min(max(1, (int) $request->input('limit', 20)), 50);
+        $page = max(1, (int) $request->input('page', 1));
 
-            if (strlen($q) < 2) {
-                return $this->sendError(
-                    'Search query (q) must be at least 2 characters.',
-                    [],
-                    422
-                );
+        if (strlen($q) < 2) {
+            return $this->sendError(
+                'Search query (q) must be at least 2 characters.',
+                [],
+                422
+            );
+        }
+
+        try {
+            $config = $this->getBansalApiConfig();
+
+            if (! empty($config['apiToken'])) {
+                $response = Http::timeout($config['timeout'])
+                    ->withToken($config['apiToken'])
+                    ->acceptJson()
+                    ->get("{$config['baseUrl']}/occupation-finder", [
+                        'q' => $q,
+                        'limit' => $perPage,
+                        'page' => $page,
+                    ]);
+
+                if ($response->successful()) {
+                    return response()->json($response->json(), $response->status());
+                }
+
+                Log::warning('Bansal occupation-finder unavailable, using local anzsco_occupations', [
+                    'status' => $response->status(),
+                    'q' => $q,
+                ]);
             }
 
-            $occupationsQuery = AnzscoOccupation::active()
-                ->search($q)
-                ->orderBy('occupation_title')
-                ->orderBy('anzsco_code');
-
-            $total = (clone $occupationsQuery)->count();
-            $rows = $occupationsQuery
-                ->offset(($page - 1) * $perPage)
-                ->limit($perPage)
-                ->get(['anzsco_code', 'occupation_title']);
-
-            $data = $rows->map(function (AnzscoOccupation $occ) {
-                return [
-                    'anzsco_code' => $occ->anzsco_code,
-                    'occupation_title' => $occ->occupation_title,
-                ];
-            })->values()->all();
-
-            $lastPage = $total === 0 ? 1 : (int) ceil($total / $perPage);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Occupations retrieved successfully',
-                'data' => $data,
-                'count' => count($data),
-                'total' => $total,
-                'page' => $page,
-                'per_page' => $perPage,
-                'last_page' => $lastPage,
-                'search_query' => $q,
-            ], 200);
-
+            return $this->searchOccupationLocalResponse($q, $perPage, $page);
         } catch (\Exception $e) {
-            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+            Log::error('Occupation search (Bansal) failed, attempting local fallback', [
+                'error' => $e->getMessage(),
+                'q' => $q,
+            ]);
+
+            try {
+                return $this->searchOccupationLocalResponse($q, $perPage, $page);
+            } catch (\Exception $e2) {
+                return $this->sendError('An error occurred: ' . $e2->getMessage(), [], 500);
+            }
         }
+    }
+
+    /**
+     * Local DB search (fallback when BANSAL_API_TOKEN is unset or Bansal request fails).
+     */
+    private function searchOccupationLocalResponse(string $q, int $perPage, int $page): JsonResponse
+    {
+        $occupationsQuery = AnzscoOccupation::active()
+            ->search($q)
+            ->orderBy('occupation_title')
+            ->orderBy('anzsco_code');
+
+        $total = (clone $occupationsQuery)->count();
+        $rows = $occupationsQuery
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get(['anzsco_code', 'occupation_title']);
+
+        $data = $rows->map(function (AnzscoOccupation $occ) {
+            return [
+                'anzsco_code' => $occ->anzsco_code,
+                'occupation_title' => $occ->occupation_title,
+            ];
+        })->values()->all();
+
+        $lastPage = $total === 0 ? 1 : (int) ceil($total / $perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Occupations retrieved successfully',
+            'data' => $data,
+            'count' => count($data),
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'last_page' => $lastPage,
+            'search_query' => $q,
+        ], 200);
     }
 
     /**
@@ -179,29 +233,65 @@ class ClientPortalCommonListingController extends BaseController
      */
     public function getOccupationResult(Request $request)
     {
-        try {
-            $code = trim((string) $request->input('occupation_code', ''));
+        $code = trim((string) $request->input('occupation_code', ''));
 
-            if ($code === '') {
-                return $this->sendError('occupation_code is required', [], 422);
-            }
-
-            $occupation = AnzscoOccupation::active()
-                ->where('anzsco_code', $code)
-                ->first();
-
-            if (! $occupation) {
-                return $this->sendError('Occupation not found', [], 404);
-            }
-
-            return $this->sendResponse(
-                $this->formatOccupationCrmDetail($occupation),
-                'Occupation retrieved successfully'
-            );
-
-        } catch (\Exception $e) {
-            return $this->sendError('An error occurred: ' . $e->getMessage(), [], 500);
+        if ($code === '') {
+            return $this->sendError('occupation_code is required', [], 422);
         }
+
+        try {
+            $config = $this->getBansalApiConfig();
+
+            if (! empty($config['apiToken'])) {
+                $response = Http::timeout($config['timeout'])
+                    ->withToken($config['apiToken'])
+                    ->acceptJson()
+                    ->get("{$config['baseUrl']}/occupation-result", [
+                        'occupation_code' => $code,
+                    ]);
+
+                if ($response->successful()) {
+                    return response()->json($response->json(), $response->status());
+                }
+
+                Log::warning('Bansal occupation-result unavailable, using local anzsco_occupations', [
+                    'status' => $response->status(),
+                    'occupation_code' => $code,
+                ]);
+            }
+
+            return $this->getOccupationResultLocalResponse($code);
+        } catch (\Exception $e) {
+            Log::error('Occupation result (Bansal) failed, attempting local fallback', [
+                'error' => $e->getMessage(),
+                'occupation_code' => $code,
+            ]);
+
+            try {
+                return $this->getOccupationResultLocalResponse($code);
+            } catch (\Exception $e2) {
+                return $this->sendError('An error occurred: ' . $e2->getMessage(), [], 500);
+            }
+        }
+    }
+
+    /**
+     * Local DB occupation detail (fallback when BANSAL_API_TOKEN is unset or Bansal request fails).
+     */
+    private function getOccupationResultLocalResponse(string $code)
+    {
+        $occupation = AnzscoOccupation::active()
+            ->where('anzsco_code', $code)
+            ->first();
+
+        if (! $occupation) {
+            return $this->sendError('Occupation not found', [], 404);
+        }
+
+        return $this->sendResponse(
+            $this->formatOccupationCrmDetail($occupation),
+            'Occupation retrieved successfully'
+        );
     }
 
     /**
