@@ -29,10 +29,10 @@ class SignatureDashboardController extends Controller
     {
         $staff = Auth::guard('admin')->user();
         
-        // Get all documents (global access - everyone can see everything)
+        // Signature dashboard list: same rows for every role (no allocation filter).
+        // Previous: ->visible($staff) hid client-linked docs per StaffClientVisibility.
         $query = Document::with(['creator', 'signers', 'client', 'lead'])
             ->forSignatureWorkflow()
-            ->visible($staff)
             ->notArchived()
             ->orderBy('created_at', 'desc');
 
@@ -72,23 +72,19 @@ class SignatureDashboardController extends Controller
 
         $documents = $query->paginate(20);
 
-        // Get counts for dashboard cards.
-        // Pending / signed / aggregates below still use Document::visible($staff) (allocation + grants).
+        // Dashboard card counts aligned with the list above (not role / allocation scoped).
+        // Previous pending/signed/all used ->visible($staff).
         $counts = [
             'sent_by_me' => Document::forSignatureWorkflow()->forUser($staff->id)->notArchived()->count(),
-            // Previous behaviour — "Visible to Me" matched per-viewer access (StaffClientVisibility):
-            // 'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(),
-            // Same total for every user: all signature-workflow documents not archived (ignores role/allocation).
+            // Previous: 'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(),
             'visible_to_me' => Document::forSignatureWorkflow()->notArchived()->count(),
-            'pending' => Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count(),
-            'signed' => Document::forSignatureWorkflow()->visible($staff)->byStatus('signed')->notArchived()->count(),
+            'pending' => Document::forSignatureWorkflow()->byStatus('sent')->notArchived()->count(),
+            'signed' => Document::forSignatureWorkflow()->byStatus('signed')->notArchived()->count(),
             'overdue' => 0, // due_at column removed
         ];
 
-        // Aggregates also respect visibility so restricted staff cannot infer
-        // the existence of documents they have no access to.
-        $counts['all'] = Document::forSignatureWorkflow()->visible($staff)->notArchived()->count();
-        $counts['all_pending'] = Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count();
+        $counts['all'] = Document::forSignatureWorkflow()->notArchived()->count();
+        $counts['all_pending'] = Document::forSignatureWorkflow()->byStatus('sent')->notArchived()->count();
 
         // Provide errors variable for the layout
         $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
