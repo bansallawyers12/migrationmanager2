@@ -335,12 +335,13 @@
             <div class="number">{{ $counts['overdue'] ?? 0 }}</div>
         </div>
         @endif
-        @if($staff->role !== 1)
+        {{-- Previously this card was hidden for administrators (role 1). Now shown for all roles so the org-wide total is visible. --}}
+        {{-- @if($staff->role !== 1) --}}
         <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
             <h3>Visible to Me</h3>
             <div class="number">{{ $counts['visible_to_me'] ?? 0 }}</div>
         </div>
-        @endif
+        {{-- @endif --}}
     </div>
 
     <!-- Success/Error Messages -->

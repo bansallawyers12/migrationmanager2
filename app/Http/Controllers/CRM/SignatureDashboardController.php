@@ -72,12 +72,14 @@ class SignatureDashboardController extends Controller
 
         $documents = $query->paginate(20);
 
-        // Get counts for dashboard cards — all scoped to records the viewer may access.
-        // Under strict allocation, exempt staff see all rows; restricted staff see only
-        // their allocated + grant-covered documents (via Document::scopeVisible).
+        // Get counts for dashboard cards.
+        // Pending / signed / aggregates below still use Document::visible($staff) (allocation + grants).
         $counts = [
             'sent_by_me' => Document::forSignatureWorkflow()->forUser($staff->id)->notArchived()->count(),
-            'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(),
+            // Previous behaviour — "Visible to Me" matched per-viewer access (StaffClientVisibility):
+            // 'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(),
+            // Same total for every user: all signature-workflow documents not archived (ignores role/allocation).
+            'visible_to_me' => Document::forSignatureWorkflow()->notArchived()->count(),
             'pending' => Document::forSignatureWorkflow()->visible($staff)->byStatus('sent')->notArchived()->count(),
             'signed' => Document::forSignatureWorkflow()->visible($staff)->byStatus('signed')->notArchived()->count(),
             'overdue' => 0, // due_at column removed
