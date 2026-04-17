@@ -73,7 +73,7 @@ class ClientEditService
      */
     protected function getClientData(int $clientId)
     {
-        return Admin::with(['partner', 'company.contactPerson', 'company.tradingNames', 'company.directors.directorClient', 'company.nominations.nominatedClient', 'company.sponsorships'])->find($clientId);
+        return Admin::with(['partner', 'company.contactPerson', 'company.tradingNames', 'company.directors.directorClient', 'company.nominations.nominatedClient', 'company.sponsorships', 'company.financials'])->find($clientId);
     }
 
     /**

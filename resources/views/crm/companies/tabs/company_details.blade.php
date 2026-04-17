@@ -112,14 +112,33 @@
         </div>
         @endif
 
-        {{-- Financial Card --}}
-        @if($comp && ($comp->annual_turnover || $comp->wages_expenditure))
+        {{-- Financial Card (multiple years + legacy columns fallback) --}}
+        @php
+            $financialDetailRows = ($comp && $comp->relationLoaded('financials') && $comp->financials->isNotEmpty()) ? $comp->financials : collect();
+            if ($financialDetailRows->isEmpty() && $comp && (($comp->annual_turnover ?? null) !== null || ($comp->wages_expenditure ?? null) !== null)) {
+                $financialDetailRows = collect([(object) [
+                    'financial_year' => null,
+                    'annual_turnover' => $comp->annual_turnover,
+                    'wages_expenditure' => $comp->wages_expenditure,
+                ]]);
+            }
+        @endphp
+        @if($financialDetailRows->isNotEmpty())
         <div class="card" style="margin-bottom: 20px;">
             <h3><i class="fas fa-dollar-sign"></i> Financial</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-                @if($comp->annual_turnover)<div class="field-group"><span class="field-label">Annual Turnover:</span><span class="field-value">${{ number_format($comp->annual_turnover, 2) }}</span></div>@endif
-                @if($comp->wages_expenditure)<div class="field-group"><span class="field-label">Wages Expenditure:</span><span class="field-value">${{ number_format($comp->wages_expenditure, 2) }}</span></div>@endif
+            @foreach($financialDetailRows as $f)
+            <div style="display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 1.75rem; row-gap: 0.35rem; margin-top: {{ $loop->first ? '15px' : '12px' }}; padding-bottom: 12px;{{ !$loop->last ? ' border-bottom: 1px solid #eee;' : '' }}">
+                @if(!empty($f->financial_year))
+                <div style="display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem;"><span class="field-label">Financial Year:</span><span class="field-value">{{ $f->financial_year }}</span></div>
+                @endif
+                @if($f->annual_turnover !== null && $f->annual_turnover !== '')
+                <div style="display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem;"><span class="field-label">Annual Turnover:</span><span class="field-value">${{ number_format((float) $f->annual_turnover, 2) }}</span></div>
+                @endif
+                @if($f->wages_expenditure !== null && $f->wages_expenditure !== '')
+                <div style="display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem;"><span class="field-label">Wages Expenditure:</span><span class="field-value">${{ number_format((float) $f->wages_expenditure, 2) }}</span></div>
+                @endif
             </div>
+            @endforeach
         </div>
         @endif
 

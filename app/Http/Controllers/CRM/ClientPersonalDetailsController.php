@@ -2130,14 +2130,100 @@ class ClientPersonalDetailsController extends Controller
         if (!$client->is_company) {
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
-        $validated = $request->validate([
-            'annual_turnover' => 'nullable|numeric|min:0',
-            'wages_expenditure' => 'nullable|numeric|min:0',
-        ]);
+
+        $years = $request->input('financial_year', []);
+        $turnovers = $request->input('financial_annual_turnover', []);
+        $wages = $request->input('financial_wages_expenditure', []);
+
+        if (! is_array($years)) {
+            $years = [];
+        }
+        if (! is_array($turnovers)) {
+            $turnovers = [];
+        }
+        if (! is_array($wages)) {
+            $wages = [];
+        }
+
+        $max = max(count($years), count($turnovers), count($wages), 1);
+
+        $rows = [];
+        for ($i = 0; $i < $max; $i++) {
+            $rawYear = $years[$i] ?? '';
+            $fy = is_string($rawYear) ? trim($rawYear) : (string) $rawYear;
+            $fy = $fy === '' ? null : $fy;
+            if ($fy !== null && mb_strlen($fy) > 64) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Financial year is too long on row ' . ($i + 1) . ' (max 64 characters).',
+                ], 422);
+            }
+
+            $to = array_key_exists($i, $turnovers) && $turnovers[$i] !== '' && $turnovers[$i] !== null
+                ? $turnovers[$i] : null;
+            $wg = array_key_exists($i, $wages) && $wages[$i] !== '' && $wages[$i] !== null
+                ? $wages[$i] : null;
+
+            if ($fy === null && $to === null && $wg === null) {
+                continue;
+            }
+
+            if ($to !== null) {
+                if (! is_numeric($to) || (float) $to < 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Annual turnover must be a non-negative number (row ' . ($i + 1) . ').',
+                    ], 422);
+                }
+            }
+            if ($wg !== null) {
+                if (! is_numeric($wg) || (float) $wg < 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Wages expenditure must be a non-negative number (row ' . ($i + 1) . ').',
+                    ], 422);
+                }
+            }
+
+            $rows[] = [
+                'financial_year' => $fy,
+                'annual_turnover' => $to !== null ? (float) $to : null,
+                'wages_expenditure' => $wg !== null ? (float) $wg : null,
+            ];
+        }
+
+        $seen = [];
+        foreach ($rows as $r) {
+            if ($r['financial_year'] === null) {
+                continue;
+            }
+            $key = mb_strtolower($r['financial_year']);
+            if (isset($seen[$key])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Duplicate financial year entries are not allowed.',
+                    'errors' => ['financial_year' => ['Each financial year must be unique.']],
+                ], 422);
+            }
+            $seen[$key] = true;
+        }
+
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->annual_turnover = $validated['annual_turnover'] ?? null;
-        $company->wages_expenditure = $validated['wages_expenditure'] ?? null;
-        $company->save();
+
+        DB::transaction(function () use ($company, $rows) {
+            $company->financials()->delete();
+            $sort = 0;
+            foreach ($rows as $r) {
+                $company->financials()->create([
+                    'financial_year' => $r['financial_year'],
+                    'annual_turnover' => $r['annual_turnover'],
+                    'wages_expenditure' => $r['wages_expenditure'],
+                    'sort_order' => $sort++,
+                ]);
+            }
+            $company->syncLegacyFinancialColumns();
+        });
+
         return response()->json(['success' => true, 'message' => 'Financial details updated successfully']);
     }
 

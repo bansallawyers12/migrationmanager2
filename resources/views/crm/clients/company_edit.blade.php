@@ -621,6 +621,39 @@
                 </section>
 
                 <!-- Financial Section -->
+                @php
+                    $financialSummaryRows = collect();
+                    if ($company) {
+                        if ($company->relationLoaded('financials') && $company->financials->isNotEmpty()) {
+                            $financialSummaryRows = $company->financials;
+                        } elseif (($company->annual_turnover ?? null) !== null || ($company->wages_expenditure ?? null) !== null) {
+                            $financialSummaryRows = collect([(object) [
+                                'financial_year' => null,
+                                'annual_turnover' => $company->annual_turnover,
+                                'wages_expenditure' => $company->wages_expenditure,
+                            ]]);
+                        }
+                    }
+                    $financialEditRows = collect();
+                    if ($company) {
+                        if ($company->relationLoaded('financials') && $company->financials->isNotEmpty()) {
+                            $financialEditRows = $company->financials;
+                        } elseif (($company->annual_turnover ?? null) !== null || ($company->wages_expenditure ?? null) !== null) {
+                            $financialEditRows = collect([(object) [
+                                'financial_year' => '',
+                                'annual_turnover' => $company->annual_turnover,
+                                'wages_expenditure' => $company->wages_expenditure,
+                            ]]);
+                        }
+                    }
+                    if ($financialEditRows->isEmpty()) {
+                        $financialEditRows = collect([(object) [
+                            'financial_year' => '',
+                            'annual_turnover' => null,
+                            'wages_expenditure' => null,
+                        ]]);
+                    }
+                @endphp
                 <section id="financialSection" class="content-section">
                     <section class="form-section">
                         <div class="section-header">
@@ -633,19 +666,37 @@
                         </div>
                         <div id="financialSummary" class="summary-view">
                             <div class="summary-grid">
-                                @if($company && ($company->annual_turnover || $company->wages_expenditure))
-                                @if($company->annual_turnover)<div class="summary-item"><span class="summary-label">Annual Turnover:</span><span class="summary-value">${{ number_format($company->annual_turnover, 2) }}</span></div>@endif
-                                @if($company->wages_expenditure)<div class="summary-item"><span class="summary-label">Wages Expenditure:</span><span class="summary-value">${{ number_format($company->wages_expenditure, 2) }}</span></div>@endif
-                                @else
+                                @forelse($financialSummaryRows as $fin)
+                                <div class="summary-block financial-summary-row" style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 1.5rem; row-gap: 0.35rem; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;">
+                                    @if(!empty($fin->financial_year))
+                                    <div class="summary-item" style="display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem; margin: 0;"><span class="summary-label">Financial Year:</span><span class="summary-value">{{ $fin->financial_year }}</span></div>
+                                    @endif
+                                    @if($fin->annual_turnover !== null && $fin->annual_turnover !== '')
+                                    <div class="summary-item" style="display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem; margin: 0;"><span class="summary-label">Annual Turnover:</span><span class="summary-value">${{ number_format((float) $fin->annual_turnover, 2) }}</span></div>
+                                    @endif
+                                    @if($fin->wages_expenditure !== null && $fin->wages_expenditure !== '')
+                                    <div class="summary-item" style="display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem; margin: 0;"><span class="summary-label">Wages Expenditure:</span><span class="summary-value">${{ number_format((float) $fin->wages_expenditure, 2) }}</span></div>
+                                    @endif
+                                </div>
+                                @empty
                                 <div class="empty-state"><p>No financial details added yet.</p></div>
-                                @endif
+                                @endforelse
                             </div>
                         </div>
                         <div id="financialEdit" class="edit-view hidden">
-                            <div class="content-grid">
-                                <div class="form-group"><label>Annual Turnover</label><input type="number" name="annual_turnover" value="{{ optional($company)->annual_turnover ?? '' }}" placeholder="0" step="0.01"></div>
-                                <div class="form-group"><label>Wages Expenditure</label><input type="number" name="wages_expenditure" value="{{ optional($company)->wages_expenditure ?? '' }}" placeholder="0" step="0.01"></div>
+                            <div id="financialRowsContainer">
+                                @foreach($financialEditRows as $idx => $fin)
+                                <div class="financial-row repeatable-section" style="border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;">
+                                    <div class="content-grid">
+                                        <div class="form-group"><label>Financial Year</label><input type="text" name="financial_year[]" value="{{ old('financial_year.'.$idx, $fin->financial_year ?? '') }}" placeholder="e.g. 2024–25" maxlength="64"></div>
+                                        <div class="form-group"><label>Annual Turnover</label><input type="number" name="financial_annual_turnover[]" value="{{ $fin->annual_turnover !== null && $fin->annual_turnover !== '' ? $fin->annual_turnover : '' }}" placeholder="0" step="0.01" min="0"></div>
+                                        <div class="form-group"><label>Wages Expenditure</label><input type="number" name="financial_wages_expenditure[]" value="{{ $fin->wages_expenditure !== null && $fin->wages_expenditure !== '' ? $fin->wages_expenditure : '' }}" placeholder="0" step="0.01" min="0"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFinancialRow(this)"><i class="fas fa-times"></i> Remove</button>
+                                </div>
+                                @endforeach
                             </div>
+                            <button type="button" class="add-item-btn" onclick="addFinancialRow()"><i class="fas fa-plus-circle"></i> Add financial year</button>
                             <div class="edit-actions">
                                 <button type="button" class="btn btn-primary" onclick="saveFinancialInfo()">Save</button>
                                 <button type="button" class="btn btn-secondary" onclick="cancelEdit('financial')">Cancel</button>
@@ -1270,6 +1321,32 @@
         if (container.find('.sponsorship-row').length <= 1) return;
         $(btn).closest('.sponsorship-row').remove();
         reindexSponsorshipRows();
+    }
+
+    function addFinancialRow() {
+        const editView = document.getElementById('financialEdit');
+        if (editView && (editView.style.display === 'none' || editView.classList.contains('hidden'))) {
+            if (typeof toggleEditMode === 'function') toggleEditMode('financial');
+        }
+        const container = document.getElementById('financialRowsContainer');
+        if (!container) return;
+        const row = document.createElement('div');
+        row.className = 'financial-row repeatable-section';
+        row.style.cssText = 'border:1px solid #dee2e6;padding:15px;margin-bottom:15px;border-radius:6px;';
+        row.innerHTML = '<div class="content-grid">' +
+            '<div class="form-group"><label>Financial Year</label><input type="text" name="financial_year[]" value="" placeholder="e.g. 2024–25" maxlength="64"></div>' +
+            '<div class="form-group"><label>Annual Turnover</label><input type="number" name="financial_annual_turnover[]" value="" placeholder="0" step="0.01" min="0"></div>' +
+            '<div class="form-group"><label>Wages Expenditure</label><input type="number" name="financial_wages_expenditure[]" value="" placeholder="0" step="0.01" min="0"></div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFinancialRow(this)"><i class="fas fa-times"></i> Remove</button>';
+        container.appendChild(row);
+    }
+
+    function removeFinancialRow(btn) {
+        const container = document.getElementById('financialRowsContainer');
+        if (!container) return;
+        if (container.querySelectorAll('.financial-row').length <= 1) return;
+        btn.closest('.financial-row').remove();
     }
 
     function saveSection(sectionName, callback) {

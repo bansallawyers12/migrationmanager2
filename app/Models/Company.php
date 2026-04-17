@@ -156,4 +156,24 @@ class Company extends Model
     {
         return $this->hasMany(CompanySponsorship::class)->orderBy('sort_order')->orderBy('id');
     }
+
+    /**
+     * Financial figures per financial year (multiple rows per company).
+     */
+    public function financials(): HasMany
+    {
+        return $this->hasMany(CompanyFinancial::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * Keep legacy `companies.annual_turnover` / `wages_expenditure` in sync with
+     * the primary row (lowest sort_order, then id) for integrations and old views.
+     */
+    public function syncLegacyFinancialColumns(): void
+    {
+        $primary = $this->financials()->orderBy('sort_order')->orderBy('id')->first();
+        $this->annual_turnover = $primary ? $primary->annual_turnover : null;
+        $this->wages_expenditure = $primary ? $primary->wages_expenditure : null;
+        $this->save();
+    }
 }
