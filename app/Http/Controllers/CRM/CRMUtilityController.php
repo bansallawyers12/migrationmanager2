@@ -1700,14 +1700,20 @@ public function getChapters(Request $request)
             return response()->json(['notifications' => [], 'count' => 0]);
         }
 
-        // Batch-load all checkin logs (eliminates N+1)
+        // Batch-load check-in logs (eliminates N+1)
         $checkinLogIds = $notifications->pluck('module_id')->filter()->unique();
-        $checkinLogs = \App\Models\CheckinLog::whereIn('id', $checkinLogIds)
-            ->where('status', 0)
-            ->get()
-            ->keyBy('id');
+        $receptionUserId = (int) config('constants.reception_user_id', 36608);
+        $viewerIsReception = (int) Auth::id() === $receptionUserId;
 
-        // If no active checkin logs, return empty
+        $checkinQuery = \App\Models\CheckinLog::whereIn('id', $checkinLogIds);
+        if (!$viewerIsReception) {
+            $checkinQuery->where('status', 0);
+        } else {
+            // Reception: include attending (e.g. after "Pls Send") so poll/fetch can still show unread alerts
+            $checkinQuery->whereIn('status', [0, 2]);
+        }
+        $checkinLogs = $checkinQuery->get()->keyBy('id');
+
         if ($checkinLogs->isEmpty()) {
             return response()->json(['notifications' => [], 'count' => 0]);
         }
@@ -1716,8 +1722,6 @@ public function getChapters(Request $request)
         $contacts = $clientIds->isNotEmpty()
             ? \App\Models\Admin::whereIn('type', ['client', 'lead'])->whereIn('id', $clientIds)->get()->keyBy('id')
             : collect();
-
-        $receptionUserId = (int) config('constants.reception_user_id', 36608);
 
         // Build response data
         $data = [];
@@ -1730,7 +1734,8 @@ public function getChapters(Request $request)
 
             $preloaded = $checkinLog->client_id ? $contacts->get($checkinLog->client_id) : null;
 
-            $isReceptionAlert = (int) Auth::id() === $receptionUserId && (int) $checkinLog->wait_type === 1;
+            $isReceptionAlert = $viewerIsReception
+                && ((int) $checkinLog->wait_type === 1 || (int) $checkinLog->status === 2);
 
             $data[] = [
                 'id' => $notification->id,

@@ -2680,6 +2680,8 @@
                 });
             }, 5000);
         }
+
+        window.showTeamsNotification = showTeamsNotification;
         
         window.closeNotification = function(notificationId) {
             var notification = $('#teams-notification-' + notificationId);
@@ -2764,34 +2766,8 @@
             });
         };
         
-        // Initial load of office visit notifications
+        // Initial load of office visit notifications (Echo listener is registered in resources/js/app.js)
         loadOfficeVisitNotifications();
-        
-        // Wait for window.Echo to be available, then setup real-time notifications
-        function setupOfficeVisitRealtimeNotifications() {
-            if (window.Echo) {
-                const userId = document.querySelector('meta[name="current-user-id"]')?.content;
-                if (userId) {
-                    console.log('✅ Subscribing to office visit notifications for user:', userId);
-                    const userChannel = window.Echo.private(`user.${userId}`);
-                    userChannel.listen('.OfficeVisitNotificationCreated', (e) => {
-                        console.log('📬 Received office visit notification:', e);
-                        if (e.notification) {
-                            showTeamsNotification(e.notification);
-                        }
-                    });
-                    // Notification bell count is handled in app.js (immediate subscription when Echo loads)
-                } else {
-                    console.warn('⚠️ User ID not found, cannot subscribe to office visit notifications');
-                }
-            } else {
-                // Echo not ready yet, wait and try again
-                setTimeout(setupOfficeVisitRealtimeNotifications, 200);
-            }
-        }
-        
-        // Start setup (will wait for Echo if needed)
-        setTimeout(setupOfficeVisitRealtimeNotifications, 500);
     });
     </script>
     <script>

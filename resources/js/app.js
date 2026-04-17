@@ -104,6 +104,34 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
                     console.warn('Notification count update error:', err);
                 }
             });
+
+            // Office visit popups: attach here (same channel) after layouts expose window.showTeamsNotification.
+            // Layout scripts run before/after this module; polling until the handler exists avoids missing events.
+            let officeVisitAttachAttempts = 0;
+            const officeVisitAttachInterval = setInterval(function () {
+                officeVisitAttachAttempts++;
+                if (window.__officeVisitEchoAttached) {
+                    clearInterval(officeVisitAttachInterval);
+                    return;
+                }
+                if (typeof window.showTeamsNotification === 'function') {
+                    userChannel.listen('.OfficeVisitNotificationCreated', function (e) {
+                        if (e && e.notification) {
+                            try {
+                                window.showTeamsNotification(e.notification);
+                            } catch (err) {
+                                console.warn('Office visit notification handler error:', err);
+                            }
+                        }
+                    });
+                    window.__officeVisitEchoAttached = true;
+                    clearInterval(officeVisitAttachInterval);
+                    console.log('✅ Office visit notification listener attached (Echo)');
+                }
+                if (officeVisitAttachAttempts >= 300) {
+                    clearInterval(officeVisitAttachInterval);
+                }
+            }, 200);
         }
     } catch (error) {
         console.warn('⚠️ Failed to initialize Laravel Echo:', error);
@@ -112,6 +140,42 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
 } else {
     window.EchoDisabled = true;
 }
+
+// When WebSockets are unavailable, poll office-visit notifications (same endpoint as initial page load)
+(function pollOfficeVisitNotificationsFallback() {
+    if (!window.EchoDisabled) return;
+    const userId = document.querySelector('meta[name="current-user-id"]')?.content;
+    if (!userId) return;
+
+    function poll() {
+        if (document.visibilityState === 'hidden') return;
+        if (typeof window.showTeamsNotification !== 'function') return;
+        fetch('/fetch-office-visit-notifications', {
+            method: 'GET',
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        })
+            .then((r) => r.json())
+            .then((data) => {
+                const list = data && data.notifications ? data.notifications : [];
+                list.forEach(function (n) {
+                    window.showTeamsNotification(n);
+                });
+            })
+            .catch(() => {});
+    }
+
+    let attempts = 0;
+    const waitForHandler = setInterval(function () {
+        attempts++;
+        if (typeof window.showTeamsNotification === 'function') {
+            clearInterval(waitForHandler);
+            setTimeout(poll, 2000);
+            setInterval(poll, 12000);
+        }
+        if (attempts >= 300) clearInterval(waitForHandler);
+    }, 200);
+})();
 
 // Polling fallback for notification badge (updates without page refresh when WebSocket unavailable)
 (function pollNotificationCount() {

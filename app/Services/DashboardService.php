@@ -395,16 +395,24 @@ class DashboardService
             ->get();
 
         $receptionUserId = (int) config('constants.reception_user_id', 36608);
+        $viewerIsReception = (int) Auth::id() === $receptionUserId;
 
         $data = [];
         foreach ($notifications as $notification) {
             $checkinLog = CheckinLog::find($notification->module_id);
             
-            if (!$checkinLog || $checkinLog->status != 0) {
+            if (!$checkinLog) {
+                continue;
+            }
+            if (!$viewerIsReception && (int) $checkinLog->status !== 0) {
+                continue;
+            }
+            if ($viewerIsReception && !in_array((int) $checkinLog->status, [0, 2], true)) {
                 continue;
             }
 
-            $isReceptionAlert = (int) Auth::id() === $receptionUserId && (int) $checkinLog->wait_type === 1;
+            $isReceptionAlert = $viewerIsReception
+                && ((int) $checkinLog->wait_type === 1 || (int) $checkinLog->status === 2);
 
             $data[] = [
                 'id' => $notification->id,
