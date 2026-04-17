@@ -4636,6 +4636,8 @@ success: function(response) {
 
                             $scope.find('#Dept_Sponsorship_Application_Charge').val(obj.cost_assignment_matterInfo.Dept_Sponsorship_Application_Charge);
 
+                            $scope.find('#saf_levy').val(obj.cost_assignment_matterInfo.saf_levy != null ? obj.cost_assignment_matterInfo.saf_levy : '');
+
 
 
                             $scope.find('#TotalDoHACharges').val(obj.cost_assignment_matterInfo.TotalDoHACharges);
@@ -4684,6 +4686,8 @@ success: function(response) {
                             $scope.find('#Dept_Nomination_Application_Charge').val(obj.matterInfo.Dept_Nomination_Application_Charge);
 
                             $scope.find('#Dept_Sponsorship_Application_Charge').val(obj.matterInfo.Dept_Sponsorship_Application_Charge);
+
+                            $scope.find('#saf_levy').val('');
 
 
 
@@ -5051,6 +5055,8 @@ success: function(response) {
 
                             $('#Dept_Sponsorship_Application_Charge_lead').val(obj.cost_assignment_matterInfo.Dept_Sponsorship_Application_Charge);
 
+                            $('#saf_levy_lead').val(obj.cost_assignment_matterInfo.saf_levy != null ? obj.cost_assignment_matterInfo.saf_levy : '');
+
 
 
                             $('#TotalDoHACharges_lead').val(obj.cost_assignment_matterInfo.TotalDoHACharges);
@@ -5101,6 +5107,8 @@ success: function(response) {
                             $('#Dept_Nomination_Application_Charge_lead').val(obj.matterInfo.Dept_Nomination_Application_Charge);
 
                             $('#Dept_Sponsorship_Application_Charge_lead').val(obj.matterInfo.Dept_Sponsorship_Application_Charge);
+
+                            $('#saf_levy_lead').val('');
 
 
 

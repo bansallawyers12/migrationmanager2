@@ -3153,22 +3153,22 @@ class ClientsController extends Controller
             return false;
         }
 
-        if (str_contains(strtolower((string) $admin->client_id), $squeryLower)
-            || str_contains(strtolower((string) $admin->email), $squeryLower)
-            || str_contains(strtolower((string) $admin->first_name), $squeryLower)
-            || str_contains(strtolower((string) $admin->last_name), $squeryLower)
+        if (Str::contains(strtolower((string) $admin->client_id), $squeryLower)
+            || Str::contains(strtolower((string) $admin->email), $squeryLower)
+            || Str::contains(strtolower((string) $admin->first_name), $squeryLower)
+            || Str::contains(strtolower((string) $admin->last_name), $squeryLower)
         ) {
             return true;
         }
 
         $fullName = strtolower(trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? '')));
-        if ($fullName !== '' && str_contains($fullName, $squeryLower)) {
+        if ($fullName !== '' && Str::contains($fullName, $squeryLower)) {
             return true;
         }
 
         if ($queryDigits !== '') {
             $phoneDigits = preg_replace('/\D+/', '', (string) $admin->phone);
-            if ($phoneDigits !== '' && str_contains($phoneDigits, $queryDigits)) {
+            if ($phoneDigits !== '' && Str::contains($phoneDigits, $queryDigits)) {
                 return true;
             }
 
@@ -3177,7 +3177,7 @@ class ClientsController extends Controller
                 ->pluck('phone');
             foreach ($extraPhones as $p) {
                 $pd = preg_replace('/\D+/', '', (string) $p);
-                if ($pd !== '' && str_contains($pd, $queryDigits)) {
+                if ($pd !== '' && Str::contains($pd, $queryDigits)) {
                     return true;
                 }
             }
@@ -3187,7 +3187,7 @@ class ClientsController extends Controller
             ->where('client_id', $contactPersonId)
             ->pluck('email');
         foreach ($extraEmails as $em) {
-            if (str_contains(strtolower((string) $em), $squeryLower)) {
+            if (Str::contains(strtolower((string) $em), $squeryLower)) {
                 return true;
             }
         }
@@ -5304,6 +5304,14 @@ class ClientsController extends Controller
         {
             $requestData = $request->all(); //dd($requestData);
 
+            $adminClient = Admin::find($requestData['client_id'] ?? null);
+            $isCompanyClient = $adminClient && (bool) $adminClient->is_company;
+            $safLevyForSave = null;
+            if ($isCompanyClient) {
+                $safLevyRaw = isset($requestData['saf_levy']) ? trim((string) $requestData['saf_levy']) : '';
+                $safLevyForSave = $safLevyRaw === '' ? null : $safLevyRaw;
+            }
+
             if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
                 $surcharge = $requestData['surcharge'];
             } else {
@@ -5481,6 +5489,7 @@ class ClientsController extends Controller
 
                         'Dept_Nomination_Application_Charge' => $requestData['Dept_Nomination_Application_Charge'],
                         'Dept_Sponsorship_Application_Charge' => $requestData['Dept_Sponsorship_Application_Charge'],
+                        'saf_levy' => $isCompanyClient ? $safLevyForSave : $costAssignment->saf_levy,
                         'Block_1_Ex_Tax' => $requestData['Block_1_Ex_Tax'],
                         'Block_2_Ex_Tax' => $requestData['Block_2_Ex_Tax'],
                         'Block_3_Ex_Tax' => $requestData['Block_3_Ex_Tax'],
@@ -5538,6 +5547,9 @@ class ClientsController extends Controller
 
                 $obj->Dept_Nomination_Application_Charge = $requestData['Dept_Nomination_Application_Charge'];
                 $obj->Dept_Sponsorship_Application_Charge = $requestData['Dept_Sponsorship_Application_Charge'];
+                if ($isCompanyClient) {
+                    $obj->saf_levy = $safLevyForSave;
+                }
 
                 $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'];
                 $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'];
@@ -5804,6 +5816,12 @@ class ClientsController extends Controller
                 echo json_encode($response);
                 return;
             }
+            $isCompanyClientLead = (bool) $clientForMatter->is_company;
+            $safLevyForSaveLead = null;
+            if ($isCompanyClientLead) {
+                $safLevyRawLead = isset($requestData['saf_levy']) ? trim((string) $requestData['saf_levy']) : '';
+                $safLevyForSaveLead = $safLevyRawLead === '' ? null : $safLevyRawLead;
+            }
             $matterId = (int) ($requestData['matter_id'] ?? 0);
             if (! Matter::allowedForClientIsCompany($matterId, (bool) $clientForMatter->is_company)) {
                 $response['message'] = 'This matter type is not valid for this client record.';
@@ -6022,6 +6040,7 @@ class ClientsController extends Controller
 
                             'Dept_Nomination_Application_Charge' => $requestData['Dept_Nomination_Application_Charge'],
                             'Dept_Sponsorship_Application_Charge' => $requestData['Dept_Sponsorship_Application_Charge'],
+                            'saf_levy' => $isCompanyClientLead ? $safLevyForSaveLead : $costAssignment->saf_levy,
                             'Block_1_Ex_Tax' => $requestData['Block_1_Ex_Tax'],
                             'Block_2_Ex_Tax' => $requestData['Block_2_Ex_Tax'],
                             'Block_3_Ex_Tax' => $requestData['Block_3_Ex_Tax'],
@@ -6078,6 +6097,9 @@ class ClientsController extends Controller
 
                     $obj->Dept_Nomination_Application_Charge = $requestData['Dept_Nomination_Application_Charge'];
                     $obj->Dept_Sponsorship_Application_Charge = $requestData['Dept_Sponsorship_Application_Charge'];
+                    if ($isCompanyClientLead) {
+                        $obj->saf_levy = $safLevyForSaveLead;
+                    }
 
                     $obj->Block_1_Ex_Tax = $requestData['Block_1_Ex_Tax'];
                     $obj->Block_2_Ex_Tax = $requestData['Block_2_Ex_Tax'];

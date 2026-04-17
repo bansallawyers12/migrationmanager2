@@ -466,6 +466,19 @@
                                     @endif
                                 </div>
                             </div>
+                            @if (isset($fetchedData) && !empty($fetchedData->is_company))
+                            <div class="col-12 col-md-6 col-lg-6">
+                                <div class="form-group">
+                                    <label for="saf_levy">SAF Levy</label>
+                                    <input type="text" name="saf_levy" id="saf_levy" class="form-control" autocomplete="off" placeholder="Enter SAF Levy" value="{{ old('saf_levy') }}" />
+                                    @if ($errors->has('saf_levy'))
+                                        <span class="custom-error" role="alert">
+                                            <strong>{{ $errors->first('saf_levy') }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <div class="row">
@@ -844,6 +857,19 @@
                                     @endif
                                 </div>
                             </div>
+                            @if (isset($fetchedData) && !empty($fetchedData->is_company))
+                            <div class="col-12 col-md-6 col-lg-6">
+                                <div class="form-group">
+                                    <label for="saf_levy_lead">SAF Levy</label>
+                                    <input type="text" name="saf_levy" id="saf_levy_lead" class="form-control" autocomplete="off" placeholder="Enter SAF Levy" value="{{ old('saf_levy') }}" />
+                                    @if ($errors->has('saf_levy'))
+                                        <span class="custom-error" role="alert">
+                                            <strong>{{ $errors->first('saf_levy') }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <div class="row">

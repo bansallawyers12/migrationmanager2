@@ -50,6 +50,7 @@ class CostAssignmentForm extends Model
 
         'Dept_Nomination_Application_Charge',
         'Dept_Sponsorship_Application_Charge',
+        'saf_levy',
 		'Block_1_Ex_Tax',
 		'Block_2_Ex_Tax',
 		'Block_3_Ex_Tax',
