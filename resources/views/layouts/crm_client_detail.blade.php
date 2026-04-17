@@ -2647,16 +2647,8 @@
             
             $('#teamsNotificationContainer').append(notificationHtml);
             
-            // Play notification sound
-            try {
-                var audioPlayer = document.getElementById('player');
-                if (audioPlayer) {
-                    audioPlayer.play().catch(function(error) {
-                        console.log('Could not play notification sound:', error);
-                    });
-                }
-            } catch (error) {
-                console.log('Error playing notification sound:', error);
+            if (typeof window.playOfficeVisitNotificationSound === 'function') {
+                window.playOfficeVisitNotificationSound();
             }
             
             // Show the notification with animation

@@ -14,6 +14,51 @@ Alpine.start();
 
 /*
 |--------------------------------------------------------------------------
+| Office visit notification sound (browser autoplay policy)
+|--------------------------------------------------------------------------
+| Browsers block audio until the user has interacted with the page. We unlock
+| on first click/keydown/touchstart, then play() from notifications works.
+|--------------------------------------------------------------------------
+*/
+window.__notificationAudioUnlocked = false;
+
+function unlockNotificationAudioFromGesture() {
+    if (window.__notificationAudioUnlocked) return;
+    const audio = document.getElementById('player');
+    if (!audio) return;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+        playPromise
+            .then(function () {
+                audio.pause();
+                audio.currentTime = 0;
+                window.__notificationAudioUnlocked = true;
+            })
+            .catch(function () {});
+    }
+}
+
+if (typeof document !== 'undefined') {
+    ['click', 'keydown', 'touchstart'].forEach(function (ev) {
+        document.addEventListener(ev, unlockNotificationAudioFromGesture, {
+            capture: true,
+            passive: true,
+            once: true,
+        });
+    });
+}
+
+window.playOfficeVisitNotificationSound = function () {
+    const audio = document.getElementById('player');
+    if (!audio || !window.__notificationAudioUnlocked) return;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(function () {});
+    }
+};
+
+/*
+|--------------------------------------------------------------------------
 | Notification Bell Update (always available - used by Echo and client_portal)
 |--------------------------------------------------------------------------
 */
@@ -116,12 +161,18 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
                 }
                 if (typeof window.showTeamsNotification === 'function') {
                     userChannel.listen('.OfficeVisitNotificationCreated', function (e) {
-                        if (e && e.notification) {
-                            try {
-                                window.showTeamsNotification(e.notification);
-                            } catch (err) {
-                                console.warn('Office visit notification handler error:', err);
+                        try {
+                            var payload =
+                                e && e.notification
+                                    ? e.notification
+                                    : e && (e.id !== undefined || e.checkin_id !== undefined)
+                                      ? e
+                                      : null;
+                            if (payload) {
+                                window.showTeamsNotification(payload);
                             }
+                        } catch (err) {
+                            console.warn('Office visit notification handler error:', err);
                         }
                     });
                     window.__officeVisitEchoAttached = true;
@@ -141,9 +192,9 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
     window.EchoDisabled = true;
 }
 
-// When WebSockets are unavailable, poll office-visit notifications (same endpoint as initial page load)
-(function pollOfficeVisitNotificationsFallback() {
-    if (!window.EchoDisabled) return;
+// Poll office-visit notifications as a safety net (Echo can still deliver instantly).
+// showTeamsNotification dedupes by id so this does not double-render when both fire.
+(function pollOfficeVisitNotificationsAll() {
     const userId = document.querySelector('meta[name="current-user-id"]')?.content;
     if (!userId) return;
 
@@ -170,8 +221,8 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
         attempts++;
         if (typeof window.showTeamsNotification === 'function') {
             clearInterval(waitForHandler);
-            setTimeout(poll, 2000);
-            setInterval(poll, 12000);
+            setTimeout(poll, 3000);
+            setInterval(poll, 20000);
         }
         if (attempts >= 300) clearInterval(waitForHandler);
     }, 200);
