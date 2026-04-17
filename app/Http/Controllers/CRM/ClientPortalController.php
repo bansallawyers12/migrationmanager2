@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use App\Services\FCMService;
+use App\Services\CrmAccess\CrmAccessService;
 
 /**
  * ClientPortalController
@@ -4208,6 +4209,13 @@ class ClientPortalController extends Controller
 	public function discontinueClientMatter(Request $request)
 	{
 		try {
+			if (! $this->canCurrentUserDiscontinueMatter()) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Only authorized access approvers can discontinue matters.'
+				], 403);
+			}
+
 			$matterId = $request->input('matter_id');
 			$reason = $request->input('discontinue_reason');
 			$notes = $request->input('discontinue_notes', '');
@@ -4785,6 +4793,14 @@ class ClientPortalController extends Controller
 	}
 
 	public function discontinueMatter(Request $request){
+		if (! $this->canCurrentUserDiscontinueMatter()) {
+			echo json_encode([
+				'status' => false,
+				'message' => 'Only authorized access approvers can discontinue matters.'
+			]);
+			return;
+		}
+
 		$obj = ClientMatter::find($request->diapp_id ?? $request->client_matter_id);
 		if (!$obj) {
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
@@ -4793,6 +4809,16 @@ class ClientPortalController extends Controller
 		$obj->matter_status = 0;
 		$saved = $obj->save();
 		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
+	}
+
+	private function canCurrentUserDiscontinueMatter(): bool
+	{
+		$user = Auth::user();
+		if (! $user) {
+			return false;
+		}
+
+		return app(CrmAccessService::class)->isApprover($user);
 	}
 
 	public function revertMatter(Request $request){

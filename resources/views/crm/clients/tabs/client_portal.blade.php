@@ -182,13 +182,17 @@
                                                     $portalNextBtnDisabled = true;
                                                     $portalNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
                                                 }
+                                                $portalAuthUser = auth()->user();
+                                                $portalCanDiscontinue = $portalAuthUser && app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($portalAuthUser);
                                             @endphp
                                             <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" data-current-stage-name="{{ $currentStageName ?? '' }}" data-is-verification-stage="{{ isset($isVerificationStage) && $isVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ isset($canVerifyAndProceed) && $canVerifyAndProceed ? '1' : '0' }}" title="{{ $portalNextBtnTitle }}" {{ $portalNextBtnDisabled ? 'disabled' : '' }}>
                                                 Proceed to Next Stage <i class="fas fa-angle-right"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger btn-sm client-portal-discontinue-btn" data-matter-id="{{ $selectedMatter->id }}" title="Discontinue Matter">
-                                                <i class="fas fa-ban"></i> Discontinue
-                                            </button>
+                                            @if($portalCanDiscontinue)
+                                                <button class="btn btn-outline-danger btn-sm client-portal-discontinue-btn" data-matter-id="{{ $selectedMatter->id }}" title="Discontinue Matter">
+                                                    <i class="fas fa-ban"></i> Discontinue
+                                                </button>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
