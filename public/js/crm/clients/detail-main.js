@@ -4661,18 +4661,25 @@ success: function(response) {
                             $scope.find('#surcharge').val(obj.matterInfo.surcharge).trigger('change');
 
                             $scope.find('#Dept_Base_Application_Charge').val(obj.matterInfo.Dept_Base_Application_Charge);
+                            $scope.find('#Dept_Base_Application_Charge_no_of_person').val(1);
 
                             $scope.find('#Dept_Non_Internet_Application_Charge').val(obj.matterInfo.Dept_Non_Internet_Application_Charge);
+                            $scope.find('#Dept_Non_Internet_Application_Charge_no_of_person').val(0);
 
                             $scope.find('#Dept_Additional_Applicant_Charge_18_Plus').val(obj.matterInfo.Dept_Additional_Applicant_Charge_18_Plus);
+                            $scope.find('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val(0);
 
                             $scope.find('#Dept_Additional_Applicant_Charge_Under_18').val(obj.matterInfo.Dept_Additional_Applicant_Charge_Under_18);
+                            $scope.find('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val(0);
 
                             $scope.find('#Dept_Subsequent_Temp_Application_Charge').val(obj.matterInfo.Dept_Subsequent_Temp_Application_Charge);
+                            $scope.find('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val(0);
 
                             $scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus').val(obj.matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus);
+                            $scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val(0);
 
                             $scope.find('#Dept_Second_VAC_Instalment_Under_18').val(obj.matterInfo.Dept_Second_VAC_Instalment_Under_18);
+                            $scope.find('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val(0);
 
                             $scope.find('#Dept_Nomination_Application_Charge').val(obj.matterInfo.Dept_Nomination_Application_Charge);
 
@@ -5071,18 +5078,25 @@ success: function(response) {
                             $('#surcharge_lead').val(obj.matterInfo.surcharge);
 
                             $('#Dept_Base_Application_Charge_lead').val(obj.matterInfo.Dept_Base_Application_Charge);
+                            $('#Dept_Base_Application_Charge_no_of_person_lead').val(1);
 
                             $('#Dept_Non_Internet_Application_Charge_lead').val(obj.matterInfo.Dept_Non_Internet_Application_Charge);
+                            $('#Dept_Non_Internet_Application_Charge_no_of_person_lead').val(0);
 
                             $('#Dept_Additional_Applicant_Charge_18_Plus_lead').val(obj.matterInfo.Dept_Additional_Applicant_Charge_18_Plus);
+                            $('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead').val(0);
 
                             $('#Dept_Additional_Applicant_Charge_Under_18_lead').val(obj.matterInfo.Dept_Additional_Applicant_Charge_Under_18);
+                            $('#Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead').val(0);
 
                             $('#Dept_Subsequent_Temp_Application_Charge_lead').val(obj.matterInfo.Dept_Subsequent_Temp_Application_Charge);
+                            $('#Dept_Subsequent_Temp_Application_Charge_no_of_person_lead').val(0);
 
                             $('#Dept_Second_VAC_Instalment_Charge_18_Plus_lead').val(obj.matterInfo.Dept_Second_VAC_Instalment_Charge_18_Plus);
+                            $('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead').val(0);
 
                             $('#Dept_Second_VAC_Instalment_Under_18_lead').val(obj.matterInfo.Dept_Second_VAC_Instalment_Under_18);
+                            $('#Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').val(0);
 
                             $('#Dept_Nomination_Application_Charge_lead').val(obj.matterInfo.Dept_Nomination_Application_Charge);
 
