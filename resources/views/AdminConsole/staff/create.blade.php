@@ -78,7 +78,7 @@
 									<label for="name">Phone Number</label>
 									<div class="cus_field_input">
 									<div class="country_code">
-										<input class="telephone" id="telephone" type="tel" name="country_code" readonly value="{{ old('country_code', '') }}" >
+										<input class="telephone" id="telephone" type="tel" name="country_code" readonly value="{{ old('country_code', '+61') }}" >
 									</div>
 									<input type="text" name="phone" value="" class="form-control tel_input" data-valid="" autocomplete="off" placeholder="Enter Phone">
                                     @if ($errors->has('phone'))

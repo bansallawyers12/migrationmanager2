@@ -123,7 +123,8 @@ class StaffController extends Controller
             $obj->first_name = @$requestData['first_name'];
             $obj->last_name = @$requestData['last_name'];
             $obj->email = @$requestData['email'];
-            $obj->country_code = @$requestData['country_code'];
+            $countryCode = trim((string) ($requestData['country_code'] ?? ''));
+            $obj->country_code = $countryCode !== '' ? $countryCode : '+61';
             $obj->position = @$requestData['position'];
             $obj->password = Hash::make(@$requestData['password']);
             $obj->phone = @$requestData['phone'];
@@ -253,7 +254,8 @@ class StaffController extends Controller
             $obj->first_name = @$requestData['first_name'];
             $obj->last_name = @$requestData['last_name'];
             $obj->email = @$requestData['email'];
-            $obj->country_code = @$requestData['country_code'];
+            $countryCode = trim((string) ($requestData['country_code'] ?? ''));
+            $obj->country_code = $countryCode !== '' ? $countryCode : '+61';
             $obj->position = @$requestData['position'];
             $obj->phone = @$requestData['phone'];
             $prevRole = (int) ($obj->role ?? 0);
