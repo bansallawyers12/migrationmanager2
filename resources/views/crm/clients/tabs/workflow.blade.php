@@ -163,8 +163,9 @@
                                             $workflowNextBtnDisabled = true;
                                             $workflowNextBtnTitle = 'Only a Migration Agent (or Admin) can verify and proceed.';
                                         }
-                                        $workflowAuthUser = auth()->user();
-                                        $workflowCanDiscontinue = $workflowAuthUser && app(\App\Services\CrmAccess\CrmAccessService::class)->isApprover($workflowAuthUser);
+                                        $workflowAdminForDiscontinue = Auth::guard('admin')->user();
+                                        $workflowCanDiscontinue = $workflowAdminForDiscontinue
+                                            && in_array((int) ($workflowAdminForDiscontinue->role ?? 0), [1, 17], true);
                                     @endphp
                                     <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
                                         Proceed to Next Stage <i class="fas fa-angle-right"></i>

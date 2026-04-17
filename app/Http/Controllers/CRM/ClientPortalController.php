@@ -4212,7 +4212,7 @@ class ClientPortalController extends Controller
 			if (! $this->canCurrentUserDiscontinueMatter()) {
 				return response()->json([
 					'status' => false,
-					'message' => 'Only authorized access approvers can discontinue matters.'
+					'message' => 'Only Super admin or Admin users can discontinue matters.'
 				], 403);
 			}
 
@@ -4796,7 +4796,7 @@ class ClientPortalController extends Controller
 		if (! $this->canCurrentUserDiscontinueMatter()) {
 			echo json_encode([
 				'status' => false,
-				'message' => 'Only authorized access approvers can discontinue matters.'
+				'message' => 'Only Super admin or Admin users can discontinue matters.'
 			]);
 			return;
 		}
@@ -4818,7 +4818,9 @@ class ClientPortalController extends Controller
 			return false;
 		}
 
-		return app(CrmAccessService::class)->isApprover($user);
+		$role = (int) ($user->role ?? 0);
+
+		return in_array($role, [1, 17], true);
 	}
 
 	public function revertMatter(Request $request){
