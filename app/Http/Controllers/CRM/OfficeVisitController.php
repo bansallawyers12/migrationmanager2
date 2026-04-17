@@ -600,45 +600,42 @@ class OfficeVisitController extends Controller
         $saved = $obj->save();
 
         if($saved){
-		    // Notify reception only on "please send client" requests (waiting flow),
-		    // not when the row is already in the "Pls Send" stage and being attended.
-		    if ((int) $request->waitingtype != 1) {
-		        $receiverId = config('constants.reception_user_id', 36608);
-		        $o = new \App\Models\Notification;
-		        $o->sender_id = Auth::user()->id;
-		        $o->receiver_id = $receiverId;
-		        $o->module_id = $request->id;
-		        $o->url = \URL::to('/office-visits/'.$t);
-		        $o->notification_type = 'officevisit';
-		        $o->message = 'Office Visit Assigned by '.Auth::user()->first_name.' '.Auth::user()->last_name;
-		        $o->seen = 0;              // Mark as unseen
-		        $o->receiver_status = 0;   // Mark as unread by receiver
-		        $o->sender_status = 1;     // Mark as sent by sender
-		        $o->save();
-		        
-		        // Broadcast real-time notification via Reverb (wrap in try-catch)
-		        try {
-		            broadcast(new OfficeVisitNotificationCreated(
-		                $o->id,
-		                $o->receiver_id,
-		                [
-		                    'id' => $o->id,
-		                    'checkin_id' => $obj->id,
-		                    'is_reception_alert' => true,
-		                    'message' => $o->message,
-		                    'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
-		                    'client_name' => $obj->contactDisplayLabel(),
-		                    'visit_purpose' => $obj->visit_purpose,
-		                    'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
-		                    'url' => $o->url
-		                ]
-		            ));
-		        } catch (\Exception $e) {
-		            Log::warning('Failed to broadcast office visit attend notification', [
-		                'notification_id' => $o->id,
-		                'error' => $e->getMessage()
-		            ]);
-		        }
+		    // Notify reception on both: red "Waiting" (escalate to Pls Send) and green "Pls Send" (session started).
+		    // Real-time delivery is via OfficeVisitNotificationCreated + Echo; no page refresh needed on reception side.
+		    $receiverId = config('constants.reception_user_id', 36608);
+		    $o = new \App\Models\Notification;
+		    $o->sender_id = Auth::user()->id;
+		    $o->receiver_id = $receiverId;
+		    $o->module_id = $request->id;
+		    $o->url = \URL::to('/office-visits/'.$t);
+		    $o->notification_type = 'officevisit';
+		    $o->message = 'Office Visit Assigned by '.Auth::user()->first_name.' '.Auth::user()->last_name;
+		    $o->seen = 0;              // Mark as unseen
+		    $o->receiver_status = 0;   // Mark as unread by receiver
+		    $o->sender_status = 1;     // Mark as sent by sender
+		    $o->save();
+
+		    try {
+		        broadcast(new OfficeVisitNotificationCreated(
+		            $o->id,
+		            $o->receiver_id,
+		            [
+		                'id' => $o->id,
+		                'checkin_id' => $obj->id,
+		                'is_reception_alert' => true,
+		                'message' => $o->message,
+		                'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
+		                'client_name' => $obj->contactDisplayLabel(),
+		                'visit_purpose' => $obj->visit_purpose,
+		                'created_at' => $o->created_at ? $o->created_at->format('d/m/Y h:i A') : now()->format('d/m/Y h:i A'),
+		                'url' => $o->url
+		            ]
+		        ));
+		    } catch (\Exception $e) {
+		        Log::warning('Failed to broadcast office visit attend notification', [
+		            'notification_id' => $o->id,
+		            'error' => $e->getMessage()
+		        ]);
 		    }
 		}
 
