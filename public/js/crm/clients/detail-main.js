@@ -2140,6 +2140,38 @@ success: function(response) {
 
 
 
+        /**
+         * Compare current browser location to the relative path we would navigate to for
+         * "sync URL with matter" (e.g. /clients/detail/{id}/{matterNo}/{tab}).
+         * Decodes path segments so Core%20Skills_1 and Core Skills_1 match — avoids
+         * full-page redirects when the matter dropdown fires change but the URL already
+         * represents the same route (e.g. Checklists > Edit > Amend cost assignment).
+         */
+        function clientDetailPathMatchesHref(relativePath) {
+            var candidate = (relativePath || '').split('?')[0];
+            if (candidate.indexOf('/') !== 0) {
+                candidate = '/' + candidate;
+            }
+            try {
+                var curPath = new URL(window.location.href, window.location.origin).pathname;
+                var normalize = function (pathname) {
+                    return pathname.split('/').map(function (seg) {
+                        if (!seg) {
+                            return seg;
+                        }
+                        try {
+                            return decodeURIComponent(seg);
+                        } catch (e) {
+                            return seg;
+                        }
+                    }).join('/');
+                };
+                return normalize(curPath) === normalize(candidate);
+            } catch (e) {
+                return window.location.href.split('?')[0].endsWith(candidate);
+            }
+        }
+
         //Select matter drop down chnage
 
         $('#sel_matter_id_client_detail').on('change', function() {
@@ -2218,8 +2250,9 @@ success: function(response) {
         
 
         // Only redirect if the URL is actually changing to prevent infinite loops
+        // (compare normalized paths — avoids spurious reload when encoding differs, e.g. %20 vs space)
 
-        if (currentUrl.split('?')[0] !== newUrl && !currentUrl.endsWith(newUrl)) {
+        if (!clientDetailPathMatchesHref(newUrl)) {
 
             window.location.href = newUrl;
 
