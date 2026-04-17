@@ -4770,6 +4770,11 @@ success: function(response) {
             calculateTotalDoHASurcharges(containerScope);
         }
 
+        function getPersonCount(value, fallback) {
+            var parsed = parseFloat(value);
+            return isNaN(parsed) ? fallback : parsed;
+        }
+
         // Calculate Total Block Fee
         // containerScope: optional selector for modal scoping
         function calculateTotalBlockFee(containerScope) {
@@ -4789,37 +4794,37 @@ success: function(response) {
 
             // Dept Base Application Charge (with person multiplier)
             var baseCharge = parseFloat($scope.find('#Dept_Base_Application_Charge').val()) || 0;
-            var basePersons = parseFloat($scope.find('#Dept_Base_Application_Charge_no_of_person').val()) || 1;
+            var basePersons = getPersonCount($scope.find('#Dept_Base_Application_Charge_no_of_person').val(), 1);
             total += baseCharge * basePersons;
 
             // Dept Non Internet Application Charge (with person multiplier)
             var nonInternetCharge = parseFloat($scope.find('#Dept_Non_Internet_Application_Charge').val()) || 0;
-            var nonInternetPersons = parseFloat($scope.find('#Dept_Non_Internet_Application_Charge_no_of_person').val()) || 1;
+            var nonInternetPersons = getPersonCount($scope.find('#Dept_Non_Internet_Application_Charge_no_of_person').val(), 0);
             total += nonInternetCharge * nonInternetPersons;
 
             // Dept Additional Applicant Charge 18+ (with person multiplier)
             var add18PlusCharge = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_18_Plus').val()) || 0;
-            var add18PlusPersons = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val()) || 1;
+            var add18PlusPersons = getPersonCount($scope.find('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person').val(), 0);
             total += add18PlusCharge * add18PlusPersons;
 
             // Dept Additional Applicant Charge Under 18 (with person multiplier)
             var addUnder18Charge = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_Under_18').val()) || 0;
-            var addUnder18Persons = parseFloat($scope.find('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val()) || 1;
+            var addUnder18Persons = getPersonCount($scope.find('#Dept_Additional_Applicant_Charge_Under_18_no_of_person').val(), 0);
             total += addUnder18Charge * addUnder18Persons;
 
             // Dept Subsequent Temp Application Charge (with person multiplier)
             var subsequentCharge = parseFloat($scope.find('#Dept_Subsequent_Temp_Application_Charge').val()) || 0;
-            var subsequentPersons = parseFloat($scope.find('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val()) || 1;
+            var subsequentPersons = getPersonCount($scope.find('#Dept_Subsequent_Temp_Application_Charge_no_of_person').val(), 0);
             total += subsequentCharge * subsequentPersons;
 
             // Dept Second VAC Instalment 18+ (with person multiplier)
             var vac18PlusCharge = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus').val()) || 0;
-            var vac18PlusPersons = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val()) || 1;
+            var vac18PlusPersons = getPersonCount($scope.find('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person').val(), 0);
             total += vac18PlusCharge * vac18PlusPersons;
 
             // Dept Second VAC Instalment Under 18 (with person multiplier)
             var vacUnder18Charge = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Under_18').val()) || 0;
-            var vacUnder18Persons = parseFloat($scope.find('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val()) || 1;
+            var vacUnder18Persons = getPersonCount($scope.find('#Dept_Second_VAC_Instalment_Under_18_no_of_person').val(), 0);
             total += vacUnder18Charge * vacUnder18Persons;
 
             // Dept Nomination Application Charge (no person multiplier)
@@ -5019,7 +5024,7 @@ success: function(response) {
 
                             $('#Dept_Subsequent_Temp_Application_Charge_lead').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge);
 
-                            $('#Dept_Subsequent_Temp_Application_Charge_no_of_person_lead').val(obj.cost_assignment_matterInfo.Dept_Additional_Applicant_Charge_Under_18_no_of_person);
+                            $('#Dept_Subsequent_Temp_Application_Charge_no_of_person_lead').val(obj.cost_assignment_matterInfo.Dept_Subsequent_Temp_Application_Charge_no_of_person);
 
 
 
@@ -5144,25 +5149,25 @@ success: function(response) {
         function calculateTotalDoHAChargesLead() {
             var total = 0;
             var baseCharge = parseFloat($('#Dept_Base_Application_Charge_lead').val()) || 0;
-            var basePersons = parseFloat($('#Dept_Base_Application_Charge_no_of_person_lead').val()) || 1;
+            var basePersons = getPersonCount($('#Dept_Base_Application_Charge_no_of_person_lead').val(), 1);
             total += baseCharge * basePersons;
             var nonInternetCharge = parseFloat($('#Dept_Non_Internet_Application_Charge_lead').val()) || 0;
-            var nonInternetPersons = parseFloat($('#Dept_Non_Internet_Application_Charge_no_of_person_lead').val()) || 1;
+            var nonInternetPersons = getPersonCount($('#Dept_Non_Internet_Application_Charge_no_of_person_lead').val(), 0);
             total += nonInternetCharge * nonInternetPersons;
             var add18PlusCharge = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus_lead').val()) || 0;
-            var add18PlusPersons = parseFloat($('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead').val()) || 1;
+            var add18PlusPersons = getPersonCount($('#Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead').val(), 0);
             total += add18PlusCharge * add18PlusPersons;
             var addUnder18Charge = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18_lead').val()) || 0;
-            var addUnder18Persons = parseFloat($('#Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead').val()) || 1;
+            var addUnder18Persons = getPersonCount($('#Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead').val(), 0);
             total += addUnder18Charge * addUnder18Persons;
             var subsequentCharge = parseFloat($('#Dept_Subsequent_Temp_Application_Charge_lead').val()) || 0;
-            var subsequentPersons = parseFloat($('#Dept_Subsequent_Temp_Application_Charge_no_of_person_lead').val()) || 1;
+            var subsequentPersons = getPersonCount($('#Dept_Subsequent_Temp_Application_Charge_no_of_person_lead').val(), 0);
             total += subsequentCharge * subsequentPersons;
             var vac18PlusCharge = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus_lead').val()) || 0;
-            var vac18PlusPersons = parseFloat($('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead').val()) || 1;
+            var vac18PlusPersons = getPersonCount($('#Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead').val(), 0);
             total += vac18PlusCharge * vac18PlusPersons;
             var vacUnder18Charge = parseFloat($('#Dept_Second_VAC_Instalment_Under_18_lead').val()) || 0;
-            var vacUnder18Persons = parseFloat($('#Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').val()) || 1;
+            var vacUnder18Persons = getPersonCount($('#Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').val(), 0);
             total += vacUnder18Charge * vacUnder18Persons;
             total += parseFloat($('#Dept_Nomination_Application_Charge_lead').val()) || 0;
             total += parseFloat($('#Dept_Sponsorship_Application_Charge_lead').val()) || 0;

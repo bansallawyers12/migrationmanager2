@@ -321,7 +321,7 @@
 				                        <div class="col-3">
                                             <label for="Dept_Non_Internet_Application_Charge_no_of_person">Person</label>
                                             <input type="number" name="Dept_Non_Internet_Application_Charge_no_of_person" id="Dept_Non_Internet_Application_Charge_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Non_Internet_Application_Charge'))
@@ -344,7 +344,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Additional_Applicant_Charge_18_Plus_no_of_person">Person</label>
                                             <input type="number" name="Dept_Additional_Applicant_Charge_18_Plus_no_of_person" id="Dept_Additional_Applicant_Charge_18_Plus_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Additional_Applicant_Charge_18_Plus'))
@@ -365,7 +365,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Additional_Applicant_Charge_Under_18_no_of_person">Person</label>
                                             <input type="number" name="Dept_Additional_Applicant_Charge_Under_18_no_of_person" id="Dept_Additional_Applicant_Charge_Under_18_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Additional_Applicant_Charge_Under_18'))
@@ -388,7 +388,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Subsequent_Temp_Application_Charge_no_of_person">Person</label>
                                             <input type="number" name="Dept_Subsequent_Temp_Application_Charge_no_of_person" id="Dept_Subsequent_Temp_Application_Charge_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Subsequent_Temp_Application_Charge'))
@@ -408,7 +408,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person">Person</label>
                                             <input type="number" name="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person" id="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Second_VAC_Instalment_Charge_18_Plus'))
@@ -431,7 +431,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Second_VAC_Instalment_Under_18_no_of_person">Person</label>
                                             <input type="number" name="Dept_Second_VAC_Instalment_Under_18_no_of_person" id="Dept_Second_VAC_Instalment_Under_18_no_of_person"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Second_VAC_Instalment_Under_18'))
@@ -699,7 +699,7 @@
 				                        <div class="col-3">
                                             <label for="Dept_Non_Internet_Application_Charge_no_of_person">Person</label>
                                             <input type="number" name="Dept_Non_Internet_Application_Charge_no_of_person" id="Dept_Non_Internet_Application_Charge_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Non_Internet_Application_Charge'))
@@ -722,7 +722,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Additional_Applicant_Charge_18_Plus_no_of_person">Person</label>
                                             <input type="number" name="Dept_Additional_Applicant_Charge_18_Plus_no_of_person" id="Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Additional_Applicant_Charge_18_Plus'))
@@ -743,7 +743,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Additional_Applicant_Charge_Under_18_no_of_person">Person</label>
                                             <input type="number" name="Dept_Additional_Applicant_Charge_Under_18_no_of_person" id="Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Additional_Applicant_Charge_Under_18'))
@@ -766,7 +766,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Subsequent_Temp_Application_Charge_no_of_person">Person</label>
                                             <input type="number" name="Dept_Subsequent_Temp_Application_Charge_no_of_person" id="Dept_Subsequent_Temp_Application_Charge_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Subsequent_Temp_Application_Charge'))
@@ -786,7 +786,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person">Person</label>
                                             <input type="number" name="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person" id="Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Second_VAC_Instalment_Charge_18_Plus'))
@@ -809,7 +809,7 @@
                                         <div class="col-3">
                                             <label for="Dept_Second_VAC_Instalment_Under_18_no_of_person">Person</label>
                                             <input type="number" name="Dept_Second_VAC_Instalment_Under_18_no_of_person" id="Dept_Second_VAC_Instalment_Under_18_no_of_person_lead"
-                                                class="form-control" placeholder="1" value="1" min="0" step="any" />
+                                                class="form-control" placeholder="0" value="0" min="0" step="any" />
                                         </div>
                                     </div>
                                     @if ($errors->has('Dept_Second_VAC_Instalment_Under_18'))

@@ -5224,7 +5224,7 @@ class ClientsController extends Controller
             $Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person + $Dept_Base_Application_Surcharge; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
 
             $Dept_Non_Internet_Application_Charge = floatval($requestData['Dept_Non_Internet_Application_Charge'] ?? 0); //dd($Dept_Non_Internet_Application_Charge);
-            $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
+            $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 0); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
             $Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge * $Dept_Non_Internet_Application_Charge_no_of_person;
             $Dept_Non_Internet_Application_Charge_after_person = floatval($Dept_Non_Internet_Application_Charge_after_person); //dd($Dept_Non_Internet_Application_Charge_after_person);
 
@@ -5238,7 +5238,7 @@ class ClientsController extends Controller
             $Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Surcharge + $Dept_Non_Internet_Application_Charge_after_person; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
 
             $Dept_Additional_Applicant_Charge_18_Plus = floatval($requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? 0);
-            $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 1);
+            $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 0);
             $Dept_Additional_Applicant_Charge_18_Plus_after_person = $Dept_Additional_Applicant_Charge_18_Plus * $Dept_Additional_Applicant_Charge_18_Plus_no_of_person;
             $Dept_Additional_Applicant_Charge_18_Plus_after_person = floatval($Dept_Additional_Applicant_Charge_18_Plus_after_person);
 
@@ -5252,7 +5252,7 @@ class ClientsController extends Controller
             $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Surcharge + $Dept_Additional_Applicant_Charge_18_Plus_after_person;
 
             $Dept_Additional_Applicant_Charge_Under_18 = floatval($requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? 0);
-            $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 1);
+            $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 0);
             $Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18 * $Dept_Additional_Applicant_Charge_Under_18_no_of_person;
             $Dept_Additional_Applicant_Charge_Under_18_after_person = floatval($Dept_Additional_Applicant_Charge_Under_18_after_person);
 
@@ -5266,7 +5266,7 @@ class ClientsController extends Controller
             $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_Surcharge + $Dept_Additional_Applicant_Charge_Under_18_after_person;
 
             $Dept_Subsequent_Temp_Application_Charge = floatval($requestData['Dept_Subsequent_Temp_Application_Charge'] ?? 0);
-            $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 1);
+            $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 0);
             $Dept_Subsequent_Temp_Application_Charge_after_person = $Dept_Subsequent_Temp_Application_Charge * $Dept_Subsequent_Temp_Application_Charge_no_of_person;
             $Dept_Subsequent_Temp_Application_Charge_after_person = floatval($Dept_Subsequent_Temp_Application_Charge_after_person);
 
@@ -5280,7 +5280,7 @@ class ClientsController extends Controller
             $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Surcharge + $Dept_Subsequent_Temp_Application_Charge_after_person;
 
             $Dept_Second_VAC_Instalment_Charge_18_Plus = floatval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? 0);
-            $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 1);
+            $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 0);
             $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus * $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person;
             $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = floatval($Dept_Second_VAC_Instalment_Charge_18_Plus_after_person);
 
@@ -5294,7 +5294,7 @@ class ClientsController extends Controller
             $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_18_Plus_Surcharge + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
 
             $Dept_Second_VAC_Instalment_Under_18 = floatval($requestData['Dept_Second_VAC_Instalment_Under_18'] ?? 0);
-            $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 1);
+            $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 0);
             $Dept_Second_VAC_Instalment_Under_18_after_person = $Dept_Second_VAC_Instalment_Under_18 * $Dept_Second_VAC_Instalment_Under_18_no_of_person;
             $Dept_Second_VAC_Instalment_Under_18_after_person = floatval($Dept_Second_VAC_Instalment_Under_18_after_person);
 
@@ -5763,7 +5763,7 @@ class ClientsController extends Controller
                 $Dept_Base_Application_Charge_after_person_surcharge = $Dept_Base_Application_Charge_after_person + $Dept_Base_Application_Surcharge; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
 
                 $Dept_Non_Internet_Application_Charge = floatval($requestData['Dept_Non_Internet_Application_Charge'] ?? 0); //dd($Dept_Non_Internet_Application_Charge);
-                $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 1); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
+                $Dept_Non_Internet_Application_Charge_no_of_person = intval($requestData['Dept_Non_Internet_Application_Charge_no_of_person'] ?? 0); //dd($Dept_Non_Internet_Application_Charge_no_of_person);
                 $Dept_Non_Internet_Application_Charge_after_person = $Dept_Non_Internet_Application_Charge * $Dept_Non_Internet_Application_Charge_no_of_person;
                 $Dept_Non_Internet_Application_Charge_after_person = floatval($Dept_Non_Internet_Application_Charge_after_person); //dd($Dept_Non_Internet_Application_Charge_after_person);
 
@@ -5777,7 +5777,7 @@ class ClientsController extends Controller
                 $Dept_Non_Internet_Application_Charge_after_person_surcharge = $Dept_Non_Internet_Application_Surcharge + $Dept_Non_Internet_Application_Charge_after_person; //dd($Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge);
 
                 $Dept_Additional_Applicant_Charge_18_Plus = floatval($requestData['Dept_Additional_Applicant_Charge_18_Plus'] ?? 0);
-                $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 1);
+                $Dept_Additional_Applicant_Charge_18_Plus_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_18_Plus_no_of_person'] ?? 0);
                 $Dept_Additional_Applicant_Charge_18_Plus_after_person = $Dept_Additional_Applicant_Charge_18_Plus * $Dept_Additional_Applicant_Charge_18_Plus_no_of_person;
                 $Dept_Additional_Applicant_Charge_18_Plus_after_person = floatval($Dept_Additional_Applicant_Charge_18_Plus_after_person);
 
@@ -5791,7 +5791,7 @@ class ClientsController extends Controller
                 $Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge = $Dept_Additional_Applicant_Charge_18_Surcharge + $Dept_Additional_Applicant_Charge_18_Plus_after_person;
 
                 $Dept_Additional_Applicant_Charge_Under_18 = floatval($requestData['Dept_Additional_Applicant_Charge_Under_18'] ?? 0);
-                $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 1);
+                $Dept_Additional_Applicant_Charge_Under_18_no_of_person = intval($requestData['Dept_Additional_Applicant_Charge_Under_18_no_of_person'] ?? 0);
                 $Dept_Additional_Applicant_Charge_Under_18_after_person = $Dept_Additional_Applicant_Charge_Under_18 * $Dept_Additional_Applicant_Charge_Under_18_no_of_person;
                 $Dept_Additional_Applicant_Charge_Under_18_after_person = floatval($Dept_Additional_Applicant_Charge_Under_18_after_person);
 
@@ -5805,7 +5805,7 @@ class ClientsController extends Controller
                 $Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge = $Dept_Additional_Applicant_Charge_Under_18_Surcharge + $Dept_Additional_Applicant_Charge_Under_18_after_person;
 
                 $Dept_Subsequent_Temp_Application_Charge = floatval($requestData['Dept_Subsequent_Temp_Application_Charge'] ?? 0);
-                $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 1);
+                $Dept_Subsequent_Temp_Application_Charge_no_of_person = intval($requestData['Dept_Subsequent_Temp_Application_Charge_no_of_person'] ?? 0);
                 $Dept_Subsequent_Temp_Application_Charge_after_person = $Dept_Subsequent_Temp_Application_Charge * $Dept_Subsequent_Temp_Application_Charge_no_of_person;
                 $Dept_Subsequent_Temp_Application_Charge_after_person = floatval($Dept_Subsequent_Temp_Application_Charge_after_person);
 
@@ -5819,7 +5819,7 @@ class ClientsController extends Controller
                 $Dept_Subsequent_Temp_Application_Charge_after_person_surcharge = $Dept_Subsequent_Temp_Application_Surcharge + $Dept_Subsequent_Temp_Application_Charge_after_person;
 
                 $Dept_Second_VAC_Instalment_Charge_18_Plus = floatval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus'] ?? 0);
-                $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 1);
+                $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person'] ?? 0);
                 $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = $Dept_Second_VAC_Instalment_Charge_18_Plus * $Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person;
                 $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person = floatval($Dept_Second_VAC_Instalment_Charge_18_Plus_after_person);
 
@@ -5833,7 +5833,7 @@ class ClientsController extends Controller
                 $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge = $Dept_Second_VAC_Instalment_18_Plus_Surcharge + $Dept_Second_VAC_Instalment_Charge_18_Plus_after_person;
 
                 $Dept_Second_VAC_Instalment_Under_18 = floatval($requestData['Dept_Second_VAC_Instalment_Under_18'] ?? 0);
-                $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 1);
+                $Dept_Second_VAC_Instalment_Under_18_no_of_person = intval($requestData['Dept_Second_VAC_Instalment_Under_18_no_of_person'] ?? 0);
                 $Dept_Second_VAC_Instalment_Under_18_after_person = $Dept_Second_VAC_Instalment_Under_18 * $Dept_Second_VAC_Instalment_Under_18_no_of_person;
                 $Dept_Second_VAC_Instalment_Under_18_after_person = floatval($Dept_Second_VAC_Instalment_Under_18_after_person);
 
