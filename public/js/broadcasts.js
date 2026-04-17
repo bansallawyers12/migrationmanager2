@@ -63,6 +63,24 @@
         bannerEl.classList.toggle('is-visible', isVisible);
     }
 
+    function formatPreviewMessage(rawMessage) {
+        const source = String(rawMessage || '');
+        if (!source) {
+            return '';
+        }
+
+        const temp = document.createElement('div');
+        temp.innerHTML = source;
+        const text = (temp.textContent || temp.innerText || '').trim();
+        const maxLength = 180;
+
+        if (text.length <= maxLength) {
+            return text;
+        }
+
+        return `${text.slice(0, maxLength)}...`;
+    }
+
     function renderActive() {
         const broadcast = state.active;
 
@@ -80,7 +98,7 @@
         }
 
         if (messageEl) {
-            messageEl.innerHTML = broadcast.message || '';
+            messageEl.textContent = formatPreviewMessage(broadcast.message);
         }
 
         if (metaTextEl) {

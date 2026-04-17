@@ -1657,16 +1657,23 @@
                 }
                 
                 $.ajax({
-                    url: "{{URL::to('/update-checkin-status')}}",
+                    url: site_url + '/attend_session',
                     method: "POST",
                     data: {
-                        checkin_id: checkinId,
-                        status: 0, // Keep status as 0
-                        wait_type: 1, // Set wait_type to 1
+                        id: checkinId,
+                        waitingtype: 0,
+                        waitcountdata: '00h:00m:00s',
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
-                        if (response.success) {
+                        try {
+                            var parsed = (typeof response === 'string') ? JSON.parse(response) : response;
+                        } catch (e) {
+                            alert('Error updating checkin status');
+                            return;
+                        }
+
+                        if (parsed && parsed.status) {
                             // Remove the row from waiting listing page
                             var row = $('tr[did="' + checkinId + '"]');
                             if (row.length > 0) {
@@ -1674,14 +1681,8 @@
                                     $(this).remove();
                                 });
                             }
-                            
-                            // Find the attend button for this checkin and click it (if exists)
-                            var attendBtn = $('tr[did="' + checkinId + '"] .attendsessionforclient');
-                            if (attendBtn.length > 0) {
-                                attendBtn.click();
-                            }
                         } else {
-                            alert('Error updating status: ' + response.message);
+                            alert('Error updating status');
                         }
                     },
                     error: function() {

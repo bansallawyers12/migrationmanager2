@@ -1719,9 +1719,6 @@
 
         if (notificationParam) {
             openReceiverBroadcast(notificationParam);
-            if (batchParam) {
-                loadBroadcastDetails(batchParam);
-            }
             const url = new URL(window.location);
             url.searchParams.delete('batch');
             url.searchParams.delete('notification');
