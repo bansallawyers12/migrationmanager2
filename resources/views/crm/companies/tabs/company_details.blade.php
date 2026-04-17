@@ -193,9 +193,14 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h3 style="margin: 0;"><i class="fas fa-clipboard-check"></i> Labour Market Testing (LMT)</h3>
                 @if($hasLmtData)
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#companyLmtModal" onclick="window.setupCompanyLmtModal(true)">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
+                    <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" id="companyLmtDeleteBtn" class="btn btn-sm btn-outline-danger" onclick="window.deleteCompanyLmtDetail()">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#companyLmtModal" onclick="window.setupCompanyLmtModal(true)">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
                 @else
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#companyLmtModal" onclick="window.setupCompanyLmtModal(false)">
                         <i class="fas fa-plus"></i> Add
@@ -287,6 +292,56 @@
                     ed.value = '';
                     nt.value = '';
                 }
+            };
+            window.deleteCompanyLmtDetail = function () {
+                if (!window.confirm('Remove all Labour Market Testing details for this company? You can add a new record afterwards.')) {
+                    return;
+                }
+                var btn = document.getElementById('companyLmtDeleteBtn');
+                var token = document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                var fd = new FormData();
+                fd.append('_token', token || '');
+                fd.append('id', String({{ (int) $fetchedData->id }}));
+                fd.append('type', {!! json_encode($fetchedData->type) !!});
+                fd.append('section', 'lmt');
+                fd.append('delete_lmt', '1');
+                if (btn) { btn.disabled = true; }
+                fetch('{{ url('/clients/save-section') }}', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(function (r) {
+                    return r.text().then(function (text) {
+                        try {
+                            return { ok: r.ok, status: r.status, data: text ? JSON.parse(text) : {} };
+                        } catch (e) {
+                            return { ok: false, status: r.status, data: { message: 'Invalid server response' } };
+                        }
+                    });
+                })
+                .then(function (res) {
+                    if (btn) { btn.disabled = false; }
+                    if (res.ok && res.data.success) {
+                        if (typeof iziToast !== 'undefined' && iziToast.show) {
+                            iziToast.show({ message: res.data.message || 'Removed', color: 'green', position: 'topRight', timeout: 3500 });
+                        } else {
+                            alert(res.data.message || 'Removed');
+                        }
+                        window.location.reload();
+                        return;
+                    }
+                    var msg = (res.data && res.data.message) ? res.data.message : 'Could not delete LMT details.';
+                    if (typeof iziToast !== 'undefined' && iziToast.show) {
+                        iziToast.show({ message: msg, color: 'red', position: 'topRight', timeout: 5000 });
+                    } else {
+                        alert(msg);
+                    }
+                })
+                .catch(function () {
+                    if (btn) { btn.disabled = false; }
+                    alert('Network error. Please try again.');
+                });
             };
             window.submitCompanyLmtDetail = function () {
                 var err = document.getElementById('companyLmtModalError');

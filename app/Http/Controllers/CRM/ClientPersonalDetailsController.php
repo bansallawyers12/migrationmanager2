@@ -2279,6 +2279,17 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
 
+        if ($request->boolean('delete_lmt')) {
+            $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
+            $company->lmt_required = null;
+            $company->lmt_start_date = null;
+            $company->lmt_end_date = null;
+            $company->lmt_notes = null;
+            $company->save();
+
+            return response()->json(['success' => true, 'message' => 'Labour Market Testing details removed. You can add a new record anytime.']);
+        }
+
         $request->merge([
             'lmt_start_date' => $request->filled('lmt_start_date') ? $request->input('lmt_start_date') : null,
             'lmt_end_date' => $request->filled('lmt_end_date') ? $request->input('lmt_end_date') : null,
