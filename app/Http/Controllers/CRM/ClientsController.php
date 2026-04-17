@@ -2245,6 +2245,21 @@ class ClientsController extends Controller
 
                 $showGoogleReviewReminderModal = $this->shouldShowGoogleReviewReminderModal($fetchedData);
 
+                // Companies where this client is the designated primary contact (separate from nominee nominations).
+                $primaryContactCompaniesForClient = Company::query()
+                    ->where('contact_person_id', (int) $id)
+                    ->with(['tradingNames'])
+                    ->get()
+                    ->filter(function (Company $c) {
+                        $aid = (int) ($c->admin_id ?? 0);
+                        if ($aid <= 0) {
+                            return false;
+                        }
+
+                        return StaffClientVisibility::canAccessClientOrLead($aid, Auth::user());
+                    })
+                    ->values();
+
                 //Return the view with all data
                 return view('crm.clients.detail', compact(
                     'fetchedData', 'clientAddresses', 'clientContacts', 'emails', 'qualifications',
@@ -2252,7 +2267,8 @@ class ClientsController extends Controller
                     'encodeId', 'id1','clientFamilyDetails', 'activeTab', 'isEoiMatter',
                     'staffName', 'matterNumber', 'officePhone', 'officeCountryCode',
                     'visibleNomineeNominations', 'notPickedCallSmsDefault',
-                    'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal'
+                    'assignableStaff', 'leadStageLabels', 'showGoogleReviewReminderModal',
+                    'primaryContactCompaniesForClient'
                 ));
             } else {
                 return redirect()->route('clients.index')->with('error', 'Clients Not Exist');
