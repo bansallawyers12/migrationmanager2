@@ -1717,6 +1717,8 @@ public function getChapters(Request $request)
             ? \App\Models\Admin::whereIn('type', ['client', 'lead'])->whereIn('id', $clientIds)->get()->keyBy('id')
             : collect();
 
+        $receptionUserId = (int) config('constants.reception_user_id', 36608);
+
         // Build response data
         $data = [];
         foreach ($notifications as $notification) {
@@ -1728,9 +1730,12 @@ public function getChapters(Request $request)
 
             $preloaded = $checkinLog->client_id ? $contacts->get($checkinLog->client_id) : null;
 
+            $isReceptionAlert = (int) Auth::id() === $receptionUserId && (int) $checkinLog->wait_type === 1;
+
             $data[] = [
                 'id' => $notification->id,
                 'checkin_id' => $checkinLog->id,
+                'is_reception_alert' => $isReceptionAlert,
                 'message' => $notification->message,
                 'sender_name' => $notification->sender 
                     ? $notification->sender->first_name . ' ' . $notification->sender->last_name 

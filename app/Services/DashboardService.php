@@ -394,6 +394,8 @@ class DashboardService
             ->orderBy('created_at', 'DESC')
             ->get();
 
+        $receptionUserId = (int) config('constants.reception_user_id', 36608);
+
         $data = [];
         foreach ($notifications as $notification) {
             $checkinLog = CheckinLog::find($notification->module_id);
@@ -402,9 +404,12 @@ class DashboardService
                 continue;
             }
 
+            $isReceptionAlert = (int) Auth::id() === $receptionUserId && (int) $checkinLog->wait_type === 1;
+
             $data[] = [
                 'id' => $notification->id,
                 'checkin_id' => $checkinLog->id,
+                'is_reception_alert' => $isReceptionAlert,
                 'message' => $notification->message,
                 'sender_name' => $notification->sender 
                     ? $notification->sender->first_name . ' ' . $notification->sender->last_name 

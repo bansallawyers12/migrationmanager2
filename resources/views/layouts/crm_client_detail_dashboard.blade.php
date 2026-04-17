@@ -1561,7 +1561,11 @@
                 if ($('#teams-notification-' + notification.id).length > 0) {
                     return;
                 }
-                
+
+                var isReception = notification.is_reception_alert ? true : false;
+                var primaryLabel = isReception ? 'Client Sent' : 'Pls Send The Client';
+                var primaryWaitingType = isReception ? 1 : 0;
+
                 var notificationHtml = `
                     <div class="teams-notification" id="teams-notification-${notification.id}">
                         <div class="teams-notification-header">
@@ -1591,8 +1595,8 @@
                                 <strong>Time:</strong> ${typeof formatDisplayDateTime === 'function' ? formatDisplayDateTime(notification.created_at) : (notification.created_at || '')}
                             </div>
                             <div class="teams-notification-actions">
-                                <button class="teams-notification-action-btn primary" onclick="attendSession(${notification.checkin_id}, ${notification.id})">
-                                    Pls Send The Client
+                                <button class="teams-notification-action-btn primary" onclick="attendSession(${notification.checkin_id}, ${notification.id}, ${primaryWaitingType})">
+                                    ${primaryLabel}
                                 </button>
                                 <button class="teams-notification-action-btn" onclick="viewDetails(${notification.checkin_id})">
                                     View Details
@@ -1664,7 +1668,8 @@
             };
             
             // Make functions globally accessible
-            window.attendSession = function(checkinId, notificationId) {
+            window.attendSession = function(checkinId, notificationId, waitingtype) {
+                waitingtype = (typeof waitingtype !== 'undefined') ? parseInt(waitingtype, 10) : 0;
                 // Close notification immediately when button is clicked
                 if (notificationId) {
                     closeNotification(notificationId);
@@ -1675,7 +1680,7 @@
                     method: "POST",
                     data: {
                         id: checkinId,
-                        waitingtype: 0,
+                        waitingtype: waitingtype,
                         waitcountdata: '00h:00m:00s',
                         _token: "{{ csrf_token() }}"
                     },

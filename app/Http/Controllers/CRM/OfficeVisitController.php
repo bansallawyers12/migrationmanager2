@@ -624,6 +624,7 @@ class OfficeVisitController extends Controller
 		                [
 		                    'id' => $o->id,
 		                    'checkin_id' => $obj->id,
+		                    'is_reception_alert' => true,
 		                    'message' => $o->message,
 		                    'sender_name' => Auth::user()->first_name . ' ' . Auth::user()->last_name,
 		                    'client_name' => $obj->contactDisplayLabel(),
