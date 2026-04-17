@@ -54,6 +54,10 @@
             opacity: 1;
         }
 
+        .broadcast-banner.is-clickable {
+            cursor: pointer;
+        }
+
         .broadcast-banner__header {
             display: flex;
             align-items: center;
@@ -1663,7 +1667,6 @@
                 <span data-broadcast-meta-text></span>
             </div>
             <div class="broadcast-banner__actions">
-                <button type="button" class="broadcast-banner__btn" data-action="mark-read">Mark as read</button>
                 <button type="button" class="broadcast-banner__btn broadcast-banner__btn--ghost" data-action="dismiss">Dismiss</button>
             </div>
         </div>

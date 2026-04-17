@@ -131,9 +131,16 @@ class BroadcastNotificationAjaxController extends Controller
 
     public function markAsRead(Request $request, int $notificationId): JsonResponse
     {
-        $updated = $this->broadcasts->markAsRead($notificationId, (int) $this->sender($request)->id);
+        $result = $this->broadcasts->markAsRead($notificationId, (int) $this->sender($request)->id);
 
-        if (!$updated) {
+        if ($result['status'] === 'delay_not_elapsed') {
+            return response()->json([
+                'message' => 'Please read the full broadcast message before marking it as read.',
+                'remaining_seconds' => (int) ($result['remaining_seconds'] ?? 0),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if (!in_array($result['status'], ['ok', 'already_read'], true)) {
             return response()->json([
                 'message' => 'Notification not found or already read.',
             ], Response::HTTP_NOT_FOUND);
@@ -141,6 +148,37 @@ class BroadcastNotificationAjaxController extends Controller
 
         return response()->json([
             'status' => 'ok',
+        ]);
+    }
+
+    public function startReadTimer(Request $request, int $notificationId): JsonResponse
+    {
+        $result = $this->broadcasts->startReadTimer($notificationId, (int) $this->sender($request)->id);
+
+        if ($result['status'] === 'not_found') {
+            return response()->json([
+                'message' => 'Broadcast notification not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json([
+            'status' => $result['status'],
+            'remaining_seconds' => (int) ($result['remaining_seconds'] ?? 0),
+        ]);
+    }
+
+    public function receiverDetail(Request $request, int $notificationId): JsonResponse
+    {
+        $detail = $this->broadcasts->getReceiverBroadcastDetail($notificationId, (int) $this->sender($request)->id);
+
+        if (!$detail) {
+            return response()->json([
+                'message' => 'Broadcast notification not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json([
+            'data' => $detail,
         ]);
     }
 

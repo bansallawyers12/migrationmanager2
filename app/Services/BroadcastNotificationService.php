@@ -6,6 +6,7 @@ use App\Events\BroadcastNotificationCreated;
 use App\Models\Staff;
 use App\Models\Notification;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
 
 class BroadcastNotificationService
 {
+    private const READ_DELAY_SECONDS = 10;
+
     /**
      * Create a broadcast notification batch and notify recipients.
      *
@@ -337,11 +340,111 @@ class BroadcastNotificationService
     }
 
     /**
-     * Mark a broadcast notification as read for the given receiver.
+     * Start (or resume) the read timer for a broadcast notification.
+     *
+     * @return array{status:string,remaining_seconds:int}
      */
-    public function markAsRead(int $notificationId, int $receiverId): bool
+    public function startReadTimer(int $notificationId, int $receiverId): array
     {
-        $updated = DB::table('notifications')
+        $notification = Notification::query()
+            ->where('id', $notificationId)
+            ->where('receiver_id', $receiverId)
+            ->where('notification_type', 'broadcast')
+            ->first();
+
+        if (!$notification) {
+            return [
+                'status' => 'not_found',
+                'remaining_seconds' => 0,
+            ];
+        }
+
+        if ((int) $notification->receiver_status === 1) {
+            return [
+                'status' => 'already_read',
+                'remaining_seconds' => 0,
+            ];
+        }
+
+        $cacheKey = $this->readTimerCacheKey($receiverId, $notificationId);
+        $startedAt = Cache::get($cacheKey);
+
+        if (!$startedAt) {
+            $startedAt = Carbon::now()->timestamp;
+            Cache::put($cacheKey, $startedAt, now()->addDay());
+        }
+
+        $remaining = max(0, self::READ_DELAY_SECONDS - (Carbon::now()->timestamp - (int) $startedAt));
+
+        return [
+            'status' => 'ok',
+            'remaining_seconds' => $remaining,
+        ];
+    }
+
+    /**
+     * Return a recipient-facing broadcast detail by notification ID.
+     */
+    public function getReceiverBroadcastDetail(int $notificationId, int $receiverId): ?array
+    {
+        $notification = Notification::query()
+            ->with('sender:id,first_name,last_name,email')
+            ->where('id', $notificationId)
+            ->where('receiver_id', $receiverId)
+            ->where('notification_type', 'broadcast')
+            ->first();
+
+        if (!$notification) {
+            return null;
+        }
+
+        $messageMeta = $this->extractMessageBody($notification->message);
+
+        return [
+            'notification_id' => $notification->id,
+            'batch_uuid' => $this->extractBatchUuid($notification->url),
+            'title' => $messageMeta['title'],
+            'message' => $messageMeta['message'],
+            'sender_name' => $notification->sender ? $this->formatSenderName($notification->sender) : 'System',
+            'sent_at' => Carbon::parse($notification->created_at),
+            'is_read' => (bool) $notification->receiver_status,
+        ];
+    }
+
+    /**
+     * Mark a broadcast notification as read for the given receiver.
+     *
+     * @return array{status:string,remaining_seconds?:int}
+     */
+    public function markAsRead(int $notificationId, int $receiverId): array
+    {
+        $notification = Notification::query()
+            ->where('id', $notificationId)
+            ->where('receiver_id', $receiverId)
+            ->where('notification_type', 'broadcast')
+            ->first();
+
+        if (!$notification) {
+            return ['status' => 'not_found'];
+        }
+
+        if ((int) $notification->receiver_status === 1) {
+            return ['status' => 'already_read'];
+        }
+
+        $cacheKey = $this->readTimerCacheKey($receiverId, $notificationId);
+        $startedAt = Cache::get($cacheKey);
+        $elapsed = $startedAt ? (Carbon::now()->timestamp - (int) $startedAt) : 0;
+        $remaining = max(0, self::READ_DELAY_SECONDS - $elapsed);
+
+        if ($remaining > 0) {
+            return [
+                'status' => 'delay_not_elapsed',
+                'remaining_seconds' => $remaining,
+            ];
+        }
+
+        DB::table('notifications')
             ->where('id', $notificationId)
             ->where('receiver_id', $receiverId)
             ->where('notification_type', 'broadcast')
@@ -351,7 +454,9 @@ class BroadcastNotificationService
                 'updated_at' => Carbon::now(),
             ]);
 
-        return (bool) $updated;
+        Cache::forget($cacheKey);
+
+        return ['status' => 'ok'];
     }
 
     /**
@@ -504,6 +609,11 @@ class BroadcastNotificationService
         // This method is deprecated - clients (User model) should not receive broadcasts
         // Only staff (type != 'client'/'lead') should receive broadcasts
         return collect();
+    }
+
+    protected function readTimerCacheKey(int $receiverId, int $notificationId): string
+    {
+        return "broadcast-read-timer:{$receiverId}:{$notificationId}";
     }
 }
 

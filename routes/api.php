@@ -250,6 +250,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications/broadcasts', [BroadcastNotificationController::class, 'index']);
     Route::get('/notifications/broadcasts/{batchUuid}', [BroadcastNotificationController::class, 'show']);
     Route::post('/notifications/broadcasts/{notificationId}/read', [BroadcastNotificationController::class, 'markAsRead']);
+    Route::post('/notifications/broadcasts/{notificationId}/start-read-timer', [BroadcastNotificationController::class, 'startReadTimer']);
+    Route::get('/notifications/broadcasts/{notificationId}/receiver-detail', [BroadcastNotificationController::class, 'receiverDetail']);
     
     // FCM Push Notification routes
     Route::post('/fcm/register-token', [FCMController::class, 'registerToken']);

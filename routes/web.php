@@ -156,6 +156,12 @@ Route::middleware(['auth:admin'])->group(function() {
         Route::post('/{notificationId}/read', [BroadcastNotificationAjaxController::class, 'markAsRead'])
             ->name('read')
             ->where('notificationId', '[0-9]+');
+        Route::post('/{notificationId}/start-read-timer', [BroadcastNotificationAjaxController::class, 'startReadTimer'])
+            ->name('start-read-timer')
+            ->where('notificationId', '[0-9]+');
+        Route::get('/{notificationId}/receiver-detail', [BroadcastNotificationAjaxController::class, 'receiverDetail'])
+            ->name('receiver-detail')
+            ->where('notificationId', '[0-9]+');
         Route::delete('/{batchUuid}', [BroadcastNotificationAjaxController::class, 'delete'])
             ->name('delete')
             ->where('batchUuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');

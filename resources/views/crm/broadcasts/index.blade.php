@@ -411,6 +411,34 @@
         </div>
     </div>
 </div>
+
+<!-- Receiver Read Modal -->
+<div class="modal fade" id="broadcastReaderModal" tabindex="-1" role="dialog" aria-labelledby="broadcastReaderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="broadcastReaderModalLabel">Broadcast Message</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <strong id="broadcast-reader-title" class="d-block"></strong>
+                    <div id="broadcast-reader-message" class="d-block mt-2"></div>
+                    <small class="text-muted d-block mt-2" id="broadcast-reader-meta"></small>
+                </div>
+                <div class="alert alert-info mb-0" id="broadcast-reader-countdown">
+                    Please read this message. You can mark it as read shortly.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary d-none" id="broadcast-reader-mark-read">Mark as read</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -499,6 +527,12 @@
         const detailMessage = document.getElementById('broadcast-detail-message');
         const detailMeta = document.getElementById('broadcast-detail-meta');
         const detailBody = document.getElementById('broadcast-detail-body');
+        const readerModal = $('#broadcastReaderModal');
+        const readerTitle = document.getElementById('broadcast-reader-title');
+        const readerMessage = document.getElementById('broadcast-reader-message');
+        const readerMeta = document.getElementById('broadcast-reader-meta');
+        const readerCountdown = document.getElementById('broadcast-reader-countdown');
+        const readerMarkReadBtn = document.getElementById('broadcast-reader-mark-read');
 
         const activeStaffBody = document.getElementById('active-staff-body');
         const activeStaffCount = document.getElementById('active-staff-count');
@@ -585,6 +619,12 @@
             currentStaffId: null
         };
 
+        let readerState = {
+            notificationId: null,
+            countdownTimer: null,
+            remainingSeconds: 0,
+        };
+
         // Helper function to truncate HTML message for display
         function truncateMessage(html, maxLength = 150) {
             const temp = document.createElement('div');
@@ -598,6 +638,113 @@
             // Truncate text and add ellipsis
             const truncated = text.substring(0, maxLength) + '...';
             return `<span title="${text.replace(/"/g, '&quot;')}">${truncated}</span>`;
+        }
+
+        function clearReaderTimer() {
+            if (readerState.countdownTimer) {
+                clearInterval(readerState.countdownTimer);
+                readerState.countdownTimer = null;
+            }
+        }
+
+        function updateReaderCountdown(remainingSeconds) {
+            readerState.remainingSeconds = Math.max(0, Number(remainingSeconds) || 0);
+
+            if (readerState.remainingSeconds > 0) {
+                readerCountdown.textContent = `Please read this message. "Mark as read" will appear in ${readerState.remainingSeconds}s.`;
+                readerCountdown.className = 'alert alert-info mb-0';
+                readerMarkReadBtn.classList.add('d-none');
+                return;
+            }
+
+            readerCountdown.textContent = 'You can now mark this message as read.';
+            readerCountdown.className = 'alert alert-success mb-0';
+            readerMarkReadBtn.classList.remove('d-none');
+        }
+
+        function startReaderCountdown(remainingSeconds) {
+            clearReaderTimer();
+            updateReaderCountdown(remainingSeconds);
+
+            if ((Number(remainingSeconds) || 0) <= 0) {
+                return;
+            }
+
+            readerState.countdownTimer = setInterval(() => {
+                if (readerState.remainingSeconds <= 1) {
+                    clearReaderTimer();
+                    updateReaderCountdown(0);
+                    return;
+                }
+
+                updateReaderCountdown(readerState.remainingSeconds - 1);
+            }, 1000);
+        }
+
+        function openReceiverBroadcast(notificationId) {
+            const parsedId = parseInt(notificationId, 10);
+            if (!Number.isFinite(parsedId)) {
+                return;
+            }
+
+            readerState.notificationId = parsedId;
+            readerTitle.textContent = '';
+            readerMessage.innerHTML = '';
+            readerMeta.textContent = '';
+            updateReaderCountdown(10);
+            readerModal.modal('show');
+
+            fetch(`/notifications/broadcasts/${parsedId}/receiver-detail`, {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+                credentials: 'include',
+            })
+                .then(async (response) => {
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to load broadcast message.');
+                    }
+                    return payload;
+                })
+                .then((payload) => {
+                    const data = payload.data || {};
+                    readerTitle.textContent = data.title || '';
+                    readerTitle.classList.toggle('d-none', !data.title);
+                    readerMessage.innerHTML = data.message || '';
+                    readerMeta.textContent = `${data.sender_name || 'System'} • ${formatDate(data.sent_at)}`;
+                })
+                .catch((error) => {
+                    console.error(error);
+                    readerCountdown.textContent = error.message || 'Failed to load message.';
+                    readerCountdown.className = 'alert alert-danger mb-0';
+                    readerMarkReadBtn.classList.add('d-none');
+                });
+
+            fetch(`/notifications/broadcasts/${parsedId}/start-read-timer`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'include',
+                body: JSON.stringify({}),
+            })
+                .then(async (response) => {
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to start read timer.');
+                    }
+                    return payload;
+                })
+                .then((payload) => {
+                    startReaderCountdown(payload.remaining_seconds || 0);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    readerCountdown.textContent = error.message || 'Unable to start read timer.';
+                    readerCountdown.className = 'alert alert-danger mb-0';
+                });
         }
 
         function renderHistoryTable(items, isSuperAdmin = false) {
@@ -1357,6 +1504,50 @@
             loadMyRead();
         });
 
+        if (readerMarkReadBtn) {
+            readerMarkReadBtn.addEventListener('click', () => {
+                if (!readerState.notificationId) {
+                    return;
+                }
+
+                fetch(`/notifications/broadcasts/${readerState.notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({}),
+                })
+                    .then(async (response) => {
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            if (response.status === 422) {
+                                startReaderCountdown(payload.remaining_seconds || 1);
+                            }
+                            throw new Error(payload.message || 'Unable to mark as read.');
+                        }
+                        return payload;
+                    })
+                    .then(() => {
+                        showFeedback('success', 'Broadcast marked as read.');
+                        readerModal.modal('hide');
+                        loadHistory();
+                        loadMyRead();
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        showFeedback('warning', error.message || 'Unable to mark as read.');
+                    });
+            });
+        }
+
+        readerModal.on('hidden.bs.modal', function() {
+            clearReaderTimer();
+            readerState.notificationId = null;
+        });
+
         // Active Staff Event Listeners
         if (activeStaffRefresh) {
             activeStaffRefresh.addEventListener('click', (event) => {
@@ -1522,8 +1713,20 @@
         loadHistory();
 
         // If arrived via broadcast notification link (?batch=xxx), open that broadcast's details modal
-        const batchParam = new URLSearchParams(window.location.search).get('batch');
-        if (batchParam) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const batchParam = urlParams.get('batch');
+        const notificationParam = urlParams.get('notification');
+
+        if (notificationParam) {
+            openReceiverBroadcast(notificationParam);
+            if (batchParam) {
+                loadBroadcastDetails(batchParam);
+            }
+            const url = new URL(window.location);
+            url.searchParams.delete('batch');
+            url.searchParams.delete('notification');
+            window.history.replaceState({}, '', url);
+        } else if (batchParam) {
             loadBroadcastDetails(batchParam, () => {
                 detailModal.modal('show');
                 // Clear ?batch= from URL to avoid re-opening on refresh

@@ -2,12 +2,9 @@
     const bannerSelector = '[data-broadcast-banner]';
     const titleSelector = '[data-broadcast-title]';
     const messageSelector = '[data-broadcast-message]';
-    const metaSelector = '[data-broadcast-meta]';
     const metaTextSelector = '[data-broadcast-meta-text]';
-    const markReadSelector = '[data-action="mark-read"]';
     const dismissSelector = '[data-action="dismiss"]';
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const currentUserId = (() => {
         const meta = document.querySelector('meta[name="current-user-id"]');
         if (!meta) {
@@ -26,14 +23,12 @@
 
     const titleEl = bannerEl.querySelector(titleSelector);
     const messageEl = bannerEl.querySelector(messageSelector);
-    const metaEl = bannerEl.querySelector(metaSelector);
     const metaTextEl = bannerEl.querySelector(metaTextSelector);
-    const markReadBtn = bannerEl.querySelector(markReadSelector);
     const dismissBtn = bannerEl.querySelectorAll(dismissSelector);
 
     const endpoints = {
         unread: '/notifications/broadcasts/unread',
-        markRead: (id) => `/notifications/broadcasts/${id}/read`,
+        manage: '/notifications/broadcasts/manage',
     };
 
     const state = {
@@ -42,6 +37,7 @@
         pollingTimer: null,
         isPolling: false,
         dismissed: new Set(),
+        navigating: false,
     };
 
     function formatTimestamp(timestamp) {
@@ -102,7 +98,24 @@
             metaTextEl.textContent = parts.join(' • ');
         }
 
+        bannerEl.classList.toggle('is-clickable', true);
+        bannerEl.setAttribute('role', 'button');
+        bannerEl.setAttribute('tabindex', '0');
         setBannerVisible(true);
+    }
+
+    function openActiveBroadcast() {
+        const broadcast = state.active;
+        if (!broadcast || !broadcast.batch_uuid || state.navigating) {
+            return;
+        }
+
+        state.navigating = true;
+        const query = new URLSearchParams({
+            batch: broadcast.batch_uuid,
+            notification: String(broadcast.notification_id || ''),
+        });
+        window.location.href = `${endpoints.manage}?${query.toString()}`;
     }
 
     function showNextBroadcast() {
@@ -208,17 +221,6 @@
             .listen('.BroadcastNotificationCreated', (e) => {
                 console.log('📢 Received broadcast notification:', e);
                 
-                // Convert the broadcast event data to the format expected by enqueueBroadcasts
-                const notification = {
-                    notification_id: null, // Will be fetched from server
-                    batch_uuid: e.batch_uuid,
-                    message: e.message,
-                    title: e.title,
-                    sender_id: e.sender_id,
-                    sender_name: e.sender_name,
-                    sent_at: e.sent_at
-                };
-                
                 // Fetch the full notification details to get notification_id
                 fetch(endpoints.unread, {
                     method: 'GET',
@@ -255,36 +257,6 @@
             console.warn('⚠️ Reverb disconnected, falling back to polling for broadcasts');
             startPolling();
         });
-    }
-
-    function markActiveAsRead() {
-        const broadcast = state.active;
-        if (!broadcast) {
-            return;
-        }
-
-        fetch(endpoints.markRead(broadcast.notification_id), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-            },
-            credentials: 'include',
-            body: JSON.stringify({}),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Failed to mark broadcast as read');
-                }
-                return response.json();
-            })
-            .then(() => {
-                showNextBroadcast();
-            })
-            .catch((error) => {
-                console.error('Failed to mark broadcast as read:', error);
-            });
     }
 
     function dismissActiveBroadcast() {
@@ -337,15 +309,29 @@
         
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        if (markReadBtn) {
-            markReadBtn.addEventListener('click', markActiveAsRead);
-        }
-
         if (dismissBtn && dismissBtn.length > 0) {
             dismissBtn.forEach(btn => {
-                btn.addEventListener('click', dismissActiveBroadcast);
+                btn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    dismissActiveBroadcast();
+                });
             });
         }
+
+        bannerEl.addEventListener('click', (event) => {
+            if (event.target.closest(dismissSelector)) {
+                return;
+            }
+            openActiveBroadcast();
+        });
+
+        bannerEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openActiveBroadcast();
+            }
+        });
     }
 
     init();
