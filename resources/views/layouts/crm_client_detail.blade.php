@@ -3000,7 +3000,7 @@
                 
                 // Dynamically load broadcasts.js now that Echo is ready
                 const script = document.createElement('script');
-                script.src = '{{asset('js/broadcasts.js')}}';
+                script.src = '{{ asset('js/broadcasts.js') }}?v={{ @filemtime(public_path('js/broadcasts.js')) }}';
                 document.body.appendChild(script);
             } else if (echoCheckAttempts >= maxAttempts) {
                 // Only show warning if Echo was expected but failed (not if intentionally disabled)
@@ -3011,7 +3011,7 @@
                 
                 // Load broadcasts.js anyway (it has fallback to polling)
                 const script = document.createElement('script');
-                script.src = '{{asset('js/broadcasts.js')}}';
+                script.src = '{{ asset('js/broadcasts.js') }}?v={{ @filemtime(public_path('js/broadcasts.js')) }}';
                 document.body.appendChild(script);
             }
         }, 100); // Check every 100ms
