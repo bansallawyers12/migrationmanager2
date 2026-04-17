@@ -130,17 +130,20 @@
                                                 $personAssisting = $clientMatter ? $clientMatter->personAssisting : null;
                                                 $office = $clientMatter ? $clientMatter->office : null;
                                                 
-                                                // Calculate costs
-                                                $totalDeptCost = 
-                                                    ($form->Dept_Base_Application_Charge ?? 0) +
-                                                    ($form->Dept_Non_Internet_Application_Charge ?? 0) +
-                                                    ($form->Dept_Additional_Applicant_Charge_18_Plus ?? 0) +
-                                                    ($form->Dept_Additional_Applicant_Charge_Under_18 ?? 0) +
-                                                    ($form->Dept_Subsequent_Temp_Application_Charge ?? 0) +
-                                                    ($form->Dept_Second_VAC_Instalment_Charge_18_Plus ?? 0) +
-                                                    ($form->Dept_Second_VAC_Instalment_Under_18 ?? 0) +
-                                                    ($form->Dept_Nomination_Application_Charge ?? 0) +
-                                                    ($form->Dept_Sponsorship_Application_Charge ?? 0);
+                                                // Calculate costs (use saved person-aware totals when available)
+                                                $totalDeptCost = $form->TotalDoHACharges ?? null;
+                                                if ($totalDeptCost === null) {
+                                                    $totalDeptCost =
+                                                        ($form->Dept_Base_Application_Charge ?? 0) +
+                                                        ($form->Dept_Non_Internet_Application_Charge ?? 0) +
+                                                        ($form->Dept_Additional_Applicant_Charge_18_Plus ?? 0) +
+                                                        ($form->Dept_Additional_Applicant_Charge_Under_18 ?? 0) +
+                                                        ($form->Dept_Subsequent_Temp_Application_Charge ?? 0) +
+                                                        ($form->Dept_Second_VAC_Instalment_Charge_18_Plus ?? 0) +
+                                                        ($form->Dept_Second_VAC_Instalment_Under_18 ?? 0) +
+                                                        ($form->Dept_Nomination_Application_Charge ?? 0) +
+                                                        ($form->Dept_Sponsorship_Application_Charge ?? 0);
+                                                }
                                                     
                                                 $totalSurcharge = $form->TotalDoHASurcharges ?? 0;
                                                 $totalOurCost = $form->TotalBLOCKFEE ?? 0;
