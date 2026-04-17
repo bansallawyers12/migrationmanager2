@@ -200,6 +200,88 @@
                     </div>
 
                     @php
+                        $primaryContactCompaniesList = $primaryContactCompaniesForClient ?? collect();
+                    @endphp
+                    @if($primaryContactCompaniesList->isNotEmpty())
+                    <div class="card">
+                        <h3><i class="fas fa-building"></i> Company Detail</h3>
+                        <p style="margin: 0 0 12px 0; color: #6c757d; font-size: 0.9rem;">
+                            This person is the primary contact for the following company record(s). Only companies you are allowed to open are shown.
+                        </p>
+                        @foreach($primaryContactCompaniesList as $pcCompany)
+                            @php
+                                $pcAdminId = (int) ($pcCompany->admin_id ?? 0);
+                                $pcTrading = $pcCompany->tradingNames?->isNotEmpty()
+                                    ? $pcCompany->tradingNames->pluck('trading_name')->join(', ')
+                                    : ($pcCompany->trading_name ?? null);
+                            @endphp
+                            <div style="padding-bottom: 14px; margin-bottom: 14px; {{ !$loop->last ? 'border-bottom: 1px dotted #dee2e6;' : '' }}">
+                                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
+                                    @if($pcAdminId > 0)
+                                        <a href="{{ route('clients.detail', base64_encode(convert_uuencode($pcAdminId))) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-external-link-alt"></i> View company profile
+                                        </a>
+                                    @endif
+                                </div>
+                                <div class="field-group">
+                                    <span class="field-label">Company name</span>
+                                    <span class="field-value">
+                                        @if($pcAdminId > 0)
+                                            <a href="{{ route('clients.detail', base64_encode(convert_uuencode($pcAdminId))) }}"
+                                               style="color: #007bff; text-decoration: none;"
+                                               title="Open company profile">
+                                                {{ $pcCompany->company_name ?? 'N/A' }}
+                                            </a>
+                                        @else
+                                            {{ $pcCompany->company_name ?? 'N/A' }}
+                                        @endif
+                                    </span>
+                                </div>
+                                @if($pcCompany->contact_person_position)
+                                <div class="field-group">
+                                    <span class="field-label">Position</span>
+                                    <span class="field-value">{{ $pcCompany->contact_person_position }}</span>
+                                </div>
+                                @endif
+                                @if($pcTrading)
+                                <div class="field-group">
+                                    <span class="field-label">Trading name(s)</span>
+                                    <span class="field-value">{{ $pcTrading }}</span>
+                                </div>
+                                @endif
+                                @if($pcCompany->ABN_number)
+                                <div class="field-group">
+                                    <span class="field-label">ABN</span>
+                                    <span class="field-value">{{ $pcCompany->ABN_number }}</span>
+                                </div>
+                                @endif
+                                @if($pcCompany->ACN)
+                                <div class="field-group">
+                                    <span class="field-label">ACN</span>
+                                    <span class="field-value">{{ $pcCompany->ACN }}</span>
+                                </div>
+                                @endif
+                                @if($pcCompany->company_type)
+                                <div class="field-group">
+                                    <span class="field-label">Business type</span>
+                                    <span class="field-value">{{ \App\Models\Company::businessTypeLabel($pcCompany->company_type) }}</span>
+                                </div>
+                                @endif
+                                @if($pcCompany->company_website)
+                                <div class="field-group">
+                                    <span class="field-label">Website</span>
+                                    <span class="field-value">
+                                        <a href="{{ $pcCompany->company_website }}" target="_blank" rel="noopener noreferrer">{{ $pcCompany->company_website }}</a>
+                                    </span>
+                                </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                    @endif
+
+                    @php
                         $nomineeNominationsList = $visibleNomineeNominations ?? collect();
                     @endphp
                     @if($nomineeNominationsList->isNotEmpty())
