@@ -42,10 +42,11 @@
 							<div class="form-group">
 								<label for="phone"><strong>Phone Number</strong></label>
 								<p class="form-control-plaintext">
-									@if($fetchedData->country_code ?? $fetchedData->phone)
-										{{ $fetchedData->country_code ?? $fetchedData->phone }}
+									@if(!empty($fetchedData->phone))
+										{{ $fetchedData->country_code }} {{ $fetchedData->phone }}
+									@else
+										N/A
 									@endif
-									{{ $fetchedData->phone ?? 'N/A' }}
 								</p>
 							</div>
 						</div>

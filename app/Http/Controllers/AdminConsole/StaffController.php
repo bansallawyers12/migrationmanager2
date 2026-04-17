@@ -123,8 +123,7 @@ class StaffController extends Controller
             $obj->first_name = @$requestData['first_name'];
             $obj->last_name = @$requestData['last_name'];
             $obj->email = @$requestData['email'];
-            $countryCode = trim((string) ($requestData['country_code'] ?? ''));
-            $obj->country_code = $countryCode !== '' ? $countryCode : '+61';
+            $obj->country_code = $this->normalizeCountryCode($requestData['country_code'] ?? null);
             $obj->position = @$requestData['position'];
             $obj->password = Hash::make(@$requestData['password']);
             $obj->phone = @$requestData['phone'];
@@ -194,6 +193,8 @@ class StaffController extends Controller
             return redirect()->route('adminconsole.staff.active')->with('error', 'Staff not found.');
         }
 
+        $fetchedData->country_code = $this->normalizeCountryCode($fetchedData->country_code ?? null);
+
         $sheetDefinitions = CrmSheets::definitions();
         $allSheetKeys = array_keys($sheetDefinitions);
         $rawSheets = $fetchedData->sheet_access ?? null;
@@ -254,8 +255,7 @@ class StaffController extends Controller
             $obj->first_name = @$requestData['first_name'];
             $obj->last_name = @$requestData['last_name'];
             $obj->email = @$requestData['email'];
-            $countryCode = trim((string) ($requestData['country_code'] ?? ''));
-            $obj->country_code = $countryCode !== '' ? $countryCode : '+61';
+            $obj->country_code = $this->normalizeCountryCode($requestData['country_code'] ?? null);
             $obj->position = @$requestData['position'];
             $obj->phone = @$requestData['phone'];
             $prevRole = (int) ($obj->role ?? 0);
@@ -367,6 +367,8 @@ class StaffController extends Controller
             return redirect()->route('adminconsole.staff.active')->with('error', 'Staff not found.');
         }
 
+        $fetchedData->country_code = $this->normalizeCountryCode($fetchedData->country_code ?? null);
+
         return view('AdminConsole.staff.view', compact(['fetchedData']));
     }
 
@@ -388,5 +390,22 @@ class StaffController extends Controller
         }
 
         return json_encode($selected);
+    }
+
+    /**
+     * Normalize staff country code. Falls back to AU when invalid/empty.
+     */
+    private function normalizeCountryCode($input): string
+    {
+        $countryCode = trim((string) $input);
+        if ($countryCode === '') {
+            return '+61';
+        }
+
+        if (preg_match('/^\+\d{1,4}$/', $countryCode) !== 1) {
+            return '+61';
+        }
+
+        return $countryCode;
     }
 }
