@@ -87,10 +87,6 @@
                         <i class="fas fa-briefcase"></i>
                         <span>Operations</span>
                     </button>
-                    <button class="nav-item" onclick="scrollToSection('lmtSection')">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span>LMT</span>
-                    </button>
                     <button class="nav-item" onclick="scrollToSection('trainingSection')">
                         <i class="fas fa-graduation-cap"></i>
                         <span>Training</span>
@@ -788,44 +784,6 @@
                     </section>
                 </section>
 
-                <!-- LMT Section -->
-                <section id="lmtSection" class="content-section">
-                    <section class="form-section">
-                        <div class="section-header">
-                            <h3><i class="fas fa-clipboard-check"></i> Labour Market Testing (LMT)</h3>
-                            <div class="section-actions">
-                                <button type="button" class="edit-section-btn" onclick="toggleEditMode('lmt')">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="lmtSummary" class="summary-view">
-                            <div class="summary-grid">
-                                @if($company && ($company->lmt_required !== null || $company->lmt_start_date || $company->lmt_notes))
-                                @if($company->lmt_required !== null)<div class="summary-item"><span class="summary-label">LMT Required:</span><span class="summary-value">{{ $company->lmt_required ? 'Yes' : 'No' }}</span></div>@endif
-                                @if($company->lmt_start_date)<div class="summary-item"><span class="summary-label">Start:</span><span class="summary-value">{{ $company->lmt_start_date->format('d/m/Y') }}</span></div>@endif
-                                @if($company->lmt_end_date)<div class="summary-item"><span class="summary-label">End:</span><span class="summary-value">{{ $company->lmt_end_date->format('d/m/Y') }}</span></div>@endif
-                                @if($company->lmt_notes)<div class="summary-item full-width"><span class="summary-label">Notes:</span><span class="summary-value">{{ $company->lmt_notes }}</span></div>@endif
-                                @else
-                                <div class="empty-state"><p>No LMT details added yet.</p></div>
-                                @endif
-                            </div>
-                        </div>
-                        <div id="lmtEdit" class="edit-view hidden">
-                            <div class="content-grid">
-                                <div class="form-group"><label><input type="checkbox" name="lmt_required" value="1" {{ optional($company)->lmt_required ? 'checked' : '' }}> LMT Required</label></div>
-                                <div class="form-group"><label>LMT Start Date</label><input type="date" name="lmt_start_date" value="{{ optional($company)->lmt_start_date?->format('Y-m-d') ?? '' }}"></div>
-                                <div class="form-group"><label>LMT End Date</label><input type="date" name="lmt_end_date" value="{{ optional($company)->lmt_end_date?->format('Y-m-d') ?? '' }}"></div>
-                                <div class="form-group full-width"><label>LMT Notes</label><textarea name="lmt_notes" rows="2">{{ optional($company)->lmt_notes ?? '' }}</textarea></div>
-                            </div>
-                            <div class="edit-actions">
-                                <button type="button" class="btn btn-primary" onclick="saveLmtInfo()">Save</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('lmt')">Cancel</button>
-                            </div>
-                        </div>
-                    </section>
-                </section>
-
                 <!-- Training Section -->
                 <section id="trainingSection" class="content-section">
                     <section class="form-section">
@@ -1378,7 +1336,6 @@
     function saveFinancialInfo() { saveSection('financial', function() { toggleEditMode('financial'); }); }
     function saveWorkforceInfo() { saveSection('workforce', function() { toggleEditMode('workforce'); }); }
     function saveOperationsInfo() { saveSection('operations', function() { toggleEditMode('operations'); }); }
-    function saveLmtInfo() { saveSection('lmt', function() { toggleEditMode('lmt'); }); }
     function saveTrainingInfo() { saveSection('training', function() { toggleEditMode('training'); }); }
     function saveNominationsInfo() { saveSection('nominations', function() { toggleEditMode('nominations'); }); }
     </script>

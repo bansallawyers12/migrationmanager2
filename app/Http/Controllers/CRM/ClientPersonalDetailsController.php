@@ -2275,20 +2275,57 @@ class ClientPersonalDetailsController extends Controller
 
     private function saveLmtSection($request, $client)
     {
-        if (!$client->is_company) {
+        if (! $client->is_company) {
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
+
+        $request->merge([
+            'lmt_start_date' => $request->filled('lmt_start_date') ? $request->input('lmt_start_date') : null,
+            'lmt_end_date' => $request->filled('lmt_end_date') ? $request->input('lmt_end_date') : null,
+        ]);
+
         $validated = $request->validate([
             'lmt_start_date' => 'nullable|date',
             'lmt_end_date' => 'nullable|date',
             'lmt_notes' => 'nullable|string',
         ]);
+
+        $reqRaw = $request->input('lmt_required');
+        $lmtRequired = null;
+        if ($reqRaw === '1' || $reqRaw === 1 || $reqRaw === true) {
+            $lmtRequired = true;
+        } elseif ($reqRaw === '0' || $reqRaw === 0 || $reqRaw === false) {
+            $lmtRequired = false;
+        }
+
+        $start = $validated['lmt_start_date'] ?? null;
+        $end = $validated['lmt_end_date'] ?? null;
+        if ($start !== null && $end !== null) {
+            try {
+                if (\Carbon\Carbon::parse($end)->lt(\Carbon\Carbon::parse($start))) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'LMT end date must be on or after the start date.',
+                    ], 422);
+                }
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid LMT date values.',
+                ], 422);
+            }
+        }
+
+        $notes = isset($validated['lmt_notes']) ? trim((string) $validated['lmt_notes']) : '';
+        $notes = $notes !== '' ? $notes : null;
+
         $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->lmt_required = $request->has('lmt_required');
-        $company->lmt_start_date = $validated['lmt_start_date'] ?? null;
-        $company->lmt_end_date = $validated['lmt_end_date'] ?? null;
-        $company->lmt_notes = $validated['lmt_notes'] ?? null;
+        $company->lmt_required = $lmtRequired;
+        $company->lmt_start_date = $start;
+        $company->lmt_end_date = $end;
+        $company->lmt_notes = $notes;
         $company->save();
+
         return response()->json(['success' => true, 'message' => 'LMT details updated successfully']);
     }
 
