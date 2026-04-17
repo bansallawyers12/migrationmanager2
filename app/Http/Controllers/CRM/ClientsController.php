@@ -2545,6 +2545,9 @@ class ClientsController extends Controller
 				->unique()
 				->values()
 				->toArray();
+			$contactPersonIdsToExclude = array_values(array_filter($contactPersonIdsToExclude, function ($pid) use ($squery) {
+				return ! $this->globalSearchQueryMatchesContactPerson((int) $pid, $squery);
+			}));
 
 			$items = array();
 			foreach($clients as $clint){
@@ -2596,6 +2599,9 @@ class ClientsController extends Controller
 				->unique()
 				->values()
 				->toArray();
+			$contactPersonIdsToExclude = array_values(array_filter($contactPersonIdsToExclude, function ($pid) use ($squery) {
+				return ! $this->globalSearchQueryMatchesContactPerson((int) $pid, $squery);
+			}));
 
 			$items = array();
 			foreach($clients as $clint){
@@ -2906,7 +2912,7 @@ class ClientsController extends Controller
             $isUniversalPhone = ($squery === '4444444444');
             
             $clientsQuery = \App\Models\Admin::query()
-                ->with('company')
+                ->with(['company.contactPerson'])
                 ->whereIn('admins.type', ['client', 'lead'])
                 ->whereNull('admins.is_deleted')
                 ->where('admins.is_archived', 0)
@@ -3061,9 +3067,21 @@ class ClientsController extends Controller
                         ? base64_encode(convert_uuencode($client->id)) . '/Matter/' . $latestMatterNo
                         : base64_encode(convert_uuencode($client->id)) . '/Client';
 
+                    $displayName = $client->company_name_or_personal_name;
+                    if ($client->is_company && $client->company?->contactPerson) {
+                        $cp = $client->company->contactPerson;
+                        $cpBits = array_filter([
+                            trim((string) ($cp->client_id ?? '')),
+                            trim(($cp->first_name ?? '') . ' ' . ($cp->last_name ?? '')),
+                        ]);
+                        if ($cpBits !== []) {
+                            $displayName .= ' — ' . implode(' ', $cpBits);
+                        }
+                    }
+
                     $results[] = StaffClientVisibility::enrichGlobalSearchItem([
                         'id' => $resultFinalId,
-                        'name' => $client->company_name_or_personal_name,
+                        'name' => $displayName,
                         'email' => $client->email,
                         'status' => $client->is_archived ? 'Archived' : $client->type,
                         'cid' => $client->id,
@@ -3098,6 +3116,9 @@ class ClientsController extends Controller
                 ->unique()
                 ->values()
                 ->toArray();
+            $contactPersonIdsToExclude = array_values(array_filter($contactPersonIdsToExclude, function ($pid) use ($squery) {
+                return ! $this->globalSearchQueryMatchesContactPerson((int) $pid, $squery);
+            }));
             $results = array_values(array_filter($results, function($r) use ($contactPersonIdsToExclude) {
                 return !in_array($r['cid'], $contactPersonIdsToExclude);
             }));
@@ -3107,6 +3128,71 @@ class ClientsController extends Controller
         
         // Return empty array when query is empty
         return response()->json(['items' => []]);
+    }
+
+    /**
+     * When a company and its primary contact both match search, keep the contact row if the query
+     * matches the contact's own phone, email, client_id, or name (not only the company).
+     */
+    protected function globalSearchQueryMatchesContactPerson(int $contactPersonId, string $squery): bool
+    {
+        $squery = trim($squery);
+        if ($squery === '' || $contactPersonId <= 0) {
+            return false;
+        }
+
+        $squeryLower = strtolower($squery);
+        $queryDigits = preg_replace('/\D+/', '', $squery);
+
+        $admin = Admin::query()
+            ->where('id', $contactPersonId)
+            ->whereIn('type', ['client', 'lead'])
+            ->first();
+
+        if (! $admin) {
+            return false;
+        }
+
+        if (str_contains(strtolower((string) $admin->client_id), $squeryLower)
+            || str_contains(strtolower((string) $admin->email), $squeryLower)
+            || str_contains(strtolower((string) $admin->first_name), $squeryLower)
+            || str_contains(strtolower((string) $admin->last_name), $squeryLower)
+        ) {
+            return true;
+        }
+
+        $fullName = strtolower(trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? '')));
+        if ($fullName !== '' && str_contains($fullName, $squeryLower)) {
+            return true;
+        }
+
+        if ($queryDigits !== '') {
+            $phoneDigits = preg_replace('/\D+/', '', (string) $admin->phone);
+            if ($phoneDigits !== '' && str_contains($phoneDigits, $queryDigits)) {
+                return true;
+            }
+
+            $extraPhones = DB::table('client_contacts')
+                ->where('client_id', $contactPersonId)
+                ->pluck('phone');
+            foreach ($extraPhones as $p) {
+                $pd = preg_replace('/\D+/', '', (string) $p);
+                if ($pd !== '' && str_contains($pd, $queryDigits)) {
+                    return true;
+                }
+            }
+        }
+
+        $extraEmails = DB::table('client_emails')
+            ->where('client_id', $contactPersonId)
+            ->pluck('email');
+        foreach ($extraEmails as $em) {
+            if (str_contains(strtolower((string) $em), $squeryLower)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
