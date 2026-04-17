@@ -4,6 +4,7 @@
     const messageSelector = '[data-broadcast-message]';
     const metaTextSelector = '[data-broadcast-meta-text]';
     const dismissSelector = '[data-action="dismiss"]';
+    const contentSelector = '.broadcast-banner__content';
 
     const currentUserId = (() => {
         const meta = document.querySelector('meta[name="current-user-id"]');
@@ -24,6 +25,7 @@
     const titleEl = bannerEl.querySelector(titleSelector);
     const messageEl = bannerEl.querySelector(messageSelector);
     const metaTextEl = bannerEl.querySelector(metaTextSelector);
+    const contentEl = bannerEl.querySelector(contentSelector);
     const dismissBtn = bannerEl.querySelectorAll(dismissSelector);
 
     const endpoints = {
@@ -124,16 +126,33 @@
 
     function openActiveBroadcast() {
         const broadcast = state.active;
-        if (!broadcast || !broadcast.batch_uuid || state.navigating) {
+        if (!broadcast || state.navigating) {
             return;
         }
 
         state.navigating = true;
-        const query = new URLSearchParams({
-            batch: broadcast.batch_uuid,
-            notification: String(broadcast.notification_id || ''),
-        });
-        window.location.href = `${endpoints.manage}?${query.toString()}`;
+        const query = new URLSearchParams();
+
+        if (broadcast.batch_uuid) {
+            query.set('batch', String(broadcast.batch_uuid));
+        }
+
+        if (broadcast.notification_id) {
+            query.set('notification', String(broadcast.notification_id));
+        }
+
+        const queryString = query.toString();
+        const destination = queryString
+            ? `${endpoints.manage}?${queryString}`
+            : endpoints.manage;
+
+        window.location.assign(destination);
+
+        // Fallback: if navigation is prevented by the browser/environment,
+        // allow subsequent clicks to try again.
+        setTimeout(() => {
+            state.navigating = false;
+        }, 1500);
     }
 
     function showNextBroadcast() {
@@ -342,6 +361,21 @@
                 return;
             }
             openActiveBroadcast();
+        });
+
+        [titleEl, messageEl, metaTextEl, contentEl].forEach((el) => {
+            if (!el) {
+                return;
+            }
+
+            el.addEventListener('click', (event) => {
+                if (event.target.closest(dismissSelector)) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                openActiveBroadcast();
+            });
         });
 
         bannerEl.addEventListener('keydown', (event) => {
