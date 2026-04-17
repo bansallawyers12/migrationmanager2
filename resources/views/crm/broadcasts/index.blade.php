@@ -434,7 +434,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary d-none" id="broadcast-reader-mark-read">Mark as read</button>
+                <button type="button" class="btn btn-primary d-none" id="broadcast-reader-mark-read">Read</button>
             </div>
         </div>
     </div>
@@ -506,6 +506,8 @@
     }
     
     (function () {
+        const BROADCAST_READ_DELAY_SECONDS = {{ (int) ($broadcastReadDelaySeconds ?? 15) }};
+
         const composeForm = document.getElementById('broadcast-compose-form');
         const messageInput = document.getElementById('broadcast-message');
         const titleInput = document.getElementById('broadcast-title');
@@ -651,13 +653,13 @@
             readerState.remainingSeconds = Math.max(0, Number(remainingSeconds) || 0);
 
             if (readerState.remainingSeconds > 0) {
-                readerCountdown.textContent = `Please read this message. "Mark as read" will appear in ${readerState.remainingSeconds}s.`;
+                readerCountdown.textContent = `Please read this message. The Read button will appear in ${readerState.remainingSeconds}s.`;
                 readerCountdown.className = 'alert alert-info mb-0';
                 readerMarkReadBtn.classList.add('d-none');
                 return;
             }
 
-            readerCountdown.textContent = 'You can now mark this message as read.';
+            readerCountdown.textContent = 'You can now tap Read to confirm you have read this message.';
             readerCountdown.className = 'alert alert-success mb-0';
             readerMarkReadBtn.classList.remove('d-none');
         }
@@ -691,7 +693,7 @@
             readerTitle.textContent = '';
             readerMessage.innerHTML = '';
             readerMeta.textContent = '';
-            updateReaderCountdown(10);
+            updateReaderCountdown(BROADCAST_READ_DELAY_SECONDS);
             readerModal.modal('show');
 
             fetch(`/notifications/broadcasts/${parsedId}/receiver-detail`, {

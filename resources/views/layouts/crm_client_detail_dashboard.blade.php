@@ -632,6 +632,19 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
+        .broadcast-banner__btn--primary {
+            background: #ffffff;
+            color: #005792;
+            border: none;
+            font-weight: 700;
+        }
+
+        .broadcast-banner__btn--primary:hover {
+            background: #e8f4ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
         .broadcast-banner__btn--ghost {
             background: transparent;
             border: 1px solid rgba(255, 255, 255, 0.6);
@@ -674,6 +687,7 @@
                 <span data-broadcast-meta-text></span>
             </div>
             <div class="broadcast-banner__actions">
+                <button type="button" class="broadcast-banner__btn broadcast-banner__btn--primary" data-action="open-broadcast">View Broadcast</button>
                 <button type="button" class="broadcast-banner__btn broadcast-banner__btn--ghost" data-action="dismiss">Dismiss</button>
             </div>
         </div>

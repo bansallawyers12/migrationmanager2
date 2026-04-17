@@ -4,6 +4,7 @@
     const messageSelector = '[data-broadcast-message]';
     const metaTextSelector = '[data-broadcast-meta-text]';
     const dismissSelector = '[data-action="dismiss"]';
+    const openSelector = '[data-action="open-broadcast"]';
 
     const currentUserId = (() => {
         const meta = document.querySelector('meta[name="current-user-id"]');
@@ -337,8 +338,22 @@
             });
         }
 
+        const openBtn = bannerEl.querySelectorAll(openSelector);
+        if (openBtn && openBtn.length > 0) {
+            openBtn.forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openActiveBroadcast();
+                });
+            });
+        }
+
         bannerEl.addEventListener('click', (event) => {
             if (event.target.closest(dismissSelector)) {
+                return;
+            }
+            if (event.target.closest(openSelector)) {
                 return;
             }
             openActiveBroadcast();

@@ -14,7 +14,12 @@ use Illuminate\Support\Str;
 
 class BroadcastNotificationService
 {
-    private const READ_DELAY_SECONDS = 10;
+    private const READ_DELAY_SECONDS = 15;
+
+    public static function readDelaySeconds(): int
+    {
+        return self::READ_DELAY_SECONDS;
+    }
 
     /**
      * Create a broadcast notification batch and notify recipients.
