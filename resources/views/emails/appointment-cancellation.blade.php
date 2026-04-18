@@ -134,7 +134,7 @@
                 Please contact us to book a new appointment:<br>
                 Phone: <a href="tel:{{ str_replace([' ', '-'], '', $locationPhone) }}" style="color: #2563eb; text-decoration: none; font-weight: 600;">{{ $locationPhone }}</a><br>
                 Email: <a href="mailto:info@bansalimmigration.com.au" style="color: #2563eb; text-decoration: none; font-weight: 600;">info@bansalimmigration.com.au</a><br>
-                Website: <a href="https://www.bansalimmigration.com.au/" style="color: #2563eb; text-decoration: none; font-weight: 600;">https://www.bansalimmigration.com.au/</a>
+                Website: <a href="https://www.bansalimmigration.com.au/" style="color: #2563eb; text-decoration: none; font-weight: 600;">bansalimmigration.com.au</a>
             </p>
         </div>
 
