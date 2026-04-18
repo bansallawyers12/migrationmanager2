@@ -238,42 +238,10 @@
                                         @endif
                                     </span>
                                 </div>
-                                @if($pcCompany->contact_person_position)
-                                <div class="field-group">
-                                    <span class="field-label">Position</span>
-                                    <span class="field-value">{{ $pcCompany->contact_person_position }}</span>
-                                </div>
-                                @endif
                                 @if($pcTrading)
                                 <div class="field-group">
                                     <span class="field-label">Trading name(s)</span>
                                     <span class="field-value">{{ $pcTrading }}</span>
-                                </div>
-                                @endif
-                                @if($pcCompany->ABN_number)
-                                <div class="field-group">
-                                    <span class="field-label">ABN</span>
-                                    <span class="field-value">{{ $pcCompany->ABN_number }}</span>
-                                </div>
-                                @endif
-                                @if($pcCompany->ACN)
-                                <div class="field-group">
-                                    <span class="field-label">ACN</span>
-                                    <span class="field-value">{{ $pcCompany->ACN }}</span>
-                                </div>
-                                @endif
-                                @if($pcCompany->company_type)
-                                <div class="field-group">
-                                    <span class="field-label">Business type</span>
-                                    <span class="field-value">{{ \App\Models\Company::businessTypeLabel($pcCompany->company_type) }}</span>
-                                </div>
-                                @endif
-                                @if($pcCompany->company_website)
-                                <div class="field-group">
-                                    <span class="field-label">Website</span>
-                                    <span class="field-value">
-                                        <a href="{{ $pcCompany->company_website }}" target="_blank" rel="noopener noreferrer">{{ $pcCompany->company_website }}</a>
-                                    </span>
                                 </div>
                                 @endif
                             </div>
@@ -309,6 +277,10 @@
                                             {{ $nomCompany->company_name ?? 'Unknown company' }}
                                         @endif
                                     </span>
+                                </div>
+                                <div class="field-group">
+                                    <span class="field-label">ABN</span>
+                                    <span class="field-value">{{ ($nomCompany && !empty($nomCompany->ABN_number)) ? $nomCompany->ABN_number : 'N/A' }}</span>
                                 </div>
                                 @if($nomRow->position_title)
                                 <div class="field-group">
