@@ -47,7 +47,7 @@
                                     <i class="fas fa-plus"></i> Add Category
                                 </button>
                                 <!-- Add link to Not Used Documents -->
-                                <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
+                                <button type="button" class="btn btn-secondary client-nav-button client-nav-button--inline" data-tab="notuseddocuments">
                                     <i class="fas fa-folder-minus"></i> Not Used Documents
                                 </button>
                             </div>

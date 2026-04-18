@@ -656,6 +656,14 @@
             font-weight: inherit;
         }
 
+        /* Document toolbar tab triggers (e.g. Not Used Documents): not full-width like sidebar */
+        .client-nav-button.client-nav-button--inline {
+            width: auto;
+            flex: 0 0 auto;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
         .main-content {
             flex: 1;
             background-color: #ffffff;
@@ -1105,6 +1113,11 @@
                 margin-bottom: 0;
                 padding: 10px 12px;
                 font-size: 0.85rem;
+            }
+
+            .client-nav-button.client-nav-button--inline {
+                flex: 0 0 auto;
+                min-width: 0;
             }
             
             .client-nav-button i {

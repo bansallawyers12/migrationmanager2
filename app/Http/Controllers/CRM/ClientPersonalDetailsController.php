@@ -2279,15 +2279,38 @@ class ClientPersonalDetailsController extends Controller
             return response()->json(['success' => false, 'message' => 'Not a company client'], 400);
         }
 
-        if ($request->boolean('delete_lmt')) {
-            $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-            $company->lmt_required = null;
-            $company->lmt_start_date = null;
-            $company->lmt_end_date = null;
-            $company->lmt_notes = null;
-            $company->save();
+        $matterId = $request->input('client_matter_id');
+        if ($matterId === null || $matterId === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Matter is required to save Labour Market Testing details.',
+            ], 422);
+        }
 
-            return response()->json(['success' => true, 'message' => 'Labour Market Testing details removed. You can add a new record anytime.']);
+        $matter = ClientMatter::query()
+            ->where('id', (int) $matterId)
+            ->where('client_id', $client->id)
+            ->first();
+
+        if (! $matter) {
+            return response()->json(['success' => false, 'message' => 'Matter not found.'], 404);
+        }
+
+        if ((int) $matter->matter_status !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'LMT can only be updated for active matters.',
+            ], 422);
+        }
+
+        if ($request->boolean('delete_lmt')) {
+            $matter->lmt_required = null;
+            $matter->lmt_start_date = null;
+            $matter->lmt_end_date = null;
+            $matter->lmt_notes = null;
+            $matter->save();
+
+            return response()->json(['success' => true, 'message' => 'Labour Market Testing details removed for this matter. You can add a new record anytime.']);
         }
 
         $request->merge([
@@ -2330,12 +2353,11 @@ class ClientPersonalDetailsController extends Controller
         $notes = isset($validated['lmt_notes']) ? trim((string) $validated['lmt_notes']) : '';
         $notes = $notes !== '' ? $notes : null;
 
-        $company = Company::firstOrCreate(['admin_id' => $client->id], ['company_name' => 'Unnamed Company']);
-        $company->lmt_required = $lmtRequired;
-        $company->lmt_start_date = $start;
-        $company->lmt_end_date = $end;
-        $company->lmt_notes = $notes;
-        $company->save();
+        $matter->lmt_required = $lmtRequired;
+        $matter->lmt_start_date = $start;
+        $matter->lmt_end_date = $end;
+        $matter->lmt_notes = $notes;
+        $matter->save();
 
         return response()->json(['success' => true, 'message' => 'LMT details updated successfully']);
     }

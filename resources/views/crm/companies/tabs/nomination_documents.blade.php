@@ -74,6 +74,41 @@
                         ", [$SelectedClientId, $client_selected_matter_id1, $SelectedClientId])
                         ->get();
 
+                    $nominationMatterLmtRow = null;
+                    $nominationMatterHasLmt = false;
+                    if (($fetchedData->is_company ?? false) && $client_selected_matter_id1) {
+                        $nominationMatterLmtRow = \App\Models\ClientMatter::query()
+                            ->where('id', $client_selected_matter_id1)
+                            ->where('client_id', $fetchedData->id)
+                            ->first();
+                        if ($nominationMatterLmtRow) {
+                            $nominationMatterHasLmt = $nominationMatterLmtRow->lmt_required !== null
+                                || ! empty($nominationMatterLmtRow->lmt_start_date)
+                                || ! empty($nominationMatterLmtRow->lmt_end_date)
+                                || (trim((string) ($nominationMatterLmtRow->lmt_notes ?? '')) !== '');
+                        }
+                    }
+                    $nominationLmtReqAttr = '';
+                    if ($nominationMatterLmtRow && $nominationMatterLmtRow->lmt_required !== null) {
+                        $nominationLmtReqAttr = $nominationMatterLmtRow->lmt_required ? '1' : '0';
+                    }
+                    $nominationLmtPopoverHtml = '';
+                    if ($nominationMatterHasLmt && $nominationMatterLmtRow) {
+                        $parts = [];
+                        if ($nominationMatterLmtRow->lmt_required !== null) {
+                            $parts[] = '<strong>LMT Required:</strong> ' . ($nominationMatterLmtRow->lmt_required ? 'Yes' : 'No');
+                        }
+                        if ($nominationMatterLmtRow->lmt_start_date) {
+                            $parts[] = '<strong>Start:</strong> ' . e($nominationMatterLmtRow->lmt_start_date->format('d/m/Y'));
+                        }
+                        if ($nominationMatterLmtRow->lmt_end_date) {
+                            $parts[] = '<strong>End:</strong> ' . e($nominationMatterLmtRow->lmt_end_date->format('d/m/Y'));
+                        }
+                        if (trim((string) ($nominationMatterLmtRow->lmt_notes ?? '')) !== '') {
+                            $parts[] = '<strong>Notes:</strong><br>' . nl2br(e($nominationMatterLmtRow->lmt_notes));
+                        }
+                        $nominationLmtPopoverHtml = '<div class="text-start small nomination-lmt-popover-body">' . implode('<br>', $parts) . '</div>';
+                    }
                     ?>
 
                     <!-- Visa Documents Content -->
@@ -100,16 +135,264 @@
                                     </div>
                                 <?php endforeach; ?>
                             </nav>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <button type="button" class="btn add-nomination-doc-category-btn add-nomination-doc-category" data-type="nomination" data-categoryid="">
-                                    <i class="fas fa-plus"></i> Add Category
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                                    <button type="button" class="btn add-nomination-doc-category-btn add-nomination-doc-category" data-type="nomination" data-categoryid="">
+                                        <i class="fas fa-plus"></i> Add Category
+                                    </button>
+                                    <!-- Add link to Not Used Documents -->
+                                    <button type="button" class="btn btn-secondary client-nav-button client-nav-button--inline" data-tab="notuseddocuments">
+                                        <i class="fas fa-folder-minus"></i> Not Used Documents
+                                    </button>
+                                </div>
+                                @if(($fetchedData->is_company ?? false) && $client_selected_matter_id1)
+                                <button type="button"
+                                    class="btn btn-sm btn-primary"
+                                    id="nominationLmtOpenBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#nominationLmtModal"
+                                    data-lmt-matter-id="{{ (int) $client_selected_matter_id1 }}"
+                                    data-lmt-has-data="{{ $nominationMatterHasLmt ? '1' : '0' }}"
+                                    data-lmt-required="{{ $nominationLmtReqAttr }}"
+                                    data-lmt-start="{{ ($nominationMatterLmtRow && $nominationMatterLmtRow->lmt_start_date) ? $nominationMatterLmtRow->lmt_start_date->format('Y-m-d') : '' }}"
+                                    data-lmt-end="{{ ($nominationMatterLmtRow && $nominationMatterLmtRow->lmt_end_date) ? $nominationMatterLmtRow->lmt_end_date->format('Y-m-d') : '' }}"
+                                    onclick="window.setupNominationLmtModal(this)"
+                                    style="align-self: flex-end;">
+                                    <i class="fas fa-clipboard-check"></i> Labour Market Test
                                 </button>
-                                <!-- Add link to Not Used Documents -->
-                                <button class="btn btn-secondary client-nav-button" data-tab="notuseddocuments">
-                                    <i class="fas fa-folder-minus"></i> Not Used Documents
-                                </button>
+                                @endif
                             </div>
                         </div>
+
+                        @if(($fetchedData->is_company ?? false) && $client_selected_matter_id1)
+                        <script type="application/json" id="nomination-lmt-initial-notes">{!! json_encode(($nominationMatterLmtRow ? $nominationMatterLmtRow->lmt_notes : null) ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+                        <div id="nomination-lmt-popover-template" style="display:none" aria-hidden="true">{!! $nominationLmtPopoverHtml !!}</div>
+
+                        <div class="modal fade" id="nominationLmtModal" tabindex="-1" role="dialog" aria-labelledby="nominationLmtModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="nominationLmtModalLabel">Labour Market Testing (LMT)</h5>
+                                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="nomination_lmt_required">LMT required</label>
+                                            <select id="nomination_lmt_required" class="form-control">
+                                                <option value="">Not set</option>
+                                                <option value="1">Yes</option>
+                                                <option value="0">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="nomination_lmt_start_date">Start date</label>
+                                            <input type="date" id="nomination_lmt_start_date" class="form-control" value="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="nomination_lmt_end_date">End date</label>
+                                            <input type="date" id="nomination_lmt_end_date" class="form-control" value="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="nomination_lmt_notes">Notes</label>
+                                            <textarea id="nomination_lmt_notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                                        </div>
+                                        <p class="text-muted small mb-0" id="nominationLmtModalError" style="display:none;color:#dc3545!important;"></p>
+                                    </div>
+                                    <div class="modal-footer d-flex justify-content-between flex-wrap gap-2">
+                                        <div>
+                                            <button type="button" class="btn btn-outline-danger" id="nominationLmtDeleteBtn" style="display:none;" onclick="window.deleteNominationLmtDetail()">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </button>
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-primary" id="nominationLmtSaveBtn" onclick="window.submitNominationLmtDetail()">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                        (function () {
+                            function nominationLmtMatterId() {
+                                var b = document.getElementById('nominationLmtOpenBtn');
+                                return b ? String(b.getAttribute('data-lmt-matter-id') || '') : '';
+                            }
+                            window.setupNominationLmtModal = function (btnEl) {
+                                var err = document.getElementById('nominationLmtModalError');
+                                if (err) { err.style.display = 'none'; err.textContent = ''; }
+                                var btn = btnEl || document.getElementById('nominationLmtOpenBtn');
+                                var req = document.getElementById('nomination_lmt_required');
+                                var sd = document.getElementById('nomination_lmt_start_date');
+                                var ed = document.getElementById('nomination_lmt_end_date');
+                                var nt = document.getElementById('nomination_lmt_notes');
+                                var del = document.getElementById('nominationLmtDeleteBtn');
+                                if (!req || !sd || !ed || !nt) return;
+                                var has = btn && btn.getAttribute('data-lmt-has-data') === '1';
+                                if (del) del.style.display = has ? 'inline-block' : 'none';
+                                if (has && btn) {
+                                    req.value = btn.getAttribute('data-lmt-required') || '';
+                                    sd.value = btn.getAttribute('data-lmt-start') || '';
+                                    ed.value = btn.getAttribute('data-lmt-end') || '';
+                                    var nj = document.getElementById('nomination-lmt-initial-notes');
+                                    try {
+                                        nt.value = nj && nj.textContent ? JSON.parse(nj.textContent) : '';
+                                    } catch (e) { nt.value = ''; }
+                                } else {
+                                    req.value = '';
+                                    sd.value = '';
+                                    ed.value = '';
+                                    nt.value = '';
+                                }
+                            };
+                            window.deleteNominationLmtDetail = function () {
+                                if (!window.confirm('Remove all Labour Market Testing details for this matter?')) return;
+                                var delBtn = document.getElementById('nominationLmtDeleteBtn');
+                                var token = document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                var fd = new FormData();
+                                fd.append('_token', token || '');
+                                fd.append('id', String({{ (int) $fetchedData->id }}));
+                                fd.append('type', {!! json_encode($fetchedData->type) !!});
+                                fd.append('section', 'lmt');
+                                fd.append('client_matter_id', nominationLmtMatterId());
+                                fd.append('delete_lmt', '1');
+                                if (delBtn) delBtn.disabled = true;
+                                fetch('{{ url('/clients/save-section') }}', {
+                                    method: 'POST',
+                                    body: fd,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                                })
+                                .then(function (r) {
+                                    return r.text().then(function (text) {
+                                        try {
+                                            return { ok: r.ok, status: r.status, data: text ? JSON.parse(text) : {} };
+                                        } catch (e) {
+                                            return { ok: false, status: r.status, data: { message: 'Invalid server response' } };
+                                        }
+                                    });
+                                })
+                                .then(function (res) {
+                                    if (delBtn) delBtn.disabled = false;
+                                    if (res.ok && res.data.success) {
+                                        if (typeof iziToast !== 'undefined' && iziToast.show) {
+                                            iziToast.show({ message: res.data.message || 'Removed', color: 'green', position: 'topRight', timeout: 3500 });
+                                        } else { alert(res.data.message || 'Removed'); }
+                                        window.location.reload();
+                                        return;
+                                    }
+                                    var msg = (res.data && res.data.message) ? res.data.message : 'Could not delete LMT details.';
+                                    if (typeof iziToast !== 'undefined' && iziToast.show) {
+                                        iziToast.show({ message: msg, color: 'red', position: 'topRight', timeout: 5000 });
+                                    } else { alert(msg); }
+                                })
+                                .catch(function () {
+                                    if (delBtn) delBtn.disabled = false;
+                                    alert('Network error. Please try again.');
+                                });
+                            };
+                            window.submitNominationLmtDetail = function () {
+                                var err = document.getElementById('nominationLmtModalError');
+                                var btn = document.getElementById('nominationLmtSaveBtn');
+                                var token = document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                if (err) { err.style.display = 'none'; err.textContent = ''; }
+                                var fd = new FormData();
+                                fd.append('_token', token || '');
+                                fd.append('id', String({{ (int) $fetchedData->id }}));
+                                fd.append('type', {!! json_encode($fetchedData->type) !!});
+                                fd.append('section', 'lmt');
+                                fd.append('client_matter_id', nominationLmtMatterId());
+                                fd.append('lmt_required', document.getElementById('nomination_lmt_required').value);
+                                fd.append('lmt_start_date', document.getElementById('nomination_lmt_start_date').value || '');
+                                fd.append('lmt_end_date', document.getElementById('nomination_lmt_end_date').value || '');
+                                fd.append('lmt_notes', document.getElementById('nomination_lmt_notes').value || '');
+                                if (btn) btn.disabled = true;
+                                fetch('{{ url('/clients/save-section') }}', {
+                                    method: 'POST',
+                                    body: fd,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                                })
+                                .then(function (r) {
+                                    return r.text().then(function (text) {
+                                        try {
+                                            return { ok: r.ok, status: r.status, data: text ? JSON.parse(text) : {} };
+                                        } catch (e) {
+                                            return { ok: false, status: r.status, data: { message: 'Invalid server response' } };
+                                        }
+                                    });
+                                })
+                                .then(function (res) {
+                                    if (btn) btn.disabled = false;
+                                    if (res.ok && res.data.success) {
+                                        if (typeof iziToast !== 'undefined' && iziToast.show) {
+                                            iziToast.show({ message: res.data.message || 'Saved', color: 'green', position: 'topRight', timeout: 3500 });
+                                        } else { alert(res.data.message || 'Saved'); }
+                                        var modalEl = document.getElementById('nominationLmtModal');
+                                        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                                            var inst = bootstrap.Modal.getInstance(modalEl);
+                                            if (inst) inst.hide();
+                                        } else if (window.jQuery && window.jQuery(modalEl).modal) {
+                                            window.jQuery(modalEl).modal('hide');
+                                        }
+                                        window.location.reload();
+                                        return;
+                                    }
+                                    var msg = (res.data && res.data.message) ? res.data.message : 'Could not save LMT details.';
+                                    if (err) {
+                                        err.textContent = msg;
+                                        err.style.display = 'block';
+                                    } else if (typeof iziToast !== 'undefined' && iziToast.show) {
+                                        iziToast.show({ message: msg, color: 'red', position: 'topRight', timeout: 5000 });
+                                    } else { alert(msg); }
+                                })
+                                .catch(function () {
+                                    if (btn) btn.disabled = false;
+                                    var msg = 'Network error. Please try again.';
+                                    if (err) { err.textContent = msg; err.style.display = 'block'; }
+                                    else { alert(msg); }
+                                });
+                            };
+                            function initNominationLmtPopover() {
+                                var openBtn = document.getElementById('nominationLmtOpenBtn');
+                                var tpl = document.getElementById('nomination-lmt-popover-template');
+                                if (!openBtn || !tpl || openBtn.getAttribute('data-lmt-has-data') !== '1') return;
+                                var html = (tpl.innerHTML || '').trim();
+                                if (!html || typeof bootstrap === 'undefined' || !bootstrap.Popover) return;
+                                var pop = bootstrap.Popover.getOrCreateInstance(openBtn, {
+                                    html: true,
+                                    sanitize: false,
+                                    trigger: 'manual',
+                                    placement: 'bottom',
+                                    title: 'Labour Market Testing',
+                                    content: html,
+                                    container: 'body'
+                                });
+                                var hideT = null;
+                                openBtn.addEventListener('mouseenter', function () {
+                                    if (hideT) { clearTimeout(hideT); hideT = null; }
+                                    pop.show();
+                                });
+                                openBtn.addEventListener('mouseleave', function () {
+                                    hideT = setTimeout(function () { pop.hide(); }, 200);
+                                });
+                                openBtn.addEventListener('shown.bs.popover', function () {
+                                    var tip = document.querySelector('body > .popover');
+                                    if (!tip) return;
+                                    tip.addEventListener('mouseenter', function () {
+                                        if (hideT) { clearTimeout(hideT); hideT = null; }
+                                    });
+                                    tip.addEventListener('mouseleave', function () {
+                                        pop.hide();
+                                    });
+                                });
+                            }
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', initNominationLmtPopover);
+                            } else {
+                                initNominationLmtPopover();
+                            }
+                        })();
+                        </script>
+                        @endif
 
                         <!-- Subtab6 Contents -->
                         <div class="subtab6-content">

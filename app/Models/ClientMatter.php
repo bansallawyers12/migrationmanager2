@@ -23,6 +23,9 @@ class ClientMatter extends Model
      */
     protected $casts = [
         'deadline' => 'date',
+        'lmt_required' => 'boolean',
+        'lmt_start_date' => 'date',
+        'lmt_end_date' => 'date',
     ];
 
     /**
@@ -45,7 +48,12 @@ class ClientMatter extends Model
         'updated_at_type',
         // Reference fields
         'department_reference',
-        'other_reference'
+        'other_reference',
+        // Labour Market Testing (matter-specific; company clients in UI)
+        'lmt_required',
+        'lmt_start_date',
+        'lmt_end_date',
+        'lmt_notes',
     ];
 
     /**
