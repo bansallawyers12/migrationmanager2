@@ -222,7 +222,7 @@
                                                                 </div>
                                                             <?php elseif ($isForm956): ?>
                                                                 <div class="form956-download-upload" style="display: flex; flex-direction: column; gap: 10px;" data-download-url="<?= e($downloadUrl) ?>" data-doc-id="<?= $fetch->id ?>">
-                                                                    <p class="mb-0" style="font-size: 12px; color: #374151;">Form 956 PDF downloads automatically. Check, update, then upload your completed form below.</p>
+                                                                    <p class="mb-0" style="font-size: 12px; color: #374151;">The Form 956 PDF downloads when you create it. Check, update, then upload your completed form below.</p>
                                                                     <div class="migration_upload_document" style="display: inline-block;">
                                                                         <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?= $fetch->id ?>">
                                                                             @csrf
@@ -826,45 +826,9 @@
                     }
                 });
 
-                // Form 956: Auto-download PDF when visa documents tab is shown (downloads once per URL per page load)
-                // Exposed as a global so sidebar-tabs.js can call it directly (stopImmediatePropagation blocks delegated click events)
-                window.autoDownloadForm956Pdfs = function() {
-                    var $containers = $('#visadocuments-tab .form956-download-upload[data-download-url]').filter(':visible');
-                    if ($containers.length === 0) return;
-                    var seenUrls = {};
-                    var downloadIdx = 0;
-                    $containers.each(function() {
-                        var url = $(this).data('download-url');
-                        var docId = $(this).data('doc-id');
-                        var lsKey = 'form956_dl_' + docId;
-                        // Skip if already downloaded in a previous session or this session
-                        if (!url || seenUrls[url]) return;
-                        if (docId && localStorage.getItem(lsKey)) return;
-                        seenUrls[url] = true;
-                        var $el = $(this);
-                        var idx = downloadIdx++;
-                        (function(u, key, $container) {
-                            setTimeout(function() {
-                                fetch(u, { credentials: 'same-origin' })
-                                    .then(function(r) { return r.blob(); })
-                                    .then(function(blob) {
-                                        var a = document.createElement('a');
-                                        a.href = URL.createObjectURL(blob);
-                                        a.download = 'Form956.pdf';
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(a.href);
-                                        if (key) localStorage.setItem(key, '1');
-                                    })
-                                    .catch(function() {
-                                        window.open(u, '_blank');
-                                        if (key) localStorage.setItem(key, '1');
-                                    });
-                            }, idx * 800);
-                        })(url, lsKey, $el);
-                    });
-                };
+                // Form 956: PDF downloads once when the form is created (see detail-main.js + Form956Controller@store).
+                // Kept as a no-op so older callers (if any) do not throw; sidebar-tabs no longer invokes bulk download on reload.
+                window.autoDownloadForm956Pdfs = function() {};
             </script>
 
             <script>

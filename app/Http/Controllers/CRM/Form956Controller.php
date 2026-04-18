@@ -101,7 +101,8 @@ class Form956Controller extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Form 956 created successfully.',
-                    'redirect' => route('forms.show', $form)
+                    'redirect' => route('forms.show', $form),
+                    'download_url' => route('forms.pdf', $form),
                 ], 200);
             }
 

@@ -4041,11 +4041,50 @@ success: function(response) {
 
 
 
+        // Form 956 PDF: single download on create (not on visa tab reload — see visa_documents + sidebar-tabs)
+        window.downloadForm956PdfOnce = function(url, onDone) {
+            if (!url) {
+                if (typeof onDone === 'function') {
+                    onDone();
+                }
+                return;
+            }
+            fetch(url, { credentials: 'same-origin' })
+                .then(function(r) {
+                    if (!r.ok) {
+                        throw new Error('PDF request failed');
+                    }
+                    return r.blob();
+                })
+                .then(function(blob) {
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'Form956.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                    if (typeof onDone === 'function') {
+                        onDone();
+                    }
+                })
+                .catch(function() {
+                    window.open(url, '_blank');
+                    if (typeof onDone === 'function') {
+                        onDone();
+                    }
+                });
+        };
+
         // Handle form submission via AJAX
 
         $('#createForm956').on('submit', function(e) {
 
             e.preventDefault();
+
+            var $btn = $(this).find('button[type="submit"]');
+
+            $btn.prop('disabled', true);
 
             $.ajax({
 
@@ -4055,6 +4094,8 @@ success: function(response) {
 
                 data: $(this).serialize(),
 
+                dataType: 'json',
+
                 success: function(response) {
 
                     if (response.success) {
@@ -4063,9 +4104,10 @@ success: function(response) {
 
                         $('#form956CreateFormModel').modal('hide');
 
-                        // Reload the page to reflect the new data
-
-                        location.reload();
+                        // Download PDF once, then reload so the new checklist row appears
+                        window.downloadForm956PdfOnce(response.download_url, function() {
+                            location.reload();
+                        });
 
                     }
 
@@ -4090,6 +4132,40 @@ success: function(response) {
                         var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while creating Form 956. Please try again.';
 
                         $('.custom-error-msg').append('<p class="text-red-600">' + msg + '</p>');
+
+                    }
+
+                },
+
+                complete: function(xhr, textStatus) {
+
+                    if (textStatus === 'error' || textStatus === 'parsererror' || textStatus === 'timeout') {
+
+                        $btn.prop('disabled', false);
+
+                        return;
+
+                    }
+
+                    try {
+
+                        var r = xhr.responseJSON;
+
+                        if (!r && xhr.responseText) {
+
+                            r = JSON.parse(xhr.responseText);
+
+                        }
+
+                        if (!r || !r.success) {
+
+                            $btn.prop('disabled', false);
+
+                        }
+
+                    } catch (err) {
+
+                        $btn.prop('disabled', false);
 
                     }
 

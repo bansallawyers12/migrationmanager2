@@ -232,12 +232,7 @@
                 break;
             case 'visadocuments':
                 filterVisaDocumentsByMatter(SidebarTabs.selectedMatter);
-                // Trigger auto-download of any pending Form 956 PDFs
-                setTimeout(function() {
-                    if (typeof window.autoDownloadForm956Pdfs === 'function') {
-                        window.autoDownloadForm956Pdfs();
-                    }
-                }, 300);
+                // Form 956 PDF downloads on create only (detail-main.js); do not mass-download on tab open/reload
                 break;
             case 'nominationdocuments':
                 filterNominationDocumentsByMatter(SidebarTabs.selectedMatter);
