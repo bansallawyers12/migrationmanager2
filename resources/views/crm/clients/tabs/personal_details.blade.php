@@ -288,6 +288,7 @@
                                     <span class="field-value">{{ $nomRow->position_title }}</span>
                                 </div>
                                 @endif
+                                {{-- TRN / Status hidden in Nominated by employer (restore if needed)
                                 @if($nomRow->trn)
                                 <div class="field-group">
                                     <span class="field-label">TRN</span>
@@ -300,6 +301,7 @@
                                     <span class="field-value">{{ $nomRow->status }}</span>
                                 </div>
                                 @endif
+                                --}}
                                 @if($nomRow->nomination_date)
                                 <div class="field-group">
                                     <span class="field-label">Nomination date</span>
