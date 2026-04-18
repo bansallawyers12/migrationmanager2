@@ -1024,11 +1024,14 @@ class ClientDocumentsController extends Controller
             ob_end_clean();
             exit;
         }
-        $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
+        $admin_info1 = Admin::select('id', 'client_id', 'first_name', 'is_company')->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
         $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
     
         $doctype = isset($request->doctype)? $request->doctype : '';
+        $namePrefix = ($doctype === 'nomination')
+            ? $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name)
+            : $client_first_name;
         
         try {
             if ($request->hasfile('document_upload')) {
@@ -1117,9 +1120,9 @@ class ClientDocumentsController extends Controller
                         exit;
                     }
 
-                    // Build new file name: firstname_checklist_timestamp.ext
+                    // Build new file name: firstname_checklist_timestamp.ext (company name for nomination when is_company)
                     $timestamp = time();
-                    $name = $client_first_name . "_" . $checklistName . "_" . $timestamp . "." . $extension;
+                    $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
 
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
                     $this->s3Disk()->put($filePath, file_get_contents($file));
@@ -1132,7 +1135,7 @@ class ClientDocumentsController extends Controller
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
                         // Checklist changed during upload - rebuild name with same timestamp
                         $checklistName = $finalChecklistName;
-                        $name = $client_first_name . "_" . $checklistName . "_" . $timestamp . "." . $extension;
+                        $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
                         // Update file path and move S3 file
                         $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
                         if ($newFilePath !== $filePath) {
@@ -1158,7 +1161,7 @@ class ClientDocumentsController extends Controller
                         }
                     }
 
-                    $obj->file_name = $client_first_name . "_" . $checklistName . "_" . $timestamp;
+                    $obj->file_name = $namePrefix . "_" . $checklistName . "_" . $timestamp;
                     $obj->filetype = $extension;
                     $obj->user_id = Auth::user()->id;
                     $fileUrl = $this->s3Disk()->url($filePath);
@@ -3266,9 +3269,12 @@ class ClientDocumentsController extends Controller
                 return $deny;
             }
             
-            $admin_info1 = Admin::select('client_id', 'first_name')->where('id', $clientid)->first();
+            $admin_info1 = Admin::select('id', 'client_id', 'first_name', 'is_company')->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
             $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
+            $namePrefix = ($doctype === 'nomination')
+                ? $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name)
+                : $client_first_name;
             
             if (!$request->hasFile('files')) {
                 $response['message'] = 'No files uploaded';
@@ -3396,7 +3402,7 @@ class ClientDocumentsController extends Controller
                     $extension = $file->getClientOriginalExtension();
                     $timestamp = time();
                     $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
-                    $name = $client_first_name . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
+                    $name = $namePrefix . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
                     
                     $this->s3Disk()->put($filePath, file_get_contents($file));
@@ -3408,7 +3414,7 @@ class ClientDocumentsController extends Controller
                     // If checklist changed during upload, rebuild filename and move S3 file
                     if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
                         $checklistName = $finalChecklistName;
-                        $name = $client_first_name . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
+                        $name = $namePrefix . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
                         $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
                         if ($newFilePath !== $filePath) {
                             try {
@@ -3432,7 +3438,7 @@ class ClientDocumentsController extends Controller
                     
                     // Update document
                     $fileUrl = $this->s3Disk()->url($filePath);
-                    $document->file_name = $client_first_name . "_" . $checklistName . "_" . $uniqueId;
+                    $document->file_name = $namePrefix . "_" . $checklistName . "_" . $uniqueId;
                     $document->filetype = $extension;
                     $document->user_id = Auth::user()->id;
                     $document->myfile = $fileUrl;
