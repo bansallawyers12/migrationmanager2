@@ -677,7 +677,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return classes[status] || 'secondary';
     }
 
-    var AJAY_ARUN_BLOCK_MESSAGE = 'You cannot assign this appointment to Ajay Calendar or Arun Calendar from 23 Apr 2026 to 3 May 2026. These consultants are not available for appointment dates in this period.';
+    var AJAY_ARUN_BLOCK_MESSAGE = 'You cannot assign this appointment to Ajay Calendar or Arun Calendar from 23 Apr 2026 to 3 May 2026. These consultants are not available for this period.';
 
     function isMelbourneYmdInAjayArunBlock(ymd) {
         if (!ymd) return false;
