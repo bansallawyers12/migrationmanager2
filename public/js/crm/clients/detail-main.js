@@ -4912,7 +4912,7 @@ success: function(response) {
             var $scope = (containerScope && $(containerScope).length) ? $(containerScope) : $(document);
             // Remove any existing handlers to prevent duplicates
             $scope.find('#Block_1_Ex_Tax, #Block_2_Ex_Tax, #Block_3_Ex_Tax').off('input change keyup');
-            $scope.find('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').off('input change keyup');
+            $scope.find('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge, #saf_levy').off('input change keyup');
             $scope.find('#Dept_Base_Application_Charge_no_of_person, #Dept_Non_Internet_Application_Charge_no_of_person, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person, #Dept_Additional_Applicant_Charge_Under_18_no_of_person, #Dept_Subsequent_Temp_Application_Charge_no_of_person, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person, #Dept_Second_VAC_Instalment_Under_18_no_of_person').off('input change keyup');
             $scope.find('#surcharge').off('change');
 
@@ -4922,7 +4922,7 @@ success: function(response) {
             });
 
             // Calculate Total DoHA Charges when Department fields change
-            $scope.find('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge').on('input change keyup', function() {
+            $scope.find('#Dept_Base_Application_Charge, #Dept_Non_Internet_Application_Charge, #Dept_Additional_Applicant_Charge_18_Plus, #Dept_Additional_Applicant_Charge_Under_18, #Dept_Subsequent_Temp_Application_Charge, #Dept_Second_VAC_Instalment_Charge_18_Plus, #Dept_Second_VAC_Instalment_Under_18, #Dept_Nomination_Application_Charge, #Dept_Sponsorship_Application_Charge, #saf_levy').on('input change keyup', function() {
                 calculateTotalDoHACharges(containerScope);
             });
 
@@ -4945,6 +4945,19 @@ success: function(response) {
         function getPersonCount(value, fallback) {
             var parsed = parseFloat(value);
             return isNaN(parsed) ? fallback : parsed;
+        }
+
+        /** SAF Levy input (company cost assignment only); empty or missing field => 0 */
+        function parseSafLevyAmount($field) {
+            if (!$field || !$field.length) {
+                return 0;
+            }
+            var raw = ($field.val() || '').toString().replace(/,/g, '').trim();
+            if (raw === '') {
+                return 0;
+            }
+            var n = parseFloat(raw);
+            return isNaN(n) ? 0 : n;
         }
 
         // Calculate Total Block Fee
@@ -5006,6 +5019,8 @@ success: function(response) {
             // Dept Sponsorship Application Charge (no person multiplier)
             var sponsorshipCharge = parseFloat($scope.find('#Dept_Sponsorship_Application_Charge').val()) || 0;
             total += sponsorshipCharge;
+
+            total += parseSafLevyAmount($scope.find('#saf_levy'));
 
             $scope.find('#TotalDoHACharges').val(total.toFixed(2));
             
@@ -5309,12 +5324,12 @@ success: function(response) {
         // Lead form calculation functions (uses _lead suffix IDs)
         function initializeCostAssignmentCalculationsLead() {
             $('#Block_1_Ex_Tax_lead, #Block_2_Ex_Tax_lead, #Block_3_Ex_Tax_lead').off('input change keyup');
-            $('#Dept_Base_Application_Charge_lead, #Dept_Non_Internet_Application_Charge_lead, #Dept_Additional_Applicant_Charge_18_Plus_lead, #Dept_Additional_Applicant_Charge_Under_18_lead, #Dept_Subsequent_Temp_Application_Charge_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_lead, #Dept_Second_VAC_Instalment_Under_18_lead, #Dept_Nomination_Application_Charge_lead, #Dept_Sponsorship_Application_Charge_lead').off('input change keyup');
+            $('#Dept_Base_Application_Charge_lead, #Dept_Non_Internet_Application_Charge_lead, #Dept_Additional_Applicant_Charge_18_Plus_lead, #Dept_Additional_Applicant_Charge_Under_18_lead, #Dept_Subsequent_Temp_Application_Charge_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_lead, #Dept_Second_VAC_Instalment_Under_18_lead, #Dept_Nomination_Application_Charge_lead, #Dept_Sponsorship_Application_Charge_lead, #saf_levy_lead').off('input change keyup');
             $('#Dept_Base_Application_Charge_no_of_person_lead, #Dept_Non_Internet_Application_Charge_no_of_person_lead, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead, #Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead, #Dept_Subsequent_Temp_Application_Charge_no_of_person_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead, #Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').off('input change keyup');
             $('#surcharge_lead').off('change');
 
             $('#Block_1_Ex_Tax_lead, #Block_2_Ex_Tax_lead, #Block_3_Ex_Tax_lead').on('input change keyup', function() { calculateTotalBlockFeeLead(); });
-            $('#Dept_Base_Application_Charge_lead, #Dept_Non_Internet_Application_Charge_lead, #Dept_Additional_Applicant_Charge_18_Plus_lead, #Dept_Additional_Applicant_Charge_Under_18_lead, #Dept_Subsequent_Temp_Application_Charge_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_lead, #Dept_Second_VAC_Instalment_Under_18_lead, #Dept_Nomination_Application_Charge_lead, #Dept_Sponsorship_Application_Charge_lead').on('input change keyup', function() { calculateTotalDoHAChargesLead(); });
+            $('#Dept_Base_Application_Charge_lead, #Dept_Non_Internet_Application_Charge_lead, #Dept_Additional_Applicant_Charge_18_Plus_lead, #Dept_Additional_Applicant_Charge_Under_18_lead, #Dept_Subsequent_Temp_Application_Charge_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_lead, #Dept_Second_VAC_Instalment_Under_18_lead, #Dept_Nomination_Application_Charge_lead, #Dept_Sponsorship_Application_Charge_lead, #saf_levy_lead').on('input change keyup', function() { calculateTotalDoHAChargesLead(); });
             $('#Dept_Base_Application_Charge_no_of_person_lead, #Dept_Non_Internet_Application_Charge_no_of_person_lead, #Dept_Additional_Applicant_Charge_18_Plus_no_of_person_lead, #Dept_Additional_Applicant_Charge_Under_18_no_of_person_lead, #Dept_Subsequent_Temp_Application_Charge_no_of_person_lead, #Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person_lead, #Dept_Second_VAC_Instalment_Under_18_no_of_person_lead').on('input change keyup', function() { calculateTotalDoHAChargesLead(); });
             $('#surcharge_lead').on('change', function() { calculateTotalDoHASurchargesLead(); });
 
@@ -5354,6 +5369,7 @@ success: function(response) {
             total += vacUnder18Charge * vacUnder18Persons;
             total += parseFloat($('#Dept_Nomination_Application_Charge_lead').val()) || 0;
             total += parseFloat($('#Dept_Sponsorship_Application_Charge_lead').val()) || 0;
+            total += parseSafLevyAmount($('#saf_levy_lead'));
             $('#TotalDoHACharges_lead').val(total.toFixed(2));
             calculateTotalDoHASurchargesLead();
         }

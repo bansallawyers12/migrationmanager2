@@ -5432,6 +5432,10 @@ class ClientsController extends Controller
                                 + $Dept_Nomination_Application_Charge
                                 + $Dept_Sponsorship_Application_Charge;
 
+            if ($isCompanyClient && $safLevyForSave !== null) {
+                $TotalDoHACharges += (float) str_replace(',', '', (string) $safLevyForSave);
+            }
+
             // Calculate surcharge as 1.4% of total DoHA charges (matching frontend calculation)
             if( $surcharge == 'Yes'){
                 $TotalDoHASurcharges = round($TotalDoHACharges * 0.014, 2);
@@ -5980,6 +5984,10 @@ class ClientsController extends Controller
                                     + $Dept_Non_Internet_Application_Charge_after_person
                                     + $Dept_Nomination_Application_Charge
                                     + $Dept_Sponsorship_Application_Charge;
+
+                if ($isCompanyClientLead && $safLevyForSaveLead !== null) {
+                    $TotalDoHACharges += (float) str_replace(',', '', (string) $safLevyForSaveLead);
+                }
 
                 // Calculate surcharge as 1.4% of total DoHA charges (matching frontend calculation)
                 if( $surcharge == 'Yes'){
