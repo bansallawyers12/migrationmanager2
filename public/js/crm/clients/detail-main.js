@@ -4281,9 +4281,38 @@ success: function(response) {
 
 
 
+        /** Toggle loading state on Create Visa Agreement buttons (checklists tab). */
+        function setVisaAgreementCreateButtonLoading($btn, isLoading) {
+            if (!$btn || !$btn.length) {
+                return;
+            }
+            if (isLoading) {
+                if ($btn.data('visaAgreementCreateLoading')) {
+                    return;
+                }
+                $btn.data('visaAgreementCreateLoading', true);
+                $btn.data('visaAgreementCreateHtml', $btn.html());
+                $btn.prop('disabled', true).attr('aria-busy', 'true');
+                $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Creating...');
+            } else {
+                if (!$btn.data('visaAgreementCreateLoading')) {
+                    return;
+                }
+                $btn.data('visaAgreementCreateLoading', false);
+                var saved = $btn.data('visaAgreementCreateHtml');
+                if (saved !== undefined) {
+                    $btn.html(saved);
+                }
+                $btn.removeData('visaAgreementCreateHtml');
+                $btn.prop('disabled', false).removeAttr('aria-busy');
+            }
+        }
+
         // Direct AJAX submission for visa agreement
 
         $(document).delegate('.visaAgreementCreateForm', 'click', function() {
+
+            var $btn = $(this);
 
             var client_id = window.ClientDetailConfig.clientId;
 
@@ -4295,6 +4324,8 @@ success: function(response) {
                 alert('Please select a matter before generating the visa agreement.\n\nA matter is required to populate visa details, fees, and agent information.');
                 return false;
             }
+
+            setVisaAgreementCreateButtonLoading($btn, true);
 
             // First check if cost assignment exists
 
@@ -4331,7 +4362,10 @@ success: function(response) {
                             success: function(agentResponse) {
 
                                 var obj = safeParseJsonResponse(agentResponse);
-                                if (!obj) return;
+                                if (!obj) {
+                                    setVisaAgreementCreateButtonLoading($btn, false);
+                                    return;
+                                }
                                 if(obj.agentInfo) {
 
                                     // Prepare form data for AJAX submission
@@ -4369,6 +4403,8 @@ success: function(response) {
                                         data: formData,
 
                                         success: function(response) {
+
+                                            try {
 
                                             // Handle successful response
 
@@ -4470,9 +4506,17 @@ success: function(response) {
 
                                             }
 
+                                            } finally {
+
+                                                setVisaAgreementCreateButtonLoading($btn, false);
+
+                                            }
+
                                         },
 
                                         error: function(xhr) {
+
+                                            setVisaAgreementCreateButtonLoading($btn, false);
 
                                             // Handle errors
 
@@ -4492,6 +4536,8 @@ success: function(response) {
 
                                 } else {
 
+                                    setVisaAgreementCreateButtonLoading($btn, false);
+
                                     alert("Agent information not found.");
 
                                 }
@@ -4499,6 +4545,8 @@ success: function(response) {
                             },
 
                             error: function() {
+
+                                setVisaAgreementCreateButtonLoading($btn, false);
 
                                 alert("Error fetching agent details.");
 
@@ -4508,6 +4556,8 @@ success: function(response) {
 
                     } else {
 
+                        setVisaAgreementCreateButtonLoading($btn, false);
+
                         alert("Please first create Cost Assignment.");
 
                     }
@@ -4515,6 +4565,8 @@ success: function(response) {
                 },
 
                 error: function() {
+
+                    setVisaAgreementCreateButtonLoading($btn, false);
 
                     alert("Error checking cost assignment.");
 
