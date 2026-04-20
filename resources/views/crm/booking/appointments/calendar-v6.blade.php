@@ -446,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 hour: '2-digit',
                 minute: '2-digit'
             });
+            const stableConsultantIdAttr = props.consultant_id != null ? String(props.consultant_id) : '';
             
             const modalBody = `
                 <div class="appointment-details">
@@ -546,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-md-6">
                             <h6><i class="fas fa-exchange-alt"></i> Change Calendar Type</h6>
                             <div class="form-group">
-                                <select class="form-control form-control-sm" id="consultantSelect-${event.id}" onchange="updateAppointmentConsultant(${event.id}, this.value)">
+                                <select class="form-control form-control-sm" id="consultantSelect-${event.id}" data-stable-consultant-id="${stableConsultantIdAttr}" onchange="updateAppointmentConsultant(${event.id}, this.value)">
                                     <option value="">Select Consultant...</option>
                                     ${(() => {
                                         // Deduplicate consultants by ID to prevent duplicates
@@ -576,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             const typeSuffix = (consultant.calendar_type && consultant.calendar_type !== 'paid')
                                                 ? ` (${consultant.calendar_type})`
                                                 : '';
-                                            return `<option value="${consultant.id}" ${isSelected ? 'selected' : ''}>${label}${typeSuffix}</option>`;
+                                            return `<option value="${consultant.id}" data-calendar-type="${consultant.calendar_type || ''}" ${isSelected ? 'selected' : ''}>${label}${typeSuffix}</option>`;
                                         }).join('');
                                     })()}
                                 </select>
@@ -674,6 +675,19 @@ document.addEventListener('DOMContentLoaded', function() {
             'rescheduled': 'primary'
         };
         return classes[status] || 'secondary';
+    }
+
+    var AJAY_ARUN_BLOCK_MESSAGE = 'You cannot assign this appointment to Ajay Calendar or Arun Calendar from 23 Apr 2026 to 3 May 2026. These consultants are not available for appointment dates in this period.';
+
+    function isMelbourneYmdInAjayArunBlock(ymd) {
+        if (!ymd) return false;
+        return ymd >= '2026-04-23' && ymd <= '2026-05-03';
+    }
+
+    function calendarTypeForConsultantOption(selectEl, consultantId) {
+        if (!selectEl || consultantId === '' || consultantId == null) return '';
+        var opt = selectEl.querySelector('option[value="' + String(consultantId).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]');
+        return opt ? (opt.getAttribute('data-calendar-type') || '') : '';
     }
     
     // Global functions for modal actions
@@ -791,18 +805,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!consultantId) {
             return;
         }
-        
-        if (!confirm('Are you sure you want to change the consultant? This will move the appointment to a different calendar.')) {
-            // Reset the select to previous value
-            const select = document.getElementById('consultantSelect-' + appointmentId);
-            if (select) select.value = '';
+
+        const select = document.getElementById('consultantSelect-' + appointmentId);
+        if (!select) return;
+
+        const stableConsultantId = select.getAttribute('data-stable-consultant-id') || '';
+
+        const dateInput = document.getElementById('rescheduleDate-' + appointmentId);
+        const effectiveMelbourneYmd = dateInput && dateInput.value ? dateInput.value : null;
+        const targetCalType = calendarTypeForConsultantOption(select, consultantId);
+        if (effectiveMelbourneYmd && isMelbourneYmdInAjayArunBlock(effectiveMelbourneYmd) && (targetCalType === 'ajay' || targetCalType === 'arun')) {
+            alert(AJAY_ARUN_BLOCK_MESSAGE);
+            select.value = stableConsultantId;
             return;
         }
         
-        // Show loading state
-        const select = document.getElementById('consultantSelect-' + appointmentId);
-        if (!select) return;
-        const originalValue = select.value;
+        if (!confirm('Are you sure you want to change the consultant? This will move the appointment to a different calendar.')) {
+            select.value = stableConsultantId;
+            return;
+        }
+        
         select.disabled = true;
         
         fetch(`/booking/appointments/${appointmentId}/update-consultant`, {
@@ -815,7 +837,8 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             credentials: 'same-origin',
             body: JSON.stringify({
-                consultant_id: consultantId
+                consultant_id: consultantId,
+                appointment_date_melbourne: effectiveMelbourneYmd || null
             })
         })
         .then(response => {
@@ -840,6 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.success) {
+                select.setAttribute('data-stable-consultant-id', String(consultantId));
                 // Close the modal and refresh calendar
                 $('#eventModal').modal('hide');
                 calendar.refetchEvents();
@@ -848,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('success', 'Consultant updated successfully! The appointment has been moved to the new calendar.');
             } else {
                 showAlert('danger', 'Failed to update consultant: ' + (data.message || 'Unknown error'));
-                if (select) select.value = originalValue;
+                select.value = stableConsultantId;
             }
         })
         .catch(error => {
@@ -859,7 +883,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Validation error
                 const errorMsg = error.data?.message || 'Validation failed';
                 const errors = error.data?.errors || {};
-                showAlert('danger', errorMsg);
+                if (errorMsg.indexOf('Ajay Calendar or Arun Calendar') !== -1) {
+                    alert(errorMsg);
+                } else {
+                    showAlert('danger', errorMsg);
+                }
                 if (Object.keys(errors).length > 0) {
                     console.error('Validation errors:', errors);
                 }
@@ -876,7 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('danger', 'Failed to update consultant. Please try again.');
             }
             
-            if (select) select.value = originalValue;
+            select.value = stableConsultantId;
         })
         .finally(() => {
             if (select) select.disabled = false;

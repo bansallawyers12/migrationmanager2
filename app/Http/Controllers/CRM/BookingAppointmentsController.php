@@ -490,8 +490,34 @@ class BookingAppointmentsController extends Controller
             $this->assertBookingAppointmentAccess($appointment);
 
             $request->validate([
-                'consultant_id' => 'required|exists:appointment_consultants,id'
+                'consultant_id' => 'required|exists:appointment_consultants,id',
+                'appointment_date_melbourne' => 'nullable|date_format:Y-m-d',
             ]);
+
+            if ((int) $request->consultant_id === (int) ($appointment->consultant_id ?? 0)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Consultant assigned successfully',
+                ]);
+            }
+
+            $newConsultant = AppointmentConsultant::find($request->consultant_id);
+            $dbYmd = $appointment->appointment_datetime
+                ? $appointment->appointment_datetime->copy()->timezone('Australia/Melbourne')->format('Y-m-d')
+                : null;
+            $modalYmd = $request->input('appointment_date_melbourne');
+            if (! is_string($modalYmd) || $modalYmd === '') {
+                $modalYmd = null;
+            }
+            if ($newConsultant && in_array($newConsultant->calendar_type, ['ajay', 'arun'], true)) {
+                if ($this->isAjayArunBlockedForMelbourneDate($dbYmd, $newConsultant->calendar_type)
+                    || $this->isAjayArunBlockedForMelbourneDate($modalYmd, $newConsultant->calendar_type)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You cannot assign this appointment to Ajay Calendar or Arun Calendar from 23 Apr 2026 to 3 May 2026. These consultants are not available for appointment dates in this period.',
+                    ], 422);
+                }
+            }
 
             $oldConsultantId = $appointment->consultant_id;
             $appointment->consultant_id = $request->consultant_id;
@@ -1461,6 +1487,24 @@ class BookingAppointmentsController extends Controller
             'success' => true,
             'message' => "Updated {$updated} appointments"
         ]);
+    }
+
+    /**
+     * Ajay/Arun calendars are not assignable for Melbourne-local appointment dates in this inclusive window.
+     *
+     * @param  string|null  $melbourneYmd  Y-m-d in Australia/Melbourne (from DB or modal date field)
+     */
+    protected function isAjayArunBlockedForMelbourneDate(?string $melbourneYmd, ?string $calendarType): bool
+    {
+        if ($melbourneYmd === null || $melbourneYmd === '') {
+            return false;
+        }
+
+        if (! in_array($calendarType, ['ajay', 'arun'], true)) {
+            return false;
+        }
+
+        return $melbourneYmd >= '2026-04-23' && $melbourneYmd <= '2026-05-03';
     }
 }
 
