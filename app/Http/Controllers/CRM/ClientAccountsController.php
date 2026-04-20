@@ -2860,8 +2860,8 @@ class ClientAccountsController extends Controller
 
       // ============= START CACHING LOGIC =============
       
-      // Check if PDF already exists in AWS
-      if ($receipt_entry && !empty($receipt_entry->pdf_document_id)) {
+      // Check if PDF already exists in AWS (skip cache when regenerate=1 so PDF is rebuilt with current client data)
+      if (!$request->has('regenerate') && $receipt_entry && !empty($receipt_entry->pdf_document_id)) {
           $existingPdf = DB::table('documents')
            ->where('id', $receipt_entry->pdf_document_id)
            ->first();
