@@ -22,11 +22,14 @@ class ClientPortalDocumentController extends Controller
         try {
             $admin = $request->user();
             $clientId = $admin->id;
-            
+            $isCompany = (bool) DB::table('admins')->where('id', $clientId)->value('is_company');
+            $typeScope = $isCompany ? ['company', 'both'] : ['personal', 'both'];
+
             // Get personal document categories (matter independent)
             // From personal_document_types table where client_id IS NULL or matches current client
             $categories = DB::table('personal_document_types')
                 ->where('status', 1) // Active categories only
+                ->whereIn('type', $typeScope)
                 ->where(function($query) use ($clientId) {
                     $query->whereNull('client_id') // Global categories
                           ->orWhere('client_id', $clientId); // Client-specific categories
@@ -37,6 +40,7 @@ class ClientPortalDocumentController extends Controller
                     'title',
                     'status',
                     'client_id',
+                    'type',
                     'created_at',
                     'updated_at'
                 )
@@ -393,9 +397,12 @@ class ClientPortalDocumentController extends Controller
 
             // Verify that the doc_category_id exists and matches the doc_type
             if ($docType === 'personal') {
+                $isCompany = (bool) DB::table('admins')->where('id', $clientId)->value('is_company');
+                $typeScope = $isCompany ? ['company', 'both'] : ['personal', 'both'];
                 $categoryExists = DB::table('personal_document_types')
                     ->where('id', $docCategoryId)
                     ->where('status', 1)
+                    ->whereIn('type', $typeScope)
                     ->where(function($query) use ($clientId) {
                         $query->whereNull('client_id')
                               ->orWhere('client_id', $clientId);

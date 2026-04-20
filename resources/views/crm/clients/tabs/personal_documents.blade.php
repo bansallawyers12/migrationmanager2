@@ -3,15 +3,39 @@
                 <div class="card full-width documentalls-container">
                     <?php
                     $clientId = $fetchedData->id ?? null;
+                    $companyDocumentsOnlyGeneral = !empty($companyDocumentsOnlyGeneral);
                     $isSuperAdmin = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role == 1;
-                    $persDocCatList = \App\Models\PersonalDocumentType::select('id', 'title','client_id')
+                    $personalDocTypeScope = $companyDocumentsOnlyGeneral
+                        ? ['company', 'both']
+                        : ['personal', 'both'];
+                    $persDocCatList = \App\Models\PersonalDocumentType::select('id', 'title', 'client_id', 'type')
                         ->where('status', 1)
                         ->where(function($query) use ($clientId) {
                             $query->whereNull('client_id')
                                 ->orWhere('client_id', $clientId);
                         })
+                        ->whereIn('type', $personalDocTypeScope)
                         ->orderBy('id', 'ASC')
                         ->get();
+                    if ($companyDocumentsOnlyGeneral) {
+                        $companyDocTitlesOrder = ['General', 'Financial'];
+                        $companyDocOrdered = collect();
+                        foreach ($companyDocTitlesOrder as $title) {
+                            $match = $persDocCatList->first(function ($cat) use ($title) {
+                                return strcasecmp(trim($cat->title ?? ''), $title) === 0;
+                            });
+                            if ($match) {
+                                $companyDocOrdered->push($match);
+                            }
+                        }
+                        if ($companyDocOrdered->isEmpty()) {
+                            $fallback = $persDocCatList->firstWhere('id', 1) ?? $persDocCatList->first();
+                            $persDocCatList = $fallback ? collect([$fallback]) : collect();
+                        } else {
+                            $persDocCatList = $companyDocOrdered->values();
+                        }
+                    }
+                    $firstPersDocCatId = optional($persDocCatList->first())->id;
                     ?>
 
                     <!-- Personal Documents Content -->
@@ -22,7 +46,9 @@
                                 <?php foreach ($persDocCatList as $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
-                                    $isActive = $id == 1 ? 'active' : '';
+                                    $isActive = $companyDocumentsOnlyGeneral
+                                        ? ($id == $firstPersDocCatId ? 'active' : '')
+                                        : ($id == 1 ? 'active' : '');
                                     $isClientGenerated = $catVal->client_id !== null;
                                     ?>
                                     <div style="display: inline-block; position: relative;" class="button-container">
@@ -43,9 +69,11 @@
                                 <?php endforeach; ?>
                             </nav>
                             <div style="display: flex; gap: 10px; align-items: center;">
+                                @if (!$companyDocumentsOnlyGeneral)
                                 <button type="button" class="btn add_personal_doc_cat-btn add_personal_doc_cat" data-type="personal" data-categoryid="">
                                     <i class="fas fa-plus"></i> Add Category
                                 </button>
+                                @endif
                                 <!-- Add link to Not Used Documents -->
                                 <button type="button" class="btn btn-secondary client-nav-button client-nav-button--inline" data-tab="notuseddocuments">
                                     <i class="fas fa-folder-minus"></i> Not Used Documents
@@ -58,7 +86,9 @@
                             <?php foreach ($persDocCatList as $catVal): ?>
                                 <?php
                                 $id = $catVal->id;
-                                $isActive = $id == 1 ? 'active' : '';
+                                $isActive = $companyDocumentsOnlyGeneral
+                                    ? ($id == $firstPersDocCatId ? 'active' : '')
+                                    : ($id == 1 ? 'active' : '');
                                 $folderName = $id;
                                 ?>
 

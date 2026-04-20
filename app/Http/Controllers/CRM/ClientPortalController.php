@@ -6523,8 +6523,11 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 
 		try {
 			if ($type === 'personal') {
+				$isCompany = (bool) DB::table('admins')->where('id', $clientId)->value('is_company');
+				$typeScope = $isCompany ? ['company', 'both'] : ['personal', 'both'];
 				$categories = DB::table('personal_document_types')
 					->where('status', 1)
+					->whereIn('type', $typeScope)
 					->where(function ($q) use ($clientId) {
 						$q->whereNull('client_id')
 						  ->orWhere('client_id', $clientId);

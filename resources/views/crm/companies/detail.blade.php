@@ -436,7 +436,7 @@ use App\Http\Controllers\Controller;
             
             @include('crm.clients.tabs.notes')
             
-            @include('crm.clients.tabs.personal_documents')
+            @include('crm.clients.tabs.personal_documents', ['companyDocumentsOnlyGeneral' => true])
             
             <?php
             // Mirror the same condition used to render sidebar buttons so that

@@ -9,7 +9,11 @@ class PersonalDocumentType extends Authenticatable {
     use Notifiable;
 	use Sortable;
 
-	protected $fillable = ['id', 'title', 'status','client_id','created_at', 'updated_at'];
+	protected $fillable = ['id', 'title', 'status', 'client_id', 'type', 'created_at', 'updated_at'];
+
+	protected $attributes = [
+		'type' => 'personal',
+	];
 
 	public $sortable = ['id', 'created_at', 'updated_at'];
 }

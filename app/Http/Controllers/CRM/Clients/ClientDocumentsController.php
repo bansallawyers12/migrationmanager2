@@ -2410,6 +2410,7 @@ class ClientDocumentsController extends Controller
             $category = new PersonalDocumentType();
             $category->title = $categoryTitle;
             $category->status = 1;
+            $category->type = 'personal';
             $category->client_id = $clientId ?? null;
             $category->save();
 

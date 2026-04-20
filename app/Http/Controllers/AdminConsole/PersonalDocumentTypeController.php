@@ -55,6 +55,7 @@ class PersonalDocumentTypeController extends Controller
             $obj		 = 	new PersonalDocumentType;
 			$obj->title	=	@$requestData['title'];
 			$obj->status	= 1;
+			$obj->type	= 'personal';
 			$saved	=	$obj->save();
             if(!$saved)
 			{
