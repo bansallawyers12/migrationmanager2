@@ -207,6 +207,9 @@
                                         <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}" target="_blank">
                                             <i class="fas fa-eye"></i> View Receipt
                                         </a>
+                                        <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}?regenerate=1" target="_blank">
+                                            <i class="fas fa-sync-alt"></i> Regenerate Invoice
+                                        </a>
                                         <a class="dropdown-item" href="{{URL::to('/clients/genClientFundReceipt')}}/{{$rec_val->id}}?download=1">
                                             <i class="fas fa-download"></i> Download PDF
                                         </a>
