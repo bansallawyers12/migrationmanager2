@@ -2119,7 +2119,7 @@ class ClientsController extends Controller
                 // Route to company detail page if this is a company
                 if ($fetchedData && $fetchedData->is_company) {
                     // Fetch data needed for company detail page
-                    $clientAddresses = ClientAddress::where('client_id', $id)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
+                    $clientAddresses = ClientAddress::where('client_id', $id)->orderedForDisplay()->get();
                     $clientContacts = ClientContact::where('client_id', $id)->get();
                     $emails = ClientEmail::where('client_id', $id)->get() ?? [];
                     
@@ -2149,7 +2149,7 @@ class ClientsController extends Controller
 
 
                 //Fetch other client-related data
-                $clientAddresses = ClientAddress::where('client_id', $id)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
+                $clientAddresses = ClientAddress::where('client_id', $id)->orderedForDisplay()->get();
                 $clientContacts = ClientContact::where('client_id', $id)->get();
                 $emails = ClientEmail::where('client_id', $id)->get() ?? [];
                 $qualifications = ClientQualification::where('client_id', $id)->orderByRaw('finish_date DESC NULLS LAST')->get() ?? [];
@@ -4743,7 +4743,7 @@ class ClientsController extends Controller
                     $client_zip = $addressArr->zip;
                 } else {
                     // If no record with is_current = 1 is found, get the latest record by created_at
-                    $latestAddressRecord = DB::table('client_addresses')->where('client_id', $id)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->first();
+                    $latestAddressRecord = DB::table('client_addresses')->where('client_id', $id)->orderByRaw(ClientAddress::ORDER_BY_DISPLAY_SQL)->orderByDesc('id')->first();
                     $client_address = $latestAddressRecord->address;
                     $client_zip = $latestAddressRecord->zip;
                 }

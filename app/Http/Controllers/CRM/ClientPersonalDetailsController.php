@@ -3760,6 +3760,9 @@ class ClientPersonalDetailsController extends Controller
                     Log::warning("SECURITY: Prevented deletion of all {$existingAddressCount} addresses for client {$client->id}. " .
                         "No valid addresses in request - this may indicate an empty form submission or bug.");
                 }
+
+                // Option A: align is_current with the same order as the Address Information UI
+                ClientAddress::syncIsCurrentForClient((int) $client->id);
             }
             
             // Get new addresses for change tracking

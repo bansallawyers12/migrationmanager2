@@ -3554,7 +3554,7 @@ class ClientPortalController extends Controller
 		$clientId = $fetchedData->id;
 		$clientContacts = ClientContact::where('client_id', $clientId)->orderBy('id')->get();
 		$emails = ClientEmail::where('client_id', $clientId)->get();
-		$clientAddresses = ClientAddress::where('client_id', $clientId)->orderByRaw('start_date DESC NULLS LAST, created_at DESC')->get();
+		$clientAddresses = ClientAddress::where('client_id', $clientId)->orderedForDisplay()->get();
 		$clientPassports = ClientPassportInformation::where('client_id', $clientId)->orderBy('id')->get();
 		$visaCountries = ClientVisaCountry::with('matter')->where('client_id', $clientId)->orderBy('id')->get();
 		$clientTravels = ClientTravelInformation::where('client_id', $clientId)->orderByRaw('travel_arrival_date DESC NULLS LAST, created_at DESC')->get();

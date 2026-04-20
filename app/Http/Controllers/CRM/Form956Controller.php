@@ -360,7 +360,8 @@ class Form956Controller extends Controller
             // If no record with is_current = 1 is found, get the latest record by created_at
             $latestAddressRecord = DB::table('client_addresses')
                 ->where('client_id', $clientId)
-                ->orderBy('created_at', 'desc')
+                ->orderByRaw(\App\Models\ClientAddress::ORDER_BY_DISPLAY_SQL)
+                ->orderByDesc('id')
                 ->first();
 
             // Return the address from the latest record, or null if no records exist

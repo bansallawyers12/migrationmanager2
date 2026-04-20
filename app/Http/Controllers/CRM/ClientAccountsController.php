@@ -3008,7 +3008,8 @@ class ClientAccountsController extends Controller
       if (!$clientAddress) {
           $clientAddress = DB::table('client_addresses')
            ->where('client_id', $record_get[0]->client_id)
-           ->orderBy('created_at', 'desc')
+           ->orderByRaw(\App\Models\ClientAddress::ORDER_BY_DISPLAY_SQL)
+           ->orderByDesc('id')
            ->first();
       }
       
@@ -4773,7 +4774,8 @@ class ClientAccountsController extends Controller
     if (!$clientAddress) {
         $clientAddress = DB::table('client_addresses')
          ->where('client_id', $record_get->client_id)
-         ->orderBy('created_at', 'desc')
+         ->orderByRaw(\App\Models\ClientAddress::ORDER_BY_DISPLAY_SQL)
+         ->orderByDesc('id')
          ->first();
     }
     
@@ -5115,7 +5117,8 @@ public function genofficereceiptInvoice(Request $request, $id){
     if (!$clientAddress) {
         $clientAddress = DB::table('client_addresses')
          ->where('client_id', $record_get->client_id)
-         ->orderBy('created_at', 'desc')
+         ->orderByRaw(\App\Models\ClientAddress::ORDER_BY_DISPLAY_SQL)
+         ->orderByDesc('id')
          ->first();
     }
     
