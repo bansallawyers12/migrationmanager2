@@ -33,6 +33,7 @@ class NotificationService
                 'appointment_datetime' => $appointment->appointment_datetime,
                 'timeslot_full' => $appointment->timeslot_full,
                 'location' => $appointment->location,
+                'meeting_type' => $appointment->meeting_type,
                 'admin_notes' => $appointment->admin_notes,
             ];
 
@@ -71,8 +72,6 @@ class NotificationService
                 'appointment_datetime' => $appointment->appointment_datetime,
                 'timeslot_full' => $appointment->timeslot_full,
                 'location' => $appointment->location,
-                'consultant' => $appointment->consultant?->name,
-                'service_type' => $appointment->service_type,
                 'cancellation_reason' => $cancellationReason,
             ];
 
@@ -91,6 +90,39 @@ class NotificationService
                 'appointment_id' => $appointment->id,
                 'error' => $e->getMessage(),
             ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send appointment reminder email (manual from CRM; distinct from the initial detailed confirmation).
+     */
+    public function sendAppointmentReminderEmail(BookingAppointment $appointment): bool
+    {
+        try {
+            $details = [
+                'client_name' => $appointment->client_name,
+                'appointment_datetime' => $appointment->appointment_datetime,
+                'timeslot_full' => $appointment->timeslot_full,
+                'location' => $appointment->location,
+            ];
+
+            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
+                new \App\Mail\AppointmentReminder($details)
+            );
+
+            Log::info('Sent appointment reminder email', [
+                'appointment_id' => $appointment->id,
+                'email' => $appointment->client_email,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send appointment reminder email', [
+                'appointment_id' => $appointment->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return false;
         }
     }

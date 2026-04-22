@@ -36,16 +36,31 @@ class AppointmentDetailedConfirmation extends Mailable
      */
     public function content(): Content
     {
+        $meetingType = strtolower(trim((string) ($this->details['meeting_type'] ?? '')));
+        $showInPersonArrival = $meetingType === '' || $meetingType === 'in_person';
+        $resumeDateFragment = $this->details['appointment_datetime']?->format('j F Y') ?? 'N/A';
+        $resumeMailtoHref = 'mailto:info@bansalimmigration.com?subject='.rawurlencode(
+            'Resume – [Your Full Name] – '.$resumeDateFragment.' Appointment'
+        );
+
         return new Content(
             view: 'emails.appointment-confirmation',
             with: [
                 'clientName' => $this->details['client_name'] ?? 'Valued Client',
                 'appointmentDate' => $this->details['appointment_datetime']?->format('l, d F Y') ?? 'N/A',
+                'resumeDateForSubject' => $resumeDateFragment,
+                'resumeMailtoHref' => $resumeMailtoHref,
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
                 'location' => ucfirst($this->details['location'] ?? 'melbourne'),
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
                 'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
+                'locationPhoneTel' => str_replace(
+                    [' ', '-'],
+                    '',
+                    $this->getLocationPhone($this->details['location'] ?? 'melbourne')
+                ),
                 'adminNotes' => $this->details['admin_notes'] ?? null,
+                'showInPersonArrival' => $showInPersonArrival,
             ],
         );
     }

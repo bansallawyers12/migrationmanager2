@@ -36,17 +36,26 @@ class AppointmentCancellation extends Mailable
      */
     public function content(): Content
     {
+        $clientName = $this->details['client_name'] ?? 'Valued Client';
+        $location = $this->details['location'] ?? 'melbourne';
+        $locationPhone = $this->getLocationPhone($location);
+        $locationPhoneTel = str_replace([' ', '-'], '', $locationPhone);
+        $rescheduleBody = "Hi Bansal Immigration Team,\r\n\r\nI would like to reschedule my cancelled appointment. Please let me know your available slots.\r\n\r\nRegards";
+        $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com?subject='.rawurlencode(
+            'Reschedule Request – '.$clientName
+        ).'&body='.rawurlencode($rescheduleBody);
+
         return new Content(
             view: 'emails.appointment-cancellation',
             with: [
-                'clientName' => $this->details['client_name'] ?? 'Valued Client',
+                'clientName' => $clientName,
                 'appointmentDate' => $this->details['appointment_datetime']?->format('l, d F Y') ?? 'N/A',
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
-                'location' => ucfirst($this->details['location'] ?? 'melbourne'),
-                'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
-                'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
-                'consultant' => $this->details['consultant'] ?? 'Our Team',
-                'serviceType' => $this->details['service_type'] ?? 'Immigration Consultation',
+                'location' => ucfirst($location),
+                'locationAddress' => $this->getLocationAddress($location),
+                'locationPhone' => $locationPhone,
+                'locationPhoneTel' => $locationPhoneTel,
+                'rescheduleMailtoHref' => $rescheduleMailtoHref,
                 'cancellationReason' => $this->details['cancellation_reason'] ?? null,
             ],
         );
@@ -68,9 +77,9 @@ class AppointmentCancellation extends Mailable
     protected function getLocationAddress(string $location): string
     {
         return match ($location) {
-            'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000',
+            'melbourne' => 'Level 8/278 Collins St, Melbourne VIC 3000, Australia',
             'adelaide' => 'Unit 5, 55 Gawler Pl, Adelaide SA 5000, Australia',
-            default => 'Bansal Immigration Office'
+            default => 'Bansal Immigration Office',
         };
     }
 

@@ -1319,20 +1319,21 @@ class BookingAppointmentsController extends Controller
 
         $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
         
-        $request->validate([
-            'type' => 'required|in:email,sms,both'
+        $validated = $request->validate([
+            'type' => 'nullable|in:email,sms,both',
         ]);
+        $type = $validated['type'] ?? 'email';
 
         $results = [
             'email' => null,
             'sms' => null
         ];
 
-        if (in_array($request->type, ['email', 'both'])) {
-            $results['email'] = $notificationService->sendDetailedConfirmationEmail($appointment);
+        if (in_array($type, ['email', 'both'], true)) {
+            $results['email'] = $notificationService->sendAppointmentReminderEmail($appointment);
         }
 
-        if (in_array($request->type, ['sms', 'both'])) {
+        if (in_array($type, ['sms', 'both'], true)) {
             $results['sms'] = $notificationService->sendReminderSms($appointment);
         }
 
