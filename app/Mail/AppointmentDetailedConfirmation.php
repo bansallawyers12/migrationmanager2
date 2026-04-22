@@ -45,8 +45,6 @@ class AppointmentDetailedConfirmation extends Mailable
                 'location' => ucfirst($this->details['location'] ?? 'melbourne'),
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
                 'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
-                'consultant' => $this->details['consultant'] ?? 'Our Team',
-                'serviceType' => $this->details['service_type'] ?? 'Immigration Consultation',
                 'adminNotes' => $this->details['admin_notes'] ?? null,
             ],
         );

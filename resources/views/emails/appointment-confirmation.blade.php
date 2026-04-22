@@ -109,16 +109,6 @@
                 <span class="label">Location:</span>
                 <span class="value">{{ $locationAddress }}</span>
             </div>
-
-            <div class="detail-row">
-                <span class="label">Consultant:</span>
-                <span class="value">{{ $consultant }}</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="label">Service:</span>
-                <span class="value">{{ $serviceType }}</span>
-            </div>
         </div>
 
         @if($adminNotes)
