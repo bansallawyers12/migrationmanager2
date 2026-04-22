@@ -14,15 +14,19 @@
         $matter_name = $matterModel ? $matterModel->title : 'NA';
     }
     
-    // Get email count
-    $total_email_assign_cnt = $matter->mailReports()
-        ->where('client_id', $matter->client_id)
-        ->where('conversion_type', 'conversion_email_fetch')
-        ->whereNull('mail_is_read')
-        ->where(function($query) {
-            $query->orWhere('mail_body_type', 'inbox')
-                  ->orWhere('mail_body_type', 'sent');
-        })->count();
+    // Prefer dashboard batch count when set; otherwise same query as legacy dashboard row
+    if (array_key_exists('dashboard_unread_mail_count', $matter->getAttributes())) {
+        $total_email_assign_cnt = (int) $matter->dashboard_unread_mail_count;
+    } else {
+        $total_email_assign_cnt = $matter->mailReports()
+            ->where('client_id', $matter->client_id)
+            ->where('conversion_type', 'conversion_email_fetch')
+            ->whereNull('mail_is_read')
+            ->where(function ($query) {
+                $query->orWhere('mail_body_type', 'inbox')
+                    ->orWhere('mail_body_type', 'sent');
+            })->count();
+    }
 @endphp
 
 <tr>

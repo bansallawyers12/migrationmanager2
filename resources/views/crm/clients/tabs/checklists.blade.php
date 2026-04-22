@@ -909,7 +909,7 @@
             $(this).prev('.checklist-item-header').attr('aria-expanded', 'false');
         });
 
-        // Send Checklist - open compose modal with matter selected and matter checklists auto-selected
+        // Send Checklist - open compose modal with matter selected (checklist rows filtered; user picks attachments)
         $(document).on('click', '.btn-send-checklist', function(e) {
             e.stopPropagation();
             var $btn = $(this);

@@ -7,7 +7,9 @@ use App\Models\Notification;
 use App\Models\CheckinLog;
 use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
+use App\Models\EmailLog;
 use App\Models\WorkflowStage;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +87,63 @@ class DashboardService
             $query->where('workflow_stage_id', '!=', 14);
         }
 
-        return $query->orderBy('updated_at', 'DESC')->paginate(10);
+        $paginator = $query->orderBy('updated_at', 'DESC')->paginate(10);
+
+        try {
+            $this->hydrateDashboardUnreadMailCounts($paginator->getCollection());
+        } catch (\Exception $e) {
+            Log::debug('Dashboard unread mail batch count failed: ' . $e->getMessage());
+            foreach ($paginator->getCollection() as $matter) {
+                $matter->setAttribute('dashboard_unread_mail_count', 0);
+            }
+        }
+
+        return $paginator;
+    }
+
+    /**
+     * One query for unread email badges on the dashboard table (matches per-row mailReports() count in Blade).
+     *
+     * @param  Collection<int, ClientMatter>  $matters
+     */
+    private function hydrateDashboardUnreadMailCounts(Collection $matters): void
+    {
+        foreach ($matters as $matter) {
+            $matter->setAttribute('dashboard_unread_mail_count', 0);
+        }
+
+        $valid = $matters->filter(static function ($m) {
+            return $m && $m->id && $m->client_id;
+        });
+
+        if ($valid->isEmpty()) {
+            return;
+        }
+
+        $query = EmailLog::query()
+            ->selectRaw('client_matter_id, COUNT(*) as dashboard_unread_cnt')
+            ->where('conversion_type', 'conversion_email_fetch')
+            ->whereNull('mail_is_read')
+            ->where(static function ($q): void {
+                $q->where('mail_body_type', 'inbox')
+                    ->orWhere('mail_body_type', 'sent');
+            })
+            ->where(static function ($q) use ($valid): void {
+                foreach ($valid as $m) {
+                    $q->orWhere(static function ($q2) use ($m): void {
+                        $q2->where('client_matter_id', $m->id)
+                            ->where('client_id', $m->client_id);
+                    });
+                }
+            })
+            ->groupBy('client_matter_id');
+
+        foreach ($query->get() as $row) {
+            $matter = $matters->firstWhere('id', (int) $row->client_matter_id);
+            if ($matter) {
+                $matter->setAttribute('dashboard_unread_mail_count', (int) $row->dashboard_unread_cnt);
+            }
+        }
     }
 
     /**
@@ -143,18 +201,35 @@ class DashboardService
         $cases = $query->orderByDesc('updated_at')
             ->limit(50) // Limit to 50 most recent cases to avoid timeout
             ->get();
-        
-        // Enrich only the first 20 cases with activity (those displayed on dashboard)
-        // This prevents timeout when there are thousands of cases
-        foreach ($cases->take(20) as $case) {
-            $case->latest_activity = $this->getLatestActivity($case);
+
+        $head = $cases->take(20);
+        $clientIds = $head->pluck('client_id')->unique()->filter(static function ($id) {
+            return $id !== null && $id !== '';
+        })->values()->all();
+
+        try {
+            $activityByClientId = $this->getLatestActivityMapForClientIds($clientIds);
+        } catch (\Exception $e) {
+            Log::debug('Error batch-fetching activities_log: ' . $e->getMessage());
+            $activityByClientId = [];
         }
-        
-        // Set default activity for remaining cases
+
+        foreach ($head as $case) {
+            $cid = $case->client_id;
+            if ($cid !== null && $cid !== '' && isset($activityByClientId[(int) $cid])) {
+                $case->latest_activity = $activityByClientId[(int) $cid];
+            } else {
+                $case->latest_activity = [
+                    'type' => 'default',
+                    'date' => $case->updated_at,
+                ];
+            }
+        }
+
         foreach ($cases->slice(20) as $case) {
             $case->latest_activity = [
                 'type' => 'default',
-                'date' => $case->updated_at
+                'date' => $case->updated_at,
             ];
         }
 
@@ -162,65 +237,104 @@ class DashboardService
     }
 
     /**
-     * Get the latest activity for a case
-     * Optimized to check only the most relevant activity sources
+     * Latest activities_log row per client_id (one query), same ordering as latest('created_at')->first()
+     * with id DESC tie-break for stable results.
+     *
+     * @param  array<int, int|string>  $clientIds
+     * @return array<int, array{type: string, date: \Carbon\Carbon|\Illuminate\Support\Carbon}>
      */
-    private function getLatestActivity($case)
+    private function getLatestActivityMapForClientIds(array $clientIds): array
     {
-        $activities = [];
-        $clientId = $case->client_id;
-        
-        try {
-            // Use a single optimized query to get the most recent activity from each source
-            // This is much faster than multiple separate queries
-            
-            // Check activities_log first (most common source)
-            $latestActivityLog = ActivitiesLog::where('client_id', $clientId)
-                ->select('subject', 'created_at')
-                ->latest('created_at')
-                ->first();
-            
-            if ($latestActivityLog) {
-                $subject = strtolower($latestActivityLog->subject ?? '');
-                $type = 'default';
-                
-                if (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
-                    $type = 'stage_updated';
-                } elseif (str_contains($subject, 'status')) {
-                    $type = 'status_changed';
-                } elseif (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
-                    $type = 'appointment_scheduled';
-                } elseif (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
-                    $type = 'payment_received';
-                } elseif (str_contains($subject, 'note')) {
-                    $type = 'note_added';
-                } elseif (str_contains($subject, 'email')) {
-                    $type = 'email_sent';
-                } elseif (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
-                    $type = 'document_uploaded';
-                } elseif (str_contains($subject, 'sign')) {
-                    $type = 'signed';
-                }
-                
-                return [
-                    'type' => $type,
-                    'date' => $latestActivityLog->created_at
-                ];
-            }
-            
-            // Fallback to case update time
-            return [
-                'type' => 'default',
-                'date' => $case->updated_at
-            ];
-            
-        } catch (\Exception $e) {
-            Log::debug('Error fetching activity: ' . $e->getMessage());
-            return [
-                'type' => 'default',
-                'date' => $case->updated_at
-            ];
+        if ($clientIds === []) {
+            return [];
         }
+
+        $connection = DB::connection();
+        $table = $connection->getTablePrefix() . 'activities_logs';
+        $driver = $connection->getDriverName();
+        $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
+        $bindings = array_values($clientIds);
+
+        if ($driver === 'pgsql') {
+            $sql = "SELECT DISTINCT ON (client_id) client_id, subject, created_at
+                FROM {$table}
+                WHERE client_id IN ({$placeholders})
+                ORDER BY client_id, created_at DESC NULLS LAST, id DESC";
+        } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $sql = "SELECT client_id, subject, created_at FROM (
+                    SELECT client_id, subject, created_at,
+                        ROW_NUMBER() OVER (PARTITION BY client_id ORDER BY created_at DESC, id DESC) AS rn
+                    FROM {$table}
+                    WHERE client_id IN ({$placeholders})
+                ) AS ranked
+                WHERE rn = 1";
+        } else {
+            $sql = "SELECT client_id, subject, created_at FROM (
+                    SELECT client_id, subject, created_at,
+                        ROW_NUMBER() OVER (PARTITION BY client_id ORDER BY created_at DESC, id DESC) AS rn
+                    FROM {$table}
+                    WHERE client_id IN ({$placeholders})
+                ) AS ranked
+                WHERE rn = 1";
+        }
+
+        $rows = DB::select($sql, $bindings);
+        $out = [];
+        foreach ($rows as $row) {
+            $payload = $this->latestActivityFromActivitiesLogRow($row);
+            if ($payload !== null) {
+                $out[(int) $row->client_id] = $payload;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  object{client_id: mixed, subject: ?string, created_at: mixed}  $row
+     * @return array{type: string, date: Carbon}|null
+     */
+    private function latestActivityFromActivitiesLogRow(object $row): ?array
+    {
+        if (empty($row->created_at)) {
+            return null;
+        }
+
+        return [
+            'type' => $this->mapActivitiesLogSubjectToType($row->subject ?? ''),
+            'date' => Carbon::parse($row->created_at),
+        ];
+    }
+
+    private function mapActivitiesLogSubjectToType(string $subject): string
+    {
+        $subject = strtolower($subject);
+        if (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
+            return 'stage_updated';
+        }
+        if (str_contains($subject, 'status')) {
+            return 'status_changed';
+        }
+        if (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
+            return 'appointment_scheduled';
+        }
+        if (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
+            return 'payment_received';
+        }
+        if (str_contains($subject, 'note')) {
+            return 'note_added';
+        }
+        if (str_contains($subject, 'email')) {
+            return 'email_sent';
+        }
+        if (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
+            return 'document_uploaded';
+        }
+        if (str_contains($subject, 'sign')) {
+            return 'signed';
+        }
+
+        return 'default';
     }
 
     /**

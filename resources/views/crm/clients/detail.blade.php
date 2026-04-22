@@ -1239,8 +1239,8 @@ $(document).ready(function() {
         }, 100);
     });
     
-    // Auto-select matter first email and dedicated checklists when compose modal opens
-    // When matter is selected: filter checklist table by matter (DataTables API); otherwise show all
+    // When compose modal opens with a matter: load templates/macros and filter checklist rows by matter.
+    // Checklist attachment checkboxes stay unchecked until the user selects them.
     $('#emailmodal').on('shown.bs.modal', function() {
         var clientMatterId = $('#compose_client_matter_id').val();
         if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
@@ -1284,11 +1284,6 @@ $(document).ready(function() {
                     $('#mychecklist-datatable').DataTable().draw();
                 }
                 $checklistCbs.prop('checked', false);
-                if (res.checklist_ids && res.checklist_ids.length) {
-                    res.checklist_ids.forEach(function(id) {
-                        $('#emailmodal input.checklistfile-cb[value="' + id + '"]').prop('checked', true);
-                    });
-                }
             })
             .fail(function() {
                 window.composeChecklistFilterIds = null;

@@ -215,21 +215,7 @@
                                         ({{ $matter->client_unique_matter_no ?? 'N/A' }})
                                     </a>
                                     @php
-                                        $emailCount = 0;
-                                        if($matter && $matter->client_id) {
-                                            try {
-                                                $emailCount = $matter->mailReports()
-                                                    ->where('client_id', $matter->client_id)
-                                                    ->where('conversion_type', 'conversion_email_fetch')
-                                                    ->whereNull('mail_is_read')
-                                                    ->where(function($query) {
-                                                        $query->orWhere('mail_body_type', 'inbox')
-                                                              ->orWhere('mail_body_type', 'sent');
-                                                    })->count();
-                                            } catch (\Exception $e) {
-                                                $emailCount = 0;
-                                            }
-                                        }
+                                        $emailCount = (int) ($matter->dashboard_unread_mail_count ?? 0);
                                     @endphp
                                     @if($emailCount > 0)
                                         <span class="badge badge-email" title="{{ $emailCount }} unread emails">
