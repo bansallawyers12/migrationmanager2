@@ -29,6 +29,9 @@ class ClientDocumentsController extends Controller
 {
     use ClientAuthorization, ClientHelpers, LogsClientActivity;
 
+    /** Max size per file for personal/visa bulk document uploads (aligned with tab Blade JS). */
+    private const BULK_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
+
     public function __construct()
     {
         $this->middleware('auth:admin');
@@ -3120,6 +3123,11 @@ class ClientDocumentsController extends Controller
                 try {
                     $fileName = $file->getClientOriginalName();
                     $size = $file->getSize();
+
+                    if ($size > self::BULK_UPLOAD_MAX_BYTES) {
+                        $errors[] = "File '{$fileName}' exceeds 20MB limit";
+                        continue;
+                    }
                     
                     // Validate filename
                     if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
@@ -3305,6 +3313,11 @@ class ClientDocumentsController extends Controller
                 try {
                     $fileName = $file->getClientOriginalName();
                     $size = $file->getSize();
+
+                    if ($size > self::BULK_UPLOAD_MAX_BYTES) {
+                        $errors[] = "File '{$fileName}' exceeds 20MB limit";
+                        continue;
+                    }
                     
                     // Validate filename
                     if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {

@@ -1236,13 +1236,13 @@
                     
                     // Validate and add files to array
                     const invalidFiles = [];
-                    const maxSize = 50 * 1024 * 1024; // 50MB
+                    const maxSize = 20 * 1024 * 1024; // 20MB
                     const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
                     
                     Array.from(files).forEach(file => {
                         // Check file size
                         if (file.size > maxSize) {
-                            invalidFiles.push(file.name + ' (exceeds 50MB)');
+                            invalidFiles.push(file.name + ' (exceeds 20MB)');
                             return;
                         }
                         
@@ -1265,7 +1265,7 @@
                     }
                     
                     if (bulkUploadVisaFiles[categoryId].length === 0) {
-                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, or DOCX files under 50MB.');
+                        alert('No valid files selected. Please select PDF, JPG, PNG, DOC, or DOCX files under 20MB.');
                         return;
                     }
                     
