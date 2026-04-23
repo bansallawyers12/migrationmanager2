@@ -162,6 +162,139 @@ final class StaffClientVisibility
     }
 
     /**
+     * Same visibility rules as repeated {@see enrichGlobalSearchItem}, but one access map for all rows.
+     *
+     * @param  list<array<string, mixed>>  $items  Each must include `cid` and `record_type`
+     * @return list<array<string, mixed>>
+     */
+    public static function enrichGlobalSearchItemsBatch(array $items, ?Authenticatable $user = null): array
+    {
+        $user = $user ?? Auth::user();
+        $cids = [];
+        foreach ($items as $it) {
+            $cid = (int) ($it['cid'] ?? 0);
+            if ($cid > 0) {
+                $cids[] = $cid;
+            }
+        }
+        $accessMap = self::globalSearchCanAccessMap($cids, $user);
+
+        foreach ($items as &$item) {
+            $cid = (int) ($item['cid'] ?? 0);
+            $recordType = (string) ($item['record_type'] ?? 'client');
+            if ($cid <= 0 || ! $user) {
+                $item['locked'] = false;
+                $item['record_type'] = $recordType;
+                $item['access_ui'] = ['show_quick' => false, 'show_supervisor' => false];
+
+                continue;
+            }
+            $can = $accessMap[$cid] ?? false;
+            $item['locked'] = ! $can;
+            $item['record_type'] = $recordType;
+            $item['access_ui'] = $can
+                ? ['show_quick' => false, 'show_supervisor' => false]
+                : self::crossAccessUiFlags($user);
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    /**
+     * Batch equivalent of {@see canAccessClientOrLead} for global search candidates.
+     *
+     * @param  list<int>  $adminIds
+     * @return array<int, bool>
+     */
+    public static function globalSearchCanAccessMap(array $adminIds, ?Authenticatable $user = null): array
+    {
+        $user = $user ?? Auth::user();
+        $adminIds = array_values(array_unique(array_filter(
+            array_map(static fn ($id) => (int) $id, $adminIds),
+            static fn (int $id) => $id > 0
+        )));
+        $out = array_fill_keys($adminIds, false);
+
+        if (! $user || $adminIds === []) {
+            return $out;
+        }
+
+        $rows = Admin::query()
+            ->whereIn('id', $adminIds)
+            ->whereIn('type', ['client', 'lead'])
+            ->get(['id', 'type', 'user_id', 'client_id'])
+            ->keyBy('id');
+
+        $role = (int) ($user->role ?? 0);
+        $staffId = (int) ($user->id ?? 0);
+        $isStaff = $user instanceof Staff;
+
+        $allocatingClientIdFlip = null;
+        if (! self::isExemptFromAllocation($user)) {
+            $allocatingClientIdFlip = [];
+            $allocatingIds = DB::table('client_matters')
+                ->whereIn('client_id', $adminIds)
+                ->where(function ($q) use ($staffId) {
+                    $q->where('sel_migration_agent', $staffId)
+                        ->orWhere('sel_person_responsible', $staffId)
+                        ->orWhere('sel_person_assisting', $staffId);
+                })
+                ->pluck('client_id');
+            foreach ($allocatingIds as $cid) {
+                $allocatingClientIdFlip[(int) $cid] = true;
+            }
+        }
+
+        $grantFlip = [];
+        if ($isStaff && (int) ($user->status ?? 0) === 1 && ! self::isExemptFromAllocation($user)) {
+            $now = Carbon::now('UTC');
+            $grantIds = ClientAccessGrant::query()
+                ->where('staff_id', $staffId)
+                ->whereIn('admin_id', $adminIds)
+                ->where('status', 'active')
+                ->whereNotNull('ends_at')
+                ->where('ends_at', '>', $now)
+                ->pluck('admin_id');
+            foreach ($grantIds as $gid) {
+                $grantFlip[(int) $gid] = true;
+            }
+        }
+
+        foreach ($adminIds as $id) {
+            $row = $rows->get($id);
+            if (! $row) {
+                continue;
+            }
+
+            if (self::isSuperAdminOnlyLockedClient($row->type ?? null, $row->client_id ?? null)) {
+                $out[$id] = ($role === 1);
+
+                continue;
+            }
+
+            if (self::isExemptFromAllocation($user)) {
+                if ($isStaff) {
+                    self::logExemptAccessIfNeeded($staffId, $id, (string) ($row->type ?? 'client'));
+                }
+                $out[$id] = true;
+
+                continue;
+            }
+
+            if ($isStaff && isset($grantFlip[$id])) {
+                $out[$id] = true;
+
+                continue;
+            }
+
+            $out[$id] = self::userMaySeeByAllocation($id, $user, $row, $allocatingClientIdFlip);
+        }
+
+        return $out;
+    }
+
+    /**
      * @param  \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder  $query
      */
     public static function restrictMatterListToAllocatedClients($query, string $cmAlias = 'cm', string $adAlias = 'ad'): void
@@ -604,10 +737,15 @@ final class StaffClientVisibility
 
     /**
      * @param  \App\Models\Admin  $row
+     * @param  array<int, bool>|null  $allocatingClientIdFlip  When non-null, replaces per-call EXISTS for allocation (client_id => true)
      */
-    private static function userMaySeeByAllocation(int $adminId, Authenticatable $user, Admin $row): bool
+    private static function userMaySeeByAllocation(int $adminId, Authenticatable $user, Admin $row, ?array $allocatingClientIdFlip = null): bool
     {
         $strict = (bool) config('crm_access.strict_allocation', false);
+        $staffId = (int) $user->id;
+        $hasAllocatingMatter = $allocatingClientIdFlip !== null
+            ? isset($allocatingClientIdFlip[$adminId])
+            : self::clientHasAllocatingMatter($adminId, $staffId);
 
         if (($row->type ?? '') === 'lead') {
             if (! $strict) {
@@ -619,8 +757,7 @@ final class StaffClientVisibility
                         return true;
                     }
                 }
-                $staffId = (int) $user->id;
-                if (self::clientHasAllocatingMatter($adminId, $staffId)) {
+                if ($hasAllocatingMatter) {
                     return true;
                 }
 
@@ -628,8 +765,7 @@ final class StaffClientVisibility
             }
 
             // Strict mode: allocation-only regardless of role (PR 12 included).
-            $staffId = (int) $user->id;
-            if (self::clientHasAllocatingMatter($adminId, $staffId)) {
+            if ($hasAllocatingMatter) {
                 return true;
             }
 
@@ -640,16 +776,14 @@ final class StaffClientVisibility
             if (! self::isRestrictedPersonAssisting($user)) {
                 return true;
             }
-            $staffId = (int) $user->id;
-            if (self::clientHasAllocatingMatter($adminId, $staffId)) {
+            if ($hasAllocatingMatter) {
                 return true;
             }
 
             return (int) ($row->user_id ?? 0) === $staffId;
         }
 
-        $staffId = (int) $user->id;
-        if (self::clientHasAllocatingMatter($adminId, $staffId)) {
+        if ($hasAllocatingMatter) {
             return true;
         }
 

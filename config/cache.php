@@ -79,6 +79,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Dashboard client matters list (COUNT for paginator)
+    |--------------------------------------------------------------------------
+    |
+    | TTL in seconds for the filtered total used by LengthAwarePaginator.
+    | Short TTL limits stale totals after creates/deletes or filter changes.
+    |
+    */
+
+    'dashboard_client_matters_count_ttl' => (int) env('DASHBOARD_CLIENT_MATTERS_COUNT_TTL', 45),
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache Key Prefix
     |--------------------------------------------------------------------------
     |

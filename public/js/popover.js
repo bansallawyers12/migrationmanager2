@@ -346,9 +346,14 @@ console.log(timestring);
 
         $('.js-data-example-ajaxccsearch__addmytask').select2({
             closeOnSelect: true,
+            minimumInputLength: 2,
             ajax: {
                 url: '/clients/get-allclients',
                 dataType: 'json',
+                delay: 350,
+                data: function (params) {
+                    return { q: params.term || '' };
+                },
                 processResults: function (data) {
                     // Transforms the top-level key of the response object from 'items' to 'results'
                     return {

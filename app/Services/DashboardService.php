@@ -10,6 +10,7 @@ use App\Models\ActivitiesLog;
 use App\Models\EmailLog;
 use App\Models\WorkflowStage;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,24 @@ use App\Support\StaffClientVisibility;
 
 class DashboardService
 {
+    /**
+     * Data for the client matters table partial only (AJAX pagination).
+     *
+     * @return array{data: \Illuminate\Contracts\Pagination\LengthAwarePaginator, workflowStages: mixed, visibleColumns: array, filters: array<string, string>}
+     */
+    public function getClientMattersTablePayload($request, $user): array
+    {
+        return [
+            'data' => $this->getClientMatters($request, $user),
+            'workflowStages' => $this->getWorkflowStages(),
+            'visibleColumns' => $this->getVisibleColumns(),
+            'filters' => [
+                'client_name' => $request->input('client_name') ?? '',
+                'client_stage' => $request->input('client_stage') ?? '',
+            ],
+        ];
+    }
+
     /**
      * Get all dashboard data
      */
@@ -87,7 +106,17 @@ class DashboardService
             $query->where('workflow_stage_id', '!=', 14);
         }
 
-        $paginator = $query->orderBy('updated_at', 'DESC')->paginate(10);
+        $query->orderBy('updated_at', 'DESC');
+
+        $perPage = 10;
+        $ttl = config('cache.dashboard_client_matters_count_ttl', 45);
+        $countCacheKey = $this->dashboardClientMattersCountCacheKey($user, $request);
+
+        $total = Cache::remember($countCacheKey, max(1, $ttl), function () use ($query) {
+            return $query->toBase()->getCountForPagination();
+        });
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', null, $total);
 
         try {
             $this->hydrateDashboardUnreadMailCounts($paginator->getCollection());
@@ -309,32 +338,48 @@ class DashboardService
     private function mapActivitiesLogSubjectToType(string $subject): string
     {
         $subject = strtolower($subject);
-        if (str_contains($subject, 'stage') || str_contains($subject, 'workflow')) {
+        if (Str::contains($subject, 'stage') || Str::contains($subject, 'workflow')) {
             return 'stage_updated';
         }
-        if (str_contains($subject, 'status')) {
+        if (Str::contains($subject, 'status')) {
             return 'status_changed';
         }
-        if (str_contains($subject, 'appointment') || str_contains($subject, 'meeting')) {
+        if (Str::contains($subject, 'appointment') || Str::contains($subject, 'meeting')) {
             return 'appointment_scheduled';
         }
-        if (str_contains($subject, 'payment') || str_contains($subject, 'invoice')) {
+        if (Str::contains($subject, 'payment') || Str::contains($subject, 'invoice')) {
             return 'payment_received';
         }
-        if (str_contains($subject, 'note')) {
+        if (Str::contains($subject, 'note')) {
             return 'note_added';
         }
-        if (str_contains($subject, 'email')) {
+        if (Str::contains($subject, 'email')) {
             return 'email_sent';
         }
-        if (str_contains($subject, 'document') || str_contains($subject, 'upload')) {
+        if (Str::contains($subject, 'document') || Str::contains($subject, 'upload')) {
             return 'document_uploaded';
         }
-        if (str_contains($subject, 'sign')) {
+        if (Str::contains($subject, 'sign')) {
             return 'signed';
         }
 
         return 'default';
+    }
+
+    /**
+     * Cache key for dashboard client matters paginator total (same filters as getClientMatters).
+     */
+    private function dashboardClientMattersCountCacheKey($user, $request): string
+    {
+        $clientName = trim((string) ($request->input('client_name') ?? ''));
+        $stage = trim((string) ($request->input('client_stage') ?? ''));
+        $role = (int) ($user->role ?? 0);
+
+        return 'dashboard:client_matters:count:v1:'
+            . (int) $user->id
+            . ':' . $role
+            . ':' . md5($clientName)
+            . ':' . $stage;
     }
 
     /**

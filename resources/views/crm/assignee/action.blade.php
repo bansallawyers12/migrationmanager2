@@ -1307,7 +1307,10 @@ $(function () {
                         ajax: {
                             url: '{{URL::to('/clients/get-allclients')}}',
                             dataType: 'json',
-                            delay: 250,
+                            delay: 350,
+                            data: function (params) {
+                                return { q: params.term || '' };
+                            },
                             processResults: function (data) {
                                 console.log('AJAX response:', data);
                                 // Validate data is an object and has items
@@ -1326,7 +1329,7 @@ $(function () {
                         },
                         templateResult: formatRepomainMYTask,
                         templateSelection: formatRepoSelectionmainMYTask,
-                        minimumInputLength: 1
+                        minimumInputLength: 2
                     });
                     
                     console.log('Select2 successfully initialized for client field');

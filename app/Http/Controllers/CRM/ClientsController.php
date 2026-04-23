@@ -69,6 +69,7 @@ use App\Models\EmailTemplate;
 use App\Models\SmsTemplate;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 
 use App\Models\Form956;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -98,6 +99,10 @@ class ClientsController extends Controller
 
     /** @var bool|null Cached for the current request only */
     protected $googleReviewCrmTemplateExistsCache = null;
+
+    private const GLOBAL_SEARCH_BRANCH_LIMIT = 45;
+
+    private const GLOBAL_SEARCH_OUTPUT_CAP = 80;
 
     /**
      * Create a new controller instance.
@@ -2781,354 +2786,409 @@ class ClientsController extends Controller
 
     public function getallclients(Request $request)
     {
-        $squery = $request->q;
-        if ($squery != '') {
-            $results = [];
-
-            // Log the search query for debugging
-            Log::info('Header search query: ' . $squery);
-
-            /**
-             * 1. Search for composite references (client_id + matter_no format like "SHAL2500295-JRP_1")
-             * Optimized: Use JOIN instead of N+1 queries
-             */
-            if (strpos($squery, '-') !== false) {
-                $parts = explode('-', $squery, 2);
-                if (count($parts) == 2) {
-                    $clientIdPart = $parts[0];
-                    $matterNoPart = $parts[1];
-                    
-                    // Optimized: Single query with JOIN instead of nested loops
-                    $clientIdPartLower = strtolower($clientIdPart);
-                    $matterNoPartLower = strtolower($matterNoPart);
-                    $matterResults = DB::table('admins')
-                        ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
-                        ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
-                        ->whereIn('admins.type', ['client', 'lead'])
-                        ->whereNull('admins.is_deleted')
-                        ->where('admins.is_archived', 0)
-                        ->where('client_matters.matter_status', 1)
-                        ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
-                        ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
-                        ->tap(function ($q) {
-                            StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
-                        })
-                        ->select(
-                            'admins.id as client_id',
-                            'admins.first_name',
-                            'admins.last_name',
-                            'admins.is_company',
-                            'admins.email',
-                            'admins.is_archived',
-                            'admins.type',
-                            'companies.company_name',
-                            'client_matters.client_unique_matter_no'
-                        )
-                        ->get();
-                    
-                    foreach ($matterResults as $result) {
-                        $displayName = ($result->is_company && $result->company_name)
-                            ? $result->company_name
-                            : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
-                        $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                            'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
-                            'name' => $displayName,
-                            'email' => $result->email,
-                            'status' => $result->is_archived ? 'Archived' : $result->type,
-                            'cid' => $result->client_id,
-                            'is_company' => (bool) $result->is_company,
-                            'record_type' => $result->type,
-                        ], (string) $result->type);
-                    }
-                }
-            }
-            
-            /**
-             * 2. Search in client_matters by department_reference / other_reference / client_unique_matter_no
-             * Optimized: Use JOIN to fetch client data in single query
-             */
-            $matterMatches = DB::table('client_matters')
-                ->join('admins', 'client_matters.client_id', '=', 'admins.id')
-                ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
-                ->whereIn('admins.type', ['client', 'lead'])
-                ->whereNull('admins.is_deleted')
-                ->where('admins.is_archived', 0)
-                ->where('client_matters.matter_status', 1)
-                ->tap(function ($q) {
-                    StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
-                })
-                ->where(function($query) use ($squery) {
-                    $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
-                          ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
-                          ->orWhere('client_matters.client_unique_matter_no', 'LIKE', "%{$squery}%");
-                })
-                ->select(
-                    'admins.id as client_id',
-                    'admins.first_name',
-                    'admins.last_name',
-                    'admins.is_company',
-                    'admins.email',
-                    'admins.is_archived',
-                    'admins.type',
-                    'companies.company_name',
-                    'client_matters.client_unique_matter_no'
-                )
-                ->get();
-            
-            // Log matter matches for debugging
-            Log::info('Matter matches found: ' . count($matterMatches) . ' for query: ' . $squery);
-
-            foreach ($matterMatches as $matter) {
-                $displayName = ($matter->is_company && $matter->company_name)
-                    ? $matter->company_name
-                    : trim(($matter->first_name ?? '') . ' ' . ($matter->last_name ?? ''));
-                $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                    'id' => base64_encode(convert_uuencode($matter->client_id)) . '/Matter/' . $matter->client_unique_matter_no,
-                    'name' => $displayName,
-                    'email' => $matter->email,
-                    'status' => $matter->is_archived ? 'Archived' : $matter->type,
-                    'cid' => $matter->client_id,
-                    'is_company' => (bool) $matter->is_company,
-                    'record_type' => $matter->type,
-                ], (string) $matter->type);
-            }
-
-            /**
-             * 3. Search in admins (clients) - OPTIMIZED VERSION
-             * Replaced correlated subqueries with LEFT JOINs
-             * Replaced IN subqueries with EXISTS or LEFT JOINs
-             */
-            $d = '';
-            if (strstr($squery, '/')) {
-                $dob = explode('/', $squery);
-                if (!empty($dob) && is_array($dob)) {
-                    $d = $dob[2] . '/' . $dob[1] . '/' . $dob[0];
-                }
-            }
-
-            // Optimized: Use LEFT JOINs instead of correlated subqueries
-            // Use EXISTS or LEFT JOINs instead of IN subqueries
-            $squeryLower = strtolower($squery);
-            $isUniversalEmail = ($squery === 'demo@gmail.com');
-            $isUniversalPhone = ($squery === '4444444444');
-            
-            $clientsQuery = \App\Models\Admin::query()
-                ->with(['company.contactPerson'])
-                ->whereIn('admins.type', ['client', 'lead'])
-                ->whereNull('admins.is_deleted')
-                ->where('admins.is_archived', 0)
-                ->leftJoin('client_contacts', function($join) use ($squery, $squeryLower, $isUniversalPhone) {
-                    $join->on('client_contacts.client_id', '=', 'admins.id');
-                    if ($isUniversalPhone) {
-                        // For universal phone (4444444444), also search for timestamped versions
-                        $join->where(function($phoneQuery) use ($squery, $squeryLower) {
-                            $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"])
-                                      ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squery}_%"]);
-                        });
-                    } else {
-                        $join->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
-                    }
-                })
-                ->leftJoin('client_emails', function($join) use ($squery, $squeryLower, $isUniversalEmail) {
-                    $join->on('client_emails.client_id', '=', 'admins.id');
-                    if ($isUniversalEmail) {
-                        // For universal email (demo@gmail.com), also search for timestamped versions
-                        $join->where(function($emailQuery) use ($squeryLower) {
-                            $emailQuery->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"])
-                                      ->orWhereRaw('LOWER(client_emails.email) LIKE ?', ['demo_%@gmail.com']);
-                        });
-                    } else {
-                        $join->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
-                    }
-                })
-                ->where(function ($query) use ($squery, $squeryLower, $d, $isUniversalEmail, $isUniversalPhone) {
-                    // Handle universal email search in admins.email
-                    if ($isUniversalEmail) {
-                        $query->where(function($emailSubQuery) use ($squeryLower) {
-                            $emailSubQuery->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"])
-                                          ->orWhereRaw('LOWER(admins.email) LIKE ?', ['demo_%@gmail.com']);
-                        });
-                    } else {
-                        $query->whereRaw('LOWER(admins.email) LIKE ?', ["%$squeryLower%"]);
-                    }
-                    
-                    $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%$squeryLower%"])
-                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%$squeryLower%"]);
-                    
-                    // Search by company name (for company clients/leads)
-                    $query->orWhereHas('company', function($q) use ($squeryLower) {
-                        $q->whereRaw('LOWER(company_name) LIKE ?', ["%{$squeryLower}%"]);
-                    });
-                    
-                    // Handle universal phone search in admins.phone
-                    if ($isUniversalPhone) {
-                        $query->orWhere(function($phoneSubQuery) use ($squery, $squeryLower) {
-                            $phoneSubQuery->whereRaw('LOWER(admins.phone) LIKE ?', ["%{$squeryLower}%"])
-                                          ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squery}_%"]);
-                        });
-                    } else {
-                        $query->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%$squeryLower%"]);
-                    }
-                    
-                    $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%$squeryLower%"])
-                        ->orWhereNotNull('client_contacts.client_id')  // Matches phone search
-                        ->orWhereNotNull('client_emails.client_id');    // Matches email search
-
-                    if ($d != "") {
-                        $query->orWhere('admins.dob', '=', $d);
-                    }
-                });
-            $clientsQuery->tap(function ($q) {
-                StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
-            });
-            $clientsQuery = $clientsQuery
-                ->select(
-                    'admins.*'
-                )
-                ->distinct()
-                ->orderBy('admins.created_at', 'desc')
-                ->get();
-
-            // Get client IDs for batch loading of related data
-            $clientIds = $clientsQuery->pluck('id')->toArray();
-            
-            if (!empty($clientIds)) {
-                // Optimized: Batch load all phones, emails, and latest matters in separate queries
-                // This is much faster than correlated subqueries
-                
-                // Get all phones grouped by client_id
-                $phonesData = DB::table('client_contacts')
-                    ->whereIn('client_id', $clientIds)
-                    ->select('client_id', 'phone', 'contact_type')
-                    ->orderBy('client_id')
-                    ->orderBy('contact_type')
-                    ->get()
-                    ->groupBy('client_id');
-                
-                // Get all emails grouped by client_id
-                $emailsData = DB::table('client_emails')
-                    ->whereIn('client_id', $clientIds)
-                    ->select('client_id', 'email', 'email_type')
-                    ->orderBy('client_id')
-                    ->orderBy('email_type')
-                    ->get()
-                    ->groupBy('client_id');
-                
-                // Get latest matter for each client (optimized: get max IDs first, then fetch details)
-                $maxMatterIds = DB::table('client_matters')
-                    ->whereIn('client_id', $clientIds)
-                    ->where('matter_status', 1)
-                    ->select('client_id', DB::raw('MAX(id) as max_id'))
-                    ->groupBy('client_id')
-                    ->pluck('max_id', 'client_id')
-                    ->toArray();
-                
-                $latestMatters = [];
-                if (!empty($maxMatterIds)) {
-                    $latestMatters = DB::table('client_matters')
-                        ->whereIn('id', array_values($maxMatterIds))
-                        ->select('client_id', 'client_unique_matter_no')
-                        ->get()
-                        ->keyBy('client_id');
-                }
-
-                // Process results
-                foreach ($clientsQuery as $client) {
-                    // Aggregate phones (ordered by contact_type as in original query)
-                    $allPhones = '';
-                    if (isset($phonesData[$client->id])) {
-                        $phones = $phonesData[$client->id]
-                            ->sortBy('contact_type')
-                            ->pluck('phone')
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                        $allPhones = implode(', ', $phones);
-                    }
-                    
-                    // Aggregate emails (ordered by email_type as in original query)
-                    $allEmails = '';
-                    if (isset($emailsData[$client->id])) {
-                        $emails = $emailsData[$client->id]
-                            ->sortBy('email_type')
-                            ->pluck('email')
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                        $allEmails = implode(', ', $emails);
-                    }
-                    
-                    // Get latest matter
-                    $latestMatterNo = isset($latestMatters[$client->id]) 
-                        ? $latestMatters[$client->id]->client_unique_matter_no 
-                        : null;
-                    
-                    $resultFinalId = $latestMatterNo
-                        ? base64_encode(convert_uuencode($client->id)) . '/Matter/' . $latestMatterNo
-                        : base64_encode(convert_uuencode($client->id)) . '/Client';
-
-                    $displayName = $client->company_name_or_personal_name;
-                    if ($client->is_company && $client->company?->contactPerson) {
-                        $cp = $client->company->contactPerson;
-                        $cpBits = array_filter([
-                            trim((string) ($cp->client_id ?? '')),
-                            trim(($cp->first_name ?? '') . ' ' . ($cp->last_name ?? '')),
-                        ]);
-                        if ($cpBits !== []) {
-                            $displayName .= ' — ' . implode(' ', $cpBits);
-                        }
-                    }
-
-                    $results[] = StaffClientVisibility::enrichGlobalSearchItem([
-                        'id' => $resultFinalId,
-                        'name' => $displayName,
-                        'email' => $client->email,
-                        'status' => $client->is_archived ? 'Archived' : $client->type,
-                        'cid' => $client->id,
-                        'phones' => $allPhones,
-                        'emails' => $allEmails,
-                        'is_company' => (bool) $client->is_company,
-                        'record_type' => $client->type,
-                    ], (string) $client->type);
-                }
-            }
-
-            // Deduplicate by cid, keeping the first occurrence of each
-            $seenCids = [];
-            $results = array_values(array_filter($results, function ($r) use (&$seenCids) {
-                $cid = $r['cid'] ?? null;
-                if ($cid === null || isset($seenCids[$cid])) {
-                    return false;
-                }
-                $seenCids[$cid] = true;
-                return true;
-            }));
-
-            // Exclude contact persons when their company is already in results (avoid duplicates)
-            $cidsInResults = array_column($results, 'cid');
-            $companyIdsInResults = \App\Models\Admin::whereIn('id', $cidsInResults)
-                ->where('is_company', 1)
-                ->pluck('id')
-                ->toArray();
-            $contactPersonIdsToExclude = \App\Models\Company::whereIn('admin_id', $companyIdsInResults)
-                ->pluck('contact_person_id')
-                ->filter()
-                ->unique()
-                ->values()
-                ->toArray();
-            $contactPersonIdsToExclude = array_values(array_filter($contactPersonIdsToExclude, function ($pid) use ($squery) {
-                return ! $this->globalSearchQueryMatchesContactPerson((int) $pid, $squery);
-            }));
-            $results = array_values(array_filter($results, function($r) use ($contactPersonIdsToExclude) {
-                return !in_array($r['cid'], $contactPersonIdsToExclude);
-            }));
-
-            return response()->json(['items' => $results]);
+        $squery = trim((string) $request->q);
+        if ($squery === '') {
+            return response()->json(['items' => []]);
         }
-        
-        // Return empty array when query is empty
-        return response()->json(['items' => []]);
+
+        if (mb_strlen($squery) < 2) {
+            $allowShort = (strpos($squery, '-') !== false)
+                || $squery === 'demo@gmail.com'
+                || $squery === '4444444444';
+            if (! $allowShort) {
+                return response()->json(['items' => []]);
+            }
+        }
+
+        $rawResults = [];
+        $lim = self::GLOBAL_SEARCH_BRANCH_LIMIT;
+
+        $squeryLower = strtolower($squery);
+        $isUniversalEmail = ($squery === 'demo@gmail.com');
+        $isUniversalPhone = ($squery === '4444444444');
+        $mysqlFtPhrase = $this->mysqlGlobalSearchBooleanFulltext($squery);
+        $useMatterFt = $mysqlFtPhrase !== ''
+            && $this->globalSearchMysqlFulltextIndexExists('client_matters', 'client_matters_global_search_ft');
+        $useAdminFt = ! $isUniversalEmail
+            && $mysqlFtPhrase !== ''
+            && $this->globalSearchMysqlFulltextIndexExists('admins', 'admins_global_search_ft');
+
+        /**
+         * 1. Composite references (client_id + matter_no)
+         */
+        if (strpos($squery, '-') !== false) {
+            $parts = explode('-', $squery, 2);
+            if (count($parts) == 2) {
+                $clientIdPart = $parts[0];
+                $matterNoPart = $parts[1];
+                $clientIdPartLower = strtolower($clientIdPart);
+                $matterNoPartLower = strtolower($matterNoPart);
+                $matterResults = DB::table('admins')
+                    ->join('client_matters', 'admins.id', '=', 'client_matters.client_id')
+                    ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+                    ->whereIn('admins.type', ['client', 'lead'])
+                    ->whereNull('admins.is_deleted')
+                    ->where('admins.is_archived', 0)
+                    ->where('client_matters.matter_status', 1)
+                    ->whereRaw('LOWER(admins.client_id) LIKE ?', ["%{$clientIdPartLower}%"])
+                    ->whereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$matterNoPartLower}%"])
+                    ->tap(function ($q) {
+                        StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+                    })
+                    ->select(
+                        'admins.id as client_id',
+                        'admins.first_name',
+                        'admins.last_name',
+                        'admins.is_company',
+                        'admins.email',
+                        'admins.is_archived',
+                        'admins.type',
+                        'companies.company_name',
+                        'client_matters.client_unique_matter_no'
+                    )
+                    ->orderByDesc('client_matters.id')
+                    ->limit($lim)
+                    ->get();
+
+                foreach ($matterResults as $result) {
+                    $displayName = ($result->is_company && $result->company_name)
+                        ? $result->company_name
+                        : trim(($result->first_name ?? '') . ' ' . ($result->last_name ?? ''));
+                    $rawResults[] = [
+                        'id' => base64_encode(convert_uuencode($result->client_id)) . '/Matter/' . $result->client_unique_matter_no,
+                        'name' => $displayName,
+                        'email' => $result->email,
+                        'status' => $result->is_archived ? 'Archived' : $result->type,
+                        'cid' => $result->client_id,
+                        'is_company' => (bool) $result->is_company,
+                        'record_type' => $result->type,
+                    ];
+                }
+            }
+        }
+
+        /**
+         * 2. Matter references (department / other / unique matter no)
+         */
+        $matterMatches = DB::table('client_matters')
+            ->join('admins', 'client_matters.client_id', '=', 'admins.id')
+            ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
+            ->whereIn('admins.type', ['client', 'lead'])
+            ->whereNull('admins.is_deleted')
+            ->where('admins.is_archived', 0)
+            ->where('client_matters.matter_status', 1)
+            ->tap(function ($q) {
+                StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
+            })
+            ->where(function ($query) use ($squery, $useMatterFt, $mysqlFtPhrase) {
+                if ($useMatterFt) {
+                    $query->whereRaw(
+                        'MATCH(client_matters.department_reference, client_matters.other_reference, client_matters.client_unique_matter_no) AGAINST (? IN BOOLEAN MODE)',
+                        [$mysqlFtPhrase]
+                    );
+                } else {
+                    $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
+                        ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
+                        ->orWhere('client_matters.client_unique_matter_no', 'LIKE', "%{$squery}%");
+                }
+            })
+            ->select(
+                'admins.id as client_id',
+                'admins.first_name',
+                'admins.last_name',
+                'admins.is_company',
+                'admins.email',
+                'admins.is_archived',
+                'admins.type',
+                'companies.company_name',
+                'client_matters.client_unique_matter_no'
+            )
+            ->orderByDesc('client_matters.id')
+            ->limit($lim)
+            ->get();
+
+        foreach ($matterMatches as $matter) {
+            $displayName = ($matter->is_company && $matter->company_name)
+                ? $matter->company_name
+                : trim(($matter->first_name ?? '') . ' ' . ($matter->last_name ?? ''));
+            $rawResults[] = [
+                'id' => base64_encode(convert_uuencode($matter->client_id)) . '/Matter/' . $matter->client_unique_matter_no,
+                'name' => $displayName,
+                'email' => $matter->email,
+                'status' => $matter->is_archived ? 'Archived' : $matter->type,
+                'cid' => $matter->client_id,
+                'is_company' => (bool) $matter->is_company,
+                'record_type' => $matter->type,
+            ];
+        }
+
+        /**
+         * 3. Admins (clients / leads)
+         */
+        $d = '';
+        if (strstr($squery, '/')) {
+            $dob = explode('/', $squery);
+            if (! empty($dob) && is_array($dob)) {
+                $d = $dob[2] . '/' . $dob[1] . '/' . $dob[0];
+            }
+        }
+
+        $clientsQuery = Admin::query()
+            ->with(['company.contactPerson'])
+            ->whereIn('admins.type', ['client', 'lead'])
+            ->whereNull('admins.is_deleted')
+            ->where('admins.is_archived', 0)
+            ->leftJoin('client_contacts', function ($join) use ($squery, $squeryLower, $isUniversalPhone) {
+                $join->on('client_contacts.client_id', '=', 'admins.id');
+                if ($isUniversalPhone) {
+                    $join->where(function ($phoneQuery) use ($squery, $squeryLower) {
+                        $phoneQuery->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"])
+                            ->orWhereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squery}_%"]);
+                    });
+                } else {
+                    $join->whereRaw('LOWER(client_contacts.phone) LIKE ?', ["%{$squeryLower}%"]);
+                }
+            })
+            ->leftJoin('client_emails', function ($join) use ($squery, $squeryLower, $isUniversalEmail) {
+                $join->on('client_emails.client_id', '=', 'admins.id');
+                if ($isUniversalEmail) {
+                    $join->where(function ($emailQuery) use ($squeryLower) {
+                        $emailQuery->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"])
+                            ->orWhereRaw('LOWER(client_emails.email) LIKE ?', ['demo_%@gmail.com']);
+                    });
+                } else {
+                    $join->whereRaw('LOWER(client_emails.email) LIKE ?', ["%{$squeryLower}%"]);
+                }
+            })
+            ->where(function ($query) use ($squery, $squeryLower, $d, $isUniversalEmail, $isUniversalPhone, $useAdminFt, $mysqlFtPhrase) {
+                if ($isUniversalEmail) {
+                    $query->where(function ($emailSubQuery) use ($squeryLower) {
+                        $emailSubQuery->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"])
+                            ->orWhereRaw('LOWER(admins.email) LIKE ?', ['demo_%@gmail.com']);
+                    });
+                } elseif ($useAdminFt) {
+                    $query->whereRaw(
+                        'MATCH(admins.first_name, admins.last_name, admins.email, admins.client_id) AGAINST (? IN BOOLEAN MODE)',
+                        [$mysqlFtPhrase]
+                    );
+                } else {
+                    $query->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"]);
+                }
+
+                if ($isUniversalEmail) {
+                    $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%{$squeryLower}%"])
+                        ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%{$squeryLower}%"])
+                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%{$squeryLower}%"]);
+                } elseif (! $useAdminFt) {
+                    $query->orWhereRaw('LOWER(admins.first_name) LIKE ?', ["%{$squeryLower}%"])
+                        ->orWhereRaw('LOWER(admins.last_name) LIKE ?', ["%{$squeryLower}%"])
+                        ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%{$squeryLower}%"]);
+                }
+
+                $query->orWhereHas('company', function ($q) use ($squeryLower) {
+                    $q->whereRaw('LOWER(company_name) LIKE ?', ["%{$squeryLower}%"]);
+                });
+
+                if ($isUniversalPhone) {
+                    $query->orWhere(function ($phoneSubQuery) use ($squery, $squeryLower) {
+                        $phoneSubQuery->whereRaw('LOWER(admins.phone) LIKE ?', ["%{$squeryLower}%"])
+                            ->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squery}_%"]);
+                    });
+                } else {
+                    $query->orWhereRaw('LOWER(admins.phone) LIKE ?', ["%{$squeryLower}%"]);
+                }
+
+                $query->orWhereRaw("LOWER(COALESCE(admins.first_name, '') || ' ' || COALESCE(admins.last_name, '')) LIKE ?", ["%{$squeryLower}%"])
+                    ->orWhereNotNull('client_contacts.client_id')
+                    ->orWhereNotNull('client_emails.client_id');
+
+                if ($d != '') {
+                    $query->orWhere('admins.dob', '=', $d);
+                }
+            });
+        $clientsQuery->tap(function ($q) {
+            StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
+        });
+        $clientsQuery = $clientsQuery
+            ->select('admins.*')
+            ->distinct()
+            ->orderBy('admins.created_at', 'desc')
+            ->limit($lim)
+            ->get();
+
+        $clientIds = $clientsQuery->pluck('id')->toArray();
+
+        if ($clientIds !== []) {
+            $phonesData = DB::table('client_contacts')
+                ->whereIn('client_id', $clientIds)
+                ->select('client_id', 'phone', 'contact_type')
+                ->orderBy('client_id')
+                ->orderBy('contact_type')
+                ->get()
+                ->groupBy('client_id');
+
+            $emailsData = DB::table('client_emails')
+                ->whereIn('client_id', $clientIds)
+                ->select('client_id', 'email', 'email_type')
+                ->orderBy('client_id')
+                ->orderBy('email_type')
+                ->get()
+                ->groupBy('client_id');
+
+            $maxMatterIds = DB::table('client_matters')
+                ->whereIn('client_id', $clientIds)
+                ->where('matter_status', 1)
+                ->select('client_id', DB::raw('MAX(id) as max_id'))
+                ->groupBy('client_id')
+                ->pluck('max_id', 'client_id')
+                ->toArray();
+
+            $latestMatters = [];
+            if ($maxMatterIds !== []) {
+                $latestMatters = DB::table('client_matters')
+                    ->whereIn('id', array_values($maxMatterIds))
+                    ->select('client_id', 'client_unique_matter_no')
+                    ->get()
+                    ->keyBy('client_id');
+            }
+
+            foreach ($clientsQuery as $client) {
+                $allPhones = '';
+                if (isset($phonesData[$client->id])) {
+                    $phones = $phonesData[$client->id]
+                        ->sortBy('contact_type')
+                        ->pluck('phone')
+                        ->unique()
+                        ->values()
+                        ->toArray();
+                    $allPhones = implode(', ', $phones);
+                }
+
+                $allEmails = '';
+                if (isset($emailsData[$client->id])) {
+                    $emails = $emailsData[$client->id]
+                        ->sortBy('email_type')
+                        ->pluck('email')
+                        ->unique()
+                        ->values()
+                        ->toArray();
+                    $allEmails = implode(', ', $emails);
+                }
+
+                $latestMatterNo = isset($latestMatters[$client->id])
+                    ? $latestMatters[$client->id]->client_unique_matter_no
+                    : null;
+
+                $resultFinalId = $latestMatterNo
+                    ? base64_encode(convert_uuencode($client->id)) . '/Matter/' . $latestMatterNo
+                    : base64_encode(convert_uuencode($client->id)) . '/Client';
+
+                $displayName = $client->company_name_or_personal_name;
+                if ($client->is_company && $client->company?->contactPerson) {
+                    $cp = $client->company->contactPerson;
+                    $cpBits = array_filter([
+                        trim((string) ($cp->client_id ?? '')),
+                        trim(($cp->first_name ?? '') . ' ' . ($cp->last_name ?? '')),
+                    ]);
+                    if ($cpBits !== []) {
+                        $displayName .= ' — ' . implode(' ', $cpBits);
+                    }
+                }
+
+                $rawResults[] = [
+                    'id' => $resultFinalId,
+                    'name' => $displayName,
+                    'email' => $client->email,
+                    'status' => $client->is_archived ? 'Archived' : $client->type,
+                    'cid' => $client->id,
+                    'phones' => $allPhones,
+                    'emails' => $allEmails,
+                    'is_company' => (bool) $client->is_company,
+                    'record_type' => $client->type,
+                ];
+            }
+        }
+
+        $results = StaffClientVisibility::enrichGlobalSearchItemsBatch($rawResults);
+
+        $seenCids = [];
+        $results = array_values(array_filter($results, function ($r) use (&$seenCids) {
+            $cid = $r['cid'] ?? null;
+            if ($cid === null || isset($seenCids[$cid])) {
+                return false;
+            }
+            $seenCids[$cid] = true;
+
+            return true;
+        }));
+
+        $cidsInResults = array_column($results, 'cid');
+        $companyIdsInResults = Admin::whereIn('id', $cidsInResults)
+            ->where('is_company', 1)
+            ->pluck('id')
+            ->toArray();
+        $contactPersonIdsToExclude = Company::whereIn('admin_id', $companyIdsInResults)
+            ->pluck('contact_person_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+        $contactPersonIdsToExclude = array_values(array_filter($contactPersonIdsToExclude, function ($pid) use ($squery) {
+            return ! $this->globalSearchQueryMatchesContactPerson((int) $pid, $squery);
+        }));
+        $results = array_values(array_filter($results, function ($r) use ($contactPersonIdsToExclude) {
+            return ! in_array($r['cid'], $contactPersonIdsToExclude);
+        }));
+
+        if (count($results) > self::GLOBAL_SEARCH_OUTPUT_CAP) {
+            $results = array_slice($results, 0, self::GLOBAL_SEARCH_OUTPUT_CAP);
+        }
+
+        return response()->json(['items' => $results]);
+    }
+
+    protected function globalSearchMysqlFulltextIndexExists(string $table, string $indexName): bool
+    {
+        static $cache = [];
+        $key = $table.'.'.$indexName;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        if (! in_array($table, ['admins', 'client_matters'], true)) {
+            return $cache[$key] = false;
+        }
+        if (Schema::getConnection()->getDriverName() !== 'mysql') {
+            return $cache[$key] = false;
+        }
+        try {
+            $rows = DB::select('SHOW INDEX FROM `'.$table.'` WHERE Key_name = ?', [$indexName]);
+
+            return $cache[$key] = (count($rows) > 0);
+        } catch (\Throwable) {
+            return $cache[$key] = false;
+        }
+    }
+
+    /**
+     * InnoDB FULLTEXT boolean mode string. Empty => use LIKE fallback (short tokens, non-MySQL, etc.).
+     */
+    protected function mysqlGlobalSearchBooleanFulltext(string $squery): string
+    {
+        $s = preg_replace('/[^\p{L}\p{N}@.]+/u', ' ', $squery);
+        $words = array_values(array_filter(explode(' ', strtolower(trim($s)))));
+        $parts = [];
+        foreach ($words as $w) {
+            $w = preg_replace('/[^a-z0-9@._-]+/i', '', $w);
+            if ($w === '') {
+                continue;
+            }
+            if (mb_strlen($w, 'UTF-8') < 3) {
+                return '';
+            }
+            $parts[] = '+'.$w.'*';
+        }
+
+        return $parts ? implode(' ', $parts) : '';
     }
 
     /**

@@ -29,6 +29,28 @@ class DashboardController extends Controller
     }
 
     /**
+     * HTML fragment for client matters table + pagination (smooth pagination without full page reload).
+     */
+    public function mattersFragment(DashboardRequest $request)
+    {
+        if (! $request->ajax()) {
+            return redirect()->route('dashboard', $request->query());
+        }
+
+        $payload = $this->dashboardService->getClientMattersTablePayload($request, Auth::user());
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $data */
+        $data = $payload['data'];
+        $data->setPath(route('dashboard'));
+
+        return response()->view('crm.partials.dashboard-client-matters-fragment', [
+            'data' => $data,
+            'workflowStages' => $payload['workflowStages'],
+            'filters' => $payload['filters'],
+            'visibleColumns' => $payload['visibleColumns'],
+        ]);
+    }
+
+    /**
      * Save column preferences
      */
     public function saveColumnPreferences(Request $request)

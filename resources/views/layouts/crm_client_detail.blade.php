@@ -1818,9 +1818,14 @@
 
             $('.js-data-example-ajaxccsearch').select2({
                 closeOnSelect: true,
+                minimumInputLength: 2,
                 ajax: {
                     url: '{{route('clients.getallclients')}}',
                     dataType: 'json',
+                    delay: 350,
+                    data: function (params) {
+                        return { q: params.term || '' };
+                    },
                     processResults: function (data) {
                         // Transforms the top-level key of the response object from 'items' to 'results'
                         return {

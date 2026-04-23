@@ -68,6 +68,164 @@ function initializeEventHandlers() {
         dashboardPendingTaskId = null;
         dashboardPendingUniqueGroupId = null;
     });
+
+    initializeDashboardMattersAjaxPagination();
+}
+
+/**
+ * Client matters table: load next/prev page via fragment (no full page reload).
+ */
+function initializeDashboardMattersAjaxPagination() {
+    if (typeof window.dashboardRoutes === 'undefined' || !window.dashboardRoutes.mattersFragment) {
+        return;
+    }
+    var dashboardBase = window.dashboardRoutes.dashboard;
+    $(document).on('click', '#dashboardMattersFragment .pagination-links a[href]', function(e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.which === 2) {
+            return;
+        }
+        var href = $(this).attr('href');
+        if (!href || href === '#' || href.indexOf('javascript:') === 0) {
+            return;
+        }
+        var targetUrl;
+        try {
+            targetUrl = new URL(href, window.location.origin);
+        } catch (err) {
+            return;
+        }
+        var dashUrl;
+        try {
+            dashUrl = new URL(dashboardBase, window.location.origin);
+        } catch (err2) {
+            return;
+        }
+        if (targetUrl.origin !== window.location.origin || targetUrl.pathname !== dashUrl.pathname) {
+            return;
+        }
+        e.preventDefault();
+        loadDashboardMattersFragment(targetUrl.toString(), true);
+    });
+
+    window.addEventListener('popstate', function(ev) {
+        if (!document.getElementById('dashboardMattersFragment') || !window.dashboardRoutes.mattersFragment) {
+            return;
+        }
+        loadDashboardMattersFragmentForHistory(ev.state);
+    });
+}
+
+/**
+ * Build matters fragment fetch query: filters from current location; page from history state, else URL, else 1.
+ */
+function buildDashboardMattersFragmentFetchQuery(historyState) {
+    var fetchParams = new URLSearchParams(window.location.search);
+    if (historyState && historyState.dashboardMattersAjax && historyState.page != null) {
+        fetchParams.set('page', String(parseInt(historyState.page, 10) || 1));
+    } else if (!fetchParams.has('page')) {
+        fetchParams.set('page', '1');
+    }
+    return fetchParams.toString();
+}
+
+function loadDashboardMattersFragmentForHistory(state) {
+    var frag = document.getElementById('dashboardMattersFragment');
+    if (!frag || !window.dashboardRoutes.mattersFragment) {
+        return;
+    }
+    var qs = buildDashboardMattersFragmentFetchQuery(state);
+    var fetchUrl = window.dashboardRoutes.mattersFragment + (qs ? '?' + qs : '');
+    frag.classList.add('dashboard-matters-fragment--loading');
+    fetch(fetchUrl, {
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html',
+        },
+    })
+        .then(function(res) {
+            if (!res.ok) {
+                throw new Error('Fragment request failed');
+            }
+            return res.text();
+        })
+        .then(function(html) {
+            frag.innerHTML = html;
+            syncDashboardMattersTotalFromFragment(frag);
+            applyInitialColumnVisibility();
+        })
+        .catch(function() {
+            window.location.reload();
+        })
+        .finally(function() {
+            frag.classList.remove('dashboard-matters-fragment--loading');
+        });
+}
+
+function loadDashboardMattersFragment(dashboardAbsoluteUrl, pushHistory) {
+    var frag = document.getElementById('dashboardMattersFragment');
+    if (!frag || !window.dashboardRoutes.mattersFragment) {
+        return;
+    }
+    var u;
+    try {
+        u = new URL(dashboardAbsoluteUrl, window.location.origin);
+    } catch (e) {
+        window.location.href = dashboardAbsoluteUrl;
+        return;
+    }
+    var qs = u.searchParams.toString();
+    var fetchUrl = window.dashboardRoutes.mattersFragment + (qs ? '?' + qs : '');
+    frag.classList.add('dashboard-matters-fragment--loading');
+    fetch(fetchUrl, {
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html',
+        },
+    })
+        .then(function(res) {
+            if (!res.ok) {
+                throw new Error('Fragment request failed');
+            }
+            return res.text();
+        })
+        .then(function(html) {
+            frag.innerHTML = html;
+            syncDashboardMattersTotalFromFragment(frag);
+            if (pushHistory) {
+                var pageNum = parseInt(u.searchParams.get('page'), 10) || 1;
+                var displayParams = new URLSearchParams(u.searchParams.toString());
+                displayParams.delete('page');
+                var displaySearch = displayParams.toString();
+                var displayUrl = u.pathname + (displaySearch ? '?' + displaySearch : '');
+                history.pushState(
+                    { dashboardMattersAjax: true, page: pageNum },
+                    '',
+                    displayUrl
+                );
+            }
+            applyInitialColumnVisibility();
+        })
+        .catch(function() {
+            window.location.href = u.pathname + u.search;
+        })
+        .finally(function() {
+            frag.classList.remove('dashboard-matters-fragment--loading');
+        });
+}
+
+function syncDashboardMattersTotalFromFragment(frag) {
+    var meta = frag.querySelector('.dashboard-matters-meta');
+    var totalEl = document.querySelector('.cases-overview-header .total-count');
+    if (!meta || !totalEl) {
+        return;
+    }
+    var t = meta.getAttribute('data-total');
+    if (t === null || t === '') {
+        return;
+    }
+    totalEl.textContent = '(' + t + ' total)';
 }
 
 function updateStage(itemId, stageId) {
