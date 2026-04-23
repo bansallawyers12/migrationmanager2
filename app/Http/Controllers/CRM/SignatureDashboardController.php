@@ -72,29 +72,15 @@ class SignatureDashboardController extends Controller
 
         $documents = $query->paginate(20);
 
-        // Dashboard card counts aligned with the list above (not role / allocation scoped).
-        // Previous pending/signed/all used ->visible($staff).
-        $counts = [
-            'sent_by_me' => Document::forSignatureWorkflow()->forUser($staff->id)->notArchived()->count(),
-            // Previous: 'visible_to_me' => Document::forSignatureWorkflow()->visible($staff)->notArchived()->count(),
-            'visible_to_me' => Document::forSignatureWorkflow()->notArchived()->count(),
-            'pending' => Document::forSignatureWorkflow()->byStatus('sent')->notArchived()->count(),
-            'signed' => Document::forSignatureWorkflow()->byStatus('signed')->notArchived()->count(),
-            'overdue' => 0, // due_at column removed
-        ];
-
-        $counts['all'] = Document::forSignatureWorkflow()->notArchived()->count();
-        $counts['all_pending'] = Document::forSignatureWorkflow()->byStatus('sent')->notArchived()->count();
+        // Dashboard card counts: one aggregate query (same filters as Document scopes).
+        $counts = $this->signatureDashboardCounts($staff);
 
         // Provide errors variable for the layout
         $errors = $request->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
 
-        // Load staff and leads for attach modal
-        $clients = \App\Models\Staff::query()
-            ->select('id', 'first_name', 'last_name', 'email')
-            ->get();
-        $leads = Lead::select('id', 'first_name', 'last_name', 'email')
-            ->get();
+        // Admins (clients) + leads for attach modal — IDs must match associateWithCategory (client_id / lead_id).
+        $clients = $this->signatureAttachClients();
+        $leads = $this->signatureAttachLeads();
 
         return view('crm.signatures.dashboard', compact('documents', 'counts', 'staff', 'errors', 'clients', 'leads'));
     }
@@ -318,14 +304,9 @@ class SignatureDashboardController extends Controller
             ->orderBy('email')
             ->get();
 
-        // Load staff and leads for attach functionality
-        $clients = \App\Models\Staff::query()
-            ->select('id', 'first_name', 'last_name', 'email')
-            ->orderBy('first_name')
-            ->get();
-        $leads = Lead::select('id', 'first_name', 'last_name', 'email')
-            ->orderBy('first_name')
-            ->get();
+        // Admins (clients) + leads for attach — same source as signature dashboard.
+        $clients = $this->signatureAttachClients();
+        $leads = $this->signatureAttachLeads();
 
         // Provide errors variable for the layout
         $errors = request()->session()->get('errors') ?? new \Illuminate\Support\MessageBag();
@@ -909,5 +890,62 @@ class SignatureDashboardController extends Controller
                 'error' => 'Failed to render template: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Signature dashboard stat cards: one aggregate query using the same filters as Document scopes.
+     */
+    private function signatureDashboardCounts($staff): array
+    {
+        $row = Document::query()
+            ->forSignatureWorkflow()
+            ->notArchived()
+            ->toBase()
+            ->selectRaw(
+                'COUNT(*) AS c_total, ' .
+                'COALESCE(SUM(CASE WHEN documents.status = ? THEN 1 ELSE 0 END), 0) AS c_pending, ' .
+                'COALESCE(SUM(CASE WHEN documents.status = ? THEN 1 ELSE 0 END), 0) AS c_signed, ' .
+                'COALESCE(SUM(CASE WHEN documents.created_by = ? THEN 1 ELSE 0 END), 0) AS c_sent_by_me',
+                ['sent', 'signed', $staff->id]
+            )
+            ->first();
+
+        $total = (int) ($row->c_total ?? 0);
+        $pending = (int) ($row->c_pending ?? 0);
+        $signed = (int) ($row->c_signed ?? 0);
+        $sentByMe = (int) ($row->c_sent_by_me ?? 0);
+
+        return [
+            'sent_by_me' => $sentByMe,
+            'visible_to_me' => $total,
+            'pending' => $pending,
+            'signed' => $signed,
+            'overdue' => 0,
+            'all' => $total,
+            'all_pending' => $pending,
+        ];
+    }
+
+    /**
+     * CRM clients (admins.type = client) for attach modal — IDs match documents.client_id / associate().
+     */
+    private function signatureAttachClients()
+    {
+        return Admin::query()
+            ->where('type', 'client')
+            ->whereNull('is_deleted')
+            ->select('id', 'first_name', 'last_name', 'email')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+    }
+
+    private function signatureAttachLeads()
+    {
+        return Lead::query()
+            ->select('id', 'first_name', 'last_name', 'email')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
     }
 }
