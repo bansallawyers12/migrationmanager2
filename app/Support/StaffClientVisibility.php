@@ -577,12 +577,15 @@ final class StaffClientVisibility
     private static function logExemptAccessIfNeeded(int $staffId, int $adminId, string $recordType): void
     {
         try {
-            $today = Carbon::now('UTC')->toDateString();
+            // Range on timestamptz uses the "exempt dedup" partial index; same UTC calendar day as whereDate(created_at, today).
+            $dayStart = Carbon::now('UTC')->startOfDay();
+            $dayEnd = Carbon::now('UTC')->copy()->addDay()->startOfDay();
             $exists = ClientAccessGrant::query()
                 ->where('staff_id', $staffId)
                 ->where('admin_id', $adminId)
                 ->where('grant_type', 'exempt')
-                ->whereDate('created_at', $today)
+                ->where('created_at', '>=', $dayStart)
+                ->where('created_at', '<', $dayEnd)
                 ->exists();
 
             if (! $exists) {
