@@ -11004,6 +11004,48 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Chatbot",
+			"item": [
+				{
+					"name": "Chat (Claude)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Bearer token from Login"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Hello, world\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot"
+							]
+						},
+						"description": "Send a chat message to Claude via the server (Anthropic Messages API). Configure ANTHROPIC_API_KEY in .env. Optional JSON fields: model (default claude-sonnet-4-6), max_tokens (default 1024)."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [

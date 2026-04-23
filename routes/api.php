@@ -20,6 +20,7 @@ use App\Http\Controllers\API\FCMController;
 use App\Http\Controllers\API\OthersController;
 use App\Http\Controllers\API\VisaPricingEstimatorController;
 use App\Http\Controllers\API\SignupController;
+use App\Http\Controllers\API\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -269,6 +270,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointments', [ClientPortalAppointmentController::class, 'addAppointment']);
     Route::post('/appointments/{id}/status', [ClientPortalAppointmentController::class, 'updateAppointmentStatus']);
     Route::post('/appointments/update-appointment', [ClientPortalAppointmentController::class, 'updateAppointment']);
+
+    // Chatbot (Anthropic Claude — server uses ANTHROPIC_API_KEY)
+    Route::post('/chatbot', [ChatbotController::class, 'chat']);
     
 });
 
