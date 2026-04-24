@@ -48,7 +48,7 @@ Route::get('/countries', [ClientPortalCommonListingController::class, 'getCountr
 // Visa Types API (public route)
 Route::get('/visa-types', [ClientPortalCommonListingController::class, 'getVisaTypes']);
 
-// Search Occupations API (public route). Trailing-slash URLs: OPTIONS preflight must not be 301’d (see public/.htaccess); GET may still canonicalize via 301.
+// Search Occupations API (public route). Trailing-slash /api/... URLs are not 301’d by Apache (see public/.htaccess) so CORS stays on the JSON response.
 Route::get('/search-occupation', [ClientPortalCommonListingController::class, 'searchOccupationDetail']);
 Route::get('/occupation-result', [ClientPortalCommonListingController::class, 'getOccupationResult']);
 

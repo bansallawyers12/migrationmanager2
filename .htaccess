@@ -16,9 +16,11 @@
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     # Redirect Trailing Slashes If Not A Folder...
-    # Skip for OPTIONS: browsers forbid redirects on CORS preflight (see migrationmanager + portal).
+    # Skip for /api/*: avoid 301 on cross-origin GET (redirect responses often lack CORS headers).
+    # Skip for OPTIONS elsewhere: browsers forbid redirects on CORS preflight.
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteCond %{REQUEST_URI} !^/api/
     RewriteCond %{REQUEST_METHOD} !OPTIONS
     RewriteRule ^ %1 [L,R=301]
 
