@@ -1,5 +1,13 @@
 <?php
 
+$defaultOrigins = ['https://portal.bansalimmigration.com.au'];
+$envOrigins = env('CORS_ALLOWED_ORIGINS');
+if (is_string($envOrigins) && $envOrigins !== '') {
+    $allowedOrigins = array_values(array_filter(array_map('trim', explode(',', $envOrigins))));
+} else {
+    $allowedOrigins = $defaultOrigins;
+}
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -18,7 +26,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://portal.bansalimmigration.com.au'], // Configure specific domains for production
+    'allowed_origins' => $allowedOrigins,
 
     'allowed_origins_patterns' => [],
 

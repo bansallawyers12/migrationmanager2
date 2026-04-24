@@ -5,10 +5,8 @@
 
     RewriteEngine On
 
-    # ✅ ADD THIS HERE (RIGHT AFTER RewriteEngine On)
-    RewriteCond %{REQUEST_METHOD} OPTIONS
-    RewriteRule ^(.*)$ $1 [R=200,L]
-    
+    # Let OPTIONS preflight reach index.php so Laravel HandleCors can attach headers.
+
     # Rewrite rules for robots.txt
     RewriteCond %{REQUEST_URI} ^/robots\.txt$
     RewriteRule ^ /public/robots.txt [R=301,L]
