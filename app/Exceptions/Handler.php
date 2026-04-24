@@ -5,8 +5,11 @@ namespace App\Exceptions;
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 use Throwable;
@@ -68,7 +71,72 @@ class Handler extends ExceptionHandler
 					return response()->view('errors.' . '404', [], 404);
 				}
 		} */
-        return parent::render($request, $exception);
+        $response = parent::render($request, $exception);
+
+        return $this->applyConfiguredCorsHeaders($request, $response);
+    }
+
+    /**
+     * Ensure API / Sanctum CORS paths get the same headers as successful responses when
+     * an exception short-circuits before the normal CORS middleware finishes (fixes browser
+     * "CORS error" on GET when OPTIONS preflight already succeeded).
+     */
+    protected function applyConfiguredCorsHeaders(Request $request, Response $response): Response
+    {
+        if (! $this->requestMatchesCorsPaths($request)) {
+            return $response;
+        }
+
+        $origin = $request->headers->get('Origin');
+        if (! is_string($origin) || $origin === '' || ! $this->corsOriginIsAllowed($origin)) {
+            return $response;
+        }
+
+        if ($response->headers->has('Access-Control-Allow-Origin')) {
+            return $response;
+        }
+
+        $response->headers->set('Access-Control-Allow-Origin', $origin);
+
+        if (config('cors.supports_credentials')) {
+            $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        }
+
+        $vary = array_values(array_filter(array_map('trim', preg_split('/\s*,\s*/', (string) $response->headers->get('Vary') ?: '', -1, PREG_SPLIT_NO_EMPTY))));
+        if (! in_array('Origin', $vary, true)) {
+            $vary[] = 'Origin';
+            $response->headers->set('Vary', implode(', ', $vary));
+        }
+
+        return $response;
+    }
+
+    protected function requestMatchesCorsPaths(Request $request): bool
+    {
+        foreach (config('cors.paths', []) as $pattern) {
+            if ($request->is($pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function corsOriginIsAllowed(string $origin): bool
+    {
+        foreach (config('cors.allowed_origins', []) as $allowed) {
+            if ($allowed === $origin) {
+                return true;
+            }
+        }
+
+        foreach (config('cors.allowed_origins_patterns', []) as $pattern) {
+            if ($pattern !== '' && Str::is($pattern, $origin)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 	protected function unauthenticated($request, AuthenticationException $exception)
@@ -85,11 +153,13 @@ class Handler extends ExceptionHandler
 		// Return JSON 401 for API routes or requests with bearer tokens
 		if ($request->expectsJson() || $isApiRoute || $hasBearerToken)
 		{
-			return response()->json([
+			$response = response()->json([
 				'success' => false,
 				'message' => 'Unauthenticated.',
 				'error' => 'Invalid or expired authentication token.'
 			], 401);
+
+			return $this->applyConfiguredCorsHeaders($request, $response);
 		}
 		
 		// For web routes, redirect to login page
