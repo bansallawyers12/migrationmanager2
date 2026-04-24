@@ -1,6 +1,6 @@
 <?php
 
-$defaultOrigins = ['https://portal.bansalimmigration.com.au'];
+$defaultOrigins = ['https://portal.bansalimmigration.com.au','https://www.bansalimmigration.com.au'];
 $envOrigins = env('CORS_ALLOWED_ORIGINS');
 if (is_string($envOrigins) && $envOrigins !== '') {
     $allowedOrigins = array_values(array_filter(array_map('trim', explode(',', $envOrigins))));
