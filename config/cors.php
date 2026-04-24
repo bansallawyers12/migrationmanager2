@@ -18,7 +18,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'], // Configure specific domains for production
+    'allowed_origins' => ['https://portal.bansalimmigration.com.au'], // Configure specific domains for production
 
     'allowed_origins_patterns' => [],
 
@@ -28,5 +28,5 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 ];
