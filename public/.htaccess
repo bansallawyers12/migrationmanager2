@@ -5,7 +5,10 @@
 
     RewriteEngine On
 
-
+    # ✅ ADD THIS HERE (RIGHT AFTER RewriteEngine On)
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+    
     # Rewrite rules for robots.txt
     RewriteCond %{REQUEST_URI} ^/robots\.txt$
     RewriteRule ^ /public/robots.txt [R=301,L]
@@ -25,14 +28,6 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-<IfModule mod_headers.c>
-    SetEnvIf Origin "^https://bansalimmigration\.com\.au$" CORS_ORIGIN=$0
-    Header set Access-Control-Allow-Origin "%{CORS_ORIGIN}e" env=CORS_ORIGIN
-    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
-    Header set Access-Control-Allow-Credentials "true"
-    Header set Vary "Origin"
-</IfModule>
 
 # BEGIN cPanel-generated php ini directives, do not edit
 # Manual editing of this file may result in unexpected behavior.
