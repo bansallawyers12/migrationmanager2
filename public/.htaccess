@@ -16,8 +16,10 @@
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     # Redirect Trailing Slashes If Not A Folder...
+    # Skip for OPTIONS: browsers forbid redirects on CORS preflight (see migrationmanager + portal).
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteCond %{REQUEST_METHOD} !OPTIONS
     RewriteRule ^ %1 [L,R=301]
 
     # Handle Front Controller...
