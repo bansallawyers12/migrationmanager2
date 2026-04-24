@@ -50,6 +50,21 @@
             return null;
         };
 
+        /**
+         * is_paid + preferred_language for Bansal Melbourne calendar routing.
+         * Backend only forwards these to Bansal when location is Melbourne.
+         * Form: radio 1=Free, 2/3=Paid (Comprehensive, Overseas).
+         */
+        function getMmSchedulePayload() {
+            var serviceId = parseInt($("input[name='radioGroup']:checked").val() || '0', 10);
+            var isPaid = (serviceId === 2 || serviceId === 3) ? 1 : 0;
+            var lang = ($('.preferred_language').val() || '').toString().trim();
+            if (!lang) {
+                lang = 'English';
+            }
+            return { is_paid: isPaid, preferred_language: lang };
+        }
+
         $(document).delegate('.enquiry_item', 'change', function(){
 
             var id = $(this).val();
@@ -189,6 +204,7 @@
                 var inperson_address = $("input[name='inperson_address']:checked").attr('data-val'); //alert(inperson_address);
                 
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
+                var schedExtra = getMmSchedulePayload();
 
                 // Initialize datepicker when location is selected
                 // Destroy existing datepicker instance if it exists
@@ -205,7 +221,10 @@
 
                     type:'POST',
 
-                    data:{id:service_id, enquiry_item:enquiry_item, inperson_address:inperson_address, slot_overwrite:slot_overwrite },
+                    data: $.extend(
+                        { id: service_id, enquiry_item: enquiry_item, inperson_address: inperson_address, slot_overwrite: slot_overwrite },
+                        schedExtra
+                    ),
 
                     dataType:'json',
 
@@ -226,7 +245,7 @@
 
                                 disabledtimeslotes = obj.disabledtimeslotes;
 
-                                var datesForDisable = obj.disabledatesarray;
+                                var datesForDisable = obj.disabledatesarray || obj.disableddatesarray || [];
 
                                 // Destroy existing datepicker instance if it exists (before reinitializing)
                                 if ($('#datetimepicker').data('datepicker')) {
@@ -289,13 +308,17 @@
                                     var enquiry_item  = $('.enquiry_item').val(); //alert(enquiry_item);
 
                                     var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
+                                    var schedExtra2 = getMmSchedulePayload();
 
                                     // Fetch disabled time slots for selected date
                                     $.ajax({
                                         url:window.ClientDetailConfig.urls.getDisabledDateTime,
                                         headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                                         type:'POST',
-                                        data:{service_id:service_id,sel_date:date, enquiry_item:enquiry_item,inperson_address:inperson_address,slot_overwrite:slot_overwrite},
+                                        data: $.extend(
+                                            { service_id: service_id, sel_date: date, enquiry_item: enquiry_item, inperson_address: inperson_address, slot_overwrite: slot_overwrite },
+                                            schedExtra2
+                                        ),
                                         dataType:'json',
                                         success:function(res){
 
@@ -504,6 +527,13 @@
 
             }
 
+        });
+
+        // Melbourne: calendar must refresh when language changes (Punjabi GSM/EOI routing, etc.)
+        $(document).on('change', '.preferred_language', function() {
+            if ($("input[name='inperson_address']:checked").attr('data-val')) {
+                $("input[name='inperson_address']:checked").first().trigger('change');
+            }
         });
 
 

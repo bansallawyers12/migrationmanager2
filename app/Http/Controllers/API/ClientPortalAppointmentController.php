@@ -17,6 +17,7 @@ use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Payment\StripePaymentService;
+use App\Support\BansalSchedulingServiceType;
 
 class ClientPortalAppointmentController extends BaseController
 {
@@ -1077,9 +1078,9 @@ class ClientPortalAppointmentController extends BaseController
 
                 // Slot availability error - do NOT create appointment, return error immediately
                 $errorLower = strtolower($bansalApiError);
-                $isSlotUnavailable = str_contains($errorLower, 'time slot')
-                    || (str_contains($errorLower, 'slot') && str_contains($errorLower, 'not available'))
-                    || (str_contains($errorLower, 'slot') && (str_contains($errorLower, 'already') || str_contains($errorLower, 'booked') || str_contains($errorLower, 'taken')));
+                $isSlotUnavailable = strpos($errorLower, 'time slot') !== false
+                    || (strpos($errorLower, 'slot') !== false && strpos($errorLower, 'not available') !== false)
+                    || (strpos($errorLower, 'slot') !== false && (strpos($errorLower, 'already') !== false || strpos($errorLower, 'booked') !== false || strpos($errorLower, 'taken') !== false));
                 if ($isSlotUnavailable) {
                     return $this->sendError('The selected time slot is not available. Please choose a different time slot.', [], 422);
                 }
@@ -1409,18 +1410,7 @@ class ClientPortalAppointmentController extends BaseController
             ];
             $specific_service = $specific_service_map[$id] ?? 'consultation';
             
-            // Map enquiry_item to service_type
-            $service_type_map = [
-                1 => 'permanent-residency',
-                2 => 'temporary-residency',
-                3 => 'jrp-skill-assessment',
-                4 => 'tourist-visa',
-                5 => 'education-visa',
-                6 => 'complex-matters',
-                7 => 'visa-cancellation',
-                8 => 'international-migration'
-            ];
-            $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+            $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item);
             
             // Map inperson_address to location
             $location_map = [
@@ -1436,6 +1426,17 @@ class ClientPortalAppointmentController extends BaseController
                 'location' => $location,
                 'slot_overwrite' => $slot_overwrite
             ];
+            [$isPaid, $preferredLanguage] = BansalSchedulingServiceType::melbourneApiExtras(
+                $request,
+                $location,
+                (int) $id
+            );
+            if ($isPaid !== null) {
+                $requestData['is_paid'] = $isPaid;
+            }
+            if ($preferredLanguage !== null) {
+                $requestData['preferred_language'] = $preferredLanguage;
+            }
             
             try {
                 // Get API configuration
@@ -1468,11 +1469,12 @@ class ClientPortalAppointmentController extends BaseController
                 }
                 
                 $data = $response->json();
+                $disabledDates = $data['disabledatesarray'] ?? $data['disableddatesarray'] ?? [];
                 
                 // Format response to match expected output
                 $result = [
                     'success' => $data['success'] ?? true,
-                    'disabledatesarray' => $data['disabledatesarray'] ?? [],
+                    'disabledatesarray' => $disabledDates,
                     'duration' => $data['duration'] ?? 15,
                     'start_time' => $data['start_time'] ?? '10:45',
                     'end_time' => $data['end_time'] ?? '16:00',
@@ -1566,18 +1568,7 @@ class ClientPortalAppointmentController extends BaseController
             ];
             $specific_service = $specific_service_map[$service_id] ?? 'consultation';
             
-            // Map enquiry_item to service_type
-            $service_type_map = [
-                1 => 'permanent-residency',
-                2 => 'temporary-residency',
-                3 => 'jrp-skill-assessment',
-                4 => 'tourist-visa',
-                5 => 'education-visa',
-                6 => 'complex-matters',
-                7 => 'visa-cancellation',
-                8 => 'international-migration'
-            ];
-            $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+            $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item);
             
             // Map inperson_address to location
             $location_map = [
@@ -1585,6 +1576,12 @@ class ClientPortalAppointmentController extends BaseController
                 2 => 'melbourne'
             ];
             $location = $location_map[$inperson_address] ?? 'adelaide';
+            
+            [$isPaid, $preferredLanguage] = BansalSchedulingServiceType::melbourneApiExtras(
+                $request,
+                $location,
+                (int) $service_id
+            );
             
             try {
                 // Use BansalApiClient to call the website API (same as getdisableddatetime)
@@ -1594,7 +1591,9 @@ class ClientPortalAppointmentController extends BaseController
                     $service_type,
                     $location,
                     $sel_date,
-                    $slot_overwrite
+                    $slot_overwrite,
+                    $isPaid,
+                    $preferredLanguage
                 );
                 
                 // Format response to match expected output

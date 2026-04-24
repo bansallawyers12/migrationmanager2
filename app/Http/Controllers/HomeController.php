@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\View;
 
 // use App\Models\WebsiteSetting; // removed website settings dependency
 // Website content models removed - tables dropped in migration 2025_12_23_180714
@@ -28,6 +29,8 @@ use Helper;
 
 use Stripe;
 
+use App\Support\BansalSchedulingServiceType;
+
 
 class HomeController extends Controller
 {
@@ -40,7 +43,7 @@ class HomeController extends Controller
             'email' => env('APP_EMAIL', ''),
             'logo' => env('APP_LOGO', 'logo.png'),
         ];
-        \View::share('siteData', $siteData);
+        View::share('siteData', $siteData);
 	}
 
 
@@ -56,7 +59,7 @@ class HomeController extends Controller
 		header("Cache-Control: no-cache, must-revalidate");
 		header('Content-type: image/png');
 		imagepng($im);
-		imagedestroy($im);
+		// GdImage is freed when $im goes out of scope (imagedestroy() deprecated in PHP 8.4+)
 
     }
 
@@ -120,18 +123,7 @@ class HomeController extends Controller
         ];
         $specific_service = $specific_service_map[$id] ?? 'consultation';
         
-        // Map enquiry_item to service_type
-        $service_type_map = [
-            1 => 'permanent-residency',
-            2 => 'temporary-residency',
-            3 => 'jrp-skill-assessment',
-            4 => 'tourist-visa',
-            5 => 'education-visa',
-            6 => 'complex-matters',
-            7 => 'visa-cancellation',
-            8 => 'international-migration'
-        ];
-        $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+        $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item);
         
         // Map inperson_address to location
         $location_map = [
@@ -147,6 +139,17 @@ class HomeController extends Controller
             'location' => $location,
             'slot_overwrite' => $slot_overwrite
         ];
+        [$isPaid, $preferredLanguage] = BansalSchedulingServiceType::melbourneApiExtras(
+            $request,
+            $location,
+            (int) ($id ?? 1)
+        );
+        if ($isPaid !== null) {
+            $requestData['is_paid'] = $isPaid;
+        }
+        if ($preferredLanguage !== null) {
+            $requestData['preferred_language'] = $preferredLanguage;
+        }
         
         try {
             // Get API configuration
@@ -184,6 +187,11 @@ class HomeController extends Controller
             }
             
             $data = $response->json();
+            if (is_array($data)) {
+                if (! isset($data['disabledatesarray']) && isset($data['disableddatesarray'])) {
+                    $data['disabledatesarray'] = $data['disableddatesarray'];
+                }
+            }
             
             // Return the response from external API
             return json_encode($data);
@@ -255,18 +263,7 @@ class HomeController extends Controller
         ];
         $specific_service = $specific_service_map[$service_id] ?? 'consultation';
         
-        // Map enquiry_item to service_type
-        $service_type_map = [
-            1 => 'permanent-residency',
-            2 => 'temporary-residency',
-            3 => 'jrp-skill-assessment',
-            4 => 'tourist-visa',
-            5 => 'education-visa',
-            6 => 'complex-matters',
-            7 => 'visa-cancellation',
-            8 => 'international-migration'
-        ];
-        $service_type = $service_type_map[$enquiry_item] ?? 'permanent-residency';
+        $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item);
         
         // Map inperson_address to location
         $location_map = [
@@ -274,6 +271,12 @@ class HomeController extends Controller
             2 => 'melbourne'
         ];
         $location = $location_map[$inperson_address] ?? 'adelaide';
+        
+        [$isPaid, $preferredLanguage] = BansalSchedulingServiceType::melbourneApiExtras(
+            $request,
+            $location,
+            (int) ($service_id ?? 1)
+        );
         
         try {
             // Use BansalApiClient to call the website API
@@ -283,7 +286,9 @@ class HomeController extends Controller
                 $service_type,
                 $location,
                 $sel_date,
-                $slot_overwrite
+                $slot_overwrite,
+                $isPaid,
+                $preferredLanguage
             );
             
             // Return the response from external API

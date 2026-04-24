@@ -297,16 +297,30 @@ class BansalApiClient
      * @param string $serviceType Enquiry type: 'permanent-residency', 'temporary-residency', etc.
      * @param string $location Location: 'adelaide' or 'melbourne'
      * @param int $slotOverwrite If 1, disabledatesarray will be blank (allows booking on blocked dates)
+     * @param ?bool $isPaid Melbourne routing (omit when null, e.g. Adelaide)
+     * @param ?string $preferredLanguage Melbourne routing (omit when null)
      * @return array API response with duration, weeks, start_time, end_time, disabledatesarray
      */
-    public function getDateTimeBackend(string $specificService, string $serviceType, string $location, int $slotOverwrite = 0): array
-    {
+    public function getDateTimeBackend(
+        string $specificService,
+        string $serviceType,
+        string $location,
+        int $slotOverwrite = 0,
+        ?bool $isPaid = null,
+        ?string $preferredLanguage = null
+    ): array {
         $payload = [
             'specific_service' => $specificService,
             'service_type' => $serviceType,
             'location' => $location,
             'slot_overwrite' => $slotOverwrite,
         ];
+        if ($isPaid !== null) {
+            $payload['is_paid'] = $isPaid;
+        }
+        if ($preferredLanguage !== null && $preferredLanguage !== '') {
+            $payload['preferred_language'] = $preferredLanguage;
+        }
 
         try {
             $response = $this->client()->post("{$this->baseUrl}/appointments/get-datetime-backend", $payload);
@@ -369,10 +383,19 @@ class BansalApiClient
      * @param string $location Location: 'adelaide' or 'melbourne'
      * @param string $selectedDate Selected date in dd/mm/yyyy format
      * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
+     * @param ?bool $isPaid Melbourne routing (omit when null)
+     * @param ?string $preferredLanguage Melbourne routing (omit when null)
      * @return array API response with disabledtimeslotes array
      */
-    public function getDisabledDateTime(string $specificService, string $serviceType, string $location, string $selectedDate, int $slotOverwrite = 0): array
-    {
+    public function getDisabledDateTime(
+        string $specificService,
+        string $serviceType,
+        string $location,
+        string $selectedDate,
+        int $slotOverwrite = 0,
+        ?bool $isPaid = null,
+        ?string $preferredLanguage = null
+    ): array {
         $payload = [
             'specific_service' => $specificService,
             'service_type' => $serviceType,
@@ -380,6 +403,12 @@ class BansalApiClient
             'sel_date' => $selectedDate,
             'slot_overwrite' => $slotOverwrite,
         ];
+        if ($isPaid !== null) {
+            $payload['is_paid'] = $isPaid;
+        }
+        if ($preferredLanguage !== null && $preferredLanguage !== '') {
+            $payload['preferred_language'] = $preferredLanguage;
+        }
 
         try {
             $response = $this->client()->post("{$this->baseUrl}/appointments/get-disabled-datetime", $payload);
