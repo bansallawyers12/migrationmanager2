@@ -9713,7 +9713,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1\n}",
+							"raw": "{\n    \"id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"is_paid\": false,\n    \"preferred_language\": \"English\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -9730,7 +9730,7 @@
 								"get-disabled-dates"
 							]
 						},
-						"description": "**Public API - No authentication required.**\n\nGet disabled dates from calendar along with duration, start_time, end_time, and weeks. The slot_overwrite parameter is automatically set to 0 (not passed in input). Works for both guest and logged-in users.\n\n**Input Parameters:**\n\n```json\n{\n    \"id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1  // 1=>Adelaide, 2=>melbourne\n}\n```\n\n**Parameter Details:**\n- `id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=Adelaide, 2=melbourne\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
+						"description": "**Public API - No authentication required.**\n\nGet disabled dates from calendar along with duration, start_time, end_time, and weeks. The slot_overwrite parameter is automatically set to 0 (not passed in input). Works for both guest and logged-in users.\n\n**Input Parameters:**\n\n```json\n{\n    \"id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // See BansalSchedulingServiceType / nature of enquiry (1-12)\n    \"inperson_address\": 1,  // 1=>Adelaide, 2=>Melbourne\n    \"is_paid\": false,  // optional; forwarded to Bansal for Melbourne only (free vs paid calendar)\n    \"preferred_language\": \"English\"  // optional; forwarded to Bansal for Melbourne (e.g. Punjabi for GSM/EOI routing)\n}\n```\n\n**Parameter Details:**\n- `id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Nature of enquiry (1-12, maps to Bansal service_type)\n- `inperson_address` (required, integer): Office location - 1=Adelaide, 2=melbourne\n- `is_paid` (optional, boolean): When `inperson_address` is 2 (Melbourne), sent to the Bansal get-datetime-backend API; if omitted, inferred from `id` (1=free, 2/3=paid). Ignored for Adelaide for upstream forwarding.\n- `preferred_language` (optional, string): When Melbourne, sent to Bansal (e.g. Punjabi with GSM/EOI). Defaults to English server-side if empty.\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
 					},
 					"response": [
 						{
@@ -9749,7 +9749,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1\n}",
+									"raw": "{\n    \"id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"is_paid\": false,\n    \"preferred_language\": \"English\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -9843,7 +9843,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"29/01/2026\"\n}",
+							"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"29/01/2026\",\n    \"is_paid\": false,\n    \"preferred_language\": \"English\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -9860,7 +9860,7 @@
 								"get-disabled-slots"
 							]
 						},
-						"description": "**Public API - No authentication required.**\n\nGet disabled time slots for a specific date from calendar. The slot_overwrite parameter is automatically set to 0 (not passed in input). Works for both guest and logged-in users.\n\n**Input Parameters:**\n\n```json\n{\n    \"service_id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // 1=>permanent-residency, 2=>temporary-residency, 3=>jrp-skill-assessment, 4=>tourist-visa, 5=>education-visa, 6=>complex-matters, 7=>visa-cancellation, 8=>international-migration\n    \"inperson_address\": 1,  // 1=>adelaide, 2=>melbourne\n    \"sel_date\": \"29/01/2026\"  // Date in dd/mm/yyyy format\n}\n```\n\n**Parameter Details:**\n- `service_id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type - 1=permanent-residency, 2=temporary-residency, 3=jrp-skill-assessment, 4=tourist-visa, 5=education-visa, 6=complex-matters, 7=visa-cancellation, 8=international-migration\n- `inperson_address` (required, integer): Office location - 1=adelaide, 2=melbourne\n- `sel_date` (required, string): Selected date in dd/mm/yyyy format (e.g., \"29/01/2026\")\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
+						"description": "**Public API - No authentication required.**\n\nGet disabled time slots for a specific date from calendar. The slot_overwrite parameter is automatically set to 0 (not passed in input). Works for both guest and logged-in users.\n\n**Input Parameters:**\n\n```json\n{\n    \"service_id\": 1,  // 1=>consultation, 2=>paid-consultation, 3=>overseas-enquiry\n    \"enquiry_item\": 1,  // Nature of enquiry (1-12)\n    \"inperson_address\": 1,  // 1=>adelaide, 2=>melbourne\n    \"sel_date\": \"29/01/2026\",  // Date in dd/mm/yyyy format\n    \"is_paid\": false,  // optional; forwarded to Bansal for Melbourne only\n    \"preferred_language\": \"English\"  // optional; forwarded to Bansal for Melbourne (e.g. Punjabi)\n}\n```\n\n**Parameter Details:**\n- `service_id` (required, integer): Service type - 1=consultation, 2=paid-consultation, 3=overseas-enquiry\n- `enquiry_item` (required, integer): Enquiry type / nature of enquiry (1-12)\n- `inperson_address` (required, integer): Office location - 1=adelaide, 2=melbourne\n- `sel_date` (required, string): Selected date in dd/mm/yyyy format (e.g., \"29/01/2026\")\n- `is_paid` (optional, boolean): When `inperson_address` is 2 (Melbourne), sent to Bansal get-disabled-datetime; if omitted, inferred from `service_id`.\n- `preferred_language` (optional, string): When Melbourne, sent to Bansal. Defaults to English if empty server-side.\n\n**Note:** slot_overwrite is automatically set to 0 internally and not required in the request."
 					},
 					"response": [
 						{
@@ -9879,7 +9879,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"29/01/2026\"\n}",
+									"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"29/01/2026\",\n    \"is_paid\": false,\n    \"preferred_language\": \"English\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -9971,7 +9971,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"2026-01-29\"\n}",
+									"raw": "{\n    \"service_id\": 1,\n    \"enquiry_item\": 1,\n    \"inperson_address\": 1,\n    \"sel_date\": \"2026-01-29\",\n    \"is_paid\": false,\n    \"preferred_language\": \"English\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
