@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\EnsuresCrmRecordAccess;
 use App\Http\Controllers\Controller;
 use App\Models\EmailLogAttachment;
 use App\Models\EmailLog;
+use App\Services\CrmSentEmailS3Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
@@ -36,23 +37,39 @@ class EmailLogAttachmentController extends Controller
                 );
             }
 
-            // Check if s3_key exists
+            $localPath = CrmSentEmailS3Service::resolveLocalDiskAbsolutePath($attachment->file_path);
+            if ($localPath) {
+                $content = @file_get_contents($localPath);
+                if ($content === false) {
+                    Log::error('Attachment download failed: empty or unreadable local file', [
+                        'id' => $id,
+                        'path' => $localPath,
+                    ]);
+                    abort(404, 'Attachment file not found in storage');
+                }
+
+                return Response::make($content, 200, [
+                    'Content-Type' => $attachment->content_type ?: 'application/octet-stream',
+                    'Content-Disposition' => 'attachment; filename="' . $attachment->filename . '"',
+                    'Content-Length' => strlen($content),
+                ]);
+            }
+
             if (!$attachment->s3_key) {
-                Log::error('Attachment download failed: No S3 key', [
+                Log::error('Attachment download failed: No S3 key or local file', [
                     'id' => $id,
                     'filename' => $attachment->filename,
                     'file_path' => $attachment->file_path,
-                    'email_log_id' => $attachment->email_log_id
+                    'email_log_id' => $attachment->email_log_id,
                 ]);
                 abort(404, 'Attachment file not found (no S3 key)');
             }
 
-            // Check if file exists in S3
             if (!Storage::disk('s3')->exists($attachment->s3_key)) {
                 Log::error('Attachment download failed: File not found in S3', [
                     'id' => $id,
                     's3_key' => $attachment->s3_key,
-                    'filename' => $attachment->filename
+                    'filename' => $attachment->filename,
                 ]);
                 abort(404, 'Attachment file not found in storage');
             }
@@ -115,7 +132,13 @@ class EmailLogAttachmentController extends Controller
 
             foreach ($attachments as $attachment) {
                 try {
-                    if ($attachment->s3_key) {
+                    $local = CrmSentEmailS3Service::resolveLocalDiskAbsolutePath($attachment->file_path);
+                    if ($local) {
+                        $content = @file_get_contents($local);
+                        if ($content !== false) {
+                            $zip->addFromString($attachment->filename, $content);
+                        }
+                    } elseif ($attachment->s3_key) {
                         $content = Storage::disk('s3')->get($attachment->s3_key);
                         $zip->addFromString($attachment->filename, $content);
                     }
@@ -159,6 +182,18 @@ class EmailLogAttachmentController extends Controller
 
             if (!$attachment->canPreview()) {
                 abort(400, 'This file type cannot be previewed');
+            }
+
+            $localPath = CrmSentEmailS3Service::resolveLocalDiskAbsolutePath($attachment->file_path);
+            if ($localPath) {
+                $content = @file_get_contents($localPath);
+                if ($content === false) {
+                    abort(404, 'Attachment file not found');
+                }
+                return Response::make($content, 200, [
+                    'Content-Type' => $attachment->content_type ?: 'application/octet-stream',
+                    'Content-Disposition' => 'inline; filename="' . $attachment->filename . '"',
+                ]);
             }
 
             if (!$attachment->s3_key) {

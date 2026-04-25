@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Notifications\Notifiable;
 use Kyslik\ColumnSortable\Sortable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -75,6 +76,23 @@ class EmailLog extends Authenticatable
     public function attachments(): HasMany
     {
         return $this->hasMany(EmailLogAttachment::class, 'email_log_id');
+    }
+
+    /**
+     * Rows in email_log_attachments. Use this instead of $this->attachments (property):
+     * the `attachments` column on email_logs (legacy JSON) has the same name and can
+     * be returned as a string, shadowing the relationship.
+     */
+    public function getFileAttachmentCollection(): Collection
+    {
+        if ($this->relationLoaded('attachments')) {
+            $rel = $this->getRelation('attachments');
+            if ($rel instanceof Collection) {
+                return $rel;
+            }
+        }
+
+        return $this->attachments()->get();
     }
 
     /**

@@ -16,12 +16,14 @@ use App\Models\Country;
 // use App\Models\WebsiteSetting; // removed website settings dependency
 // use App\Models\State; // REMOVED: State model has been deleted
 use PDF;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
 use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
+use App\Models\McqChapter;
+use App\Models\McqSubject;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
 use App\Support\StaffClientVisibility;
@@ -1159,7 +1161,6 @@ public function getChapters(Request $request)
 
 		$user_id = @Auth::user()->id;
 		$reciept_id = null;
-		$array = array();
 
 		$obj = new \App\Models\EmailLog;
 		$obj->user_id 		=  $user_id;
@@ -1248,7 +1249,17 @@ public function getChapters(Request $request)
         }
 
         $attachments = array_merge($attachments, $attachments2);
-        if(!empty($attachments) && count($attachments) >0){
+        if ($request->hasFile('attach')) {
+            foreach ($request->file('attach') as $upFile) {
+                if ($upFile->isValid()) {
+                    $attachments[] = [
+                        'file_name' => $upFile->getClientOriginalName(),
+                        'file_url' => 'user_upload',
+                    ];
+                }
+            }
+        }
+        if (!empty($attachments) && count($attachments) > 0) {
             $obj->attachments = json_encode($attachments);
         }
 
@@ -1318,174 +1329,158 @@ public function getChapters(Request $request)
 		// Convert plain URLs to clickable links (open in new tab, copyable)
 		$message = $this->linkifyUrlsInHtml($message);
 
-		foreach($requestData['email_to'] as $l){
-			if(@$requestData['type'] == 'agent'){
-				$client = \App\Models\AgentDetails::Where('id', $l)->first();
-			    $subject = str_replace('{Client First Name}',$client->full_name, $subject);
-			    $message = str_replace('{Client First Name}',$client->full_name, $message);
-			}else{
-				$client = \App\Models\Admin::Where('id', $l)->first();
-			    $subject = str_replace('{Client First Name}',$client->first_name, $subject);
-			    $message = str_replace('{Client First Name}',$client->first_name, $message);
+		$baseSubject = $subject;
+		$baseMessage = $message;
+
+		$preparedSendPaths = [];
+		if (isset($requestData['checklistfile']) && !empty($requestData['checklistfile'])) {
+			foreach ($requestData['checklistfile'] as $checklistfile) {
+				$filechecklist = \App\Models\UploadChecklist::where('id', $checklistfile)->first();
+				if ($filechecklist) {
+					$preparedSendPaths[] = public_path('checklists' . DIRECTORY_SEPARATOR . $filechecklist->file);
+				}
+			}
+		}
+		if (isset($requestData['checklistfile_document']) && !empty($requestData['checklistfile_document'])) {
+			foreach ($requestData['checklistfile_document'] as $checklistfile1) {
+				$filechecklist_doc = \App\Models\Document::where('id', $checklistfile1)->first();
+				if ($filechecklist_doc) {
+					if ($filechecklist_doc->doc_type == 'education' || $filechecklist_doc->doc_type == 'migration') {
+						$preparedSendPaths[] = public_path('img' . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $filechecklist_doc->myfile);
+					} elseif ($filechecklist_doc->doc_type == 'documents') {
+						$fileUrl = $filechecklist_doc->myfile;
+						if (filter_var($fileUrl, FILTER_VALIDATE_URL)) {
+							$tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . basename($fileUrl);
+							@file_put_contents($tempPath, @file_get_contents($fileUrl));
+							$preparedSendPaths[] = $tempPath;
+						} else {
+							$preparedSendPaths[] = $fileUrl;
+						}
+					}
+				}
+			}
+		}
+		if ($request->hasFile('attach')) {
+			$uploadBase = storage_path('app' . DIRECTORY_SEPARATOR . 'uploads');
+			if (!is_dir($uploadBase)) {
+				@mkdir($uploadBase, 0755, true);
+			}
+			foreach ($request->file('attach') as $file1) {
+				if ($file1->isValid()) {
+					$filename = time() . '_' . substr(uniqid('', true), -8) . '_' . preg_replace('/[^a-zA-Z0-9._\-\s]/', '_', $file1->getClientOriginalName());
+					$file1->move($uploadBase, $filename);
+					$preparedSendPaths[] = $uploadBase . DIRECTORY_SEPARATOR . $filename;
+				}
+			}
+		}
+
+		$attachmentTuplesForArchive = [];
+		foreach ($preparedSendPaths as $p) {
+			if (is_string($p) && is_readable($p)) {
+				$attachmentTuplesForArchive[] = ['path' => $p, 'name' => basename($p)];
+			}
+		}
+
+		$emailToRecipients = $requestData['email_to'] ?? null;
+		if (!is_array($emailToRecipients)) {
+			$emailToRecipients = $emailToRecipients !== null && $emailToRecipients !== '' ? [(string) $emailToRecipients] : [];
+		}
+
+		$anySendSuccess = false;
+		$lastSendSubject = $baseSubject;
+		$lastSendMessage = $baseMessage;
+
+		foreach ($emailToRecipients as $l) {
+			$subject = $baseSubject;
+			$message = $baseMessage;
+			if (@$requestData['type'] == 'agent') {
+				$client = \App\Models\AgentDetails::where('id', $l)->first();
+				if (!$client) {
+					continue;
+				}
+				$subject = str_replace('{Client First Name}', $client->full_name, $subject);
+				$message = str_replace('{Client First Name}', $client->full_name, $message);
+			} else {
+				$client = \App\Models\Admin::where('id', $l)->first();
+				if (!$client) {
+					continue;
+				}
+				$subject = str_replace('{Client First Name}', $client->first_name, $subject);
+				$message = str_replace('{Client First Name}', $client->first_name, $message);
 			}
 
-			$message = str_replace('{Client Assignee Name}',$client->first_name, $message);
+			$message = str_replace('{Client Assignee Name}', $client->first_name, $message);
 			$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
-			$ccarray = array();
-			if(isset($requestData['email_cc']) && !empty($requestData['email_cc'])){
-				foreach($requestData['email_cc'] as $cc){
-					$clientcc = \App\Models\Admin::Where('id', $cc)->first();
-					$ccarray[] = $clientcc;
+
+			$ccarray = [];
+			if (isset($requestData['email_cc']) && !empty($requestData['email_cc'])) {
+				foreach ($requestData['email_cc'] as $cc) {
+					$clientcc = \App\Models\Admin::where('id', $cc)->first();
+					if ($clientcc) {
+						$ccarray[] = $clientcc->email;
+					}
 				}
 			}
 
-			if(isset($requestData['checklistfile'])){
-    		    if(!empty($requestData['checklistfile'])){
-    		       $checklistfiles = $requestData['checklistfile'];
-    		        foreach($checklistfiles as $checklistfile){
-    		           $filechecklist =  \App\Models\UploadChecklist::where('id', $checklistfile)->first();
-    		           if($filechecklist){
-    		            $array['files'][] =  public_path() . '/' .'checklists/'.$filechecklist->file;
-    		           }
-    		        }
-    		    }
-		    }
+			try {
+				$this->emailService->sendEmail(
+					'emails.template',
+					['content' => $message],
+					$client->email,
+					$subject,
+					$requestData['email_from'],
+					$preparedSendPaths,
+					$ccarray
+				);
+				$anySendSuccess = true;
+				$lastSendSubject = $subject;
+				$lastSendMessage = $message;
 
-            if(isset($requestData['checklistfile_document'])){
-                if(!empty($requestData['checklistfile_document'])){
-                    $checklistfiles_documents = $requestData['checklistfile_document'];
-                    foreach($checklistfiles_documents as $checklistfile1){
-                        $filechecklist_doc =  \App\Models\Document::where('id', $checklistfile1)->first();
-                        if($filechecklist_doc){
-                            if( $filechecklist_doc->doc_type == "education" || $filechecklist_doc->doc_type == "migration" ){
-                                $array['files'][] =  public_path() . '/' .'img/documents/'.$filechecklist_doc->myfile;
-                            }
-                            else if( $filechecklist_doc->doc_type == "documents") {
-                                $fileUrl = $filechecklist_doc->myfile; // AWS S3 link
+				Log::info('Compose email sent successfully', [
+					'staff_id' => Auth::guard('admin')->id(),
+					'email_log_id' => $obj->id,
+					'crm_admin_id' => $obj->client_id,
+					'recipient_admin_or_agent_id' => $l,
+					'recipient_email' => $client->email ?? null,
+					'mail_type' => $requestData['type'] ?? 'client',
+				]);
+			} catch (\Exception $e) {
+				Log::error('Compose email send failed', [
+					'staff_id' => Auth::guard('admin')->id(),
+					'crm_admin_id' => $requestData['client_id'] ?? $requestData['lead_id'] ?? null,
+					'error' => $e->getMessage(),
+				]);
+				if ($request->ajax() || $request->wantsJson()) {
+					return response()->json([
+						'status' => false,
+						'success' => false,
+						'message' => 'Failed to send email: ' . $e->getMessage(),
+					], 422);
+				}
+				return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage())->withInput();
+			}
+		}
 
-                                // Check if it's a URL
-                                if(filter_var($fileUrl, FILTER_VALIDATE_URL)){
-                                    // Download and save to a temporary location
-                                    $tempPath = sys_get_temp_dir() . '/' . basename($fileUrl);
-                                    file_put_contents($tempPath, file_get_contents($fileUrl));
-                                    $array['files'][] = $tempPath; // Attach the temp file
-                                } else {
-                                    $array['files'][] = $fileUrl; // Local file
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            //echo "<pre>array=";print_r($array);die;
-
-		    /*if($request->hasfile('attach'))
-            {
-                 $array['filesatta'][] =  $request->attach;
-            }*/
-
-            // Process Uploaded Files
-            if ($request->hasFile('attach')) {
-                foreach ($request->file('attach') as $file1) {
-                    $array['filesatta'][] =  $file1;
-                }
-            }
-
-            //dd($client->email,  $requestData['email_from']);
-            //$this->send_compose_template($client->email, $subject, $requestData['email_from'], $message, '', $array,@$ccarray);
-
-            try {
-                $attachments = [];
-                //dd($array['filesatta']);
-                if(isset($array['files'])){
-                    $attachments = array_merge($attachments, $array['files']);
-                }
-
-                if(isset($array['filesatta'])){
-                    foreach($array['filesatta'] as $file) {
-                        $filename = time().'_'.$file->getClientOriginalName(); // Unique filename
-                        $filePath = storage_path('app/uploads/'.$filename); // Save in storage/uploads folder
-
-                        // Move the file to storage folder
-                        $file->move(storage_path('app/uploads'), $filename);
-
-                        // Add saved file path to attachments
-                        $attachments[] = $filePath;
-                    }
-                }
-
-                $ccarray = [];
-                if(isset($requestData['email_cc']) && !empty($requestData['email_cc'])){
-                    foreach($requestData['email_cc'] as $cc){
-                        $clientcc = \App\Models\Admin::Where('id', $cc)->first();
-                        if($clientcc) {
-                            $ccarray[] = $clientcc->email;
-                        }
-                    }
-                }
-                //dd($attachments);
-                $this->emailService->sendEmail(
-                    'emails.template',
-                    ['content' => $message],
-                    $client->email,
-                    $subject,
-                    $requestData['email_from'],
-                    $attachments,
-                    $ccarray
-                );
-
-                Log::info('Compose email sent successfully', [
-                    'staff_id' => Auth::guard('admin')->id(),
-                    'email_log_id' => $obj->id,
-                    'crm_admin_id' => $obj->client_id,
-                    'recipient_admin_or_agent_id' => $l,
-                    'recipient_email' => $client->email ?? null,
-                    'mail_type' => $requestData['type'] ?? 'client',
-                ]);
-
-                // Store full email to S3 for archival (HTML snapshot + attachments)
-                try {
-                    $attachmentTuples = [];
-                    foreach ($attachments as $p) {
-                        if (is_string($p) && file_exists($p)) {
-                            $attachmentTuples[] = ['path' => $p, 'name' => basename($p)];
-                        }
-                    }
-                    $this->crmSentEmailS3Service->storeToS3($obj, $subject, $message, $attachmentTuples);
-                } catch (\Exception $s3Ex) {
-                    \Log::warning('CRM sent email S3 storage failed (email still sent)', ['error' => $s3Ex->getMessage()]);
-                }
-
-                // Return JSON response for AJAX requests, redirect for regular form submissions
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'status' => true,
-                        'success' => true,
-                        'message' => 'Email sent successfully!'
-                    ]);
-                }
-                return redirect()->back()->with('success', 'Email sent successfully!');
-            } catch (\Exception $e) {
-                Log::error('Compose email send failed', [
-                    'staff_id' => Auth::guard('admin')->id(),
-                    'crm_admin_id' => $requestData['client_id'] ?? $requestData['lead_id'] ?? null,
-                    'error' => $e->getMessage(),
-                ]);
-
-                // Return JSON response for AJAX requests, redirect for regular form submissions
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'status' => false,
-                        'success' => false,
-                        'message' => 'Failed to send email: ' . $e->getMessage()
-                    ], 422);
-                }
-                return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage())->withInput();
-            }
-        }
-        if(!empty($array['file'])){
-            unset($array['file']);
-        }
+		if ($anySendSuccess) {
+			try {
+				$this->crmSentEmailS3Service->storeToS3(
+					$obj,
+					$lastSendSubject,
+					$lastSendMessage,
+					$attachmentTuplesForArchive
+				);
+			} catch (\Exception $s3Ex) {
+				Log::warning('CRM sent email S3 storage failed (email still sent)', ['error' => $s3Ex->getMessage()]);
+			}
+			if ($request->ajax() || $request->wantsJson()) {
+				return response()->json([
+					'status' => true,
+					'success' => true,
+					'message' => 'Email sent successfully!',
+				]);
+			}
+			return redirect()->back()->with('success', 'Email sent successfully!');
+		}
         if(!$saved) {
             // Return JSON response for AJAX requests, redirect for regular form submissions
             if ($request->ajax() || $request->wantsJson()) {
@@ -1562,7 +1557,7 @@ public function getChapters(Request $request)
 	}
 
 	public function getassigneeajax(Request $request){
-	    \Log::info('📋 getassigneeajax called', [
+	    Log::info('📋 getassigneeajax called', [
 	        'search' => $request->likevalue,
 	        'user_id' => Auth::id(),
 	    ]);
@@ -1596,14 +1591,14 @@ public function getChapters(Request $request)
     			);
     		}
     
-    		\Log::info('✅ getassigneeajax success', [
+    		Log::info('✅ getassigneeajax success', [
     		    'count' => count($agents),
     		    'sample' => array_slice($agents, 0, 3),
     		]);
     
     		return response()->json($agents);
 	    } catch (\Exception $e) {
-	        \Log::error('❌ getassigneeajax failed', [
+	        Log::error('❌ getassigneeajax failed', [
 	            'error' => $e->getMessage(),
 	            'trace' => $e->getTraceAsString(),
 	        ]);
@@ -1647,7 +1642,7 @@ public function getChapters(Request $request)
 		$lists->getCollection()->transform(function ($notification) {
 			// Message notifications: /messages (404) -> client detail + client portal tab
 			if ($notification->notification_type === 'message' && ($notification->url === '/messages' || str_starts_with($notification->url ?? '', '/messages'))) {
-				$clientMatter = \DB::table('client_matters')->where('id', $notification->module_id)->first();
+				$clientMatter = DB::table('client_matters')->where('id', $notification->module_id)->first();
 				if ($clientMatter) {
 					$path = '/clients/detail/' . base64_encode(convert_uuencode($clientMatter->client_id));
 					if (!empty($clientMatter->client_unique_matter_no)) {

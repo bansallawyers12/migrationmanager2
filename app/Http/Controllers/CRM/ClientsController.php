@@ -4004,16 +4004,13 @@ class ClientsController extends Controller
                 // Convert to array to ensure all relationships are properly serialized
                 $emailArray = $email->toArray();
                 
-                // Explicitly fetch attachments - try relationship first, then direct query as fallback
-                $attachments = $email->attachments;
-                
-                // If relationship is empty, try direct query (fallback for relationship issues)
-                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+                // email_logs.attachments JSON column shadows $email->attachments — use getFileAttachmentCollection()
+                $attachments = $email->getFileAttachmentCollection();
+                if ($attachments->isEmpty()) {
                     $attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
                 }
-                
-                // Format attachments as array with all required fields
-                if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
+
+                if ($attachments->isNotEmpty()) {
                     $emailArray['attachments'] = $attachments->map(function ($attachment) {
                         return [
                             'id' => $attachment->id,
@@ -4277,16 +4274,12 @@ class ClientsController extends Controller
 				// Convert to array to ensure all relationships are properly serialized
 				$emailArray = $email->toArray();
 				
-				// Explicitly fetch attachments - try relationship first, then direct query as fallback
-				$attachments = $email->attachments;
-				
-				// If relationship is empty, try direct query (fallback for relationship issues)
-				if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+				$attachments = $email->getFileAttachmentCollection();
+				if ($attachments->isEmpty()) {
 					$attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
 				}
-				
-				// Format attachments as array with all required fields
-				if ($attachments && method_exists($attachments, 'count') && $attachments->count() > 0) {
+
+				if ($attachments->isNotEmpty()) {
 					$emailArray['attachments'] = $attachments->map(function ($attachment) {
 						return [
 							'id' => $attachment->id,
@@ -4416,11 +4409,11 @@ class ClientsController extends Controller
                 }
 
                 $emailArray = $email->toArray();
-                $attachments = $email->attachments;
-                if (!$attachments || (method_exists($attachments, 'count') && $attachments->count() === 0)) {
+                $attachments = $email->getFileAttachmentCollection();
+                if ($attachments->isEmpty()) {
                     $attachments = \App\Models\EmailLogAttachment::where('email_log_id', $email->id)->get();
                 }
-                $emailArray['attachments'] = ($attachments && $attachments->count() > 0)
+                $emailArray['attachments'] = $attachments->isNotEmpty()
                     ? $attachments->map(function ($attachment) {
                         return [
                             'id' => $attachment->id,
