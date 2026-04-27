@@ -64,6 +64,10 @@ class Admin extends Authenticatable
         // Google review staff reminder (client/lead detail)
         'google_review_reminder_status',
         'google_review_reminder_snooze_until',
+        // Public inquiry form
+        'manual_form_fill',
+        'visa_type',
+        'source',
         // Timestamps
         'created_at', 'updated_at'
     ];

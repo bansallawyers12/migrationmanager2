@@ -22,6 +22,7 @@ use App\Http\Controllers\CRM\AuditLogController;
 use App\Http\Controllers\CRM\ReportController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\ReverbMessagingLabController;
+use App\Http\Controllers\Public\PublicLeadInquiryController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,23 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function() {
     return redirect()->route('crm.login');
 });
+
+/*--------------------------------------------------
+| Public lead inquiry (no auth)
+|--------------------------------------------------*/
+$publicLeadPath = config('public_lead_form.path', 'lead-client-info-form');
+Route::middleware('throttle:30,1')->group(function () use ($publicLeadPath) {
+    Route::get("/{$publicLeadPath}", [PublicLeadInquiryController::class, 'showForm'])->name('public.lead-inquiry');
+});
+Route::post("/{$publicLeadPath}", [PublicLeadInquiryController::class, 'submit'])
+    ->middleware('throttle:10,1')
+    ->name('public.lead-inquiry.submit');
+Route::post("/{$publicLeadPath}/confirm", [PublicLeadInquiryController::class, 'confirmUpdate'])
+    ->middleware('throttle:10,1')
+    ->name('public.lead-inquiry.confirm');
+Route::post("/{$publicLeadPath}/cancel", [PublicLeadInquiryController::class, 'cancelUpdate'])
+    ->middleware('throttle:10,1')
+    ->name('public.lead-inquiry.cancel');
 
 // Cache clearing route - protected with authentication
 Route::get('/clear-cache', function() {
