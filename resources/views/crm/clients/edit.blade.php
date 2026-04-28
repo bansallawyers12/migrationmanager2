@@ -1317,7 +1317,7 @@
                         <!-- Summary View -->
                         <div id="partnerInfoSummary" class="summary-view">
                             @php
-                                $partners = $clientPartners->where('relationship_type', 'Husband')->merge($clientPartners->where('relationship_type', 'Wife'))->merge($clientPartners->where('relationship_type', 'Ex-Wife'))->merge($clientPartners->where('relationship_type', 'Defacto'));
+                                $partners = $clientPartners->whereIn('relationship_type', ['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Defacto', 'Engaged']);
                             @endphp
                             @if($partners->count() > 0)
                                 <div style="margin-top: 15px;">
@@ -1359,7 +1359,7 @@
                                         :index="$index"
                                         :member="$partner"
                                         type="partner"
-                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Defacto']"
+                                        :relationshipOptions="['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Defacto', 'Engaged']"
                                     />
                                 @endforeach
                             </div>

@@ -971,7 +971,7 @@ class ClientsController extends Controller
                 'health_declarations.*.date' => 'nullable|regex:/^\d{2}\/\d{2}\/\d{4}$/',
                 'source' => 'nullable|in:SubAgent,Others',
                 'partner_details.*' => 'nullable|string|max:255',
-                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Defacto',
+                'partner_relationship_type.*' => 'nullable|in:Husband,Wife,Ex-Husband,Ex-Wife,Defacto,Engaged',
                 'partner_company_type.*' => 'nullable|in:Accompany Member,Non-Accompany Member',
                 'partner_email.*' => 'nullable|email|max:255',
                 'partner_first_name.*' => 'nullable|string|max:255',
@@ -1620,7 +1620,7 @@ class ClientsController extends Controller
 
             // Update Partner Handling to include all family member types
             $familyTypes = [
-                'partner' => ['Husband', 'Wife', 'Ex-Wife', 'Defacto'],
+                'partner' => ['Husband', 'Wife', 'Ex-Wife', 'Defacto', 'Engaged'],
                 'children' => ['Son', 'Daughter', 'Step Son', 'Step Daughter'],
                 'parent' => ['Father', 'Mother', 'Step Father', 'Step Mother', 'Mother-in-law', 'Father-in-law'],
                 'siblings' => ['Brother', 'Sister', 'Step Brother', 'Step Sister'],
@@ -1639,6 +1639,8 @@ class ClientsController extends Controller
                         return 'Ex-Husband';
                     case 'Defacto':
                         return 'Defacto';
+                    case 'Engaged':
+                        return 'Engaged';
                     
                     // Parent-Child relationships
                     case 'Son':
