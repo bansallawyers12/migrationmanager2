@@ -24,6 +24,7 @@ use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
+use mikehaertl\pdftk\Pdf;
 
 class ClientDocumentsController extends Controller
 {
@@ -1128,7 +1129,9 @@ class ClientDocumentsController extends Controller
                     $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
 
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    $this->s3Disk()->put($filePath, file_get_contents($file));
+                    $fileContent = $this->flattenPdfIfForm956($file, $obj);
+                    $this->s3Disk()->put($filePath, $fileContent);
+                    $size = strlen($fileContent);
 
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
@@ -3418,8 +3421,10 @@ class ClientDocumentsController extends Controller
                     $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
                     $name = $namePrefix . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
                     $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    
-                    $this->s3Disk()->put($filePath, file_get_contents($file));
+
+                    $fileContent = $this->flattenPdfIfForm956($file, $document);
+                    $this->s3Disk()->put($filePath, $fileContent);
+                    $size = strlen($fileContent);
                     
                     // Refresh one more time before saving to catch any changes during S3 upload
                     $document->refresh();
@@ -3542,5 +3547,56 @@ class ClientDocumentsController extends Controller
         }
         
         return '';
+    }
+
+    /**
+     * Flattens a PDF if the document is linked to a Form 956.
+     * Flattening removes all interactive AcroForm fields, making the PDF
+     * non-editable when previewed or downloaded after upload.
+     * Falls back to the original file content if flattening fails.
+     */
+    private function flattenPdfIfForm956(\Illuminate\Http\UploadedFile $file, Document $doc): string
+    {
+        $content = file_get_contents($file->getRealPath());
+
+        if (strtolower($file->getClientOriginalExtension()) !== 'pdf' || empty($doc->form956_id)) {
+            return $content;
+        }
+
+        $tempInput  = null;
+        $tempOutput = null;
+
+        try {
+            $tempInput  = tempnam(sys_get_temp_dir(), 'pdf956in_');
+            $tempOutput = tempnam(sys_get_temp_dir(), 'pdf956out_');
+
+            file_put_contents($tempInput, $content);
+
+            $pdf    = new Pdf($tempInput);
+            $result = $pdf->flatten()->saveAs($tempOutput);
+
+            if ($result !== false && file_exists($tempOutput) && filesize($tempOutput) > 0) {
+                $flatContent = file_get_contents($tempOutput);
+            } else {
+                Log::warning('Form 956 PDF flattening failed, uploading original', [
+                    'doc_id'      => $doc->id,
+                    'form956_id'  => $doc->form956_id,
+                    'pdftk_error' => $pdf->getError(),
+                ]);
+                $flatContent = $content;
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception during Form 956 PDF flattening, uploading original', [
+                'doc_id'     => $doc->id,
+                'form956_id' => $doc->form956_id,
+                'error'      => $e->getMessage(),
+            ]);
+            $flatContent = $content;
+        } finally {
+            if ($tempInput  && file_exists($tempInput))  @unlink($tempInput);
+            if ($tempOutput && file_exists($tempOutput)) @unlink($tempOutput);
+        }
+
+        return $flatContent;
     }
 }
