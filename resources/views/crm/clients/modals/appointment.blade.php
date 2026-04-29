@@ -1000,6 +1000,13 @@ document.addEventListener('DOMContentLoaded', function() {
 				document.getElementById('info').style.display = 'none';
 			}
 		}
+
+		if (e.target.classList.contains('inperson_address')) {
+			const preferredLanguageSelect = document.querySelector('.preferred_language');
+			if (preferredLanguageSelect) {
+				preferredLanguageSelect.value = '';
+			}
+		}
 	});
 
 	// Modern Appointment Booking Enhancement System

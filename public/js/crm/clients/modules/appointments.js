@@ -157,6 +157,9 @@
 
                 $('.info_row').show();
 
+                // Reset preferred language whenever location selection changes
+                $('.preferred_language').val('');
+
                 $('.appointment_details_cls').show();
 
 
