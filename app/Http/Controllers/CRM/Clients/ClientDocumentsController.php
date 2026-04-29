@@ -384,7 +384,7 @@ class ClientDocumentsController extends Controller
             ob_end_clean();
             exit;
         }
-        $admin_info1 = Admin::select('id', 'client_id', 'first_name', 'is_company')->where('id', $clientid)->first();
+        $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
         $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
         $namePrefix = $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name);
@@ -414,7 +414,7 @@ class ClientDocumentsController extends Controller
     
                     // Fetch and validate document
                     $req_file_id = $request->fileid;
-                    $obj = Document::find($req_file_id);
+                    $obj = Document::query()->find($req_file_id);
                     
                     if (!$obj) {
                         Log::warning('Document upload failed: Document not found', [
@@ -600,6 +600,7 @@ class ClientDocumentsController extends Controller
             $checklistArray = $request->input('visa_checklist');
             if (is_array($checklistArray))
             {
+                $saved = false;
                 foreach ($checklistArray as $item)
                 {
                     $obj = new Document;
@@ -633,7 +634,7 @@ class ClientDocumentsController extends Controller
 
                     //Update date in client matter table
                     if( isset($request->client_matter_id) && $request->client_matter_id != ""){
-                        $obj1 = ClientMatter::find($request->client_matter_id);
+                        $obj1 = ClientMatter::query()->find($request->client_matter_id);
                         $obj1->updated_at = date('Y-m-d H:i:s');
                         $obj1->save();
                     }
@@ -652,7 +653,7 @@ class ClientDocumentsController extends Controller
                     foreach($fetchd as $visaKey=>$fetch)
                     {
                         $admin = $fetch->staff;
-                        $VisaDocumentType = VisaDocumentType::where('id', $fetch->folder_name)->first();
+                        $VisaDocumentType = VisaDocumentType::query()->where('id', $fetch->folder_name)->first();
                         $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
                         
                         // Hide non-matching documents with CSS (original behavior)
@@ -865,7 +866,7 @@ class ClientDocumentsController extends Controller
             }
 
             if (isset($request->client_matter_id) && $request->client_matter_id != '') {
-                $obj1 = ClientMatter::find($request->client_matter_id);
+                $obj1 = ClientMatter::query()->find($request->client_matter_id);
                 if ($obj1) {
                     $obj1->updated_at = date('Y-m-d H:i:s');
                     $obj1->save();
@@ -885,7 +886,7 @@ class ClientDocumentsController extends Controller
             ob_start();
             foreach ($fetchd as $fetch) {
                 $admin = $fetch->staff;
-                $nomCat = NominationDocumentType::where('id', $fetch->folder_name)->first();
+                $nomCat = NominationDocumentType::query()->where('id', $fetch->folder_name)->first();
                 $catTitle = $nomCat->title ?? '';
                 $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$fetch->client_id.'/nomination/'.$fetch->myfile;
 
@@ -1028,7 +1029,7 @@ class ClientDocumentsController extends Controller
             ob_end_clean();
             exit;
         }
-        $admin_info1 = Admin::select('id', 'client_id', 'first_name', 'is_company')->where('id', $clientid)->first();
+        $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
         $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
     
@@ -1061,7 +1062,7 @@ class ClientDocumentsController extends Controller
 
                     // Fetch and validate document
                     $req_file_id = $request->fileid;
-                    $obj = Document::find($req_file_id);
+                    $obj = Document::query()->find($req_file_id);
                     
                     if (!$obj) {
                         Log::warning('Visa document upload failed: Document not found', [
@@ -1205,7 +1206,7 @@ class ClientDocumentsController extends Controller
 
                         //Update date in client matter table
                         if( isset($request->client_matter_id) && $request->client_matter_id != ""){
-                            $obj1 = ClientMatter::find($request->client_matter_id);
+                            $obj1 = ClientMatter::query()->find($request->client_matter_id);
                             $obj1->updated_at = date('Y-m-d H:i:s');
                             $obj1->save();
                         }
@@ -1364,7 +1365,7 @@ class ClientDocumentsController extends Controller
             }
 
             // Step 2: Validate document exists
-            if (!\App\Models\Document::where('id', $id)->exists()) {
+            if (!\App\Models\Document::query()->where('id', $id)->exists()) {
                 Log::warning('Document rename failed: Document not found', [
                     'document_id' => $id,
                     'user_id' => Auth::user()->id ?? 'unknown'
@@ -1375,7 +1376,7 @@ class ClientDocumentsController extends Controller
                 return;
             }
 
-            $doc = \App\Models\Document::where('id', $id)->first();
+            $doc = \App\Models\Document::query()->where('id', $id)->first();
             $client_id = $doc->client_id;
             if ($this->blockEchoUnlessStaffClientAccess((int) $client_id)) {
                 return;
@@ -1620,7 +1621,7 @@ class ClientDocumentsController extends Controller
         
         try {
             $note_id = $request->note_id;
-            if(\App\Models\Document::where('id',$note_id)->exists()){
+            if(\App\Models\Document::query()->where('id',$note_id)->exists()){
             $data = DB::table('documents')->where('id', @$note_id)->first();
             if ($this->blockEchoUnlessStaffClientAccess((int) ($data->client_id ?? 0))) {
                 return;
@@ -1710,7 +1711,7 @@ class ClientDocumentsController extends Controller
             $targetId = $request->target_id;
             
             // Get the document
-            $document = \App\Models\Document::find($documentId);
+            $document = \App\Models\Document::query()->find($documentId);
             
             if (!$document) {
                 $response['message'] = 'Document not found';
@@ -1734,10 +1735,11 @@ class ClientDocumentsController extends Controller
             $oldChecklistName = $document->checklist;
             
             // Update document based on target type
+            $targetName = '';
             if ($targetType === 'personal') {
                 // Moving to Personal Documents
                 // Verify target category exists
-                $category = \App\Models\PersonalDocumentType::find($targetId);
+                $category = \App\Models\PersonalDocumentType::query()->find($targetId);
                 if (!$category) {
                     $response['message'] = 'Target category not found';
                     return response()->json($response);
@@ -1754,7 +1756,7 @@ class ClientDocumentsController extends Controller
             } elseif ($targetType === 'visa') {
                 // Moving to Visa Documents - targetId is the CATEGORY ID
                 // Get the category to find its matter
-                $category = \App\Models\VisaDocumentType::find($targetId);
+                $category = \App\Models\VisaDocumentType::query()->find($targetId);
                 if (!$category) {
                     $response['message'] = 'Target visa category not found';
                     return response()->json($response);
@@ -1768,7 +1770,7 @@ class ClientDocumentsController extends Controller
                 $requestedMatterRaw = $request->input('target_matter_id');
                 if ($requestedMatterRaw !== null && $requestedMatterRaw !== '') {
                     $requestedMatterId = (int) $requestedMatterRaw;
-                    $clientMatter = ClientMatter::where('id', $requestedMatterId)
+                    $clientMatter = ClientMatter::query()->where('id', $requestedMatterId)
                         ->where('client_id', $document->client_id)
                         ->first();
                     if (! $clientMatter) {
@@ -1783,7 +1785,7 @@ class ClientDocumentsController extends Controller
                 
                 $targetName = $category->title;
             } elseif ($targetType === 'nomination') {
-                $category = NominationDocumentType::find($targetId);
+                $category = NominationDocumentType::query()->find($targetId);
                 if (!$category) {
                     $response['message'] = 'Target nomination category not found';
                     return response()->json($response);
@@ -1872,7 +1874,7 @@ class ClientDocumentsController extends Controller
             }
             
             // Get visa document categories for this client and matter
-            $categories = \App\Models\VisaDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
+            $categories = \App\Models\VisaDocumentType::select(['id', 'title', 'client_id', 'client_matter_id'])
                 ->where('status', 1)
                 ->where(function($query) use ($clientId, $matterId) {
                     $query->where(function($q) {
@@ -1920,7 +1922,7 @@ class ClientDocumentsController extends Controller
                 return $deny;
             }
 
-            $categories = NominationDocumentType::select('id', 'title', 'client_id', 'client_matter_id')
+            $categories = NominationDocumentType::select(['id', 'title', 'client_id', 'client_matter_id'])
                 ->where('status', 1)
                 ->where(function ($query) use ($clientId, $matterId) {
                     $query->where(function ($q) {
@@ -1976,7 +1978,7 @@ class ClientDocumentsController extends Controller
         try {
             $doc_id = $request->doc_id;
             $doc_type = $request->doc_type;
-            if(\App\Models\Document::where('id',$doc_id)->exists()){
+            if(\App\Models\Document::query()->where('id',$doc_id)->exists()){
             $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
             if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
                 return;
@@ -2065,8 +2067,8 @@ class ClientDocumentsController extends Controller
         try {
             $id = $request->id;
             $checklist = $request->checklist;
-            if(\App\Models\Document::where('id',$id)->exists()){
-            $doc = \App\Models\Document::where('id',$id)->first();
+            if(\App\Models\Document::query()->where('id',$id)->exists()){
+            $doc = \App\Models\Document::query()->where('id',$id)->first();
             if ($this->blockEchoUnlessStaffClientAccess((int) ($doc->client_id ?? 0))) {
                 return;
             }
@@ -2117,7 +2119,7 @@ class ClientDocumentsController extends Controller
         try {
             $doc_id = $request->doc_id;
             $doc_type = $request->doc_type;
-            if(\App\Models\Document::where('id',$doc_id)->exists()){
+            if(\App\Models\Document::query()->where('id',$doc_id)->exists()){
             $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
             if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
                 return;
@@ -2205,9 +2207,9 @@ class ClientDocumentsController extends Controller
                 return response()->json($response);
             }
             
-            $document = Document::find($checklist_id);
+            $document = Document::query()->find($checklist_id);
             
-            if (!$document) {
+            if (!$document instanceof Document) {
                 $response['message'] = 'Checklist not found';
                 return response()->json($response);
             }
@@ -2227,6 +2229,7 @@ class ClientDocumentsController extends Controller
             $folderName = $document->folder_name;
             
             // Delete the document record
+            /** @disregard P1005 Intelephense: Model::delete() is 0-arg; can be confused with Query Builder. */
             $deleted = $document->delete();
             
             if ($deleted) {
@@ -2387,7 +2390,7 @@ class ClientDocumentsController extends Controller
         }
 
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
-        $existsForNullClient = PersonalDocumentType::where('title', $categoryTitle)
+        $existsForNullClient = PersonalDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_id')
             ->exists();
@@ -2400,7 +2403,7 @@ class ClientDocumentsController extends Controller
         }
 
         // RULE 2: Same title with status=1 for same client_id is not allowed
-        $existsForSameClient = PersonalDocumentType::where('title', $categoryTitle)
+        $existsForSameClient = PersonalDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->where('client_id', $clientId)
             ->exists();
@@ -2458,7 +2461,7 @@ class ClientDocumentsController extends Controller
         $categoryTitle = trim($request->input('title'));
 
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
-        $existsForNullClient = PersonalDocumentType::where('title', $categoryTitle)
+        $existsForNullClient = PersonalDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_id')
             ->exists();
@@ -2471,7 +2474,7 @@ class ClientDocumentsController extends Controller
         }
 
         // RULE 2: Same title with status=1 for same client_id is not allowed (excluding the current category)
-        $existsForSameClient = PersonalDocumentType::where('title', $categoryTitle)
+        $existsForSameClient = PersonalDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->where('client_id', $clientId)
             ->where('id', '!=', $category->id) // Exclude the current category
@@ -2523,7 +2526,7 @@ class ClientDocumentsController extends Controller
         }
 
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
-        $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
+        $existsForNullClient = VisaDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_matter_id')
             ->whereNull('client_id')
@@ -2537,7 +2540,7 @@ class ClientDocumentsController extends Controller
         }
 
         // RULE 2: Same title with status=1 for same client_id is not allowed
-        $existsForSameClient = VisaDocumentType::where('title', $categoryTitle)
+        $existsForSameClient = VisaDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->where('client_matter_id', $clientMatterId)
             ->exists();
@@ -2595,7 +2598,7 @@ class ClientDocumentsController extends Controller
         $categoryTitle = trim($request->input('title'));
 
         // RULE 1: If status=1 and client_id is NULL, title must be unique globally (only one)
-        $existsForNullClient = VisaDocumentType::where('title', $categoryTitle)
+        $existsForNullClient = VisaDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_matter_id')
             ->exists();
@@ -2608,7 +2611,7 @@ class ClientDocumentsController extends Controller
         }
 
         // RULE 2: Same title with status=1 for same client_id is not allowed (excluding the current category)
-        $existsForSameClient = VisaDocumentType::where('title', $categoryTitle)
+        $existsForSameClient = VisaDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->where('client_matter_id', $clientMatterId)
             ->where('id', '!=', $request->id)
@@ -2662,7 +2665,7 @@ class ClientDocumentsController extends Controller
             }
         }
 
-        $existsForNullClient = NominationDocumentType::where('title', $categoryTitle)
+        $existsForNullClient = NominationDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_matter_id')
             ->whereNull('client_id')
@@ -2675,7 +2678,7 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
-        $existsForSameClient = NominationDocumentType::where('title', $categoryTitle)
+        $existsForSameClient = NominationDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->where('client_matter_id', $clientMatterId)
             ->exists();
@@ -2729,7 +2732,7 @@ class ClientDocumentsController extends Controller
 
         $categoryTitle = trim($request->input('title'));
 
-        $existsForNullClient = NominationDocumentType::where('title', $categoryTitle)
+        $existsForNullClient = NominationDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->whereNull('client_matter_id')
             ->whereNull('client_id')
@@ -2742,7 +2745,7 @@ class ClientDocumentsController extends Controller
             ]);
         }
 
-        $existsForSameClient = NominationDocumentType::where('title', $categoryTitle)
+        $existsForSameClient = NominationDocumentType::query()->where('title', $categoryTitle)
             ->where('status', 1)
             ->where('client_matter_id', $clientMatterId)
             ->where('id', '!=', $request->id)
@@ -2791,7 +2794,7 @@ class ClientDocumentsController extends Controller
             $category = PersonalDocumentType::findOrFail($request->id);
 
             // Check if category is empty (no documents with this folder_name)
-            $documentCount = Document::where('folder_name', $category->id)
+            $documentCount = Document::query()->where('folder_name', $category->id)
                 ->where('doc_type', 'personal')
                 ->count();
 
@@ -2844,7 +2847,7 @@ class ClientDocumentsController extends Controller
             $matches = [];
             
             foreach ($files as $file) {
-                $fileName = $file['name'] ?? '';
+                $fileName = (string) ($file['name'] ?? '');
                 $match = $this->findBestChecklistMatch($fileName, $checklists);
                 if ($match) {
                     $matches[$fileName] = $match;
@@ -2865,9 +2868,17 @@ class ClientDocumentsController extends Controller
     }
     
     /**
-     * Find best checklist match for a filename
+     * Find best checklist match for a filename.
+     *
+     * @param  list<string>|array<int|string, string>  $checklists
+     * @return array{
+     *     checklist: string,
+     *     confidence: string,
+     *     score: float|int,
+     *     method: string
+     * }|null
      */
-    private function findBestChecklistMatch($fileName, $checklists) {
+    private function findBestChecklistMatch(string $fileName, array $checklists): ?array {
         if (empty($fileName) || empty($checklists)) {
             return null;
         }
@@ -2882,6 +2893,7 @@ class ClientDocumentsController extends Controller
         $bestConfidence = 'low';
         
         foreach ($checklists as $checklist) {
+            $checklist = (string) $checklist;
             $checklistLower = strtolower($checklist);
             $checklistWords = $this->extractKeywords($checklist);
             
@@ -2950,7 +2962,7 @@ class ClientDocumentsController extends Controller
     /**
      * Clean filename for matching
      */
-    private function cleanFileName($fileName) {
+    private function cleanFileName(string $fileName): string {
         // Remove extension
         $name = pathinfo($fileName, PATHINFO_FILENAME);
         // Remove common prefixes (client name, timestamps)
@@ -2962,8 +2974,10 @@ class ClientDocumentsController extends Controller
     
     /**
      * Extract keywords from text
+     *
+     * @return array<int|string, string>
      */
-    private function extractKeywords($text) {
+    private function extractKeywords(string $text): array {
         $text = strtolower($text);
         $words = preg_split('/[\s_\-]+/', $text);
         $stopWords = ['the', 'of', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'is', 'are', 'was', 'were'];
@@ -2975,7 +2989,7 @@ class ClientDocumentsController extends Controller
     /**
      * Calculate similarity between two strings (Levenshtein-based)
      */
-    private function calculateSimilarity($str1, $str2) {
+    private function calculateSimilarity(string $str1, string $str2): float {
         $len1 = strlen($str1);
         $len2 = strlen($str2);
         
@@ -2991,8 +3005,12 @@ class ClientDocumentsController extends Controller
     
     /**
      * Check pattern match
+     *
+     * @param array<int|string, string> $fileNameWords
+     * @param array<int|string, string> $checklistWords
+     * @return array{matched: bool, score: int}
      */
-    private function checkPatternMatch($fileNameWords, $checklistWords) {
+    private function checkPatternMatch(array $fileNameWords, array $checklistWords): array {
         $patterns = [
             'passport' => ['passport', 'pass', 'pp'],
             'visa' => ['visa', 'grant', 'vg'],
@@ -3032,7 +3050,7 @@ class ClientDocumentsController extends Controller
     /**
      * Check abbreviation match
      */
-    private function checkAbbreviationMatch($fileName, $checklist) {
+    private function checkAbbreviationMatch(string $fileName, string $checklist): int {
         $abbreviations = [
             'pp' => 'passport',
             'vg' => 'visa grant',
@@ -3056,8 +3074,11 @@ class ClientDocumentsController extends Controller
     
     /**
      * Check partial word match
+     *
+     * @param array<int|string, string> $fileNameWords
+     * @param array<int|string, string> $checklistWords
      */
-    private function checkPartialMatch($fileNameWords, $checklistWords) {
+    private function checkPartialMatch(array $fileNameWords, array $checklistWords): float {
         $matches = 0;
         $total = count($checklistWords);
         
@@ -3093,7 +3114,7 @@ class ClientDocumentsController extends Controller
                 return $deny;
             }
             
-            $admin_info1 = Admin::select('id', 'client_id', 'first_name', 'is_company')->where('id', $clientid)->first();
+            $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
             $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
             $namePrefix = $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name);
@@ -3123,8 +3144,8 @@ class ClientDocumentsController extends Controller
             $errors = [];
             
             foreach ($files as $index => $file) {
+                $fileName = $file->getClientOriginalName();
                 try {
-                    $fileName = $file->getClientOriginalName();
                     $size = $file->getSize();
 
                     if ($size > self::BULK_UPLOAD_MAX_BYTES) {
@@ -3152,7 +3173,7 @@ class ClientDocumentsController extends Controller
                     }
                     
                     // Check if checklist exists, create if needed
-                    $document = Document::where('client_id', $clientid)
+                    $document = Document::query()->where('client_id', $clientid)
                         ->where('doc_type', $doctype)
                         ->where('folder_name', $categoryid)
                         ->where('checklist', $checklistName)
@@ -3173,7 +3194,7 @@ class ClientDocumentsController extends Controller
                         $document->save();
                     } elseif (!$document && $mapping['type'] === 'existing') {
                         // If trying to use existing checklist but all instances have files, create new one
-                        $hasAnyChecklist = Document::where('client_id', $clientid)
+                        $hasAnyChecklist = Document::query()->where('client_id', $clientid)
                             ->where('doc_type', $doctype)
                             ->where('folder_name', $categoryid)
                             ->where('checklist', $checklistName)
@@ -3281,7 +3302,7 @@ class ClientDocumentsController extends Controller
                 return $deny;
             }
             
-            $admin_info1 = Admin::select('id', 'client_id', 'first_name', 'is_company')->where('id', $clientid)->first();
+            $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
             $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
             $namePrefix = ($doctype === 'nomination')
@@ -3313,8 +3334,8 @@ class ClientDocumentsController extends Controller
             $errors = [];
             
             foreach ($files as $index => $file) {
+                $fileName = $file->getClientOriginalName();
                 try {
-                    $fileName = $file->getClientOriginalName();
                     $size = $file->getSize();
 
                     if ($size > self::BULK_UPLOAD_MAX_BYTES) {
@@ -3342,7 +3363,7 @@ class ClientDocumentsController extends Controller
                     }
                     
                     // Check if checklist exists, create if needed
-                    $document = Document::where('client_id', $clientid)
+                    $document = Document::query()->where('client_id', $clientid)
                         ->where('doc_type', $doctype)
                         ->where('folder_name', $categoryid)
                         ->where('checklist', $checklistName)
@@ -3367,7 +3388,7 @@ class ClientDocumentsController extends Controller
                         $document->save();
                     } elseif (!$document && $mapping['type'] === 'existing') {
                         // If trying to use existing checklist but all instances have files, create new one
-                        $hasAnyChecklist = Document::where('client_id', $clientid)
+                        $hasAnyChecklist = Document::query()->where('client_id', $clientid)
                             ->where('doc_type', $doctype)
                             ->where('folder_name', $categoryid)
                             ->where('checklist', $checklistName)
@@ -3494,7 +3515,7 @@ class ClientDocumentsController extends Controller
                 
                 // Update matter date
                 if ($matterid) {
-                    $matter = ClientMatter::find($matterid);
+                    $matter = ClientMatter::query()->find($matterid);
                     if ($matter) {
                         $matter->updated_at = now();
                         $matter->save();
@@ -3523,21 +3544,24 @@ class ClientDocumentsController extends Controller
     
     /**
      * Get matter reference for activity logging
+     *
+     * @param int|string|null $clientId
+     * @param int|string|null $matterId
      */
-    private function getMatterReference($clientId, $matterId = null)
+    private function getMatterReference(int|string|null $clientId, int|string|null $matterId = null): string
     {
         $matterReference = '';
         
         // First try to get from provided matter ID
         if($matterId) {
-            $matter = ClientMatter::find($matterId);
+            $matter = ClientMatter::query()->find($matterId);
             if($matter && $matter->client_unique_matter_no) {
                 return $matter->client_unique_matter_no;
             }
         }
         
         // Fall back to latest active matter
-        $latestMatter = ClientMatter::where('client_id', $clientId)
+        $latestMatter = ClientMatter::query()->where('client_id', $clientId)
             ->where('matter_status', 1)
             ->orderBy('id', 'desc')
             ->first();

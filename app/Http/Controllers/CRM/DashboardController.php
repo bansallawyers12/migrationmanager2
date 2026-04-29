@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    protected $dashboardService;
+    protected DashboardService $dashboardService;
 
     public function __construct(DashboardService $dashboardService)
     {
@@ -277,13 +277,13 @@ class DashboardController extends Controller
     public function fetchTotalActivityCount(Request $request)
     {
         if (Auth::user()->role == 1) {
-            $assigneesCount = \App\Models\Note::where('type', 'client')
+            $assigneesCount = \App\Models\Note::query()->where('type', 'client')
                 ->whereNotNull('client_id')
                 ->where('is_action', 1)
                 ->where('status', 0)
                 ->count();
         } else {
-            $assigneesCount = \App\Models\Note::where('assigned_to', Auth::user()->id)
+            $assigneesCount = \App\Models\Note::query()->where('assigned_to', Auth::user()->id)
                 ->where('type', 'client')
                 ->where('is_action', 1)
                 ->where('status', 0)
