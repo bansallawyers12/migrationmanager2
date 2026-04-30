@@ -158,7 +158,16 @@
                         </div>
 
                         <?php
-                        $address_Info = App\Models\ClientAddress::select('address','suburb','country','zip','regional_code')->where('client_id', $fetchedData->id)->latest('id')->first();
+                        $address_Info = App\Models\ClientAddress::select('address','suburb','country','zip','regional_code')
+                            ->where('client_id', $fetchedData->id)
+                            ->where('is_current', 1)
+                            ->first();
+                        if (!$address_Info) {
+                            $address_Info = App\Models\ClientAddress::select('address','suburb','country','zip','regional_code')
+                                ->where('client_id', $fetchedData->id)
+                                ->latest('id')
+                                ->first();
+                        }
                         ?>
 
                         <div class="field-group">
@@ -166,18 +175,15 @@
                             <span class="field-value">
                                 <?php
                                 if($address_Info) {
-                                    // Check if we have new structured address fields
                                     $addressParts = array_filter([
                                         $address_Info->suburb ?? '',
                                         $address_Info->country ?? '',
                                         $address_Info->zip ?? ''
                                     ]);
-                                    
+
                                     if (!empty($addressParts)) {
-                                        // Use new structured format: "Sydney, Australia, 2000"
                                         echo implode(', ', $addressParts);
                                     } elseif (!empty($address_Info->address)) {
-                                        // Fallback to old address field format
                                         echo $address_Info->address;
                                     } else {
                                         echo 'N/A';
