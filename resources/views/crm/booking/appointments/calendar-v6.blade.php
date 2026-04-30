@@ -501,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                            data-original-time="${melbourneTime}">
                                 </div>
                                 <div class="form-group col-md-4 d-flex align-items-end">
-                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="rescheduleAppointmentDateTime(${event.id}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
+                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="rescheduleAppointmentDateTime(this, ${event.id}, '${props.meeting_type || 'in_person'}', '${props.preferred_language || 'English'}')">
                                         <i class="fas fa-save"></i> Update Date & Time
                                     </button>
                                 </div>
@@ -933,7 +933,12 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Reschedule Date & Time function
-    window.rescheduleAppointmentDateTime = function(appointmentId, meetingType, preferredLanguage) {
+    window.rescheduleAppointmentDateTime = function(btnEl, appointmentId, meetingType, preferredLanguage) {
+        // Capture button reference immediately — before any blocking dialogs (confirm, etc.)
+        // which would clear window.event making event.target unavailable later.
+        const button = btnEl;
+        const originalButtonHtml = button.innerHTML;
+
         const dateInput = document.getElementById(`rescheduleDate-${appointmentId}`);
         const timeInput = document.getElementById(`rescheduleTime-${appointmentId}`);
         
@@ -977,8 +982,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Show loading state
-        const button = event.target;
-        const originalButtonHtml = button.innerHTML;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
         button.disabled = true;
         dateInput.disabled = true;
