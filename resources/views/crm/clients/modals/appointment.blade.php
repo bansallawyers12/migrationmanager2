@@ -1001,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}
 
-		if (e.target.classList.contains('inperson_address')) {
+		if (e.target.classList.contains('inperson_address') && !window._appointmentLangRefresh) {
 			const preferredLanguageSelect = document.querySelector('.preferred_language');
 			if (preferredLanguageSelect) {
 				preferredLanguageSelect.value = '';

@@ -157,8 +157,10 @@
 
                 $('.info_row').show();
 
-                // Reset preferred language whenever location selection changes
-                $('.preferred_language').val('');
+                // Reset preferred language when user changes location, but not when triggered by language change
+                if (!window._appointmentLangRefresh) {
+                    $('.preferred_language').val('');
+                }
 
                 $('.appointment_details_cls').show();
 
@@ -535,7 +537,9 @@
         // Melbourne: calendar must refresh when language changes (Punjabi GSM/EOI routing, etc.)
         $(document).on('change', '.preferred_language', function() {
             if ($("input[name='inperson_address']:checked").attr('data-val')) {
+                window._appointmentLangRefresh = true;
                 $("input[name='inperson_address']:checked").first().trigger('change');
+                window._appointmentLangRefresh = false;
             }
         });
 
