@@ -756,6 +756,28 @@ class BookingAppointmentsController extends Controller
                 ->with('success', $message);
         }
 
+        // Slot conflict check: block if another active appointment for the same consultant is already at the new datetime
+        if ($datetimeChanged) {
+            $slotTaken = BookingAppointment::where('consultant_id', $appointment->consultant_id)
+                ->where('appointment_datetime', $newDatetime)
+                ->where('id', '!=', $appointment->id)
+                ->whereNotIn('status', ['cancelled', 'no_show'])
+                ->exists();
+
+            if ($slotTaken) {
+                $conflictMsg = 'The time slot ' . $newDatetime->format('d M Y \a\t h:i A') . ' is already booked for this consultant. Please select a different date or time.';
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $conflictMsg,
+                    ], 409);
+                }
+
+                return redirect()->back()->withErrors(['appointment_datetime' => $conflictMsg])->withInput();
+            }
+        }
+
         // Update appointment fields in local database FIRST (always update locally)
         if ($datetimeChanged) {
             $appointment->appointment_datetime = $newDatetime;
@@ -961,6 +983,19 @@ class BookingAppointmentsController extends Controller
                 $activityLog->subject = 'Booking appointment updated';
                 $activityLog->description = implode('', $descriptionParts);
                 $activityLog->save();
+            }
+        }
+
+        // Send reschedule confirmation email to client when datetime changed
+        if ($datetimeChanged && !empty($appointment->client_email)) {
+            try {
+                $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                $notificationService->sendRescheduleEmail($appointment, $oldDatetime);
+            } catch (\Exception $e) {
+                Log::warning('Failed to send reschedule email', [
+                    'appointment_id' => $appointment->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 

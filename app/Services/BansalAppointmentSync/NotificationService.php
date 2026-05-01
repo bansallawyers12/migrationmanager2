@@ -95,6 +95,45 @@ class NotificationService
     }
 
     /**
+     * Send reschedule confirmation email to client when an appointment's date/time is updated by staff.
+     *
+     * @param  BookingAppointment  $appointment  The appointment with the NEW datetime already saved.
+     * @param  \Carbon\Carbon|null  $oldDatetime  The previous appointment datetime.
+     */
+    public function sendRescheduleEmail(BookingAppointment $appointment, ?\Carbon\Carbon $oldDatetime): bool
+    {
+        try {
+            $details = [
+                'client_name'          => $appointment->client_name,
+                'old_datetime'         => $oldDatetime,
+                'appointment_datetime' => $appointment->appointment_datetime,
+                'timeslot_full'        => $appointment->timeslot_full,
+                'location'             => $appointment->location,
+                'meeting_type'         => $appointment->meeting_type,
+            ];
+
+            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
+                new \App\Mail\AppointmentReschedule($details)
+            );
+
+            Log::info('Sent reschedule confirmation email', [
+                'appointment_id' => $appointment->id,
+                'email'          => $appointment->client_email,
+                'old_datetime'   => $oldDatetime?->toIso8601String(),
+                'new_datetime'   => $appointment->appointment_datetime?->toIso8601String(),
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send reschedule email', [
+                'appointment_id' => $appointment->id,
+                'error'          => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Send appointment reminder email (manual from CRM; distinct from the initial detailed confirmation).
      */
     public function sendAppointmentReminderEmail(BookingAppointment $appointment): bool

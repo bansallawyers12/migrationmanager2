@@ -1057,6 +1057,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('danger', errorDetails);
             } else if (error.status === 404) {
                 showAlert('danger', 'Appointment not found');
+            } else if (error.status === 409) {
+                const errorMsg = error.data?.message || 'This time slot is already booked. Please select a different date or time.';
+                showAlert('warning', errorMsg);
             } else if (error.status === 500) {
                 const errorMsg = error.data?.message || 'Server error occurred';
                 showAlert('danger', errorMsg + ' Please try again later.');
