@@ -602,7 +602,7 @@ class OfficeVisitController extends Controller
         if($saved){
 		    // Notify reception on both: red "Waiting" (escalate to Pls Send) and green "Pls Send" (session started).
 		    // Real-time delivery is via OfficeVisitNotificationCreated + Echo; no page refresh needed on reception side.
-		    $receiverId = config('constants.reception_user_id', 36608);
+		    $receiverId = config('constants.reception_user_id', 36730);
 		    $o = new \App\Models\Notification;
 		    $o->sender_id = Auth::user()->id;
 		    $o->receiver_id = $receiverId;

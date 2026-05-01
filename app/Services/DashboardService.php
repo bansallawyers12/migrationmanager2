@@ -553,7 +553,7 @@ class DashboardService
             ->orderBy('created_at', 'DESC')
             ->get();
 
-        $receptionUserId = (int) config('constants.reception_user_id', 36608);
+        $receptionUserId = (int) config('constants.reception_user_id', 36730);
         $viewerIsReception = (int) Auth::id() === $receptionUserId;
 
         $data = [];

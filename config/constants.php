@@ -52,5 +52,5 @@ return [
 	'edited' => ' has been edited successfully.',	
 
 	// Reception staff id (staff.id) for office visit "please send the client" notifications — matches Notification.receiver_id / Auth::id() (admin guard)
-	'reception_user_id' => env('RECEPTION_USER_ID', 36608),
+	'reception_user_id' => env('RECEPTION_USER_ID', 36730),
 ];

@@ -1697,7 +1697,7 @@ public function getChapters(Request $request)
 
         // Batch-load check-in logs (eliminates N+1)
         $checkinLogIds = $notifications->pluck('module_id')->filter()->unique();
-        $receptionUserId = (int) config('constants.reception_user_id', 36608);
+        $receptionUserId = (int) config('constants.reception_user_id', 36730);
         $viewerIsReception = (int) Auth::id() === $receptionUserId;
 
         $checkinQuery = \App\Models\CheckinLog::whereIn('id', $checkinLogIds);
