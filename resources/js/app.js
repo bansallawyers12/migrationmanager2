@@ -59,6 +59,43 @@ window.playOfficeVisitNotificationSound = function () {
 
 /*
 |--------------------------------------------------------------------------
+| Office visit popup (Echo can fire before layout defines showTeamsNotification)
+|--------------------------------------------------------------------------
+*/
+window.__officeVisitNotificationQueue = window.__officeVisitNotificationQueue || [];
+
+function normalizeOfficeVisitEchoPayload(e) {
+    if (!e) return null;
+    if (e.notification) return e.notification;
+    if (e.id !== undefined || e.checkin_id !== undefined) return e;
+    return null;
+}
+
+window.deliverOfficeVisitNotificationPayload = function (payload) {
+    if (!payload) return;
+    if (typeof window.showTeamsNotification === 'function') {
+        window.showTeamsNotification(payload);
+        return;
+    }
+    window.__officeVisitNotificationQueue.push(payload);
+};
+
+window.drainOfficeVisitNotificationQueue = function () {
+    if (typeof window.showTeamsNotification !== 'function') return;
+    const q = window.__officeVisitNotificationQueue;
+    if (!q || !q.length) return;
+    const batch = q.splice(0, q.length);
+    batch.forEach(function (payload) {
+        try {
+            window.showTeamsNotification(payload);
+        } catch (err) {
+            console.warn('Office visit queued notification error:', err);
+        }
+    });
+};
+
+/*
+|--------------------------------------------------------------------------
 | Notification Bell Update (always available - used by Echo and client_portal)
 |--------------------------------------------------------------------------
 */
@@ -150,39 +187,22 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
                 }
             });
 
-            // Office visit popups: attach here (same channel) after layouts expose window.showTeamsNotification.
-            // Layout scripts run before/after this module; polling until the handler exists avoids missing events.
-            let officeVisitAttachAttempts = 0;
-            const officeVisitAttachInterval = setInterval(function () {
-                officeVisitAttachAttempts++;
-                if (window.__officeVisitEchoAttached) {
-                    clearInterval(officeVisitAttachInterval);
-                    return;
-                }
-                if (typeof window.showTeamsNotification === 'function') {
-                    userChannel.listen('.OfficeVisitNotificationCreated', function (e) {
-                        try {
-                            var payload =
-                                e && e.notification
-                                    ? e.notification
-                                    : e && (e.id !== undefined || e.checkin_id !== undefined)
-                                      ? e
-                                      : null;
-                            if (payload) {
-                                window.showTeamsNotification(payload);
-                            }
-                        } catch (err) {
-                            console.warn('Office visit notification handler error:', err);
+            // Office visit popups: subscribe immediately so events are not missed while layout loads.
+            // deliverOfficeVisitNotificationPayload queues until showTeamsNotification exists (drain in layout).
+            if (!window.__officeVisitEchoAttached) {
+                userChannel.listen('.OfficeVisitNotificationCreated', function (e) {
+                    try {
+                        const payload = normalizeOfficeVisitEchoPayload(e);
+                        if (payload) {
+                            window.deliverOfficeVisitNotificationPayload(payload);
                         }
-                    });
-                    window.__officeVisitEchoAttached = true;
-                    clearInterval(officeVisitAttachInterval);
-                    console.log('✅ Office visit notification listener attached (Echo)');
-                }
-                if (officeVisitAttachAttempts >= 300) {
-                    clearInterval(officeVisitAttachInterval);
-                }
-            }, 200);
+                    } catch (err) {
+                        console.warn('Office visit notification handler error:', err);
+                    }
+                });
+                window.__officeVisitEchoAttached = true;
+                console.log('✅ Office visit notification listener attached (Echo)');
+            }
         }
     } catch (error) {
         console.warn('⚠️ Failed to initialize Laravel Echo:', error);
@@ -221,11 +241,20 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
         attempts++;
         if (typeof window.showTeamsNotification === 'function') {
             clearInterval(waitForHandler);
+            if (typeof window.drainOfficeVisitNotificationQueue === 'function') {
+                window.drainOfficeVisitNotificationQueue();
+            }
             setTimeout(poll, 3000);
-            setInterval(poll, 20000);
+            setInterval(poll, 10000);
         }
         if (attempts >= 300) clearInterval(waitForHandler);
     }, 200);
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+            poll();
+        }
+    });
 })();
 
 // Polling fallback for notification badge (updates without page refresh when WebSocket unavailable)

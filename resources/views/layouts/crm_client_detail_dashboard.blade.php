@@ -1640,6 +1640,9 @@
             }
 
             window.showTeamsNotification = showTeamsNotification;
+            if (typeof window.drainOfficeVisitNotificationQueue === 'function') {
+                window.drainOfficeVisitNotificationQueue();
+            }
             
             window.closeNotification = function(notificationId) {
                 var notification = $('#teams-notification-' + notificationId);
