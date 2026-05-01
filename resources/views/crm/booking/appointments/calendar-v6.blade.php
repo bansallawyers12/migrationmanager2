@@ -1058,8 +1058,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (error.status === 404) {
                 showAlert('danger', 'Appointment not found');
             } else if (error.status === 409) {
-                const errorMsg = error.data?.message || 'This time slot is already booked. Please select a different date or time.';
-                showAlert('warning', errorMsg);
+                const errorMsg = error.data?.message || 'This slot is already booked. You cannot book this appointment. Please select a different date or time.';
+                showModalAlert('danger', errorMsg);
+                // Keep the user's chosen date/time in the inputs so they can easily pick another slot
+                return;
             } else if (error.status === 500) {
                 const errorMsg = error.data?.message || 'Server error occurred';
                 showAlert('danger', errorMsg + ' Please try again later.');
@@ -1070,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('danger', 'Failed to reschedule appointment. Please try again.');
             }
             
-            // Reset to original values on error
+            // Reset to original values on error (not on 409 — handled above with early return)
             dateInput.value = originalDate;
             timeInput.value = originalTime;
         })
@@ -1239,6 +1241,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 5000);
         }
     }
+
+    // Shows an alert INSIDE the appointment modal so it is visible while the modal is open.
+    function showModalAlert(type, message) {
+        const modalBody = document.getElementById('eventModalBody');
+        if (!modalBody) {
+            showAlert(type, message);
+            return;
+        }
+
+        // Remove any previous modal alert
+        const existing = modalBody.querySelector('.modal-inline-alert');
+        if (existing) existing.remove();
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show modal-inline-alert`;
+        alertDiv.style.cssText = 'margin:0 0 12px 0; border-radius:4px;';
+        alertDiv.innerHTML = `
+            <strong>${type === 'danger' ? '&#10060; ' : '&#9888; '}${message}</strong>
+            <button type="button" class="close" style="padding:4px 8px;" onclick="this.parentElement.remove()">
+                <span>&times;</span>
+            </button>
+        `;
+
+        // Prepend inside the modal body so it appears at the top
+        modalBody.insertBefore(alertDiv, modalBody.firstChild);
+
+        // Auto-dismiss after 8 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) alertDiv.remove();
+        }, 8000);
+    }
+
     }); // Close waitForFullCalendar callback
 }); // Close DOMContentLoaded
 </script>
