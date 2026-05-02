@@ -59,12 +59,12 @@ class PublicDocumentController extends Controller
             
             // Handle agreement type documents specially
             if (isset($document->doc_type) && $document->doc_type == 'agreement') {
-                $signer = $document->signers()->where('document_id', $documentId)->first();
+                $signer = $document->signers()->where('document_id', '=', $documentId)->first();
                 if ($signer) {
                     // Only update token/status when still pending - never overwrite 'signed' or 'cancelled'
                     if ($signer->status === 'pending') {
                         $signer->update(['token' => $token, 'status' => 'pending']);
-                        $signer = $document->signers()->where('token', $token)->first();
+                        $signer = $document->signers()->where('token', '=', $token)->first();
                     }
                     // If signed or cancelled, $signer stays as-is; status check below will redirect
                 } else {
@@ -74,7 +74,7 @@ class PublicDocumentController extends Controller
                     ]);
                 }
             } else {
-                $signer = $document->signers()->where('token', $token)->first();
+                $signer = $document->signers()->where('token', '=', $token)->first();
             }
 
             if (!$signer || $signer->status === 'signed' || $signer->status === 'cancelled') {
@@ -131,7 +131,7 @@ class PublicDocumentController extends Controller
             } else {
                 // Try to build S3 key from DB fields as fallback
                 if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    $admin = DB::table('admins')->select('client_id')->where('id', '=', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $pdfPath = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
                         
@@ -299,7 +299,7 @@ class PublicDocumentController extends Controller
                 if (!$tmpPdfPath) {
                     $clientId = null;
                     if ($document->client_id) {
-                        $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                        $admin = DB::table('admins')->select('client_id')->where('id', '=', $document->client_id)->first();
                         if ($admin && $admin->client_id) {
                             $clientId = $admin->client_id;
                         }
@@ -352,7 +352,7 @@ class PublicDocumentController extends Controller
                 $docType = $document->doc_type ?? '';
                 
                 if ($document->client_id) {
-                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    $admin = DB::table('admins')->select('client_id')->where('id', '=', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $clientId = $admin->client_id;
                     } else {
@@ -591,60 +591,109 @@ class PublicDocumentController extends Controller
                     ]);
                 }
 
-                // For visa documents: create {checklist}_signed row in same category (if not already exists)
-                if ($document->doc_type === 'visa' && $document->client_id && $document->folder_name && !str_ends_with($document->checklist ?? '', '_signed')) {
-                    $signedChecklist = ($document->checklist ?? 'Document') . '_signed';
-                    $exists = Document::where('client_id', $document->client_id)->where('folder_name', $document->folder_name)
-                        ->where('client_matter_id', $document->client_matter_id)->where('checklist', $signedChecklist)->exists();
-                    if (!$exists) try {
-                        $parentKey = (string) ($document->myfile_key ?? '');
-                        $parentStem = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document');
-                        if ($parentKey !== '' && !preg_match('/^\d+_signed\.pdf$/i', $parentKey)) {
-                            $signedKey = pathinfo($parentKey, PATHINFO_FILENAME) . '_signed.pdf';
-                        } else {
-                            $signedKey = $parentStem . '_signed.pdf';
+                // For visa documents: create {checklist}_signed row in same category (if not already exists).
+                // Refresh so folder_name / checklist / matter match DB after save (avoid stale model skipping this block).
+                $document->refresh();
+
+                $docTypeNorm = strtolower(trim((string) ($document->doc_type ?? '')));
+                $folderGuard = trim((string) ($document->folder_name ?? ''));
+                $baseChecklist = trim((string) str_replace("\0", '', (string) ($document->checklist ?? '')));
+                if ($baseChecklist === '') {
+                    $baseChecklist = 'Document';
+                }
+                $checklistAlreadySignedSuffix = str_ends_with($baseChecklist, '_signed');
+
+                $shouldCreateVisaSignedCopy = $docTypeNorm === 'visa'
+                    && (bool) $document->client_id
+                    && $folderGuard !== ''
+                    && !$checklistAlreadySignedSuffix;
+
+                if ($docTypeNorm === 'visa' && !$shouldCreateVisaSignedCopy) {
+                    Log::info('Skipping visa _signed document row', [
+                        'document_id' => $document->id,
+                        'doc_type' => $document->doc_type,
+                        'has_client_id' => (bool) $document->client_id,
+                        'folder_name_raw' => $document->folder_name,
+                        'folder_empty_after_trim' => $folderGuard === '',
+                        'checklist' => $document->checklist,
+                        'checklist_ends_with__signed' => $checklistAlreadySignedSuffix,
+                    ]);
+                }
+
+                if ($shouldCreateVisaSignedCopy) {
+                    $signedChecklist = $baseChecklist . '_signed';
+                    $exists = Document::where('client_id', '=', $document->client_id, 'and')
+                        ->where('folder_name', '=', $document->folder_name, 'and')
+                        ->where('client_matter_id', '=', $document->client_matter_id, 'and')
+                        ->where('checklist', '=', $signedChecklist, 'and')
+                        ->whereNull('not_used_doc')
+                        ->exists();
+
+                    if ($exists) {
+                        Log::info('Visa _signed row already present (active)', [
+                            'document_id' => $document->id,
+                            'signed_checklist' => $signedChecklist,
+                            'folder_name' => $document->folder_name,
+                            'client_matter_id' => $document->client_matter_id,
+                        ]);
+                    }
+
+                    if (!$exists) {
+                        try {
+                            $parentKey = (string) ($document->myfile_key ?? '');
+                            $parentStem = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document');
+                            if ($parentKey !== '' && !preg_match('/^\d+_signed\.pdf$/i', $parentKey)) {
+                                $signedKey = pathinfo($parentKey, PATHINFO_FILENAME) . '_signed.pdf';
+                            } else {
+                                $signedKey = $parentStem . '_signed.pdf';
+                            }
+                            $signedKey = preg_replace('/[^a-zA-Z0-9_\-\.\s\$]+/', '_', $signedKey);
+                            $signedKey = trim($signedKey);
+                            if ($signedKey === '' || strcasecmp($signedKey, '_signed.pdf') === 0 || strlen($signedKey) > 200) {
+                                $signedKey = mb_substr(preg_replace('/[^a-zA-Z0-9_\-\.\s\$]+/', '_', $parentStem . '_signed.pdf'), 0, 200);
+                            }
+                            if ($signedKey === '' || strcasecmp($signedKey, '_signed.pdf') === 0) {
+                                $signedKey = $document->id . '_signed.pdf';
+                            }
+                            $signedDoc = new Document();
+                            $signedDoc->checklist = $signedChecklist;
+                            $signedDoc->file_name = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document') . '_signed';
+                            $signedDoc->filetype = 'pdf';
+                            $signedDoc->myfile = $signedPdfUrl;
+                            $signedDoc->myfile_key = $signedKey;
+                            $signedDoc->client_id = $document->client_id;
+                            $signedDoc->client_matter_id = $document->client_matter_id;
+                            $signedDoc->folder_name = (string) $document->folder_name;
+                            $signedDoc->doc_type = 'visa';
+                            $signedDoc->type = 'client';
+                            $signedDoc->user_id = $document->user_id;
+                            $signedDoc->status = 'signed';
+                            $signedDoc->signed_doc_link = $signedPdfUrl;
+                            $signedDoc->save();
+                            Log::info('Created visa _signed row', ['original_id' => $document->id, 'signed_id' => $signedDoc->id]);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to create visa _signed row', [
+                                'document_id' => $document->id,
+                                'signed_checklist' => $signedChecklist ?? null,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString(),
+                            ]);
                         }
-                        $signedKey = preg_replace('/[^a-zA-Z0-9_\-\.\s\$]+/', '_', $signedKey);
-                        $signedKey = trim($signedKey);
-                        if ($signedKey === '' || strcasecmp($signedKey, '_signed.pdf') === 0 || strlen($signedKey) > 200) {
-                            $signedKey = mb_substr(preg_replace('/[^a-zA-Z0-9_\-\.\s\$]+/', '_', $parentStem . '_signed.pdf'), 0, 200);
-                        }
-                        if ($signedKey === '' || strcasecmp($signedKey, '_signed.pdf') === 0) {
-                            $signedKey = $document->id . '_signed.pdf';
-                        }
-                        $signedDoc = new Document();
-                        $signedDoc->checklist = $signedChecklist;
-                        $signedDoc->file_name = preg_replace('/\.(pdf|PDF)$/', '', $document->file_name ?? 'document') . '_signed';
-                        $signedDoc->filetype = 'pdf';
-                        $signedDoc->myfile = $signedPdfUrl;
-                        $signedDoc->myfile_key = $signedKey;
-                        $signedDoc->client_id = $document->client_id;
-                        $signedDoc->client_matter_id = $document->client_matter_id;
-                        $signedDoc->folder_name = $document->folder_name;
-                        $signedDoc->doc_type = 'visa';
-                        $signedDoc->type = 'client';
-                        $signedDoc->user_id = $document->user_id;
-                        $signedDoc->status = 'signed';
-                        $signedDoc->signed_doc_link = $signedPdfUrl;
-                        $signedDoc->save();
-                        Log::info('Created visa _signed row', ['original_id' => $document->id, 'signed_id' => $signedDoc->id]);
-                    } catch (\Exception $e) {
-                        Log::warning('Failed to create visa _signed row', ['document_id' => $document->id, 'error' => $e->getMessage()]);
                     }
                 }
 
                 // Advance workflow to next stage when document is tied to a checklist/client matter
                 if ($document->client_matter_id && $document->client_id) {
                     try {
-                        ClientMatter::where('id', $document->client_matter_id)->update(['updated_at_type' => 'signed', 'updated_at' => now()]);
+                        ClientMatter::where('id', '=', $document->client_matter_id, 'and')->update(['updated_at_type' => 'signed', 'updated_at' => now()]);
 
                         // Agreement-specific activity log (Cost Agreement)
                         if ($document->doc_type === 'agreement') {
-                            $clientMatterInfo = ClientMatter::select('client_unique_matter_no', 'sel_person_responsible')
-                                ->where('id', $document->client_matter_id)->first();
+                            $clientMatterInfo = ClientMatter::select(['client_unique_matter_no', 'sel_person_responsible'])
+                                ->where('id', '=', $document->client_matter_id)->first();
                             if ($clientMatterInfo && $clientMatterInfo->sel_person_responsible) {
-                                $docSignerInfo = \App\Models\Admin::select('first_name', 'last_name', 'client_id')
-                                    ->where('id', $document->client_id)->first();
+                                $docSignerInfo = \App\Models\Admin::select(['first_name', 'last_name', 'client_id'])
+                                    ->where('id', '=', $document->client_id)->first();
                                 $docSignerFullName = $docSignerInfo ? trim(($docSignerInfo->first_name ?? '') . ' ' . ($docSignerInfo->last_name ?? '')) : 'NA';
                                 $docSignerClientId = $docSignerInfo?->client_id ?? 'NA';
                                 $clientMatterReference = $docSignerClientId . '-' . ($clientMatterInfo->client_unique_matter_no ?? '');
@@ -663,9 +712,9 @@ class PublicDocumentController extends Controller
                         }
 
                         // Advance workflow stage to next in sequence (when next stage doesn't require manual input)
-                        $clientMatter = ClientMatter::find($document->client_matter_id);
+                        $clientMatter = ClientMatter::find($document->client_matter_id, ['*']);
                         if ($clientMatter && $clientMatter->workflow_stage_id) {
-                            $currentStage = WorkflowStage::find($clientMatter->workflow_stage_id);
+                            $currentStage = WorkflowStage::find($clientMatter->workflow_stage_id, ['*']);
                             if ($currentStage) {
                                 $currentStageName = strtolower(trim($currentStage->name ?? ''));
                                 $verificationStages = ['payment verified', 'verification: payment, service agreement, forms'];
@@ -679,10 +728,10 @@ class PublicDocumentController extends Controller
                                     ]);
                                 } else {
                                     $currentOrder = $currentStage->sort_order ?? $currentStage->id;
-                                    $stageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder]);
+                                    $stageQuery = WorkflowStage::whereRaw('COALESCE(sort_order, id) > ?', [$currentOrder], 'and');
                                     $workflowId = $clientMatter->workflow_id ?? $currentStage->workflow_id;
                                     if ($workflowId) {
-                                        $stageQuery->where('workflow_id', $workflowId);
+                                        $stageQuery->where('workflow_id', '=', $workflowId);
                                     }
                                     $nextStage = $stageQuery->orderByRaw('COALESCE(sort_order, id) ASC')->first();
 
@@ -809,7 +858,7 @@ class PublicDocumentController extends Controller
             } else {
                 // Try to build S3 key from DB fields as fallback
                 if (!empty($document->myfile_key) && !empty($document->doc_type) && !empty($document->client_id)) {
-                    $admin = DB::table('admins')->select('client_id')->where('id', $document->client_id)->first();
+                    $admin = DB::table('admins')->select('client_id')->where('id', '=', $document->client_id)->first();
                     if ($admin && $admin->client_id) {
                         $pdfPath = $admin->client_id . '/' . $document->doc_type . '/' . $document->myfile_key;
                         
@@ -1098,7 +1147,7 @@ class PublicDocumentController extends Controller
         $document = null;
         
         if ($id) {
-            $document = Document::find($id);
+            $document = Document::find($id, ['*']);
             if ($document && $document->signed_doc_link) {
                 $parsed = parse_url($document->signed_doc_link);
                 if (isset($parsed['path'])) {
@@ -1193,8 +1242,10 @@ class PublicDocumentController extends Controller
 
     /**
      * Count PDF pages
+     *
+     * @return int|null
      */
-    protected function countPdfPages($pathToPdf)
+    protected function countPdfPages(string $pathToPdf): ?int
     {
         try {
             $pythonService = app(\App\Services\PythonService::class);
@@ -1220,8 +1271,10 @@ class PublicDocumentController extends Controller
 
     /**
      * Sanitize signature data
+     *
+     * @return array{imageData: string, base64Data: string, size: int}|false
      */
-    private function sanitizeSignatureData($signatureData, $fieldId)
+    private function sanitizeSignatureData(mixed $signatureData, int $fieldId): array|false
     {
         if (!is_string($signatureData) || empty($signatureData)) {
             return false;
@@ -1271,8 +1324,11 @@ class PublicDocumentController extends Controller
 
     /**
      * Sanitize position data
+     *
+     * @param  array<string, mixed>  $position
+     * @return array<string, float>
      */
-    private function sanitizePositionData($position)
+    private function sanitizePositionData($position): array
     {
         $sanitized = [];
         $fields = ['x_percent', 'y_percent', 'w_percent', 'h_percent'];
@@ -1291,6 +1347,9 @@ class PublicDocumentController extends Controller
 
     /**
      * Create notifications and activity logs when document is signed
+     *
+     * @param  Document  $document
+     * @param  Signer  $signer
      */
     private function createSignatureNotifications($document, $signer)
     {
@@ -1307,12 +1366,12 @@ class PublicDocumentController extends Controller
             
             // Check if document is associated with a client matter
             if ($document->client_matter_id) {
-                $clientMatter = \App\Models\ClientMatter::select('client_unique_matter_no', 'sel_person_responsible', 'client_id')
-                    ->where('id', $document->client_matter_id)
+                $clientMatter = \App\Models\ClientMatter::select(['client_unique_matter_no', 'sel_person_responsible', 'client_id'])
+                    ->where('id', '=', $document->client_matter_id)
                     ->first();
                 
                 if ($clientMatter) {
-                    $associatedEntity = \App\Models\Admin::find($clientMatter->client_id);
+                    $associatedEntity = \App\Models\Admin::find($clientMatter->client_id, ['*']);
                     $responsiblePersonId = $clientMatter->sel_person_responsible;
                     $entityType = 'client';
                     $notificationUrl = url("/clients/detail/{$clientMatter->client_id}");
@@ -1333,7 +1392,7 @@ class PublicDocumentController extends Controller
             }
             // Check if document has client_id (direct client association)
             elseif ($document->client_id) {
-                $associatedEntity = \App\Models\Admin::find($document->client_id);
+                $associatedEntity = \App\Models\Admin::find($document->client_id, ['*']);
                 
                 if ($associatedEntity) {
                     $entityType = ($associatedEntity->type === 'lead') ? 'lead' : 'client';
@@ -1357,7 +1416,7 @@ class PublicDocumentController extends Controller
             // Check if document has client_id or lead_id
             elseif ($document->client_id || $document->lead_id) {
                 if ($document->client_id) {
-                    $associatedEntity = \App\Models\Admin::find($document->client_id);
+                    $associatedEntity = \App\Models\Admin::find($document->client_id, ['*']);
                     
                     if ($associatedEntity) {
                         $entityType = ($associatedEntity->type === 'lead') ? 'lead' : 'client';
@@ -1366,8 +1425,9 @@ class PublicDocumentController extends Controller
                         $matterRef = null;
                         
                         if ($document->client_matter_id) {
-                            $clientMatter = \App\Models\ClientMatter::select('client_unique_matter_no', 'sel_person_responsible')
-                                ->find($document->client_matter_id);
+                            $clientMatter = \App\Models\ClientMatter::select(['client_unique_matter_no', 'sel_person_responsible'])
+                                ->where('id', '=', $document->client_matter_id)
+                                ->first();
                             $matterRef = $clientMatter?->client_unique_matter_no;
                             $responsiblePersonId = $clientMatter?->sel_person_responsible ?? $responsiblePersonId;
                         }
@@ -1384,7 +1444,7 @@ class PublicDocumentController extends Controller
                         );
                     }
                 } elseif ($document->lead_id) {
-                    $associatedEntity = \App\Models\Admin::find($document->lead_id);
+                    $associatedEntity = \App\Models\Admin::find($document->lead_id, ['*']);
                     
                     if ($associatedEntity) {
                         $entityType = 'lead';
@@ -1423,6 +1483,15 @@ class PublicDocumentController extends Controller
     
     /**
      * Helper method to create activity log and notification
+     *
+     * @param  Document  $document
+     * @param  \App\Models\Admin  $entity
+     * @param  int|string|null  $responsiblePersonId
+     * @param  string  $signerName
+     * @param  string  $signedAt
+     * @param  string  $entityType  'client' or 'lead'
+     * @param  string  $notificationUrl
+     * @param  string|null  $matterReference
      */
     private function createActivityAndNotification(
         $document, 
