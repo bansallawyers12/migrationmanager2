@@ -32,6 +32,7 @@ class Kernel extends ConsoleKernel
         // Signature Management System Commands
         '\App\Console\Commands\ArchiveOldDrafts',
         '\App\Console\Commands\SendSignatureReminders',
+        '\App\Console\Commands\BackfillVisaSignedDocumentRows',
         
         // SQL Migration Tools
         //'\App\Console\Commands\FixMySqlDumpForPostgres', // Command file does not exist
