@@ -56,9 +56,9 @@ class AppointmentCancellation extends Mailable
     public function content(): Content
     {
         $clientName = $this->details['client_name'] ?? 'Valued Client';
-        $location = $this->details['location'] ?? 'melbourne';
-        $locationPhone = $this->getLocationPhone($location);
-        $locationPhoneTel = $this->normalizePhoneForTelUri($locationPhone);
+        $locationKey = $this->normalizeLocationKey($this->details['location'] ?? null);
+        $locationPhone = $this->getLocationPhone($locationKey);
+        $callUsHref = $this->buildCallUsHref($locationPhone);
         $rescheduleBody = "Hi Bansal Immigration Team,\r\n\r\nI would like to reschedule my cancelled appointment. Please let me know your available slots.\r\n\r\nRegards";
         $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com.au?subject='.rawurlencode(
             'Reschedule Request – '.$clientName
@@ -70,10 +70,10 @@ class AppointmentCancellation extends Mailable
                 'clientName' => $clientName,
                 'appointmentDate' => $this->details['appointment_datetime']?->format('l, d F Y') ?? 'N/A',
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
-                'location' => ucfirst($location),
-                'locationAddress' => $this->getLocationAddress($location),
+                'location' => ucfirst($locationKey),
+                'locationAddress' => $this->getLocationAddress($locationKey),
                 'locationPhone' => $locationPhone,
-                'locationPhoneTel' => $locationPhoneTel,
+                'callUsHref' => $callUsHref,
                 'rescheduleMailtoHref' => $rescheduleMailtoHref,
                 'cancellationReason' => $this->details['cancellation_reason'] ?? null,
             ],
@@ -115,12 +115,29 @@ class AppointmentCancellation extends Mailable
     }
 
     /**
-     * E.164-style subscriber number for tel: (digits and optional leading + only).
+     * Normalise location from DB/API (e.g. "Melbourne" → "melbourne") for match().
      */
-    protected function normalizePhoneForTelUri(string $phone): string
+    protected function normalizeLocationKey(mixed $location): string
     {
-        $normalized = preg_replace('/[^\d+]/', '', $phone) ?? '';
+        if (! is_string($location)) {
+            return 'melbourne';
+        }
 
-        return $normalized !== '' ? $normalized : '61396021330';
+        $loc = strtolower(trim($location));
+
+        return $loc !== '' ? $loc : 'melbourne';
+    }
+
+    /**
+     * tel: href using digits only (no "+"). Some mobile mail apps mishandle "+" in tel URIs.
+     */
+    protected function buildCallUsHref(string $phoneDisplay): string
+    {
+        $digits = preg_replace('/\D/', '', $phoneDisplay) ?? '';
+        if ($digits === '') {
+            $digits = '61396021330';
+        }
+
+        return 'tel:'.$digits;
     }
 }

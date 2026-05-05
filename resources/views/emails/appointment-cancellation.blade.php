@@ -145,11 +145,11 @@
             <a href="{{ $rescheduleMailtoHref }}" class="btn btn-reschedule" style="display:inline-block; padding:13px 26px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none; background:#2980b9; color:#fff;"><span class="btn-icon">📅</span> Request to Reschedule</a>
           </td>
           <td style="padding:6px;">
-            <a href="tel:{{ $locationPhoneTel }}" class="btn btn-contact" style="display:inline-block; padding:13px 26px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none; background:#1c2a3a; color:#fff;" role="link" rel="nofollow"><span class="btn-icon">📞</span> Call Us</a>
+            <a href="{{ $callUsHref }}" class="btn btn-contact" style="display:inline-block; padding:13px 26px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none; background:#1c2a3a; color:#fff;"><span class="btn-icon">📞</span> Call Us</a>
           </td>
         </tr>
       </table>
-      <p class="btn-note">Clicking &quot;Request to Reschedule&quot; will open a pre-filled email. Alternatively, call us on <a href="tel:{{ $locationPhoneTel }}" style="color:#2980b9; font-weight:bold; text-decoration:none;">{{ $locationPhone }}</a>.</p>
+      <p class="btn-note">Clicking &quot;Request to Reschedule&quot; will open a pre-filled email. Alternatively, call us on <a href="{{ $callUsHref }}" style="color:#2980b9; font-weight:bold; text-decoration:none;">{{ $locationPhone }}</a>.</p>
     </div>
 
     <hr class="divider"/>
@@ -167,7 +167,7 @@
 
     <div class="contact-box">
       <h3>📞 Need Help or Have Questions?</h3>
-      <p>📱 <strong>Phone:</strong> <a href="tel:{{ $locationPhoneTel }}">{{ $locationPhone }}</a></p>
+      <p>📱 <strong>Phone:</strong> <a href="{{ $callUsHref }}">{{ $locationPhone }}</a></p>
       <p>📧 <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
       <p>🌐 <strong>Website:</strong> <a href="https://bansalimmigration.com.au" target="_blank">bansalimmigration.com.au</a></p>
     </div>
