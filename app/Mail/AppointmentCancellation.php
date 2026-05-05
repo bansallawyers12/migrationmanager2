@@ -33,7 +33,7 @@ class AppointmentCancellation extends Mailable
     }
 
     /**
-     * Disable SendGrid click-tracking so tel:/mailto: links are not rewritten.
+     * Disable SendGrid click-tracking so mailto / tel / HTTPS call-bridge links are not rewritten.
      */
     public function headers(): Headers
     {
@@ -57,8 +57,8 @@ class AppointmentCancellation extends Mailable
     {
         $clientName = $this->details['client_name'] ?? 'Valued Client';
         $locationKey = $this->normalizeLocationKey($this->details['location'] ?? null);
-        $locationPhone = $this->getLocationPhone($locationKey);
-        $callUsHref = $this->buildCallUsHref($locationPhone);
+        $locationPhone = '+61 3 9602 1330';
+        $callUsHref = $this->buildCallUsWebUrl('61396021330');
         $rescheduleBody = "Hi Bansal Immigration Team,\r\n\r\nI would like to reschedule my cancelled appointment. Please let me know your available slots.\r\n\r\nRegards";
         $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com.au?subject='.rawurlencode(
             'Reschedule Request – '.$clientName
@@ -103,18 +103,6 @@ class AppointmentCancellation extends Mailable
     }
 
     /**
-     * Get phone number for location (used in appointment emails)
-     */
-    protected function getLocationPhone(string $location): string
-    {
-        return match ($location) {
-            'adelaide' => '08 8317 1340',
-            'melbourne' => '+61 3 9602 1330',
-            default => '1300 859 368'
-        };
-    }
-
-    /**
      * Normalise location from DB/API (e.g. "Melbourne" → "melbourne") for match().
      */
     protected function normalizeLocationKey(mixed $location): string
@@ -129,15 +117,19 @@ class AppointmentCancellation extends Mailable
     }
 
     /**
-     * tel: href using digits only (no "+"). Some mobile mail apps mishandle "+" in tel URIs.
+     * HTTPS bridge URL (same flow as website): opens browser, then navigates to tel: so the
+     * OS "pick an application / dial" prompt can appear on desktop and mobile.
      */
-    protected function buildCallUsHref(string $phoneDisplay): string
+    protected function buildCallUsWebUrl(string $digits): string
     {
-        $digits = preg_replace('/\D/', '', $phoneDisplay) ?? '';
-        if ($digits === '') {
-            $digits = '61396021330';
+        $base = config('services.bansal_public.call_us_bridge_base_url');
+        if (is_string($base) && $base !== '') {
+            $base = rtrim($base, '/');
+            $sep = str_contains($base, '?') ? '&' : '?';
+
+            return $base.$sep.'n='.rawurlencode($digits);
         }
 
-        return 'tel:'.$digits;
+        return route('public.phone-call', ['n' => $digits], true);
     }
 }

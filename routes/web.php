@@ -23,6 +23,7 @@ use App\Http\Controllers\CRM\ReportController;
 use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\CRM\ReverbMessagingLabController;
 use App\Http\Controllers\Public\PublicLeadInquiryController;
+use App\Http\Controllers\Public\PublicPhoneCallController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +63,8 @@ Route::post("/{$publicLeadPath}/confirm", [PublicLeadInquiryController::class, '
 Route::post("/{$publicLeadPath}/cancel", [PublicLeadInquiryController::class, 'cancelUpdate'])
     ->middleware('throttle:10,1')
     ->name('public.lead-inquiry.cancel');
+
+Route::middleware('throttle:60,1')->get('/phone-call', PublicPhoneCallController::class)->name('public.phone-call');
 
 // Cache clearing route - protected with authentication
 Route::get('/clear-cache', function() {

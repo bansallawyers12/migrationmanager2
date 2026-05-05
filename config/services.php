@@ -135,6 +135,15 @@ return [
     ],
 
     /*
+    | Optional: HTTPS URL used in emails for "Call Us" (must serve the phone-call bridge).
+    | Example: https://www.bansalimmigration.com.au/phone-call
+    | If unset, APP_URL + /phone-call (this app's bridge) is used.
+    */
+    'bansal_public' => [
+        'call_us_bridge_base_url' => env('BANSAL_CALL_US_BRIDGE_BASE_URL'),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Stripe Payment Configuration
     |--------------------------------------------------------------------------
