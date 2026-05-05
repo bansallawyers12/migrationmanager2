@@ -206,10 +206,14 @@
                             </div>
                             <div class="form-group col-md-4">
                                 <label for="preferred-language">Preferred Language <span class="text-danger">*</span></label>
+                                @php
+                                    $preferredLangInput = old('preferred_language', $appointment->preferred_language ?? 'English');
+                                    $preferredLangKey = strtolower(trim((string) $preferredLangInput));
+                                @endphp
                                 <select class="form-control form-control-sm" id="preferred-language" name="preferred_language" required style="max-width: 250px;">
-                                    <option value="English" {{ old('preferred_language', $appointment->preferred_language ?? 'English') == 'English' ? 'selected' : '' }}>English</option>
-                                    <option value="Hindi" {{ old('preferred_language', $appointment->preferred_language ?? 'English') == 'Hindi' ? 'selected' : '' }}>Hindi</option>
-                                    <option value="Punjabi" {{ old('preferred_language', $appointment->preferred_language ?? 'English') == 'Punjabi' ? 'selected' : '' }}>Punjabi</option>
+                                    <option value="English" {{ $preferredLangKey === 'english' ? 'selected' : '' }}>English</option>
+                                    <option value="Hindi" {{ $preferredLangKey === 'hindi' ? 'selected' : '' }}>Hindi</option>
+                                    <option value="Punjabi" {{ $preferredLangKey === 'punjabi' ? 'selected' : '' }}>Punjabi</option>
                                 </select>
                                 <div class="invalid-feedback">
                                     Please select a preferred language.

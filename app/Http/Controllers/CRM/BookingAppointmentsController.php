@@ -710,6 +710,8 @@ class BookingAppointmentsController extends Controller
         $appointment = BookingAppointment::findOrFail($id);
         $this->assertBookingAppointmentAccess($appointment);
 
+        $this->normalizePreferredLanguageRequest($request);
+
         $request->validate([
             'appointment_date' => 'required|date',
             'appointment_time' => 'required|date_format:H:i',
@@ -1164,6 +1166,29 @@ class BookingAppointmentsController extends Controller
             ->back()
             ->withInput()
             ->with('error', $message);
+    }
+
+    /**
+     * Map common casings (e.g. from sync/API) to validated canonical labels.
+     * Unknown values are left unchanged so validation still rejects them.
+     */
+    protected function normalizePreferredLanguageRequest(Request $request): void
+    {
+        $raw = $request->input('preferred_language');
+        if (! is_string($raw)) {
+            return;
+        }
+
+        $key = strtolower(trim($raw));
+        $canonical = [
+            'english' => 'English',
+            'hindi' => 'Hindi',
+            'punjabi' => 'Punjabi',
+        ];
+
+        if (isset($canonical[$key])) {
+            $request->merge(['preferred_language' => $canonical[$key]]);
+        }
     }
 
     /**

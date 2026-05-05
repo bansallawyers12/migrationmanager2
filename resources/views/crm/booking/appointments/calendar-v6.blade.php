@@ -931,6 +931,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return true;
     };
+
+    /** Align with BookingAppointmentsController::normalizePreferredLanguageRequest (english/hindi/punjabi casings). */
+    function canonicalPreferredLanguageForSubmit(lang) {
+        const s = (lang == null || typeof lang !== 'string') ? '' : lang.trim();
+        if (s === '') {
+            return 'English';
+        }
+        const key = s.toLowerCase();
+        const map = { english: 'English', hindi: 'Hindi', punjabi: 'Punjabi' };
+        return map[key] !== undefined ? map[key] : s;
+    }
     
     // Reschedule Date & Time function
     window.rescheduleAppointmentDateTime = function(btnEl, appointmentId, meetingType, preferredLanguage) {
@@ -993,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('appointment_date', newDate);
         formData.append('appointment_time', newTime);
         formData.append('meeting_type', meetingType);
-        formData.append('preferred_language', preferredLanguage);
+        formData.append('preferred_language', canonicalPreferredLanguageForSubmit(preferredLanguage));
         
         fetch(`/booking/appointments/${appointmentId}`, {
             method: 'POST',
