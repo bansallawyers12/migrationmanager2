@@ -122,7 +122,7 @@
       </p>
       <p>
         To help our consultant prepare tailored advice for your session, please email your <strong>up-to-date resume/CV</strong> to
-        <a href="{{ $resumeMailtoHref }}">info@bansalimmigration.com</a>
+        <a href="{{ $resumeMailtoHref }}">info@bansalimmigration.com.au</a>
         with the subject: <em>&quot;Resume – [Your Full Name] – {{ $resumeDateForSubject }} Appointment&quot;</em> —
         at least <strong>48 hours before</strong> your appointment. If unavailable beforehand, please bring a printed copy on the day.
       </p>
@@ -192,8 +192,8 @@
     <div class="contact-box">
       <h3>📞 Need to Reschedule or Have Questions?</h3>
       <p>📱 <strong>Phone:</strong> <a href="tel:{{ $locationPhoneTel }}">{{ $locationPhone }}</a></p>
-      <p>📧 <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com">info@bansalimmigration.com</a></p>
-      <p>🌐 <strong>Website:</strong> <a href="https://bansalimmigration.com" target="_blank">bansalimmigration.com</a></p>
+      <p>📧 <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
+      <p>🌐 <strong>Website:</strong> <a href="https://bansalimmigration.com.au" target="_blank">bansalimmigration.com.au</a></p>
       <p style="margin-top:10px; color:#4a6070;">
         Please provide at least <strong>24 hours' notice</strong> if you need to reschedule your appointment.
       </p>

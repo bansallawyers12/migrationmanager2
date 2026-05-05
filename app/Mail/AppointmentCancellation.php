@@ -41,7 +41,7 @@ class AppointmentCancellation extends Mailable
         $locationPhone = $this->getLocationPhone($location);
         $locationPhoneTel = str_replace([' ', '-'], '', $locationPhone);
         $rescheduleBody = "Hi Bansal Immigration Team,\r\n\r\nI would like to reschedule my cancelled appointment. Please let me know your available slots.\r\n\r\nRegards";
-        $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com?subject='.rawurlencode(
+        $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com.au?subject='.rawurlencode(
             'Reschedule Request – '.$clientName
         ).'&body='.rawurlencode($rescheduleBody);
 

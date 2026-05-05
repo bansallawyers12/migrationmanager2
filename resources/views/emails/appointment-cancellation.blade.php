@@ -168,8 +168,8 @@
     <div class="contact-box">
       <h3>📞 Need Help or Have Questions?</h3>
       <p>📱 <strong>Phone:</strong> <a href="tel:{{ $locationPhoneTel }}">{{ $locationPhone }}</a></p>
-      <p>📧 <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com">info@bansalimmigration.com</a></p>
-      <p>🌐 <strong>Website:</strong> <a href="https://bansalimmigration.com" target="_blank">bansalimmigration.com</a></p>
+      <p>📧 <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
+      <p>🌐 <strong>Website:</strong> <a href="https://bansalimmigration.com.au" target="_blank">bansalimmigration.com.au</a></p>
     </div>
 
     <div class="closing">

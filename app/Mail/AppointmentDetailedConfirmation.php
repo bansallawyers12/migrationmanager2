@@ -39,7 +39,7 @@ class AppointmentDetailedConfirmation extends Mailable
         $meetingType = strtolower(trim((string) ($this->details['meeting_type'] ?? '')));
         $showInPersonArrival = $meetingType === '' || $meetingType === 'in_person';
         $resumeDateFragment = $this->details['appointment_datetime']?->format('j F Y') ?? 'N/A';
-        $resumeMailtoHref = 'mailto:info@bansalimmigration.com?subject='.rawurlencode(
+        $resumeMailtoHref = 'mailto:info@bansalimmigration.com.au?subject='.rawurlencode(
             'Resume – [Your Full Name] – '.$resumeDateFragment.' Appointment'
         );
 

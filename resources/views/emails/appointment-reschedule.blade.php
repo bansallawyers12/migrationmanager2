@@ -174,8 +174,8 @@
     <div class="contact-box">
       <h3>&#128222; Need Help or Have Questions?</h3>
       <p>&#128241; <strong>Phone:</strong> <a href="tel:{{ $locationPhoneTel }}">{{ $locationPhone }}</a></p>
-      <p>&#128231; <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com">info@bansalimmigration.com</a></p>
-      <p>&#127760; <strong>Website:</strong> <a href="https://bansalimmigration.com" target="_blank">bansalimmigration.com</a></p>
+      <p>&#128231; <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
+      <p>&#127760; <strong>Website:</strong> <a href="https://bansalimmigration.com.au" target="_blank">bansalimmigration.com.au</a></p>
       <p style="margin-top:10px; color:#4a6070;">
         Please provide at least <strong>24 hours' notice</strong> if you need to make any further changes.
       </p>
