@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class AppointmentCancellation extends Mailable
@@ -32,6 +33,24 @@ class AppointmentCancellation extends Mailable
     }
 
     /**
+     * Disable SendGrid click-tracking so tel:/mailto: links are not rewritten.
+     */
+    public function headers(): Headers
+    {
+        return new Headers(text: [
+            'X-SMTPAPI' => json_encode([
+                'filters' => [
+                    'clicktrack' => [
+                        'settings' => [
+                            'enable' => 0,
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+    }
+
+    /**
      * Get the message content definition.
      */
     public function content(): Content
@@ -39,7 +58,7 @@ class AppointmentCancellation extends Mailable
         $clientName = $this->details['client_name'] ?? 'Valued Client';
         $location = $this->details['location'] ?? 'melbourne';
         $locationPhone = $this->getLocationPhone($location);
-        $locationPhoneTel = str_replace([' ', '-'], '', $locationPhone);
+        $locationPhoneTel = $this->normalizePhoneForTelUri($locationPhone);
         $rescheduleBody = "Hi Bansal Immigration Team,\r\n\r\nI would like to reschedule my cancelled appointment. Please let me know your available slots.\r\n\r\nRegards";
         $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com.au?subject='.rawurlencode(
             'Reschedule Request – '.$clientName
@@ -93,5 +112,15 @@ class AppointmentCancellation extends Mailable
             'melbourne' => '+61 3 9602 1330',
             default => '1300 859 368'
         };
+    }
+
+    /**
+     * E.164-style subscriber number for tel: (digits and optional leading + only).
+     */
+    protected function normalizePhoneForTelUri(string $phone): string
+    {
+        $normalized = preg_replace('/[^\d+]/', '', $phone) ?? '';
+
+        return $normalized !== '' ? $normalized : '61396021330';
     }
 }

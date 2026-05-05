@@ -145,11 +145,11 @@
             <a href="{{ $rescheduleMailtoHref }}" class="btn btn-reschedule" style="display:inline-block; padding:13px 26px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none; background:#2980b9; color:#fff;"><span class="btn-icon">📅</span> Request to Reschedule</a>
           </td>
           <td style="padding:6px;">
-            <a href="tel:{{ $locationPhoneTel }}" class="btn btn-contact" style="display:inline-block; padding:13px 26px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none; background:#1c2a3a; color:#fff;"><span class="btn-icon">📞</span> Call Us</a>
+            <a href="tel:{{ $locationPhoneTel }}" class="btn btn-contact" style="display:inline-block; padding:13px 26px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none; background:#1c2a3a; color:#fff;" role="link" rel="nofollow"><span class="btn-icon">📞</span> Call Us</a>
           </td>
         </tr>
       </table>
-      <p class="btn-note">Clicking "Request to Reschedule" will open a pre-filled email. Alternatively, call us on {{ $locationPhone }}.</p>
+      <p class="btn-note">Clicking &quot;Request to Reschedule&quot; will open a pre-filled email. Alternatively, call us on <a href="tel:{{ $locationPhoneTel }}" style="color:#2980b9; font-weight:bold; text-decoration:none;">{{ $locationPhone }}</a>.</p>
     </div>
 
     <hr class="divider"/>
