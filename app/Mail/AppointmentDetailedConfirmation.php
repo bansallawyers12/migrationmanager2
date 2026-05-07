@@ -53,6 +53,9 @@ class AppointmentDetailedConfirmation extends Mailable
                 'appointmentTime' => $this->details['timeslot_full'] ?? 'N/A',
                 'location' => ucfirst($this->details['location'] ?? 'melbourne'),
                 'locationAddress' => $this->getLocationAddress($this->details['location'] ?? 'melbourne'),
+                'serviceType' => filled($this->details['service_type'] ?? null)
+                    ? (string) $this->details['service_type']
+                    : 'N/A',
                 'locationPhone' => $this->getLocationPhone($this->details['location'] ?? 'melbourne'),
                 'locationPhoneTel' => str_replace(
                     [' ', '-'],

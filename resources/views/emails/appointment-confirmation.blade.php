@@ -137,6 +137,7 @@
       <tr><td>Date:</td><td>{{ $appointmentDate }}</td></tr>
       <tr><td>Time:</td><td>{{ $appointmentTime }}</td></tr>
       <tr><td>Location:</td><td>{{ $locationAddress }}</td></tr>
+      <tr><td>Service Type:</td><td>{{ $serviceType }}</td></tr>
     </table>
 
     @if($adminNotes)

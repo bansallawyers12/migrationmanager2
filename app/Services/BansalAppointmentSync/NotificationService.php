@@ -34,6 +34,7 @@ class NotificationService
                 'timeslot_full' => $appointment->timeslot_full,
                 'location' => $appointment->location,
                 'meeting_type' => $appointment->meeting_type,
+                'service_type' => $appointment->service_type,
                 'admin_notes' => $appointment->admin_notes,
             ];
 
