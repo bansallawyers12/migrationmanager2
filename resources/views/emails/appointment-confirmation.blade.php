@@ -9,13 +9,6 @@
     body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; font-size: 14px; }
     .wrapper { max-width: 700px; margin: 30px auto; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
 
-    /* Header */
-    .header { background: #1c2a3a; text-align: center; padding: 28px 20px; }
-    .header .logo-panel img { display: block; margin: 0; border: 0; max-width: 220px; width: 220px; height: auto; }
-    .header .logo-panel { margin: 0 auto 12px; }
-    .header h1 { color: #fff; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-    .header p { color: #c8d4df; font-size: 13px; margin-top: 4px; }
-
     /* Body */
     .body { padding: 28px 36px; }
     .greeting { margin-bottom: 16px; line-height: 1.7; }
@@ -95,17 +88,21 @@
 <body>
 <div class="wrapper">
 
-  <div class="header">
-    <table class="logo-panel" align="center" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:0 auto 12px auto; border-collapse:collapse;">
-      <tr>
-        <td style="padding:12px 18px; background-color:#ffffff; border-radius:10px; border:1px solid #dbe4ec;">
-          <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" width="220" style="display:block; border:0; outline:none; max-width:220px; width:220px; height:auto;" />
-        </td>
-      </tr>
-    </table>
-    <h1 style="font-size:18px; margin-top:6px;">Bansal Immigration</h1>
-    <p>Appointment Confirmation</p>
-  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse; mso-table-lspace:0; mso-table-rspace:0; background-color:#1c2a3a;">
+    <tr>
+      <td align="center" style="padding:28px 20px 24px 20px; background-color:#1c2a3a;">
+        <table cellpadding="0" cellspacing="0" border="0" role="presentation" align="center" style="margin:0 auto 12px auto; border-collapse:collapse;">
+          <tr>
+            <td align="center" style="padding:12px 18px; background-color:#ffffff; border-radius:10px; border:1px solid #dbe4ec;">
+              <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" style="display:block; border:0; outline:none; text-decoration:none; max-width:260px; width:auto; height:auto;" />
+            </td>
+          </tr>
+        </table>
+        <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:18px; font-weight:bold; color:#ffffff; line-height:1.3;">Bansal Immigration</p>
+        <p style="margin:6px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:13px; color:#c8d4df; line-height:1.4;">Appointment Confirmation</p>
+      </td>
+    </tr>
+  </table>
 
   <div class="body">
 

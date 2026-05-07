@@ -61,18 +61,18 @@
 <div class="wrapper">
 
   {{-- Header --}}
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse; background-color:#1c2a3a;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse; mso-table-lspace:0; mso-table-rspace:0; background-color:#1c2a3a;">
     <tr>
       <td align="center" style="padding:28px 20px 24px 20px; background-color:#1c2a3a;">
         <table cellpadding="0" cellspacing="0" border="0" role="presentation" align="center" style="margin:0 auto 12px auto; border-collapse:collapse;">
           <tr>
             <td align="center" style="padding:12px 18px; background-color:#ffffff; border-radius:10px; border:1px solid #dbe4ec;">
-              <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" width="220" style="display:block; border:0; outline:none; text-decoration:none; max-width:220px; width:220px; height:auto;" />
+              <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" style="display:block; border:0; outline:none; text-decoration:none; max-width:260px; width:auto; height:auto;" />
             </td>
           </tr>
         </table>
-        <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold; color:#ffffff; line-height:1.3;">Bansal Immigration</p>
-        <p style="margin:6px 0 0 0; font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#c8d4df; line-height:1.4;">Appointment Rescheduled</p>
+        <p style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:18px; font-weight:bold; color:#ffffff; line-height:1.3;">Bansal Immigration</p>
+        <p style="margin:6px 0 0 0; font-family:Arial, Helvetica, sans-serif; font-size:13px; color:#c8d4df; line-height:1.4;">Appointment Rescheduled</p>
       </td>
     </tr>
   </table>
