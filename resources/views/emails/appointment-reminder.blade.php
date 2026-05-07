@@ -174,8 +174,6 @@
   </div>
 
   <div class="footer">
-    <p>This is an automated reminder email. Please do not reply directly to this email.</p>
-    <p>Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/Files/consumer_guide_english.pdf" target="_blank">https://www.mara.gov.au/get-help-visa-subsite/Files/consumer_guide_english.pdf</a></p>
     <p class="copy">© {{ date('Y') }} Bansal Immigration. All rights reserved.</p>
   </div>
 

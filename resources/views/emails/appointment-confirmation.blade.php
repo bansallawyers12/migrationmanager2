@@ -11,7 +11,7 @@
 
     /* Header */
     .header { background: #1c2a3a; text-align: center; padding: 28px 20px; }
-    .header img { height: 55px; margin-bottom: 12px; }
+    .header img { max-height: 72px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
     .header h1 { color: #fff; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
     .header p { color: #c8d4df; font-size: 13px; margin-top: 4px; }
 
@@ -95,7 +95,7 @@
 <div class="wrapper">
 
   <div class="header">
-    <h1>🅱 BANSAL</h1>
+    <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" />
     <h1 style="font-size:18px; margin-top:6px;">Bansal Immigration</h1>
     <p>Appointment Confirmation</p>
   </div>
@@ -211,8 +211,6 @@
   </div>
 
   <div class="footer">
-    <p>This is an automated confirmation email. Please do not reply directly to this email.</p>
-    <p>Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/Files/consumer_guide_english.pdf" target="_blank">https://www.mara.gov.au/get-help-visa-subsite/Files/consumer_guide_english.pdf</a></p>
     <p class="copy">© {{ date('Y') }} Bansal Immigration. All rights reserved.</p>
   </div>
 

@@ -66,8 +66,9 @@
       <td align="center" style="padding:28px 20px 24px 20px; background-color:#1c2a3a;">
         <table cellpadding="0" cellspacing="0" border="0" role="presentation" align="center" style="margin:0 auto 12px auto; border-collapse:collapse;">
           <tr>
-            <td align="center" valign="middle" width="36" height="36" style="width:36px; height:36px; background-color:#f5a623; font-family:Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold; color:#ffffff; line-height:36px; text-align:center;">B</td>
-            <td valign="middle" style="padding-left:12px; font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:800; color:#f5a623; letter-spacing:2px; line-height:1.2;">BANSAL</td>
+            <td align="center" style="padding:0;">
+              <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" width="220" style="display:block; border:0; outline:none; text-decoration:none; max-width:220px; height:auto;" />
+            </td>
           </tr>
         </table>
         <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold; color:#ffffff; line-height:1.3;">Bansal Immigration</p>
@@ -190,8 +191,6 @@
   </div>
 
   <div class="footer">
-    <p>This is an automated notification email. Please do not reply directly to this email.</p>
-    <p>Consumer guide: <a href="https://www.mara.gov.au/get-help-visa-subsite/Files/consumer_guide_english.pdf" target="_blank">https://www.mara.gov.au/get-help-visa-subsite/Files/consumer_guide_english.pdf</a></p>
     <p class="copy">&copy; {{ date('Y') }} Bansal Immigration. All rights reserved.</p>
   </div>
 
