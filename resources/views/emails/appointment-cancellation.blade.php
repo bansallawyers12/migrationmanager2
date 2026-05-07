@@ -69,8 +69,8 @@
       <td align="center" style="padding:28px 20px 24px 20px; background-color:#1c2a3a;">
         <table cellpadding="0" cellspacing="0" border="0" role="presentation" align="center" style="margin:0 auto 12px auto; border-collapse:collapse;">
           <tr>
-            <td align="center" style="padding:0;">
-              <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" width="220" style="display:block; border:0; outline:none; text-decoration:none; max-width:220px; height:auto;" />
+            <td align="center" style="padding:12px 18px; background-color:#ffffff; border-radius:10px; border:1px solid #dbe4ec;">
+              <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" width="220" style="display:block; border:0; outline:none; text-decoration:none; max-width:220px; width:220px; height:auto;" />
             </td>
           </tr>
         </table>

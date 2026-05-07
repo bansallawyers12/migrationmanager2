@@ -11,7 +11,8 @@
 
     /* Header */
     .header { background: #1c2a3a; text-align: center; padding: 28px 20px; }
-    .header img { max-height: 72px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
+    .header .logo-panel img { display: block; margin: 0; border: 0; max-width: 220px; width: 220px; height: auto; }
+    .header .logo-panel { margin: 0 auto 12px; }
     .header h1 { color: #fff; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
     .header p { color: #c8d4df; font-size: 13px; margin-top: 4px; }
 
@@ -95,7 +96,13 @@
 <div class="wrapper">
 
   <div class="header">
-    <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" />
+    <table class="logo-panel" align="center" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:0 auto 12px auto; border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 18px; background-color:#ffffff; border-radius:10px; border:1px solid #dbe4ec;">
+          <img src="{{ asset('img/logo.png') }}" alt="Bansal Immigration Consultants" width="220" style="display:block; border:0; outline:none; max-width:220px; width:220px; height:auto;" />
+        </td>
+      </tr>
+    </table>
     <h1 style="font-size:18px; margin-top:6px;">Bansal Immigration</h1>
     <p>Appointment Confirmation</p>
   </div>
