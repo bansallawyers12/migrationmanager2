@@ -6618,7 +6618,7 @@ class ClientsController extends Controller
                     $objs = new ActivitiesLog;
                     $objs->client_id = $clientId;
                     $objs->created_by = Auth::user()->id;
-                    $objs->subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '') . 'Set action for ' . $assigneeName;
+                    $objs->subject = 'Set action for ' . $assigneeName;
                     $objs->description = '<span class="text-semi-bold">' . ($requestData['remindersubject'] ?? '') . '</span><p>' . ($requestData['description'] ?? '') . '</p>';
                     $objs->task_status = 0;
                     $objs->pin = 0;
@@ -6922,7 +6922,7 @@ class ClientsController extends Controller
                 $activityLog = new ActivitiesLog;
                 $activityLog->client_id = $clientId;
                 $activityLog->created_by = Auth::user()->id;
-                $activityLog->subject = ($clientLabel !== '' ? $clientLabel . ' — ' : '') . 'Updated action for ' . $assigneeName;
+                $activityLog->subject = 'Updated action for ' . $assigneeName;
                 $activityLog->description = '<span class="text-semi-bold">' . ($action->task_group ?? '') . '</span><p>' . ($action->description ?? '') . '</p>';
                 $activityLog->task_status = $action->status === '1' ? 1 : 0;
                 $activityLog->pin = 0;

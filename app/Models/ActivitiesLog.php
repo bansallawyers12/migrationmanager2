@@ -17,6 +17,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action)
  * - followup_date (field name preserved): The scheduled date for the action
  * - activity_type: Can include 'followup_scheduled', 'followup_completed', etc. (these refer to Actions in the UI)
+ * - Action assign/complete log subjects (e.g. "Set action for …") should not embed the client display name; the row is already tied to client_id and the UI prepends the actor (staff) name.
  * 
  * Note: Field names contain "task" and "followup" for database compatibility but refer to Actions in the UI
  */

@@ -27,6 +27,15 @@
         }
     }
 @endphp
+@php
+    $feedStaffDisplay = 'NA';
+    if ($admin) {
+        $feedStaffDisplay = trim(($admin->first_name ?? '') . ' ' . ($admin->last_name ?? ''));
+        if ($feedStaffDisplay === '') {
+            $feedStaffDisplay = 'NA';
+        }
+    }
+@endphp
 
 <li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }} activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass }}" id="activity_{{ $activity->id }}" data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
     <span class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
@@ -58,7 +67,7 @@
         @if($activity->activity_type === 'stage')
             <div class="feed-item-stage">
                 <div class="feed-item-stage-header">
-                    <span class="feed-item-staff">{{ $admin->first_name ?? 'NA' }}{{ isset($admin->last_name) ? ' ' . $admin->last_name : '' }}</span>
+                    <span class="feed-item-staff">{{ $feedStaffDisplay }}</span>
                     <span class="feed-timestamp">{{ date('d M Y, H:i', strtotime($activity->created_at)) }}</span>
                 </div>
                 <div class="feed-item-stage-body">
@@ -70,7 +79,7 @@
                 @if(\App\Models\ActivitiesLog::displaySubjectWithoutStaffPrefix($activity->activity_type ?? null, $activity->subject ?? null))
                 <strong>{{ $activity->subject ?? '' }}</strong>
                 @else
-                <strong>{{ $admin->first_name ?? 'NA' }}  {{ $activity->subject ?? '' }}</strong>
+                <strong>{{ $feedStaffDisplay }}  {{ $activity->subject ?? '' }}</strong>
                 @endif
                 @if(str_contains($activity->subject ?? '', 'added a note') || str_contains($activity->subject ?? '', 'updated a note'))
                     <i class="fas fa-ellipsis-v convert-activity-to-note" 
