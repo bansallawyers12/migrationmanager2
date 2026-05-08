@@ -112,8 +112,10 @@ class ClientNotesController extends Controller
         }
         
         try {
-            $saved = $obj->save();
-            
+            $saved = $isUpdate
+                ? Note::withoutTimestamps(fn () => $obj->save())
+                : $obj->save();
+
             if($saved){
                 // BUGFIX #5: Log activity for BOTH client and lead notes (not just client)
                 if($request->vtype == 'client' || $request->vtype == 'lead'){

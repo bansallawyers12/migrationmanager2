@@ -24,6 +24,38 @@ class ActivitySearchController extends Controller
     }
 
     /**
+     * activities_logs.use_for is VARCHAR (staff id as text or labels like "matter").
+     * PostgreSQL rejects varchar = bigint in JOIN; compare as text on pgsql.
+     */
+    private function applyActivitySearchJoins(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id');
+
+        $driver = DB::connection()->getDriverName();
+        $query->leftJoin('staff as assignee', function ($join) use ($driver) {
+            if ($driver === 'pgsql') {
+                $join->whereRaw('assignee.id::text = activities_logs.use_for');
+            } else {
+                $join->on('activities_logs.use_for', '=', 'assignee.id');
+            }
+        });
+
+        $query->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
+    }
+
+    /**
+     * Case-insensitive substring match for subject/description (works on MySQL & PostgreSQL).
+     */
+    private function applyKeywordFilter(\Illuminate\Database\Eloquent\Builder $query, string $keyword): void
+    {
+        $pattern = '%' . mb_strtolower($keyword, 'UTF-8') . '%';
+        $query->where(function ($q) use ($pattern) {
+            $q->whereRaw('LOWER(activities_logs.subject) LIKE ?', [$pattern])
+                ->orWhereRaw('LOWER(activities_logs.description) LIKE ?', [$pattern]);
+        });
+    }
+
+    /**
      * Display the activity search page
      *
      * @return \Illuminate\Http\Response
@@ -89,10 +121,8 @@ class ActivitySearchController extends Controller
                     'client.first_name as client_first_name',
                     'client.last_name as client_last_name',
                     'client.email as client_email'
-                )
-                ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
-                ->leftJoin('staff as assignee', 'activities_logs.use_for', '=', 'assignee.id')
-                ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
+                );
+            $this->applyActivitySearchJoins($query);
 
             // Filter by Assigner (created_by)
             if ($request->filled('assigner_id')) {
@@ -137,21 +167,15 @@ class ActivitySearchController extends Controller
 
             // Filter by Keyword (search in subject and description)
             if ($request->filled('keyword')) {
-                $keyword = $request->keyword;
-                $query->where(function($q) use ($keyword) {
-                    $q->where('activities_logs.subject', 'ILIKE', '%' . $keyword . '%')
-                      ->orWhere('activities_logs.description', 'ILIKE', '%' . $keyword . '%');
-                });
+                $this->applyKeywordFilter($query, $request->keyword);
             }
-
-            // Get total count
-            $totalActivities = $query->count();
 
             // Order by most recent first
             $query->orderBy('activities_logs.created_at', 'DESC');
 
-            // Paginate results
+            // Paginate results (paginator runs its own COUNT internally)
             $activities = $query->paginate(50)->appends($request->except('page'));
+            $totalActivities = $activities->total();
         }
 
         return view('AdminConsole.system.activity-search.index', compact(
@@ -187,10 +211,8 @@ class ActivitySearchController extends Controller
                 'client.first_name as client_first_name',
                 'client.last_name as client_last_name',
                 'client.email as client_email'
-            )
-            ->leftJoin('staff as creator', 'activities_logs.created_by', '=', 'creator.id')
-            ->leftJoin('staff as assignee', 'activities_logs.use_for', '=', 'assignee.id')
-            ->leftJoin('admins as client', 'activities_logs.client_id', '=', 'client.id');
+            );
+        $this->applyActivitySearchJoins($query);
 
         // Apply same filters as index
         if ($request->filled('assigner_id')) {
@@ -228,11 +250,7 @@ class ActivitySearchController extends Controller
         }
 
         if ($request->filled('keyword')) {
-            $keyword = $request->keyword;
-            $query->where(function($q) use ($keyword) {
-                $q->where('activities_logs.subject', 'ILIKE', '%' . $keyword . '%')
-                  ->orWhere('activities_logs.description', 'ILIKE', '%' . $keyword . '%');
-            });
+            $this->applyKeywordFilter($query, $request->keyword);
         }
 
         // Limit export to 5000 records
