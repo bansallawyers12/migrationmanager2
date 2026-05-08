@@ -32,7 +32,7 @@ return [
     'matter_discontinue_role_ids' => (($__matterDiscontinueRoles = array_values(array_filter(array_map(
         'intval',
         explode(',', (string) env('CRM_MATTER_DISCONTINUE_ROLE_IDS', '1,17,16'))
-    ), static fn (int $id) => $id > 0))) !== []
+    ), static fn (int $id) => $id > 0))) !== [])
         ? $__matterDiscontinueRoles
         : [1, 17, 16],
 
@@ -112,9 +112,9 @@ return [
     'lead_list_assigned_only_role_ids' => (($__leadAssignedRoles = array_values(array_filter(array_map(
         'intval',
         explode(',', (string) env('CRM_LEAD_LIST_ASSIGNED_ONLY_ROLE_IDS', '13,14,15,16'))
-    ), static fn (int $id) => $id > 0))) !== []
+    ), static fn (int $id) => $id > 0))) !== [])
         ? $__leadAssignedRoles
-        : [13, 14, 15, 16]),
+        : [13, 14, 15, 16],
 
     /*
     |--------------------------------------------------------------------------
@@ -176,8 +176,8 @@ return [
     'front_desk_checkin_role_ids' => (($__fdCheckinRoles = array_values(array_filter(array_map(
         'intval',
         explode(',', (string) env('CRM_FRONT_DESK_CHECKIN_ROLE_IDS', '1,12,14,17'))
-    ), static fn (int $id) => $id > 0))) !== []
+    ), static fn (int $id) => $id > 0))) !== [])
         ? $__fdCheckinRoles
-        : [1, 12, 14, 17]),
+        : [1, 12, 14, 17],
 
 ];
