@@ -184,7 +184,7 @@
                                                 }
                                                 $portalAdminForDiscontinue = Auth::guard('admin')->user();
                                                 $portalCanDiscontinue = $portalAdminForDiscontinue
-                                                    && in_array((int) ($portalAdminForDiscontinue->role ?? 0), [1, 17], true);
+                                                    && in_array((int) ($portalAdminForDiscontinue->role ?? 0), config('crm.matter_discontinue_role_ids', [1, 17, 16]), true);
                                             @endphp
                                             <button class="btn btn-success btn-sm" id="proceed-to-next-stage" data-matter-id="{{ $selectedMatter->id }}" data-next-stage-name="{{ $nextStageName ?? '' }}" data-current-stage-name="{{ $currentStageName ?? '' }}" data-is-verification-stage="{{ isset($isVerificationStage) && $isVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ isset($canVerifyAndProceed) && $canVerifyAndProceed ? '1' : '0' }}" title="{{ $portalNextBtnTitle }}" {{ $portalNextBtnDisabled ? 'disabled' : '' }}>
                                                 Proceed to Next Stage <i class="fas fa-angle-right"></i>

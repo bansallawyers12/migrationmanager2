@@ -19,6 +19,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Matter discontinue / reopen: allowed staff roles (staff.role → user_roles.id)
+    |--------------------------------------------------------------------------
+    |
+    | Who may set a matter inactive (discontinue) or active again (reopen / legacy revert).
+    | Default: Super Admin (1), Admin (17), Migration Agent (16).
+    | Override via CRM_MATTER_DISCONTINUE_ROLE_IDS e.g. "1,17,16,12".
+    | If the env value parses to an empty list, falls back to [1, 17, 16] so access is not
+    | accidentally locked out for all staff.
+    |
+    */
+    'matter_discontinue_role_ids' => (($__matterDiscontinueRoles = array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_MATTER_DISCONTINUE_ROLE_IDS', '1,17,16'))
+    ), static fn (int $id) => $id > 0))) !== []
+        ? $__matterDiscontinueRoles
+        : [1, 17, 16],
+
+    /*
+    |--------------------------------------------------------------------------
     | Person Assisting role IDs (user_roles.id)
     |--------------------------------------------------------------------------
     |

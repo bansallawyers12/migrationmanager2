@@ -124,10 +124,10 @@
                             <div class="stage-navigation-buttons">
                                 @php
                                     $workflowIsDiscontinued = ($workflowSelectedMatter->matter_status ?? 1) == 0;
-                                    $workflowCanReopen = ((Auth::guard('admin')->user()->role ?? 0) == 1);
+                                    $workflowCanReopen = in_array((int) (Auth::guard('admin')->user()->role ?? 0), config('crm.matter_discontinue_role_ids', [1, 17, 16]), true);
                                 @endphp
                                 @if($workflowIsDiscontinued)
-                                    {{-- Discontinued matter: show Reopen (Admin only), Change Workflow --}}
+                                    {{-- Discontinued matter: show Reopen (same roles as discontinue), Change Workflow --}}
                                     @if($workflowCanReopen)
                                     <button class="btn btn-primary btn-sm matter-detail-reopen-btn" id="workflow-tab-reopen" data-matter-id="{{ $workflowSelectedMatter->id }}" title="Reopen Matter">
                                         <i class="fas fa-redo"></i> Reopen
@@ -165,7 +165,7 @@
                                         }
                                         $workflowAdminForDiscontinue = Auth::guard('admin')->user();
                                         $workflowCanDiscontinue = $workflowAdminForDiscontinue
-                                            && in_array((int) ($workflowAdminForDiscontinue->role ?? 0), [1, 17], true);
+                                            && in_array((int) ($workflowAdminForDiscontinue->role ?? 0), config('crm.matter_discontinue_role_ids', [1, 17, 16]), true);
                                     @endphp
                                     <button class="btn btn-success btn-sm" id="workflow-tab-proceed-to-next-stage" data-matter-id="{{ $workflowSelectedMatter->id }}" data-next-stage-name="{{ $workflowNextStageName ?? '' }}" data-current-stage-name="{{ $workflowCurrentStageName ?? '' }}" data-is-verification-stage="{{ $workflowIsVerificationStage ? '1' : '0' }}" data-can-verify-and-proceed="{{ $workflowCanVerifyAndProceed ? '1' : '0' }}" title="{{ $workflowNextBtnTitle }}" {{ $workflowNextBtnDisabled ? 'disabled' : '' }}>
                                         Proceed to Next Stage <i class="fas fa-angle-right"></i>

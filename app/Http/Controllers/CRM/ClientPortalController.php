@@ -4209,10 +4209,10 @@ class ClientPortalController extends Controller
 	public function discontinueClientMatter(Request $request)
 	{
 		try {
-			if (! $this->canCurrentUserDiscontinueMatter()) {
+			if (! $this->currentStaffMayDiscontinueOrReopenMatter()) {
 				return response()->json([
 					'status' => false,
-					'message' => 'Only Super admin or Admin users can discontinue matters.'
+					'message' => 'Only Super admin, Admin, or Migration Agent users can discontinue matters.'
 				], 403);
 			}
 
@@ -4342,6 +4342,13 @@ class ClientPortalController extends Controller
 	public function reopenClientMatter(Request $request)
 	{
 		try {
+			if (! $this->currentStaffMayDiscontinueOrReopenMatter()) {
+				return response()->json([
+					'status' => false,
+					'message' => 'Only Super admin, Admin, or Migration Agent users can reopen matters.'
+				], 403);
+			}
+
 			$matterId = $request->input('matter_id');
 
 			if (!$matterId) {
@@ -4793,10 +4800,10 @@ class ClientPortalController extends Controller
 	}
 
 	public function discontinueMatter(Request $request){
-		if (! $this->canCurrentUserDiscontinueMatter()) {
+		if (! $this->currentStaffMayDiscontinueOrReopenMatter()) {
 			echo json_encode([
 				'status' => false,
-				'message' => 'Only Super admin or Admin users can discontinue matters.'
+				'message' => 'Only Super admin, Admin, or Migration Agent users can discontinue matters.'
 			]);
 			return;
 		}
@@ -4811,7 +4818,10 @@ class ClientPortalController extends Controller
 		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
 	}
 
-	private function canCurrentUserDiscontinueMatter(): bool
+	/**
+	 * Roles allowed to discontinue a matter, reopen it, or legacy-revert it (config: crm.matter_discontinue_role_ids).
+	 */
+	private function currentStaffMayDiscontinueOrReopenMatter(): bool
 	{
 		$user = Auth::user();
 		if (! $user) {
@@ -4820,10 +4830,18 @@ class ClientPortalController extends Controller
 
 		$role = (int) ($user->role ?? 0);
 
-		return in_array($role, [1, 17], true);
+		return in_array($role, config('crm.matter_discontinue_role_ids', [1, 17, 16]), true);
 	}
 
 	public function revertMatter(Request $request){
+		if (! $this->currentStaffMayDiscontinueOrReopenMatter()) {
+			echo json_encode([
+				'status' => false,
+				'message' => 'Only Super admin, Admin, or Migration Agent users can revert matters.'
+			]);
+			return;
+		}
+
 		$obj = ClientMatter::with('workflowStage')->find($request->revapp_id ?? $request->client_matter_id);
 		if (!$obj) {
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
