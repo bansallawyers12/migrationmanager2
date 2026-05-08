@@ -394,7 +394,7 @@ class ClientNotesController extends Controller
                     <span class="author-updated-date-time"><?php echo date('d/m/Y h:i A', strtotime($list->updated_at));?></span>
                     <div class="note-toggle-btn-div">
                         <div class="dropdown">
-                            <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button class="btn btn-link dropdown-toggle note-toggle-btn-div-type" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-ellipsis-v"></i>
                             </button>
                             <div class="dropdown-menu">
@@ -491,16 +491,19 @@ class ClientNotesController extends Controller
     {
 		$noteId = $request->input('note_id');
 
-		if (!$noteId || !Note::where('id', $noteId)->exists()) {
+		$note = $noteId ? Note::find($noteId) : null;
+
+		if (!$note) {
 			return response()->json(['status' => false, 'message' => 'Record not found']);
 		}
 
-		$note = Note::find($noteId);
 		$currentPin = (int) $note->pin;
 		$newPin = $currentPin ? 0 : 1;
 
-		$note->pin = $newPin;
-		$note->save();
+		Note::withoutTimestamps(function () use ($note, $newPin) {
+			$note->pin = $newPin;
+			$note->save();
+		});
 
 		return response()->json([
 			'status' => true,
