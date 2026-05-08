@@ -11030,7 +11030,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"message\": \"Hello, world\"\n}"
+							"raw": "{\n    \"message\": \"What offices do you have?\",\n    \"conversation\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Hi\"\n        },\n        {\n            \"role\": \"assistant\",\n            \"content\": \"Hi! Thank you for contacting Bansal Immigration Consultants. How can we assist you today?\"\n        }\n    ]\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/chatbot",
@@ -11041,7 +11041,7 @@
 								"chatbot"
 							]
 						},
-						"description": "Send a chat message to Claude via the server (Anthropic Messages API). Configure ANTHROPIC_API_KEY in .env. Optional JSON fields: model (default claude-sonnet-4-6), max_tokens (default 1024)."
+						"description": "Send a chat message to Claude via the server (Anthropic Messages API). Requires Bearer auth (auth:sanctum). Set ANTHROPIC_API_KEY in .env.\n\nBody:\n- message (required): latest user message.\n- conversation (optional): prior turns only — array of {role, content} starting with user, alternating, ending with assistant. Omit or [] for first message.\n- model (optional): default claude-sonnet-4-6.\n- max_tokens (optional): default 1024.\n\nSystem prompt: resources/prompts/bansal_immigration_chatbot_system.txt (override path with CHATBOT_SYSTEM_PROMPT_PATH). History length cap: CHATBOT_MAX_CONVERSATION_MESSAGES (default 24)."
 					},
 					"response": []
 				}
