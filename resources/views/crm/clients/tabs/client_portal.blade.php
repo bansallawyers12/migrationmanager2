@@ -148,10 +148,10 @@
                                     <div class="stage-navigation-buttons">
                                         @php
                                             $portalIsDiscontinued = ($selectedMatter->matter_status ?? 1) == 0;
-                                            $portalCanReopen = ((Auth::guard('admin')->user()->role ?? 0) == 1);
+                                            $portalCanReopen = in_array((int) (Auth::guard('admin')->user()->role ?? 0), config('crm.matter_discontinue_role_ids', [1, 17, 16]), true);
                                         @endphp
                                         @if($portalIsDiscontinued)
-                                            {{-- Discontinued matter: show Reopen (Admin only) - styled like matter list page --}}
+                                            {{-- Discontinued matter: show Reopen (same roles as discontinue) --}}
                                             @if($portalCanReopen)
                                             <button class="btn btn-primary btn-sm matter-detail-reopen-btn client-portal-reopen-btn" id="client-portal-reopen" data-matter-id="{{ $selectedMatter->id }}" title="Reopen Matter">
                                                 <i class="fas fa-redo"></i> Reopen

@@ -259,6 +259,7 @@
                             if ($currentSort !== $column) return '<i class="fas fa-sort text-muted"></i>';
                             return $currentDirection === 'asc' ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>';
                         };
+                        $closedMattersListCanReopen = in_array((int) (Auth::user()->role ?? 0), config('crm.matter_discontinue_role_ids', [1, 17, 16]), true);
                     @endphp
                     <div class="table-responsive">
                         <table class="table">
@@ -273,7 +274,7 @@
                                     <th class="thCls">Status</th>
                                     <th class="thCls sortable-header"><a href="{{ $buildSortUrl('cm.created_at') }}">Created At {!! $sortIcon('cm.created_at') !!}</a></th>
                                     <th class="thCls">Office</th>
-                                    @if(Auth::user()->role == 1)
+                                    @if($closedMattersListCanReopen)
                                     <th class="thCls">Reopen</th>
                                     @endif
                                 </tr>
@@ -307,7 +308,7 @@
                                                     <span class="badge badge-warning" style="font-size: 11px;"><i class="fas fa-exclamation-triangle"></i> Not Assigned</span>
                                                 @endif
                                             </td>
-                                            @if(Auth::user()->role == 1)
+                                            @if($closedMattersListCanReopen)
                                             <td class="tdCls">
                                                 @if($isDiscontinued)
                                                 <button class="btn btn-primary btn-sm closed-matter-reopen" type="button" data-matter-id="{{ $list->id }}"><i class="fas fa-redo"></i> Reopen</button>
@@ -321,7 +322,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="{{ Auth::user()->role == 1 ? '10' : '9' }}" style="text-align: center; padding: 20px;">No Record Found</td>
+                                        <td colspan="{{ $closedMattersListCanReopen ? '10' : '9' }}" style="text-align: center; padding: 20px;">No Record Found</td>
                                     </tr>
                                 @endif
                             </tbody>
