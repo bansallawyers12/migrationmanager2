@@ -339,12 +339,9 @@
 						</div>
 
                         <div class="col-12 col-md-12 col-lg-12">
-                            <!--<div class="Invoic_no_cls" style="text-align: center;">
-                                <b>Invoice No -
-                                    <span class="unique_invoice_no"></span>
-                                </b>
-                                <input type="hidden" name="invoice_no" class="invoice_no" value="">
-                            </div>-->
+                            <div class="Invoic_no_cls" style="text-align: center;">
+                                <b>Invoice No – <span class="text-muted">Auto-assigned on save</span></b>
+                            </div>
 							<div class="form-group">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
                                     <thead>
@@ -617,10 +614,7 @@
 
                         <div class="col-12 col-md-12 col-lg-12">
                             <div class="Invoic_no_cls" style="text-align: center;">
-                                <b>Invoice No -
-                                    <span class="unique_invoice_no"></span>
-                                </b>
-                                <input type="hidden" name="invoice_no" class="invoice_no" value="">
+                                <b>Invoice No – <span class="text-muted">Auto-assigned on save</span></b>
                             </div>
 							<div class="form-group">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">
@@ -873,10 +867,7 @@
 
 						<div class="col-12 col-md-12 col-lg-12">
                             <div class="Invoic_no_cls" style="text-align: center;">
-                                <b>Invoice No -
-                                    <span class="unique_invoice_no"></span>
-                                </b>
-                                <input type="hidden" name="invoice_no" class="invoice_no" value="">
+                                <b>Invoice No – <span class="text-muted">Auto-assigned on save</span></b>
                             </div>
 							<div class="form-group">
                                 <table border="1" style="margin-bottom:0rem !important;" class="table text_wrap table-striped table-hover table-md vertical_align">

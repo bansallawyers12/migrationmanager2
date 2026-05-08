@@ -1086,13 +1086,13 @@ function customValidate(formName, savetype = '')
 													if(subArray2.save_type == 'draft'){
 														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
 														var draftlink2 = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray2.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.invoice_no+" "+draftlink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
+														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.trans_no+" "+draftlink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
 													}
 													else if(subArray2.save_type == 'final') {
 														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
 														var invoiceUrl2 = "/clients/genInvoice/"+subArray2.receipt_id;
 														var finallink2 = '<a target="_blank" class="link-primary" href="'+invoiceUrl2+'"><i class="fas fa-file-pdf"></i></a>';
-														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.invoice_no+" "+finallink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
+														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.trans_no+" "+finallink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
 													}
 												});
 												$('.productitemList_invoice tr:last').before(trRows_invoice2);
@@ -1108,12 +1108,12 @@ function customValidate(formName, savetype = '')
 												//console.log('save_type='+subArray.save_type);
 												if(subArray.save_type == 'draft'){
 													var draftlink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-													var trRows_invoice = "<td>"+subArray.invoice_no+" "+draftlink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
+													var trRows_invoice = "<td>"+subArray.trans_no+" "+draftlink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
 												}
 												else if(subArray.save_type == 'final') {
 													var invoiceUrl = "/clients/genInvoice/"+subArray.receipt_id;
 													var finallink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
-													var trRows_invoice = "<td>"+subArray.invoice_no+" "+finallink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
+													var trRows_invoice = "<td>"+subArray.trans_no+" "+finallink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
 												}
 												$('#invoiceTrRow_'+subArray.id).append(trRows_invoice);
 											});

@@ -427,8 +427,6 @@
 
                         $('#function_type').val("add");
 
-                        getTopInvoiceNoFromDB(3);
-
                     }
 
                     $('#client_matter_id_invoice').val(selectedMatter);
@@ -555,30 +553,6 @@ success: function(response){
                     } else {
 
                         $('#invoice_top_value_db').val(obj.record_count);
-
-                    }
-
-
-
-                    if(obj.max_receipt_id >0){
-
-                        var max_receipt_id = obj.max_receipt_id +1;
-
-                        max_receipt_id = "Inv000"+max_receipt_id;
-
-                        $('.unique_invoice_no').text(max_receipt_id);
-
-                        $('.invoice_no').val(max_receipt_id);
-
-                    } else {
-
-                        var max_receipt_id = obj.max_receipt_id +1;
-
-                        max_receipt_id = "Inv000"+max_receipt_id;
-
-                        $('.unique_invoice_no').text(max_receipt_id);
-
-                        $('.invoice_no').val(max_receipt_id);
 
                     }
 
@@ -2752,13 +2726,14 @@ success: function(response) {
                                 });
 
                                 if(index <1 ){
-
-                                    $('.invoice_no').val(subArray.invoice_no);
-
-                                    $('.unique_invoice_no').text(subArray.invoice_no);
-
+                                    var invNo = subArray.trans_no || subArray.invoice_no || '';
+                                    if ($('.unique_invoice_no').length) {
+                                        $('.unique_invoice_no').text(invNo);
+                                    }
+                                    if ($('.invoice_no').length) {
+                                        $('.invoice_no').val(invNo);
+                                    }
                                     $('#receipt_id').val(subArray.receipt_id);
-
                                 }
 
                             });
@@ -2932,13 +2907,14 @@ success: function(response) {
 
 
                                 if (index < 1) {
-
-                                    $('.invoice_no').val(subArray.invoice_no);
-
-                                    $('.unique_invoice_no').text(subArray.invoice_no);
-
+                                    var invNo = subArray.trans_no || subArray.invoice_no || '';
+                                    if ($('.unique_invoice_no').length) {
+                                        $('.unique_invoice_no').text(invNo);
+                                    }
+                                    if ($('.invoice_no').length) {
+                                        $('.invoice_no').val(invNo);
+                                    }
                                     $('#receipt_id').val(subArray.receipt_id);
-
                                 }
 
                             });
