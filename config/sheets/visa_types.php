@@ -214,7 +214,7 @@ return [
         'session_prefix' => 'parents_sheet_',
 
         'matter_nick_names' => ['cp', 'ap', 'prt'],
-        'matter_title_patterns' => ['103', '143', '173', '864', '884', '870'],
+        'matter_title_patterns' => ['103', '143', '173', '804', '838', '864', '884', '870'],
 
         'ongoing_stages' => [
             'Cost Agreement, form 956 and First email Sent',
