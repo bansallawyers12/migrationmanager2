@@ -383,22 +383,19 @@
                                         @foreach($rows as $row)
                                             @php
                                                 $isLead = !empty($row->is_lead);
-                                                if ($isLead) {
-                                                    $detailUrl = route('leads.detail', ['id' => $row->client_id]);
-                                                    $matterId = '';
-                                                    $emailReminderUrl = $detailUrl . '?open_email_reminder=1';
-                                                    $smsReminderUrl = $detailUrl . '?open_sms_reminder=1';
-                                                } else {
-                                                    $encodedId = base64_encode(convert_uuencode($row->client_id));
-                                                    $detailUrl = route('clients.detail', ['client_id' => $encodedId, 'client_unique_matter_ref_no' => $row->client_unique_matter_no ?? '']);
-                                                    $matterId = $row->matter_internal_id ?? '';
-                                                    $emailReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_email_reminder=1' : '');
-                                                    $smsReminderUrl = $detailUrl . ($matterId ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '');
-                                                }
+                                                // Same unified CRM detail for leads and clients (Admin record types client | lead).
+                                                $encodedId = base64_encode(convert_uuencode((string)(int) $row->client_id));
+                                                $detailUrl = route('clients.detail', [
+                                                    'client_id' => $encodedId,
+                                                    'client_unique_matter_ref_no' => $row->client_unique_matter_no ?? '',
+                                                ]);
+                                                $matterId = $row->matter_internal_id ?? '';
+                                                $emailReminderUrl = $detailUrl . (!empty($matterId) ? '?matterId=' . $matterId . '&open_email_reminder=1' : '?open_email_reminder=1');
+                                                $smsReminderUrl = $detailUrl . (!empty($matterId) ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '?open_sms_reminder=1');
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $detailUrl }}'">
                                                 <td class="pin-cell" onclick="event.stopPropagation();">
-                                                    @if(!$isLead)
+                                                    @if(!$isLead || !empty($row->matter_internal_id))
                                                     <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}" 
                                                        data-client-id="{{ $row->client_id }}" 
                                                        data-matter-id="{{ $matterId }}"
