@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Models\Country;
 use App\Models\Matter;
 use App\Models\AnzscoOccupation;
+use Exception;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -272,6 +274,82 @@ class ClientPortalCommonListingController extends BaseController
             } catch (\Exception $e2) {
                 return $this->sendError('An error occurred: ' . $e2->getMessage(), [], 500);
             }
+        }
+    }
+
+    /**
+     * Full occupation list from Bansal CRM (bulk reference data).
+     * GET /api/occupation-all
+     *
+     * Proxies GET `{BANSAL_API_BASE_URL}/occupation-all` with server-side token.
+     * Response body and status are passed through from the upstream API (often large JSON).
+     */
+    public function getOccupationAll()
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+
+            if (empty($config['apiToken'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env',
+                ], 500);
+            }
+
+            $effectiveTimeout = max($config['timeout'], 120);
+
+            $response = Http::timeout($effectiveTimeout)
+                ->withToken($config['apiToken'])
+                ->acceptJson()
+                ->get("{$config['baseUrl']}/occupation-all");
+
+            if ($response->failed()) {
+                Log::error('Bansal API occupation-all error', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to load occupations from external API',
+                    'error' => $response->status() === 404 ? 'Occupation list not found' : 'API request failed',
+                ], $response->status());
+            }
+
+            return response()->json($response->json(), $response->status());
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API occupation-all request error', [
+                'status' => $response?->status(),
+                'error' => $message,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to load all occupations',
+                'error' => 'API request failed',
+            ], $response?->status() ?: 500);
+        } catch (Exception $e) {
+            Log::error('Bansal API occupation-all error', [
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while loading all occupations',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 

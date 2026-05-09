@@ -948,5 +948,91 @@ class OthersController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * List all postcodes (full reference dataset)
+     * GET /api/postcode-all
+     *
+     * No query parameters. Returns the same payload as the upstream Bansal CRM endpoint
+     * (large JSON — typically tens of thousands of suburb/postcode rows and a count).
+     */
+    public function getPostcodeAll()
+    {
+        try {
+            $config = $this->getBansalApiConfig();
+            $baseUrl = $config['baseUrl'];
+            $apiToken = $config['apiToken'];
+            $timeout = (int) $config['timeout'];
+
+            if (empty($apiToken)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bansal API token not configured. Set BANSAL_API_TOKEN in .env'
+                ], 500);
+            }
+
+            // Full list can be slow / large; allow at least 120s when default is small.
+            $effectiveTimeout = max($timeout, 120);
+
+            $response = Http::timeout($effectiveTimeout)
+                ->withToken($apiToken)
+                ->acceptJson()
+                ->get("{$baseUrl}/postcode-all");
+
+            if ($response->failed()) {
+                Log::error('Bansal API List All Postcodes Error', [
+                    'method' => 'getPostcodeAll',
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to load postcodes from external API',
+                    'error' => $response->status() === 404 ? 'Postcode list not found' : 'API request failed'
+                ], $response->status());
+            }
+
+            return response()->json($response->json(), $response->status());
+
+        } catch (RequestException $e) {
+            $response = $e->response;
+            $responseBody = $response?->json();
+            $message = null;
+
+            if (is_array($responseBody)) {
+                $message = $responseBody['message']
+                    ?? ($responseBody['error']['message'] ?? null);
+            }
+
+            $message = $message ?: $response?->body() ?: $e->getMessage();
+
+            Log::error('Bansal API List All Postcodes Request Error', [
+                'method' => 'getPostcodeAll',
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+                'error' => $message,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Failed to load all postcodes',
+                'error' => 'API request failed'
+            ], $response?->status() ?: 500);
+
+        } catch (Exception $e) {
+            Log::error('Bansal API List All Postcodes Error', [
+                'method' => 'getPostcodeAll',
+                'error_type' => get_class($e),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while loading all postcodes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

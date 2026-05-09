@@ -7251,6 +7251,62 @@
 							"body": "{\n    \"success\": false,\n    \"message\": \"Occupation not found\"\n}"
 						}
 					]
+				},
+				{
+					"name": "37. Occupation All",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/occupation-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"occupation-all"
+							]
+						},
+						"description": "Returns the full occupation reference list from the Bansal CRM API (large JSON). No query parameters.\n\n**Auth:** None on the request — your app uses `BANSAL_API_TOKEN` on the server to call `https://www.bansalimmigration.com.au/api/crm/occupation-all`.\n\n**Response:** Pass-through from upstream (status + body).\n\n**Errors:** `500` if `BANSAL_API_TOKEN` is missing or upstream fails.\n\n**Note:** Response can be large; ensure adequate `BANSAL_API_TIMEOUT` if needed."
+					},
+					"response": [
+						{
+							"name": "Success Response (shape example)",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/occupation-all",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"occupation-all"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\"anzsco_code\": \"261313\", \"occupation_title\": \"Software Engineer\"}\n]"
+						}
+					]
 				}
 			]
 		},
@@ -8540,6 +8596,62 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"postcode\": \"3002\",\n        \"suburb\": \"EAST MELBOURNE\",\n        \"state\": \"VIC\",\n        \"regional_status\": false,\n        \"additional_info\": {}\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List All Postcodes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/postcode-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"postcode-all"
+							]
+						},
+						"description": "Returns the full postcode reference list from the external Bansal API (large response — often ~18k+ rows and a `count` field).\n\n**Auth:** Public — no `Authorization` header required on this route. Your server uses `BANSAL_API_TOKEN` to call upstream.\n\n**Query Parameters:** None.\n\n**Response:**\n- `200`: JSON array of postcode rows (`id`, `suburb`, `postcode`, `state`, etc.) plus `count`\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies `GET https://www.bansalimmigration.com.au/api/crm/postcode-all`. Consider increasing `BANSAL_API_TIMEOUT` if the upstream is slow."
+					},
+					"response": [
+						{
+							"name": "Success Response (truncated shape)",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/postcode-all",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"postcode-all"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\"id\": 18523, \"suburb\": \"GOSNELLS\", \"postcode\": \"6990\", \"state\": \"WA\"}\n]"
 						}
 					]
 				}

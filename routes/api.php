@@ -51,6 +51,7 @@ Route::get('/visa-types', [ClientPortalCommonListingController::class, 'getVisaT
 // Search Occupations API (public route). Trailing-slash /api/... URLs are not 301’d by Apache (see public/.htaccess) so CORS stays on the JSON response.
 Route::get('/search-occupation', [ClientPortalCommonListingController::class, 'searchOccupationDetail']);
 Route::get('/occupation-result', [ClientPortalCommonListingController::class, 'getOccupationResult']);
+Route::get('/occupation-all', [ClientPortalCommonListingController::class, 'getOccupationAll']);
 
 // Appointment Variable Lists API (public route)
 Route::get('/appointment-variable-lists', [ClientPortalAppointmentController::class, 'getAppointmentVariableLists']);
@@ -145,6 +146,9 @@ Route::post('/payments/create-payment-intent', function (Request $request) {
 // Blog routes (list is public; detail requires authentication — see auth:sanctum group)
 Route::get('/blogs/list', [OthersController::class, 'getBlogList']);
 
+// Full Australian postcode list (public — proxies Bansal; postcode-search / postcode-result remain Sanctum)
+Route::get('/postcode-all', [OthersController::class, 'getPostcodeAll']);
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [ClientPortalController::class, 'logout']);
@@ -168,7 +172,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Occupation Finder (authenticated)
     Route::get('/occupation-finder', [OthersController::class, 'searchOccupation']);
 
-    // Postcode Checker (authenticated)
+    // Postcode Checker (authenticated — full list is public: GET /postcode-all)
     Route::get('/postcode-search', [OthersController::class, 'searchPostcode']);
     Route::get('/postcode-result', [OthersController::class, 'getPostcodeResult']);
 
