@@ -38,7 +38,7 @@
 @endphp
 
 <li class="feed-item feed-item--{{ $activity->activity_type === 'stage' ? 'stage' : 'email' }} activity {{ $activity->activity_type ? 'activity-type-' . $activity->activity_type : '' }} {{ $noteTypeClass }}" id="activity_{{ $activity->id }}" data-created-at="{{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d') : '' }}">
-    <span class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
+    <span class="feed-icon {{ $activity->activity_type === 'sms' ? 'feed-icon-sms' : '' }} {{ $activity->activity_type === 'activity' ? 'feed-icon-activity' : '' }} {{ $activity->activity_type === 'stage' ? 'feed-icon-stage' : '' }} {{ $activity->activity_type === 'financial' ? 'feed-icon-accounting' : '' }} {{ $activity->activity_type === 'email' ? 'feed-icon-email' : '' }} {{ $activity->activity_type === 'signature' ? 'feed-icon-signature' : '' }} {{ $activity->activity_type === 'note' ? 'feed-icon-note ' . str_replace('activity-type-', 'feed-icon-', $noteTypeClass) : '' }}">
         @if($activity->activity_type === 'sms')
             <i class="fas fa-sms"></i>
         @elseif($activity->activity_type === 'note')
@@ -49,14 +49,18 @@
             <i class="fas fa-route"></i>
         @elseif($activity->activity_type === 'financial')
             <i class="fas fa-dollar-sign"></i>
+        @elseif($activity->activity_type === 'email')
+            <i class="fas fa-envelope"></i>
+        @elseif($activity->activity_type === 'signature')
+            <i class="fas fa-file-signature"></i>
+        @elseif($activity->activity_type === 'document')
+            <i class="fas fa-file-alt"></i>
         @elseif(str_contains(strtolower($activity->subject ?? ''), "invoice") || 
                 str_contains(strtolower($activity->subject ?? ''), "receipt") || 
                 str_contains(strtolower($activity->subject ?? ''), "ledger") || 
                 str_contains(strtolower($activity->subject ?? ''), "payment") ||
                 str_contains(strtolower($activity->subject ?? ''), "account"))
             <i class="fas fa-dollar-sign"></i>
-        @elseif($activity->activity_type === 'signature')
-            <i class="fas fa-file-signature"></i>
         @elseif(str_contains($activity->subject ?? '', "document"))
             <i class="fas fa-file-alt"></i>
         @else

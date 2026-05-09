@@ -5980,69 +5980,102 @@ success: function(response) {
                             return;
                         }
 
+                        if (!ress.data || !$.isArray(ress.data)) {
+                            ress.data = [];
+                        }
+
                     var html = '';
 
 
 
                     $.each(ress.data, function (k, v) {
 
-                        // Determine icon based on activity type
-                        var activityType = v.activity_type ?? 'note';
+                        var activityType = v.activity_type ?? '';
+                        var noteSubtypeClass = '';
                         var subjectIcon;
                         var iconClass = '';
-                        
+                        var subject = v.subject ?? '';
+                        var subjectLower = subject.toLowerCase();
+
                         if (activityType === 'sms') {
                             subjectIcon = '<i class="fas fa-sms"></i>';
                             iconClass = 'feed-icon-sms';
-                        } else if (v.subject && v.subject.toLowerCase().includes("document")) {
+                        } else if (activityType === 'note') {
+                            var noteIcon = 'fa-sticky-note';
+                            if (subjectLower.indexOf('call') !== -1) { noteIcon = 'fa-phone'; noteSubtypeClass = ' activity-type-note-call'; }
+                            else if (subjectLower.indexOf('email') !== -1) { noteIcon = 'fa-envelope'; noteSubtypeClass = ' activity-type-note-email'; }
+                            else if (subjectLower.indexOf('in-person') !== -1) { noteIcon = 'fa-user-friends'; noteSubtypeClass = ' activity-type-note-in-person'; }
+                            else if (subjectLower.indexOf('attention') !== -1) { noteIcon = 'fa-exclamation-triangle'; noteSubtypeClass = ' activity-type-note-attention'; }
+                            else if (subjectLower.indexOf('others') !== -1) { noteIcon = 'fa-ellipsis-h'; noteSubtypeClass = ' activity-type-note-others'; }
+                            subjectIcon = '<i class="fas ' + noteIcon + '"></i>';
+                            iconClass = 'feed-icon-note';
+                        } else if (activityType === 'activity') {
+                            subjectIcon = '<i class="fas fa-bolt"></i>';
+                            iconClass = 'feed-icon-activity';
+                        } else if (activityType === 'stage') {
+                            subjectIcon = '<i class="fas fa-route"></i>';
+                            iconClass = 'feed-icon-stage';
+                        } else if (activityType === 'financial') {
+                            subjectIcon = '<i class="fas fa-dollar-sign"></i>';
+                            iconClass = 'feed-icon-accounting';
+                        } else if (activityType === 'email') {
+                            subjectIcon = '<i class="fas fa-envelope"></i>';
+                            iconClass = '';
+                        } else if (activityType === 'signature') {
+                            subjectIcon = '<i class="fas fa-file-signature"></i>';
+                            iconClass = 'feed-icon-signature';
+                        } else if (activityType === 'document') {
                             subjectIcon = '<i class="fas fa-file-alt"></i>';
+                            iconClass = '';
+                        } else if (subjectLower.includes('invoice') || subjectLower.includes('receipt') || subjectLower.includes('ledger') || subjectLower.includes('payment') || subjectLower.includes('account')) {
+                            subjectIcon = '<i class="fas fa-dollar-sign"></i>';
+                            iconClass = '';
+                        } else if (subjectLower.includes('document')) {
+                            subjectIcon = '<i class="fas fa-file-alt"></i>';
+                            iconClass = '';
                         } else {
                             subjectIcon = '<i class="fas fa-sticky-note"></i>';
+                            iconClass = '';
                         }
 
-                        var subject = v.subject ?? '';
-
                         var description = v.message ?? '';
-
                         var taskGroup = v.task_group ?? '';
-
                         var followupDate = v.followup_date ?? '';
-
                         var date = v.date ?? '';
-
-                        var createdBy = v.createdname ?? 'Unknown';
-
                         var fullName = v.name ?? '';
-                        
                         var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
                         var headline = v.subject_without_staff_prefix === true ? subject : (fullName + ' ' + subject);
+                        var feedItemClass = activityType === 'stage' ? 'feed-item--stage' : 'feed-item--email';
+                        var createdAtYmd = v.created_at_ymd || '';
+
+                        var innerContent;
+                        if (activityType === 'stage') {
+                            innerContent =
+                                '<div class="feed-item-stage">' +
+                                    '<div class="feed-item-stage-header">' +
+                                        '<span class="feed-item-staff">' + fullName + '</span>' +
+                                        '<span class="feed-timestamp">' + date + '</span>' +
+                                    '</div>' +
+                                    '<div class="feed-item-stage-body">' + (v.message ? v.message : '') + '</div>' +
+                                '</div>';
+                        } else {
+                            innerContent =
+                                '<p><strong>' + headline + '</strong></p>' +
+                                (description !== '' ? '<p>' + description + '</p>' : '') +
+                                (taskGroup !== '' ? '<p>' + taskGroup + '</p>' : '') +
+                                (followupDate !== '' ? '<p>' + followupDate + '</p>' : '') +
+                                '<span class="feed-timestamp">' + date + '</span>';
+                        }
 
                         html += `
-
-                            <li class="feed-item feed-item--email activity ${activityTypeClass}" id="activity_${v.activity_id}">
-
+                            <li class="feed-item ${feedItemClass} activity ${activityTypeClass}${noteSubtypeClass}" id="activity_${v.activity_id}" data-created-at="${createdAtYmd}">
                                 <span class="feed-icon ${iconClass}">
-
                                     ${subjectIcon}
-
                                 </span>
-
                                 <div class="feed-content">
-
-                                    <p><strong>${headline}</strong></p>
-
-                                    ${description !== '' ? `<p>${description}</p>` : ''}
-
-                                    ${taskGroup !== '' ? `<p>${taskGroup}</p>` : ''}
-
-                                    ${followupDate !== '' ? `<p>${followupDate}</p>` : ''}
-
-                                    <span class="feed-timestamp">${date}</span>
-
+                                    ${innerContent}
                                 </div>
-
                             </li>
-
                         `;
 
                     });
@@ -6060,6 +6093,10 @@ success: function(response) {
                     // Adjust Activity Feed height after content update
 
                     adjustActivityFeedHeight();
+
+                    if (window.ActivityFeed && typeof window.ActivityFeed.reapplyCurrentFilter === 'function') {
+                        window.ActivityFeed.reapplyCurrentFilter();
+                    }
 
                     } catch (error) {
                         console.error('Error processing activities:', error);

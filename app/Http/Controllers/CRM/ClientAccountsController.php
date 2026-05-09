@@ -688,10 +688,7 @@ class ClientAccountsController extends Controller
                     $objs->created_by = Auth::user()->id;
                     $objs->description = $description;
                     $objs->subject = $subject;
-                    // Only set activity_type to 'document' if document was actually saved
-                    if ($doc_saved) {
-                        $objs->activity_type = 'document';
-                    }
+                    $objs->activity_type = 'financial';
                     $objs->task_status = 0;
                     $objs->pin = 0;
                     $objs->save();
@@ -868,6 +865,7 @@ class ClientAccountsController extends Controller
                     $objs->created_by = Auth::user()->id;
                     $objs->description = '';
                     $objs->subject = $subject;
+                    $objs->activity_type = 'financial';
                     $objs->task_status = 0;
                     $objs->pin = 0;
                     $objs->save();
@@ -1118,6 +1116,7 @@ class ClientAccountsController extends Controller
                     $objs->created_by = Auth::user()->id;
                     $objs->description = '';
                     $objs->subject = $subject;
+                    $objs->activity_type = 'financial';
                     $objs->task_status = 0;
                     $objs->pin = 0;
                     $objs->save();
@@ -1780,10 +1779,7 @@ class ClientAccountsController extends Controller
                $objs->created_by = Auth::user()->id;
                $objs->description = $description;
                $objs->subject = $subject;
-               // Only set activity_type to 'document' if document was actually saved
-               if ($doc_saved) {
-                   $objs->activity_type = 'document';
-               }
+               $objs->activity_type = 'financial';
                $objs->task_status = 0;
                $objs->pin = 0;
                $objs->save();
@@ -3829,6 +3825,7 @@ class ClientAccountsController extends Controller
                $objs->created_by = Auth::user()->id;
                $objs->description = '';
                $objs->subject = $subject;
+               $objs->activity_type = 'financial';
                $objs->task_status = 0;
                $objs->pin = 0;
                $objs->save();
@@ -3988,6 +3985,7 @@ class ClientAccountsController extends Controller
                            $reversal_activity->created_by = Auth::user()->id;
                            $reversal_activity->description = 'Fee Transfer voided - Amount no longer withdrawn from client funds';
                            $reversal_activity->subject = $reversal_subject;
+                           $reversal_activity->activity_type = 'financial';
                            $reversal_activity->task_status = 0;
                            $reversal_activity->pin = 0;
                            $reversal_activity->save();
@@ -4389,6 +4387,7 @@ class ClientAccountsController extends Controller
                $objs->created_by = Auth::user()->id;
                $objs->description = '';
                $objs->subject = $subject;
+               $objs->activity_type = 'financial';
                $objs->task_status = 0;
                $objs->pin = 0;
                $objs->save();
@@ -4495,6 +4494,7 @@ class ClientAccountsController extends Controller
            $objs->created_by = Auth::user()->id;
            $objs->description = '';
            $objs->subject = $subject;
+           $objs->activity_type = 'financial';
            $objs->task_status = 0;
            $objs->pin = 0;
            $objs->save();
@@ -5167,6 +5167,7 @@ public function genofficereceiptInvoice(Request $request, $id){
         $activity->created_by = Auth::guard('admin')->id();
         $activity->description = '';
         $activity->subject = $subject;
+        $activity->activity_type = 'financial';
         $activity->task_status = 0;
         $activity->pin = 0;
         $activity->save();
@@ -5760,6 +5761,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Invoice #' . $invoiceNo . ' sent to Client Portal';
             $objs->subject = 'Invoice sent to Client Portal';
+            $objs->activity_type = 'financial';
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();
@@ -5921,6 +5923,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Invoice #' . $invoiceNo . ' sent to client email: ' . $clientEmail;
             $objs->subject = 'Invoice sent to client';
+            $objs->activity_type = 'financial';
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();
@@ -6051,6 +6054,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Client fund receipt #' . $receiptNo . ' sent to client email: ' . $clientEmail;
             $objs->subject = 'Client fund receipt sent to client';
+            $objs->activity_type = 'financial';
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();
@@ -6178,6 +6182,7 @@ public function getInvoiceAmount(Request $request)
             $objs->created_by = Auth::user()->id;
             $objs->description = 'Office receipt #' . $receiptNo . ' sent to client email: ' . $clientEmail;
             $objs->subject = 'Office receipt sent to client';
+            $objs->activity_type = 'financial';
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();

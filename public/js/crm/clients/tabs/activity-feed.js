@@ -51,6 +51,45 @@
     }
 
     /**
+     * Subject-line patterns that identify accounting activities when activity_type is missing (legacy rows).
+     * Used by the Accounting filter fallback only (Notes are strict activity-type-note only).
+     */
+    function getAccountingSubjectPatterns() {
+        return [
+            'invoice',
+            'added invoice',
+            'updated invoice',
+            'deleted invoice',
+            'receipt',
+            'office receipt',
+            'client receipt',
+            'journal receipt',
+            'receipt document',
+            'journal receipt document',
+            'client receipt document',
+            'office receipt document',
+            'added.*receipt',
+            'updated.*receipt',
+            'ledger',
+            'client funds ledger',
+            'fee transfer',
+            'allocation',
+            'allocated',
+            'payment',
+            'deposit',
+            'withdrawal',
+            'balance',
+            'cost agreement',
+            'account'
+        ];
+    }
+
+    /** True for staff note rows: base class or structured note subtype (activity-type-note-*) */
+    function isNoteFeedItem($item) {
+        return $item.hasClass('activity-type-note') || $item.is('[class*="activity-type-note-"]');
+    }
+
+    /**
      * Filter activities based on type
      * @param {string} filterType - The type of filter to apply (all, activity, note, document, accounting)
      */
@@ -62,16 +101,10 @@
             $('.feed-item.activity').hide();
             $('.feed-item.activity-type-activity, .feed-item.activity-type-sms, .feed-item.activity-type-stage').show();
         } else if (filterType === 'note') {
-            // Show only actual notes (exclude activity edits, SMS, documents, and accounting)
+            // Staff notes only (activity_type === 'note'; Blade adds activity-type-note plus optional activity-type-note-* subtype)
             $('.feed-item.activity').each(function() {
                 var $item = $(this);
-                // Hide Activity edits, SMS, stage, document, and accounting activities, show everything else (notes)
-                if (!$item.hasClass('activity-type-sms') && 
-                    !$item.hasClass('activity-type-activity') &&
-                    !$item.hasClass('activity-type-stage') &&
-                    !$item.hasClass('activity-type-document') && 
-                    !$item.hasClass('activity-type-signature') &&
-                    !$item.hasClass('activity-type-financial')) {
+                if (isNoteFeedItem($item)) {
                     $item.show();
                 } else {
                     $item.hide();
@@ -143,45 +176,18 @@
                     $item.show();
                     return;
                 }
+
+                if (isNoteFeedItem($item)) {
+                    return;
+                }
                 
                 // Fallback: Check subject text for accounting-related keywords
                 // This handles legacy activities that don't have activity_type set
                 var subject = $item.find('.feed-content strong').text().toLowerCase();
                 var subjectText = subject || '';
-                
-                // Accounting-related patterns to match
-                var accountingPatterns = [
-                    'invoice',
-                    'added invoice',
-                    'updated invoice',
-                    'deleted invoice',
-                    'receipt',
-                    'office receipt',
-                    'client receipt',
-                    'journal receipt',
-                    'receipt document',
-                    'journal receipt document',
-                    'client receipt document',
-                    'office receipt document',
-                    'added.*receipt',
-                    'updated.*receipt',
-                    'ledger',
-                    'client funds ledger',
-                    'fee transfer',
-                    'allocation',
-                    'allocated',
-                    'payment',
-                    'deposit',
-                    'withdrawal',
-                    'balance',
-                    'cost agreement',
-                    'account'
-                ];
-                
-                // Check if subject matches any accounting pattern
-                var isAccounting = accountingPatterns.some(function(pattern) {
-                    var regex = new RegExp(pattern, 'i');
-                    return regex.test(subjectText);
+
+                var isAccounting = getAccountingSubjectPatterns().some(function(pattern) {
+                    return new RegExp(pattern, 'i').test(subjectText);
                 });
                 
                 if (isAccounting) {
@@ -193,6 +199,7 @@
             $('.feed-item.activity').hide();
             $('.feed-item.activity-type-' + filterType).show();
         }
+        updateEmptyState();
     }
 
     /**
@@ -297,9 +304,10 @@
             return $item.hasClass('activity-type-activity') || $item.hasClass('activity-type-sms') || $item.hasClass('activity-type-stage');
         }
         if (filterType === 'note') {
-            return !$item.hasClass('activity-type-sms') && !$item.hasClass('activity-type-activity') &&
-                !$item.hasClass('activity-type-stage') &&
-                !$item.hasClass('activity-type-document') && !$item.hasClass('activity-type-financial');
+            return isNoteFeedItem($item);
+        }
+        if (filterType === 'signature') {
+            return $item.hasClass('activity-type-signature');
         }
         if (filterType === 'document') {
             if ($item.hasClass('activity-type-document')) return true;
@@ -310,8 +318,11 @@
         }
         if (filterType === 'accounting') {
             if ($item.hasClass('activity-type-financial')) return true;
+            if (isNoteFeedItem($item)) return false;
             var subj = ($item.find('.feed-content strong').text() || '').toLowerCase();
-            return /invoice|receipt|payment|ledger|account/.test(subj);
+            return getAccountingSubjectPatterns().some(function(pattern) {
+                return new RegExp(pattern, 'i').test(subj);
+            });
         }
         return true;
     }
@@ -330,10 +341,27 @@
         init();
     });
 
+    /**
+     * Re-apply the current type filter (and extended search/date when bar is open) after AJAX replaces .feed-list HTML.
+     */
+    function reapplyCurrentFilter() {
+        if (!$('.activity-feed').length || !$('.feed-list').length) {
+            return;
+        }
+        if ($('#activity-feed-filter-bar').is(':visible')) {
+            applyExtendedFilters();
+        } else {
+            var activeFilter = $('.activity-filter-btn.active').data('filter') || 'all';
+            filterActivities(activeFilter);
+        }
+    }
+
     // Expose public API
     window.ActivityFeed = {
         init: init,
-        filterActivities: filterActivities
+        filterActivities: filterActivities,
+        applyExtendedFilters: applyExtendedFilters,
+        reapplyCurrentFilter: reapplyCurrentFilter
     };
 
 })(jQuery);

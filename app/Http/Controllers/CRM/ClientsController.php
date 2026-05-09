@@ -3190,7 +3190,7 @@ class ClientsController extends Controller
 						'followup_date' => $activit->followup_date ?? '',
 						'task_group' => $activit->task_group ?? '',
 						'pin' => $activit->pin ?? 0,
-						'activity_type' => $activit->activity_type ?? 'note'
+						'activity_type' => $activit->activity_type
 					);
 				}
 
