@@ -130,67 +130,6 @@ class EoiRoiSheetController extends Controller
     }
 
     /**
-     * Display the EOI/ROI Sheet — checklist items from Upload Checklists (matter_checklists) for EOI/ROI matter templates.
-     */
-    public function checklist(Request $request)
-    {
-        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
-            abort(403, 'Unauthorized');
-        }
-
-        $activeFilterCount = $this->countActiveFilters($request);
-
-        $matterChecklistRows = collect();
-        if (Schema::hasTable('matter_checklists')) {
-            $eoiRoiMatterIds = $this->eoiRoiMatterTemplateIds();
-            if ($eoiRoiMatterIds->isNotEmpty()) {
-                $matterChecklistRows = DB::table('matter_checklists as mc')
-                    ->join('matters as m', 'm.id', '=', 'mc.matter_id')
-                    ->whereIn('mc.matter_id', $eoiRoiMatterIds)
-                    ->orderBy('m.title')
-                    ->orderBy('mc.id')
-                    ->select(
-                        'mc.id',
-                        'mc.matter_id',
-                        'mc.name',
-                        'mc.file',
-                        'm.title as matter_title',
-                        'm.nick_name as matter_nick_name'
-                    )
-                    ->get();
-            }
-        }
-
-        return view('crm.clients.sheets.eoi-roi-checklist', compact(
-            'activeFilterCount',
-            'matterChecklistRows'
-        ));
-    }
-
-    /**
-     * Active matter template IDs classified as EOI or ROI (same rules as EOI sheet + ROI nick/title patterns).
-     *
-     * @return \Illuminate\Support\Collection<int, int|string>
-     */
-    protected function eoiRoiMatterTemplateIds()
-    {
-        return DB::table('matters')
-            ->where(function ($q) {
-                $q->where('status', 1)->orWhere('status', '1');
-            })
-            ->where(function ($q) {
-                $q->whereRaw('LOWER(COALESCE(nick_name, \'\')) = ?', ['eoi'])
-                    ->orWhereRaw('LOWER(COALESCE(title, \'\')) LIKE ?', ['%eoi%'])
-                    ->orWhereRaw('LOWER(COALESCE(title, \'\')) LIKE ?', ['%expression of interest%'])
-                    ->orWhereRaw('LOWER(COALESCE(title, \'\')) LIKE ?', ['%expression%'])
-                    ->orWhereRaw('LOWER(COALESCE(nick_name, \'\')) = ?', ['roi'])
-                    ->orWhereRaw('LOWER(COALESCE(title, \'\')) LIKE ?', ['%roi%'])
-                    ->orWhereRaw('LOWER(COALESCE(title, \'\')) LIKE ?', ['%registration of interest%']);
-            })
-            ->pluck('id');
-    }
-
-    /**
      * Build the base query for EOI/ROI sheet
      * Uses a standalone subquery for "latest EOI matter per client" so we never reference outer tables inside the subquery (PostgreSQL scope).
      *

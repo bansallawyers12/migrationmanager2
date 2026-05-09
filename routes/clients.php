@@ -51,7 +51,6 @@ Route::get('/clients/partner-eoi-data/{partnerId}', [ClientPersonalDetailsContro
 
 /*---------- Sheets ----------*/
 Route::get('/clients/sheets/eoi-roi', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'index'])->name('clients.sheets.eoi-roi');
-Route::get('/clients/sheets/eoi-roi/checklist', [EoiRoiSheetController::class, 'checklist'])->name('clients.sheets.eoi-roi.checklist');
 Route::get('/clients/sheets/eoi-roi/insights', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'insights'])->name('clients.sheets.eoi-roi.insights');
 Route::post('/clients/sheets/eoi-roi/{eoiId}/toggle-pin', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'togglePin'])->name('clients.sheets.eoi-roi.toggle-pin');
 

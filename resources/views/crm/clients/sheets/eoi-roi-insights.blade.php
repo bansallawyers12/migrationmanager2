@@ -255,9 +255,6 @@
                     <a href="{{ route('clients.sheets.eoi-roi', request()->query()) }}" class="sheet-tab">
                         <i class="fas fa-list"></i> List
                     </a>
-                    <a href="{{ route('clients.sheets.eoi-roi.checklist', request()->query()) }}" class="sheet-tab">
-                        <i class="fas fa-clipboard-check"></i> Checklist
-                    </a>
                     @if(Auth::user() && in_array(Auth::user()->role, [1, 12]))
                     <a href="{{ route('clients.sheets.eoi-roi.insights', request()->query()) }}" class="sheet-tab active">
                         <i class="fas fa-chart-bar"></i> Insights
