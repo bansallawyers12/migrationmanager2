@@ -307,35 +307,44 @@ class InvoicePaymentSyncService
     /**
      * Delete the cached invoice PDF from S3 + documents table and clear pdf_document_id on
      * all matching invoice lines. Called whenever a payment changes what "Total Pending" should be.
-     * Failures are logged but never throw — PDF invalidation is best-effort and must not
-     * roll back the payment state that was already committed.
+     *
+     * Order of operations matters:
+     *   1. Null out pdf_document_id FIRST — so genInvoice can never redirect to a broken S3 URL
+     *      even if subsequent S3 / document cleanup fails.
+     *   2. Delete document records and S3 files (best-effort, failures are logged not thrown).
+     *
+     * This method never throws — PDF invalidation must not roll back a payment that already
+     * committed to the database.
      */
     private function invalidateCachedPdf(int $clientId, string $invoiceKey): void
     {
         try {
+            // Collect all invoice lines that have a cached PDF reference.
             $rows = $this->invoiceLinesBaseQuery($clientId, $invoiceKey)
                 ->whereNotNull('pdf_document_id')
-                ->select(['id', 'pdf_document_id', 'receipt_id'])
+                ->select(['id', 'pdf_document_id'])
                 ->get();
 
             if ($rows->isEmpty()) {
                 return;
             }
 
+            // Deduplicate — multiple lines share one pdf_document_id.
+            $docIds = $rows->pluck('pdf_document_id')->filter()->unique()->values()->all();
+
+            // Step 1: clear the DB reference FIRST so genInvoice sees null immediately
+            // even if the S3 / document cleanup below partially fails.
+            $this->invoiceLinesBaseQuery($clientId, $invoiceKey)
+                ->update(['pdf_document_id' => null, 'updated_at' => now()]);
+
+            // Step 2: clean up the document records and S3 files (best-effort per document).
             $clientUniqueId = DB::table('admins')
                 ->where('id', $clientId)
                 ->value('client_id');
 
-            $seenDocIds = [];
-
-            foreach ($rows as $row) {
-                $docId = $row->pdf_document_id;
-                if ($docId === null || in_array($docId, $seenDocIds, true)) {
-                    continue;
-                }
-                $seenDocIds[] = $docId;
-
+            foreach ($docIds as $docId) {
                 $doc = DB::table('documents')->where('id', $docId)->first();
+
                 if ($doc && ! empty($doc->myfile_key) && $clientUniqueId) {
                     $docType = $doc->doc_type ?? 'invoices';
                     $s3Path  = $clientUniqueId . '/' . $docType . '/' . $doc->myfile_key;
@@ -352,14 +361,10 @@ class InvoicePaymentSyncService
                 DB::table('documents')->where('id', $docId)->delete();
             }
 
-            // Clear the reference on every invoice line for this key
-            $this->invoiceLinesBaseQuery($clientId, $invoiceKey)
-                ->update(['pdf_document_id' => null, 'updated_at' => now()]);
-
             Log::info('InvoicePaymentSyncService: invoice PDF cache invalidated', [
-                'client_id'   => $clientId,
-                'invoice_key' => $invoiceKey,
-                'docs_removed' => count($seenDocIds),
+                'client_id'    => $clientId,
+                'invoice_key'  => $invoiceKey,
+                'docs_removed' => count($docIds),
             ]);
         } catch (\Exception $e) {
             Log::error('InvoicePaymentSyncService: unexpected error in invalidateCachedPdf', [
