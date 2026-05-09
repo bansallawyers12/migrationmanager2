@@ -140,21 +140,6 @@ class EoiRoiSheetController extends Controller
 
         $activeFilterCount = $this->countActiveFilters($request);
 
-        $eoiCategoryGuide = [
-            [
-                'title' => 'EOI Summary',
-                'description' => 'Visa Documents category mapped to each EOI. Documents here are candidates for attachment to the client EOI confirmation email. For multiple EOIs use per‑EOI names such as "EOI Summary - E0123456789".',
-            ],
-            [
-                'title' => 'Points Summary',
-                'description' => 'Visa Documents category for points calculator / summary uploads. Supports the same shared or per‑EOI naming as EOI Summary.',
-            ],
-            [
-                'title' => 'ROI Draft',
-                'description' => 'Visa Documents category for ROI drafts. Confirmation emails prefer these categories when attaching ROI-related files.',
-            ],
-        ];
-
         $matterChecklistRows = collect();
         if (Schema::hasTable('matter_checklists')) {
             $eoiRoiMatterIds = $this->eoiRoiMatterTemplateIds();
@@ -178,7 +163,6 @@ class EoiRoiSheetController extends Controller
 
         return view('crm.clients.sheets.eoi-roi-checklist', compact(
             'activeFilterCount',
-            'eoiCategoryGuide',
             'matterChecklistRows'
         ));
     }
