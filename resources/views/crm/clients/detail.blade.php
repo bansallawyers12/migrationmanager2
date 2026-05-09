@@ -706,16 +706,16 @@ use App\Http\Controllers\Controller;
 						<div class="col-12">
 							<div class="form-group">
 								<label for="sms_message">Message <span class="span_req">*</span></label>
-							<textarea class="form-control" id="sms_message" name="message" rows="5" maxlength="320" required></textarea>
-							<div class="d-flex justify-content-between align-items-center mt-1">
-								<small class="text-muted">
-									<span id="sms_char_count">0</span> / <span id="sms_char_max">160</span> chars
-								</small>
-								<small>
-									<span id="sms_segment_badge" class="badge badge-success">1 SMS</span>
-									<span id="sms_chars_remaining" class="text-muted"> &nbsp;·&nbsp; 160 left in this SMS</span>
-								</small>
-							</div>
+								<textarea class="form-control" id="sms_message" name="message" rows="5" maxlength="320" required></textarea>
+								<div class="d-flex justify-content-between align-items-center mt-1">
+									<small class="text-muted">
+										<span id="sms_char_count">0</span> / <span id="sms_char_max">160</span> chars
+									</small>
+									<small>
+										<span id="sms_segment_badge" class="badge badge-success">1 SMS</span>
+										<span id="sms_chars_remaining" class="text-muted">&nbsp;&middot;&nbsp; 160 left in this SMS</span>
+									</small>
+								</div>
 							</div>
 						</div>
 						
@@ -1676,10 +1676,10 @@ $('.send-sms-btn').on('click', function() {
         }
     });
     
-    // Reset form
-    $('#sms_message').val('');
-    $('#sms_char_count').text('0');
-    
+    // Reset form — trigger('input') re-runs the counter so badge/max/remaining all reset
+    $('#sms_message').val('').trigger('input');
+    $('#sms_template').val('');
+
     $('#sendSmsModal').modal('show');
 });
 

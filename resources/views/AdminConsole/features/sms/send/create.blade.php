@@ -124,7 +124,8 @@ $(document).ready(function() {
                 if (response.success) {
                     alert('SMS sent successfully!');
                     $('#smsForm')[0].reset();
-                    $('#charCount').text('0');
+                    // Re-run counter so badge/max/remaining all reset to their initial state
+                    $('#message').trigger('input');
                 } else {
                     alert('Error: ' + response.message);
                 }
