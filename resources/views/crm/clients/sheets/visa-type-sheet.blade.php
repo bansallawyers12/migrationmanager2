@@ -183,6 +183,9 @@
     .visa-sheet-page .visa-sheet-col-payment-request {
         min-width: 10rem;
     }
+    .visa-sheet-page .visa-sheet-col-payment-receipt {
+        min-width: 11rem;
+    }
 </style>
 @endsection
 
@@ -337,6 +340,8 @@
                                         <th>DOB</th>
                                         @if($tab === 'checklist')
                                         <th class="text-nowrap visa-sheet-col-payment-request" title="Payment Request">Payment Request</th>
+                                        @elseif($tab === 'ongoing')
+                                        <th class="text-nowrap visa-sheet-col-payment-receipt" title="Payment Receipt">Payment Receipt</th>
                                         @else
                                         <th>Payment Received</th>
                                         @endif
@@ -409,10 +414,16 @@
                                                 @endif
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
                                                 <td>{{ $row->dob ? \Carbon\Carbon::parse($row->dob)->format('d/m/Y') : '—' }}</td>
-                                                <td title="{{ $tab === 'checklist' ? 'Our Cost (Block Fees)' : '' }}">
+                                                <td title="{{ $tab === 'checklist' ? 'Our Cost (Block Fees)' : ($tab === 'ongoing' ? 'Current Funds Held (Account → Client Funds Ledger)' : '') }}">
                                                     @if($tab === 'checklist')
                                                         @if(isset($row->checklist_block_fee) && $row->checklist_block_fee !== null && $row->checklist_block_fee !== '')
                                                             ${{ number_format((float) $row->checklist_block_fee, 2) }}
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    @elseif($tab === 'ongoing' && !$isLead)
+                                                        @if($row->current_funds_held !== null)
+                                                            ${{ number_format((float) $row->current_funds_held, 2) }}
                                                         @else
                                                             —
                                                         @endif

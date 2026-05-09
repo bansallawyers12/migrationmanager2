@@ -104,6 +104,12 @@ class VisaTypeSheetController extends Controller
                         $row->pending_payment = 0;
                     }
                 }
+                // Ongoing: Payment Receipt column shows same balance as Account tab → Current Funds Held.
+                if ($tab === 'ongoing' && !$row->is_lead && isset($row->matter_internal_id)) {
+                    $held = $this->currentFundsHeldForClientMatter((int) $row->client_id, (int) $row->matter_internal_id);
+                    $row->current_funds_held = $held;
+                }
+
                 return $row;
             });
         }
@@ -807,6 +813,34 @@ class VisaTypeSheetController extends Controller
             })
             ->sum(DB::raw('COALESCE(balance_amount, 0)'));
         return ['total' => number_format($total, 2), 'pending' => number_format($pending, 2)];
+    }
+
+    /**
+     * Mirrors Client Funds Ledger "Current Funds Held" on Account tab (account.blade.php)
+     * for one client + matter: receipt_type ledger rows, excluding void_fee_transfer.
+     */
+    protected function currentFundsHeldForClientMatter(?int $clientId, ?int $matterInternalId): ?float
+    {
+        if (!$clientId || !$matterInternalId || ! Schema::hasTable('account_client_receipts')) {
+            return null;
+        }
+
+        $ledgerEntries = DB::table('account_client_receipts')
+            ->select('deposit_amount', 'withdraw_amount', 'void_fee_transfer')
+            ->where('client_id', $clientId)
+            ->where('client_matter_id', $matterInternalId)
+            ->where('receipt_type', 1)
+            ->get();
+
+        $calculatedBalance = 0.0;
+        foreach ($ledgerEntries as $entry) {
+            if (isset($entry->void_fee_transfer) && $entry->void_fee_transfer == 1) {
+                continue;
+            }
+            $calculatedBalance += floatval($entry->deposit_amount ?? 0) - floatval($entry->withdraw_amount ?? 0);
+        }
+
+        return round($calculatedBalance, 2);
     }
 
     /**
