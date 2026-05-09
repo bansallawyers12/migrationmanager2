@@ -89,9 +89,21 @@
         return $item.hasClass('activity-type-note') || $item.is('[class*="activity-type-note-"]');
     }
 
+    /** Uploaded / synced email log rows (activity_type email, or legacy subject prefix from EmailUploadController) */
+    function getFeedSubjectStrongText($item) {
+        return ($item.find('.feed-content strong').first().text() || '').trim();
+    }
+
+    function isEmailFeedItem($item) {
+        if ($item.hasClass('activity-type-email')) {
+            return true;
+        }
+        return /uploaded email:/i.test(getFeedSubjectStrongText($item));
+    }
+
     /**
      * Filter activities based on type
-     * @param {string} filterType - The type of filter to apply (all, activity, note, document, accounting)
+     * @param {string} filterType - all | activity | note | email | document | signature | accounting
      */
     function filterActivities(filterType) {
         if (filterType === 'all') {
@@ -105,6 +117,15 @@
             $('.feed-item.activity').each(function() {
                 var $item = $(this);
                 if (isNoteFeedItem($item)) {
+                    $item.show();
+                } else {
+                    $item.hide();
+                }
+            });
+        } else if (filterType === 'email') {
+            $('.feed-item.activity').each(function() {
+                var $item = $(this);
+                if (isEmailFeedItem($item)) {
                     $item.show();
                 } else {
                     $item.hide();
@@ -125,6 +146,9 @@
                 
                 // Fallback: Check subject text for document-related keywords
                 // This handles legacy activities that don't have activity_type set
+                if (isEmailFeedItem($item)) {
+                    return;
+                }
                 var subject = $item.find('.feed-content strong').text().toLowerCase();
                 var subjectText = subject || '';
                 
@@ -178,6 +202,10 @@
                 }
 
                 if (isNoteFeedItem($item)) {
+                    return;
+                }
+
+                if (isEmailFeedItem($item)) {
                     return;
                 }
                 
@@ -306,11 +334,15 @@
         if (filterType === 'note') {
             return isNoteFeedItem($item);
         }
+        if (filterType === 'email') {
+            return isEmailFeedItem($item);
+        }
         if (filterType === 'signature') {
             return $item.hasClass('activity-type-signature');
         }
         if (filterType === 'document') {
             if ($item.hasClass('activity-type-document')) return true;
+            if (isEmailFeedItem($item)) return false;
             var subject = ($item.find('.feed-content strong').text() || '').toLowerCase();
             if (/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subject)) return false;
             var docPatterns = ['document', 'added.*document', 'updated.*document', 'visa document', 'personal document', 'checklist', 'uploaded', 'signed document'];
@@ -319,6 +351,7 @@
         if (filterType === 'accounting') {
             if ($item.hasClass('activity-type-financial')) return true;
             if (isNoteFeedItem($item)) return false;
+            if (isEmailFeedItem($item)) return false;
             var subj = ($item.find('.feed-content strong').text() || '').toLowerCase();
             return getAccountingSubjectPatterns().some(function(pattern) {
                 return new RegExp(pattern, 'i').test(subj);

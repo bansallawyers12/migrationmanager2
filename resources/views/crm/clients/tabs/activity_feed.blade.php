@@ -54,6 +54,9 @@
         <button class="activity-filter-btn" data-filter="note">
             <i class="fas fa-sticky-note"></i> Notes
         </button>
+        <button class="activity-filter-btn" data-filter="email">
+            <i class="fas fa-envelope"></i> Emails
+        </button>
         <button class="activity-filter-btn" data-filter="document">
             <i class="fas fa-file-alt"></i> Documents
         </button>
