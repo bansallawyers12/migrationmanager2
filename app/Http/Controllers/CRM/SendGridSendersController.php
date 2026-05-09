@@ -21,14 +21,26 @@ class SendGridSendersController extends Controller
     public function senders(Request $request)
     {
         $list = $this->getVerifiedSenders();
-        $fromEmail = config('services.sendgrid.from_email', '');
-        if (empty($fromEmail)) {
-            $fromEmail = optional(auth('admin')->user())->email ?? config('mail.from.address', '');
+        $fromEmail = trim((string) config('services.sendgrid.from_email', ''));
+        if ($fromEmail === '') {
+            $fromEmail = trim((string) (optional(auth('admin')->user())->email ?? config('mail.from.address', '')));
         }
-        $emails = array_column($list, 'email');
-        if (!empty($emails) && !in_array($fromEmail, $emails)) {
-            $fromEmail = $emails[0];
+
+        if ($list === []) {
+            $fromEmail = '';
+        } else {
+            $fromLower = strtolower($fromEmail);
+            $matched = null;
+            foreach ($list as $row) {
+                $addr = isset($row['email']) && is_string($row['email']) ? $row['email'] : '';
+                if ($addr !== '' && strtolower($addr) === $fromLower) {
+                    $matched = $addr;
+                    break;
+                }
+            }
+            $fromEmail = $matched ?? ($list[0]['email'] ?? '');
         }
+
         return response()->json([
             'senders' => $list,
             'default_from' => $fromEmail,

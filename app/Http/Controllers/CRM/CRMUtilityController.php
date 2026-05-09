@@ -1174,6 +1174,8 @@ public function getChapters(Request $request)
 			return redirect()->back()->withErrors(['email_from' => $msg])->withInput();
 		}
 
+		$requestData['email_from'] = $fromForCompose;
+
 		$user_id = @Auth::user()->id;
 		$reciept_id = null;
 
