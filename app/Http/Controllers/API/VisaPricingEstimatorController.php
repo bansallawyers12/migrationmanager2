@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Validator;
  */
 class VisaPricingEstimatorController extends BaseController
 {
+    /** Upper bound for visa-list pagination (config-backed list; allows full fetch in one page). */
+    private const VISA_LIST_MAX_LIMIT = 500;
+
     /**
      * Visa List with Search
      * GET /api/visa-estimate/visa-list
@@ -22,14 +25,16 @@ class VisaPricingEstimatorController extends BaseController
      * Query Parameters (same style as GET /api/notifications):
      * - q: Search query - case-insensitive substring match on visa label only (optional)
      * - page: Page number (optional, default: 1, integer min 1)
-     * - limit: Items per page (optional, default: 20, integer min 1, max 100)
+     * - limit: Items per page (optional, default: 20, integer min 1, max 500)
      */
     public function getVisaList(Request $request)
     {
+        $maxLimit = self::VISA_LIST_MAX_LIMIT;
+
         $validator = Validator::make($request->query(), [
             'q' => 'nullable|string|max:500',
             'page' => 'nullable|integer|min:1',
-            'limit' => 'nullable|integer|min:1|max:100',
+            'limit' => ['nullable', 'integer', 'min:1', 'max:'.$maxLimit],
         ]);
 
         if ($validator->fails()) {
@@ -42,7 +47,7 @@ class VisaPricingEstimatorController extends BaseController
 
         $search = trim((string) $request->get('q', ''));
         $page = (int) $request->get('page', 1);
-        $limit = min(max((int) $request->get('limit', 20), 1), 100);
+        $limit = min(max((int) $request->get('limit', 20), 1), $maxLimit);
         $page = max($page, 1);
 
         $visas = config('visa_pricing_estimator.visas', []);
