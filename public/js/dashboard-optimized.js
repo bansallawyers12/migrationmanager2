@@ -483,6 +483,14 @@ function showNotification(message, type = 'info') {
 // Microsoft To Do Style Task Functions
 // ====================
 
+/** Opens the dashboard "Add My Task" popover (same UX as the header + control). */
+window.openCreateTaskModal = function() {
+    var $trigger = $('.todo-container .todo-header .add_my_task').first();
+    if ($trigger.length) {
+        $trigger.trigger('click');
+    }
+};
+
 // Open Task Detail Panel
 window.openTaskDetail = function(taskId) {
     const taskItem = $(`[data-task-id="${taskId}"]`);
@@ -674,7 +682,7 @@ function updateTaskCount() {
                     </div>
                     <h4>All caught up!</h4>
                     <p>You have no tasks at the moment.</p>
-                    <button class="todo-empty-add-btn" onclick="openCreateTaskModal()">
+                    <button type="button" class="todo-empty-add-btn" onclick="openCreateTaskModal()">
                         <i class="fas fa-plus"></i>
                         Add a task
                     </button>

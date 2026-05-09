@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\InvoicePaymentSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,7 @@ class ClientPortalBillingController extends Controller
      *
      * Returns invoices where:
      * - client_portal_sent = 1 (invoice sent to client portal)
-     * - invoice_status = 0 (Pending) OR invoice_status = 1 (Paid)
+     * - invoice_status in 0 (Pending/Unpaid), 1 (Paid), 2 (Partial)
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -45,7 +46,7 @@ class ClientPortalBillingController extends Controller
                 ->select(
                     'trans_no',
                     'receipt_id',
-                    DB::raw('MAX(COALESCE(balance_amount, withdraw_amount, 0)) as balance_amount'),
+                    DB::raw('SUM(COALESCE(balance_amount, 0)) as balance_amount'),
                     DB::raw('MAX(COALESCE(invoice_status, 0)) as invoice_status'),
                     DB::raw('MAX(description) as description'),
                     DB::raw('MAX(trans_date) as latest_trans_date'),
@@ -56,7 +57,7 @@ class ClientPortalBillingController extends Controller
                 ->where('client_matter_id', $clientMatterId)
                 ->where('receipt_type', 3)
                 ->where('client_portal_sent', 1)
-                ->whereIn('invoice_status', [0, 1])
+                ->whereIn('invoice_status', [0, 1, 2])
                 ->where(function ($query) {
                     $query->whereNull('void_invoice')
                         ->orWhere('void_invoice', 0);
@@ -75,7 +76,7 @@ class ClientPortalBillingController extends Controller
                 ->limit($perPage)
                 ->get();
 
-            $statusMap = [0 => 'Pending', 1 => 'Paid'];
+            $statusMap = [0 => 'Pending', 1 => 'Paid', 2 => 'Partial'];
 
             $invoices = $invoices->map(function ($invoice) use ($statusMap) {
                 return [
@@ -133,7 +134,8 @@ class ClientPortalBillingController extends Controller
      * - payment_token: unique token value (e.g. Stripe PaymentIntent id pi_...)
      * - payment_status: "completed" or "failed"
      *
-     * Lookup by receipt_id and client_matter_id. When payment_status is "completed": updates invoice_status to 1 and saves payment_token (and payment_type).
+     * Lookup by receipt_id and client_matter_id. When payment_status is "completed": syncs invoice to fully paid
+     * (balances / partial_paid / mirror table) then stores payment_token and payment_type.
      * When payment_status is "failed": no update.
      *
      * @param Request $request
@@ -171,14 +173,26 @@ class ClientPortalBillingController extends Controller
             }
 
             if ($validated['payment_status'] === 'completed') {
+                $marked = app(InvoicePaymentSyncService::class)->markFullyPaidFromClientPortal(
+                    $clientId,
+                    $receiptId,
+                    $clientMatterId
+                );
+                if (! $marked) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Could not update invoice payment state.',
+                    ], 422);
+                }
+
                 $updated = DB::table('account_client_receipts')
                     ->where('receipt_id', $receiptId)
                     ->where('client_matter_id', $clientMatterId)
                     ->where('client_id', $clientId)
                     ->update([
-                        'invoice_status' => 1,
                         'client_portal_payment_token' => $validated['payment_token'],
                         'client_portal_payment_type' => $validated['payment_type'],
+                        'updated_at' => now(),
                     ]);
 
                 return response()->json([

@@ -1110,14 +1110,19 @@ $(function () {
         $('.popover-backdrop').removeClass('show');
     });
     
-    // Function to initialize client Select2
+    // Function to initialize client Select2 (must target the visible popover — duplicate
+    // #assign_client_id exists in the hidden #add-task-popover-template, so never use $('#assign_client_id') alone.)
     function initializeClientSelect2() {
         var attempts = 0;
         var maxAttempts = 10;
         
         function tryInitialize() {
             attempts++;
-            var $clientSelect = $('#assign_client_id');
+            var $popoverCtx = $('.popover.add-my-task-popover:visible').last();
+            if (!$popoverCtx.length) {
+                $popoverCtx = $('.popover:visible').last();
+            }
+            var $clientSelect = $popoverCtx.find('#assign_client_id');
             
             if ($clientSelect.length && $clientSelect.is(':visible')) {
                 if ($clientSelect.hasClass('select2-hidden-accessible')) {
@@ -1130,7 +1135,7 @@ $(function () {
                         placeholder: 'Search client...',
                         allowClear: true,
                         width: '100%',
-                        dropdownParent: $('.popover'),
+                        dropdownParent: $popoverCtx.length ? $popoverCtx : $('.popover:visible').last(),
                         ajax: {
                             url: '{{URL::to('/clients/get-allclients')}}',
                             dataType: 'json',

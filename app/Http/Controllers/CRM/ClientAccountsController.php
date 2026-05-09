@@ -20,6 +20,7 @@ use App\Models\ClientMatter;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\ClientPortalActionNoteService;
 use App\Services\FinancialStatsService;
+use App\Services\InvoicePaymentSyncService;
 use App\Services\FCMService;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -293,6 +294,7 @@ class ClientAccountsController extends Controller
             }
    
             // Process Fee Transfers with invoice numbers
+            $invoicePaymentSync = app(InvoicePaymentSyncService::class);
             foreach ($feeTransferByInvoice as $invoiceNo => $feeTransfers) {
                 $totalWithdrawAmount = array_sum(array_column($feeTransfers, 'withdraw_amount'));
    
@@ -329,18 +331,13 @@ class ClientAccountsController extends Controller
                     return response()->json($response, 200);
                 }
    
-                // Get invoice details
-                $invoiceInfo = DB::table('account_client_receipts')
-                    ->select('withdraw_amount', 'partial_paid_amount', 'balance_amount')
-                    ->where('client_id', $requestData['client_id'])
-                    ->where('receipt_type', 3)
-                    ->where('invoice_no', $invoiceNo)
-                    ->first();
-   
-                if ($invoiceInfo) {
-                    $invoiceWithdrawAmount = floatval($invoiceInfo->withdraw_amount);
-                    
-                    // Recalculate current total payments from all sources (office receipts + fee transfers)
+                if (! $invoicePaymentSync->invoiceLinesExist($requestData['client_id'], $invoiceNo)) {
+                    continue;
+                }
+
+                $invoiceWithdrawAmount = $invoicePaymentSync->sumInvoiceLineWithdrawTotal($requestData['client_id'], $invoiceNo);
+
+                // Recalculate current total payments from all sources (office receipts + fee transfers)
                     // This ensures we have accurate data even if office receipts were applied first
                     $currentTotalPaidOffice = DB::table('account_client_receipts')
                         ->where('receipt_type', 2)
@@ -568,64 +565,15 @@ class ClientAccountsController extends Controller
                         }
                     }
 
-                    // Recalculate total payments from all sources after all fee transfers are inserted
-                    // This ensures accuracy even if office receipts exist
-                    $totalPaidOffice = DB::table('account_client_receipts')
-                        ->where('receipt_type', 2)
-                        ->where('invoice_no', $invoiceNo)
-                        ->where('client_id', $requestData['client_id'])
-                        ->where('save_type', 'final')
-                        ->sum('deposit_amount');
-                    
-                    $totalPaidFeeTransfer = DB::table('account_client_receipts')
-                        ->where('receipt_type', 1)
-                        ->where('client_fund_ledger_type', 'Fee Transfer')
-                        ->where('invoice_no', $invoiceNo)
-                        ->where('client_id', $requestData['client_id'])
-                        ->where(function($q) {
-                            $q->whereNull('void_fee_transfer')
-                              ->orWhere('void_fee_transfer', 0);
-                        })
-                        ->sum('withdraw_amount');
-                    
-                    $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
-                    $newBalance = $invoiceWithdrawAmount - $totalPaid;
-                    
-                    // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
-                    if ($newBalance <= 0) {
-                        $status = 1; // Paid
-                    } elseif ($totalPaid > 0) {
-                        $status = 2; // Partial
-                    } else {
-                        $status = 0; // Unpaid
+                    $synced = $invoicePaymentSync->persistPaymentState($requestData['client_id'], $invoiceNo);
+                    if ($synced !== null) {
+                        $response['invoices'][] = [
+                            'invoice_no' => $invoiceNo,
+                            'invoice_status' => $synced['invoice_status'],
+                            'invoice_balance' => $synced['new_balance'],
+                            'outstanding_balance' => $synced['new_balance'],
+                        ];
                     }
-   
-                    DB::table('account_client_receipts')
-                        ->where('client_id', $requestData['client_id'])
-                        ->where('receipt_type', 3)
-                        ->where('invoice_no', $invoiceNo)
-                        ->update([
-                            'invoice_status' => $status,
-                            'partial_paid_amount' => $totalPaid,
-                            'balance_amount' => max(0, $newBalance),
-                            'updated_at' => now(),
-                        ]);
-   
-                    AccountAllInvoiceReceipt::where('client_id', $requestData['client_id'])
-                        ->where('receipt_type', 3)
-                        ->where('invoice_no', $invoiceNo)
-                        ->update([
-                            'invoice_status' => $status,
-                            'updated_at' => now(),
-                        ]);
-   
-                    $response['invoices'][] = [
-                        'invoice_no' => $invoiceNo,
-                        'invoice_status' => $status,
-                        'invoice_balance' => $newBalance,
-                        'outstanding_balance' => $newBalance,
-                    ];
-                }
             }
    
             // Process remaining entries (non-Fee Transfer or Fee Transfer without invoice)
@@ -1769,19 +1717,19 @@ class ClientAccountsController extends Controller
       }
 
       // Process invoice matching for all affected invoices (only for final receipts)
+      $invoicePaymentSync = app(InvoicePaymentSyncService::class);
       if ($saveType == 'final' && !empty($processedInvoices)) {
               foreach ($processedInvoices as $invoiceNo => $receipts) {
                   try {
-                      // Get the invoice
-                      $invoice = DB::table('account_client_receipts')
+                      // Check if invoice is voided - skip if voided
+                      $invoiceRow = DB::table('account_client_receipts')
                           ->where('receipt_type', 3)
                           ->where('invoice_no', $invoiceNo)
                           ->where('client_id', $requestData['client_id'])
                           ->first();
 
-                      if ($invoice) {
-                          // Check if invoice is voided - skip if voided
-                          if (!empty($invoice->void_invoice) && $invoice->void_invoice == 1) {
+                      if ($invoiceRow) {
+                          if (!empty($invoiceRow->void_invoice) && $invoiceRow->void_invoice == 1) {
                               Log::warning('Attempted to match receipt to voided invoice', [
                                   'invoice_no' => $invoiceNo,
                                   'client_id' => $requestData['client_id']
@@ -1789,67 +1737,16 @@ class ClientAccountsController extends Controller
                               continue;
                           }
 
-                          // Calculate total payments for this invoice (from office receipts and fee transfers)
-                          $totalPaidOffice = DB::table('account_client_receipts')
-                              ->where('receipt_type', 2)
-                              ->where('invoice_no', $invoiceNo)
-                              ->where('client_id', $requestData['client_id'])
-                              ->where('save_type', 'final')
-                              ->sum('deposit_amount');
-
-                          // Sum fee transfers for this invoice
-                          $totalPaidFeeTransfer = DB::table('account_client_receipts')
-                              ->where('receipt_type', 1)
-                              ->where('client_fund_ledger_type', 'Fee Transfer')
-                              ->where('invoice_no', $invoiceNo)
-                              ->where('client_id', $requestData['client_id'])
-                              ->where(function($q) {
-                                  $q->whereNull('void_fee_transfer')
-                                    ->orWhere('void_fee_transfer', 0);
-                              })
-                              ->sum('withdraw_amount');
-
-                          $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
-                          $invoiceAmount = floatval($invoice->withdraw_amount);
-                          $newBalance = $invoiceAmount - $totalPaid;
-
-                          // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
-                          if ($newBalance <= 0) {
-                              $newStatus = 1; // Paid
-                          } elseif ($totalPaid > 0) {
-                              $newStatus = 2; // Partial
-                          } else {
-                              $newStatus = 0; // Unpaid
+                          $synced = $invoicePaymentSync->persistPaymentState($requestData['client_id'], $invoiceNo);
+                          if ($synced !== null) {
+                              Log::info('Invoice status updated after office receipt creation', [
+                                  'invoice_no' => $invoiceNo,
+                                  'total_paid' => $synced['total_paid'],
+                                  'new_balance' => $synced['new_balance'],
+                                  'new_status' => $synced['invoice_status'],
+                                  'client_id' => $requestData['client_id']
+                              ]);
                           }
-
-                          // Update invoice status and balance
-                          DB::table('account_client_receipts')
-                              ->where('receipt_type', 3)
-                              ->where('invoice_no', $invoiceNo)
-                              ->where('client_id', $requestData['client_id'])
-                              ->update([
-                                  'invoice_status' => $newStatus,
-                                  'partial_paid_amount' => $totalPaid,
-                                  'balance_amount' => max(0, $newBalance),
-                                  'updated_at' => now(),
-                              ]);
-
-                          // Also update in account_all_invoice_receipts if it exists
-                          AccountAllInvoiceReceipt::where('receipt_type', 3)
-                              ->where('invoice_no', $invoiceNo)
-                              ->where('client_id', $requestData['client_id'])
-                              ->update([
-                                  'invoice_status' => $newStatus,
-                                  'updated_at' => now(),
-                              ]);
-
-                          Log::info('Invoice status updated after office receipt creation', [
-                              'invoice_no' => $invoiceNo,
-                              'total_paid' => $totalPaid,
-                              'new_balance' => $newBalance,
-                              'new_status' => $newStatus,
-                              'client_id' => $requestData['client_id']
-                          ]);
                       } else {
                           Log::warning('Invoice not found for receipt matching', [
                               'invoice_no' => $invoiceNo,
@@ -2080,18 +1977,12 @@ class ClientAccountsController extends Controller
           if ($request->has('invoice_no') && !empty($request->input('invoice_no'))) {
               $invoiceNo = $request->input('invoice_no');
               
-              // Get the invoice
-              $invoice = DB::table('account_client_receipts')
-                  ->where('receipt_type', 3)
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $receipt->client_id)
-                  ->first();
-              
-              if ($invoice) {
-                  // Use original receipt amount (before any updates)
-                  $receiptAmount = floatval($originalReceipt->deposit_amount);
-                  $invoiceAmount = floatval($invoice->withdraw_amount);
-                  $invoiceBalance = floatval($invoice->balance_amount ?? $invoiceAmount);
+              $invoicePaymentSync = app(InvoicePaymentSyncService::class);
+              $isOverpayment = false;
+
+              if ($invoicePaymentSync->invoiceLinesExist($receipt->client_id, $invoiceNo)) {
+                  $receiptAmount = floatval($receipt->deposit_amount);
+                  $invoiceBalance = $invoicePaymentSync->outstandingExcludingOfficeReceiptId($receipt->client_id, $invoiceNo, (int) $id);
                   
                   // Check if receipt amount exceeds invoice balance (overpayment)
                   $excessAmount = $receiptAmount - $invoiceBalance;
@@ -2150,68 +2041,14 @@ class ClientAccountsController extends Controller
                       $receipt = DB::table('account_client_receipts')->where('id', $id)->first();
                   }
                   
-                  // BUGFIX #2: Calculate total payments INCLUDING fee transfers (not just office receipts)
-                  // Calculate total Office Receipts for this invoice
-                  $totalPaidOffice = DB::table('account_client_receipts')
-                      ->where('receipt_type', 2)
-                      ->where('invoice_no', $invoiceNo)
-                      ->where('client_id', $receipt->client_id)
-                      ->where('save_type', 'final')
-                      ->sum('deposit_amount');
-                  
-                  // Calculate total Fee Transfers for this invoice (non-voided only)
-                  $totalPaidFeeTransfer = DB::table('account_client_receipts')
-                      ->where('receipt_type', 1)
-                      ->where('client_fund_ledger_type', 'Fee Transfer')
-                      ->where('invoice_no', $invoiceNo)
-                      ->where('client_id', $receipt->client_id)
-                      ->where(function($q) {
-                          $q->whereNull('void_fee_transfer')
-                            ->orWhere('void_fee_transfer', 0);
-                      })
-                      ->sum('withdraw_amount');
-                  
-                  // Combine both payment types
-                  $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
-                  
-                  $newBalance = $invoiceAmount - $totalPaid;
-                  
-                  // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
-                  if ($newBalance <= 0) {
-                      $newStatus = 1; // Paid
-                  } elseif ($totalPaid > 0) {
-                      $newStatus = 2; // Partial
-                  } else {
-                      $newStatus = 0; // Unpaid
-                  }
-                  
-                  // Update invoice status and balance
-                  DB::table('account_client_receipts')
-                      ->where('receipt_type', 3)
-                      ->where('invoice_no', $invoiceNo)
-                      ->where('client_id', $receipt->client_id)
-                      ->update([
-                          'invoice_status' => $newStatus,
-                          'partial_paid_amount' => $totalPaid,
-                          'balance_amount' => max(0, $newBalance),
-                          'updated_at' => now(),
-                      ]);
-                  
-                  // Also update in account_all_invoice_receipts if it exists
-                  AccountAllInvoiceReceipt::where('receipt_type', 3)
-                      ->where('invoice_no', $invoiceNo)
-                      ->where('client_id', $receipt->client_id)
-                      ->update([
-                          'invoice_status' => $newStatus,
-                          'updated_at' => now(),
-                      ]);
+                  $synced = $invoicePaymentSync->persistPaymentState((int) $receipt->client_id, $invoiceNo);
                   
                   Log::info('Invoice status updated after receipt allocation', [
                       'invoice_no' => $invoiceNo,
-                      'total_paid' => $totalPaid,
-                      'new_balance' => $newBalance,
-                      'new_status' => $newStatus,
-                      'residual_created' => $isOverpayment
+                      'total_paid' => $synced !== null ? $synced['total_paid'] : null,
+                      'new_balance' => $synced !== null ? $synced['new_balance'] : null,
+                      'new_status' => $synced !== null ? $synced['invoice_status'] : null,
+                      'residual_created' => $isOverpayment,
                   ]);
               }
           }
@@ -2314,7 +2151,7 @@ class ClientAccountsController extends Controller
           $baseQuery = DB::table('account_client_receipts')
               ->select(
                   DB::raw('invoice_no as trans_no'),
-                  DB::raw('MAX(COALESCE(balance_amount, withdraw_amount, 0)) as balance_amount'),
+                  DB::raw('SUM(COALESCE(balance_amount, 0)) as balance_amount'),
                   DB::raw('MAX(COALESCE(invoice_status, 0)) as invoice_status'),
                   DB::raw('MAX(description) as description'),
                   DB::raw('MAX(trans_date) as latest_trans_date')
@@ -2347,7 +2184,7 @@ class ClientAccountsController extends Controller
               $invoices = DB::table('account_client_receipts')
                   ->select(
                       DB::raw('invoice_no as trans_no'),
-                      DB::raw('MAX(COALESCE(balance_amount, withdraw_amount, 0)) as balance_amount'),
+                      DB::raw('SUM(COALESCE(balance_amount, 0)) as balance_amount'),
                       DB::raw('MAX(COALESCE(invoice_status, 0)) as invoice_status'),
                       DB::raw('MAX(description) as description'),
                       DB::raw('MAX(trans_date) as latest_trans_date')
@@ -2442,59 +2279,13 @@ class ClientAccountsController extends Controller
                       'updated_at' => now(),
                   ]);
               
-              // Get the old invoice and update its status
-              $oldInvoice = DB::table('account_client_receipts')
-                  ->where('receipt_type', 3)
-                  ->where('trans_no', $oldInvoiceNo)
-                  ->where('client_id', $clientId)
-                  ->first();
-              
-              if ($oldInvoice) {
-                  // Recalculate old invoice status
-                  $totalPaidOfficeOld = DB::table('account_client_receipts')
-                      ->where('receipt_type', 2)
-                      ->where('invoice_no', $oldInvoiceNo)
-                      ->where('client_id', $clientId)
-                      ->where('save_type', 'final')
-                      ->sum('deposit_amount');
-                  
-                  $totalPaidFeeTransferOld = DB::table('account_client_receipts')
-                      ->where('receipt_type', 1)
-                      ->where('client_fund_ledger_type', 'Fee Transfer')
-                      ->where('invoice_no', $oldInvoiceNo)
-                      ->where('client_id', $clientId)
-                      ->where(function($q) {
-                          $q->whereNull('void_fee_transfer')
-                            ->orWhere('void_fee_transfer', 0);
-                      })
-                      ->sum('withdraw_amount');
-                  
-                  $totalPaidOld = $totalPaidOfficeOld + $totalPaidFeeTransferOld;
-                  $invoiceAmountOld = floatval($oldInvoice->withdraw_amount);
-                  $newBalanceOld = $invoiceAmountOld - $totalPaidOld;
-                  
-                  $newStatusOld = 0; // Unpaid
-                  if ($newBalanceOld <= 0) {
-                      $newStatusOld = 1; // Paid
-                  } elseif ($totalPaidOld > 0) {
-                      $newStatusOld = 2; // Partial
-                  }
-                  
-                  DB::table('account_client_receipts')
-                      ->where('receipt_type', 3)
-                      ->where('trans_no', $oldInvoiceNo)
-                      ->where('client_id', $clientId)
-                      ->update([
-                          'invoice_status' => $newStatusOld,
-                          'partial_paid_amount' => $totalPaidOld,
-                          'balance_amount' => max(0, $newBalanceOld),
-                          'updated_at' => now(),
-                      ]);
-                  
+              $invoicePaymentSyncLedger = app(InvoicePaymentSyncService::class);
+              $syncOld = $invoicePaymentSyncLedger->persistPaymentState((int) $clientId, (string) $oldInvoiceNo);
+              if ($syncOld !== null) {
                   Log::info('Old invoice status updated after re-allocation', [
                       'old_invoice_no' => $oldInvoiceNo,
-                      'new_status' => $newStatusOld,
-                      'new_balance' => $newBalanceOld
+                      'new_status' => $syncOld['invoice_status'],
+                      'new_balance' => $syncOld['new_balance'],
                   ]);
               }
           }
@@ -2584,74 +2375,14 @@ class ClientAccountsController extends Controller
               ]);
           }
           
-          // Get the invoice
-          $invoice = DB::table('account_client_receipts')
-              ->where('receipt_type', 3)
-              ->where('invoice_no', $invoiceNo)
-              ->where('client_id', $clientId)
-              ->first();
-          
-          if ($invoice) {
-              // Calculate total payments for this invoice (from office receipts, ledger deposits, and fee transfers)
-              $totalPaidOffice = DB::table('account_client_receipts')
-                  ->where('receipt_type', 2)
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->where('save_type', 'final')
-                  ->sum('deposit_amount');
-              
-              // Sum fee transfers for this invoice
-              $totalPaidFeeTransfer = DB::table('account_client_receipts')
-                  ->where('receipt_type', 1)
-                  ->where('client_fund_ledger_type', 'Fee Transfer')
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->where(function($q) {
-                      $q->whereNull('void_fee_transfer')
-                        ->orWhere('void_fee_transfer', 0);
-                  })
-                  ->sum('withdraw_amount');
-              
-              $totalPaid = $totalPaidOffice + $totalPaidFeeTransfer;
-              
-              $invoiceAmount = floatval($invoice->withdraw_amount);
-              $newBalance = $invoiceAmount - $totalPaid;
-              
-              // Determine new status: 0=Unpaid, 1=Paid, 2=Partial
-              if ($newBalance <= 0) {
-                  $newStatus = 1; // Paid
-              } elseif ($totalPaid > 0) {
-                  $newStatus = 2; // Partial
-              } else {
-                  $newStatus = 0; // Unpaid
-              }
-              
-              // Update invoice status and balance
-              DB::table('account_client_receipts')
-                  ->where('receipt_type', 3)
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->update([
-                      'invoice_status' => $newStatus,
-                      'partial_paid_amount' => $totalPaid,
-                      'balance_amount' => max(0, $newBalance),
-                      'updated_at' => now(),
-                  ]);
-              
-              // Also update in account_all_invoice_receipts if it exists
-              AccountAllInvoiceReceipt::where('receipt_type', 3)
-                  ->where('invoice_no', $invoiceNo)
-                  ->where('client_id', $clientId)
-                  ->update([
-                      'invoice_status' => $newStatus,
-                      'updated_at' => now(),
-                  ]);
-              
+          $invoicePaymentSyncLedger = app(InvoicePaymentSyncService::class);
+          $syncedNew = $invoicePaymentSyncLedger->persistPaymentState((int) $clientId, (string) $invoiceNo);
+          if ($syncedNew !== null) {
               Log::info('Invoice status updated after ledger allocation', [
                   'invoice_no' => $invoiceNo,
-                  'total_paid' => $totalPaid,
-                  'new_balance' => $newBalance,
-                  'new_status' => $newStatus
+                  'total_paid' => $syncedNew['total_paid'],
+                  'new_balance' => $syncedNew['new_balance'],
+                  'new_status' => $syncedNew['invoice_status'],
               ]);
           }
           
@@ -3032,24 +2763,17 @@ class ClientAccountsController extends Controller
           $total_GST_amount = 0.00;
       }
 
-      //Total Pending Amount
-      $total_Pending_amount = DB::table('account_client_receipts')
-        ->where('receipt_type', 3)
-        ->where('receipt_id', $id)
-        ->where('client_id', $queryClientId)
-        ->where(function ($query) {
-            $query->whereIn('invoice_status', [0, 2])
-                ->orWhere(function ($q) {
-                    $q->where('invoice_status', 1)
-                        ->whereRaw('balance_amount <> 0::numeric');
-                });
-        })
-        ->sum('balance_amount');  
-    Log::info('Total Pending Amount: ' . $total_Pending_amount);
+      // Total Pending Amount (computed from invoice lines and payments; matches partial fee transfer / office receipts)
+      $invoicePaymentSyncPdf = app(InvoicePaymentSyncService::class);
+      $voidForPending = ($receipt_entry && isset($receipt_entry->void_invoice) && (int) $receipt_entry->void_invoice === 1) ? 1 : null;
+      $total_Pending_amount = $invoicePaymentSyncPdf->pendingAmountForReceiptPdf(
+          (int) $queryClientId,
+          (int) $id,
+          (float) $total_Invoice_Amount,
+          $voidForPending
+      );
 
-      if ($total_Pending_amount === null) {
-          $total_Pending_amount = 0.00;
-      }
+    Log::info('Total Pending Amount: ' . $total_Pending_amount);
 
       $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
       
@@ -5637,14 +5361,16 @@ public function getInvoiceAmount(Request $request)
         'invoice_no' => 'required|string',
     ]);
 
-    // Fetch the balance_amount from account_client_receipts where receipt_type = 3
-    $invoice = AccountClientReceipt::select('balance_amount')->where('invoice_no', $request->invoice_no)
+    $row = AccountClientReceipt::select('client_id')
+        ->where('invoice_no', $request->invoice_no)
         ->where('receipt_type', 3)
         ->first();
-    if ($invoice) {
+    if ($row) {
+        $pending = app(InvoicePaymentSyncService::class)->computePaymentState((int) $row->client_id, $request->invoice_no);
+
         return response()->json([
          'success' => true,
-         'balance_amount' => $invoice->balance_amount,
+         'balance_amount' => $pending['new_balance'] ?? 0,
         ]);
     }
 
@@ -5718,18 +5444,6 @@ public function getInvoiceAmount(Request $request)
 
          $total_GST_amount =  $total_Invoice_Amount - $total_Gross_Amount;
 
-         $total_Pending_amount  = DB::table('account_client_receipts')
-         ->where('receipt_type', 3)
-         ->where('receipt_id', $id)
-         ->where(function ($query) {
-             $query->whereIn('invoice_status', [0, 2])
-                 ->orWhere(function ($q) {
-                     $q->where('invoice_status', 1)
-                         ->where('balance_amount', '!=', 0);
-                 });
-         })
-         ->sum('balance_amount');
-
          // FIX: Handle NULL values for amounts (prevent decimal casting errors in Blade template)
          if ($total_Gross_Amount === null) {
              $total_Gross_Amount = 0.00;
@@ -5740,6 +5454,23 @@ public function getInvoiceAmount(Request $request)
          if ($total_GST_amount === null) {
              $total_GST_amount = 0.00;
          }
+
+         $hubdocAcr = DB::table('account_client_receipts')
+             ->where('receipt_type', 3)
+             ->where('receipt_id', $id)
+             ->where('client_id', $record_get[0]->client_id)
+             ->orderBy('id')
+             ->first();
+         $voidHubdoc = $hubdocAcr && isset($hubdocAcr->void_invoice) ? (int) $hubdocAcr->void_invoice : null;
+
+         $invoicePaymentSyncHubdoc = app(InvoicePaymentSyncService::class);
+         $total_Pending_amount = $invoicePaymentSyncHubdoc->pendingAmountForReceiptPdf(
+             (int) $record_get[0]->client_id,
+             (int) $id,
+             (float) $total_Invoice_Amount,
+             $voidHubdoc === 1 ? 1 : null
+         );
+
          if ($total_Pending_amount === null) {
              $total_Pending_amount = 0.00;
          }

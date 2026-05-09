@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Models\AccountAllInvoiceReceipt;
+use App\Services\InvoicePaymentSyncService;
 use PDF;
 
 class SendHubdocInvoiceJob implements ShouldQueue
@@ -88,17 +89,30 @@ class SendHubdocInvoiceJob implements ShouldQueue
 
             $total_GST_amount =  $total_Invoice_Amount - $total_Gross_Amount;
 
-            $total_Pending_amount  = DB::table('account_client_receipts')
-            ->where('receipt_type', 3)
-            ->where('receipt_id', $this->invoiceId)
-            ->where(function ($query) {
-                $query->whereIn('invoice_status', [0, 2])
-                    ->orWhere(function ($q) {
-                        $q->where('invoice_status', 1)
-                            ->where('balance_amount', '!=', 0);
-                    });
-            })
-            ->sum('balance_amount');
+            if ($total_Gross_Amount === null) {
+                $total_Gross_Amount = 0.00;
+            }
+            if ($total_Invoice_Amount === null) {
+                $total_Invoice_Amount = 0.00;
+            }
+            if ($total_GST_amount === null) {
+                $total_GST_amount = 0.00;
+            }
+
+            $hubdocJobAcr = DB::table('account_client_receipts')
+                ->where('receipt_type', 3)
+                ->where('receipt_id', $this->invoiceId)
+                ->where('client_id', $record_get[0]->client_id)
+                ->orderBy('id')
+                ->first();
+            $voidHubdocJob = $hubdocJobAcr && isset($hubdocJobAcr->void_invoice) && (int) $hubdocJobAcr->void_invoice === 1 ? 1 : null;
+
+            $total_Pending_amount = app(InvoicePaymentSyncService::class)->pendingAmountForReceiptPdf(
+                (int) $record_get[0]->client_id,
+                (int) $this->invoiceId,
+                (float) $total_Invoice_Amount,
+                $voidHubdocJob
+            );
 
             // Get payment method
             $invoice_payment_method = '';
