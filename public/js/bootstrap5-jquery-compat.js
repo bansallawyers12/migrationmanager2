@@ -1,7 +1,16 @@
 /**
- * Bootstrap 5 jQuery compatibility shim
- * Provides $.fn.modal, $.fn.collapse, $.fn.dropdown, $.fn.alert for legacy code
- * that expects Bootstrap 4's jQuery API. Delegates to Bootstrap 5's native API.
+ * Bootstrap 5.3.7 — jQuery compatibility shim
+ *
+ * Canonical version matches compiled CSS (see public/css/app.css header; layout uses
+ * public/css/app.min.css) and the bootstrap.bundle script (currently 5.3.7 CDN) in
+ * resources/views/layouts/crm_client_detail_dashboard.blade.php.
+ *
+ * Provides $.fn.modal, $.fn.collapse, $.fn.dropdown, $.fn.alert for legacy code that
+ * expects Bootstrap 4's jQuery API. Delegates to Bootstrap 5's native API.
+ *
+ * Note: Popover/Tooltip still use the legacy jQuery plugin from app.min.js where
+ * present; this file does not register $.fn.popover. New code should prefer
+ * bootstrap.Popover / bootstrap.Tooltip when possible.
  */
 (function() {
     if (typeof bootstrap === 'undefined' || typeof jQuery === 'undefined') return;
