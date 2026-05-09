@@ -44,9 +44,7 @@ class DashboardController extends Controller
 
         return response()->view('crm.partials.dashboard-client-matters-fragment', [
             'data' => $data,
-            'workflowStages' => $payload['workflowStages'],
             'filters' => $payload['filters'],
-            'visibleColumns' => $payload['visibleColumns'],
         ]);
     }
 
@@ -61,24 +59,6 @@ class DashboardController extends Controller
             'success' => true,
             'message' => 'Column preferences saved successfully'
         ]);
-    }
-
-    /**
-     * Update client matter stage
-     */
-    public function updateStage(Request $request)
-    {
-        $this->validate($request, [
-            'item_id' => 'required|integer',
-            'stage_id' => 'required|integer',
-        ]);
-
-        $result = $this->dashboardService->updateClientMatterStage(
-            $request->item_id, 
-            $request->stage_id
-        );
-
-        return response()->json($result);
     }
 
     /**

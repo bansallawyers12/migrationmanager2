@@ -1,4 +1,4 @@
-{{-- Client matters table + pagination only (AJAX fragment for dashboard). Expects: $data, $workflowStages, $filters --}}
+{{-- Client matters table + pagination only (AJAX fragment). Expects: $data, $filters --}}
 <div class="dashboard-matters-meta" data-total="{{ $data->total() }}" hidden></div>
 <div class="table-responsive">
     <table class="data-table data-table-enhanced" role="grid">
@@ -105,13 +105,7 @@
                             @endif
                         </td>
                         <td class="col-stage">
-                            <select class="form-select stageCls stage-select-enhanced" id="stage_{{ $matter->id }}" aria-label="Change stage for matter {{ $matter->client_unique_matter_no }}">
-                                @foreach($matter->stagesForDashboardDropdown($workflowStages) as $stage)
-                                    <option value="{{ $stage->id }}" {{ $matter->workflow_stage_id == $stage->id ? 'selected' : '' }}>
-                                        {{ $stage->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @include('crm.partials.dashboard-matter-stage-link', ['matter' => $matter])
                         </td>
                     </tr>
                 @endif

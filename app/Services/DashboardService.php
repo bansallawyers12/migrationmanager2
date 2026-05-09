@@ -76,8 +76,7 @@ class DashboardService
             'migrationAgent',  // Load full migration agent record
             'personResponsible', // Load full person responsible record
             'personAssisting',  // Load full person assisting record
-            'workflowStage',    // Load workflow stage
-            'workflowStages',   // Stages for this matter's workflow (dashboard dropdown)
+            'workflowStage',    // Load workflow stage name (dashboard Stage column)
             'matter',            // Load matter type
         ]);
 
@@ -499,34 +498,6 @@ class DashboardService
         $filteredColumns = array_intersect($visibleColumns, $validColumns);
         
         session(['dashboard_column_preferences' => $filteredColumns]);
-    }
-
-    /**
-     * Update client matter stage
-     */
-    public function updateClientMatterStage($itemId, $stageId): array
-    {
-        $item = ClientMatter::find($itemId);
-
-        if (! $item) {
-            return ['success' => false, 'message' => 'Matter not found!'];
-        }
-
-        $stage = WorkflowStage::find($stageId);
-
-        if (! $stage) {
-            return ['success' => false, 'message' => 'Stage not found!'];
-        }
-
-        if ($item->workflow_id !== null
-            && (int) $stage->workflow_id !== (int) $item->workflow_id) {
-            return ['success' => false, 'message' => 'This stage is not part of this matter\'s workflow.'];
-        }
-
-        $item->workflow_stage_id = $stageId;
-        $item->save();
-
-        return ['success' => true, 'message' => 'Matter stage updated successfully!'];
     }
 
     /**

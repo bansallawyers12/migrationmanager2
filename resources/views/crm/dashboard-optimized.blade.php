@@ -135,9 +135,7 @@
             <div id="dashboardMattersFragment" class="dashboard-matters-fragment">
                 @include('crm.partials.dashboard-client-matters-fragment', [
                     'data' => $data,
-                    'workflowStages' => $workflowStages,
                     'filters' => $filters,
-                    'visibleColumns' => $visibleColumns,
                 ])
             </div>
         </section>
@@ -553,25 +551,32 @@
     flex-shrink: 0;
 }
 
-/* Enhanced Stage Select */
-.stage-select-enhanced {
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
+/* Stage column: read-only label linking to client Workflow tab */
+.stage-static-link {
+    display: block;
     padding: 6px 10px;
     font-size: 0.85em;
-    transition: all 0.2s ease;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #0d6efd;
+    text-decoration: none;
+    border-radius: 6px;
     width: 100%;
     min-width: 180px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    word-break: break-word;
     white-space: normal;
-    overflow: visible;
 }
 
-.stage-select-enhanced:focus {
-    border-color: #005792;
-    box-shadow: 0 0 0 3px rgba(0, 87, 146, 0.1);
-    outline: none;
-    z-index: 10;
-    position: relative;
+.stage-static-link:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+    background-color: rgba(13, 110, 253, 0.06);
+}
+
+.stage-static-link:focus-visible {
+    outline: 2px solid #005792;
+    outline-offset: 2px;
 }
 
 /* Fix stage column width */
@@ -976,7 +981,6 @@
     window.dashboardRoutes = {
         dashboard: "{{ route('dashboard') }}",
         mattersFragment: "{{ route('dashboard.matters-fragment') }}",
-        updateStage: "{{ route('dashboard.update-stage') }}",
         columnPreferences: "{{ route('dashboard.column-preferences') }}",
         extendDeadline: "{{ route('dashboard.extend-deadline') }}",
         updateActionCompleted: "{{ route('dashboard.update-action-completed') }}",

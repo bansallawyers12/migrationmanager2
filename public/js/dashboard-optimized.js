@@ -20,15 +20,6 @@ function initializeDashboard() {
 }
 
 function initializeEventHandlers() {
-    // Stage change handler
-    $(document).on('change', '.stageCls', function () {
-        let stageId = $(this).val();
-        let itemId = $(this).attr('id').split('_')[1];
-        if (stageId) {
-            updateStage(itemId, stageId);
-        }
-    });
-
     // Extend deadline
     $(document).on('click', '#extend_deadline', extendDeadline);
     $(document).delegate('.btn-extend_note_deadline', 'click', openExtendDeadlineModal);
@@ -226,28 +217,6 @@ function syncDashboardMattersTotalFromFragment(frag) {
         return;
     }
     totalEl.textContent = '(' + t + ' total)';
-}
-
-function updateStage(itemId, stageId) {
-    if (!window.dashboardRoutes || !window.dashboardRoutes.updateStage) {
-        console.error('Update stage route not defined');
-        showNotification('Configuration error: Update route not available.', 'error');
-        return;
-    }
-    
-    $.ajax({
-        url: window.dashboardRoutes.updateStage,
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        method: 'POST',
-        data: { item_id: itemId, stage_id: stageId },
-        success: function (response) {
-            showNotification(response.success ? 'Stage updated successfully!' : 'Failed to update stage.', response.success ? 'success' : 'error');
-            if (response.success) setTimeout(() => location.reload(), 1000);
-        },
-        error: function (xhr, status, error) {
-            showNotification('An error occurred while updating status.', 'error');
-        }
-    });
 }
 
 function extendDeadline() {

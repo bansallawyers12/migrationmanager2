@@ -1,4 +1,4 @@
-@props(['matter', 'workflowStages'])
+@props(['matter'])
 
 @php
     $client = $matter->client;
@@ -61,12 +61,6 @@
         {{ $personAssisting ? $personAssisting->first_name . ' ' . $personAssisting->last_name : config('constants.empty') }}
     </td>
     <td class="col-stage">
-        <select class="form-select stageCls" id="stage_{{ $matter->id }}" style="height: 30px;border-color: #e0e0e0;">
-            @foreach($matter->stagesForDashboardDropdown($workflowStages) as $stage)
-                <option value="{{ $stage->id }}" {{ $matter->workflow_stage_id == $stage->id ? 'selected' : '' }}>
-                    {{ $stage->name }}
-                </option>
-            @endforeach
-        </select>
+        @include('crm.partials.dashboard-matter-stage-link', ['matter' => $matter])
     </td>
 </tr>
