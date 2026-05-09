@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
+use App\Services\CrmAccess\CrmAccessService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use App\Models\ActivitiesLog;
 use App\Models\Admin;
-use Carbon\Carbon;
 
 class ActivitySearchController extends Controller
 {
@@ -21,6 +24,38 @@ class ActivitySearchController extends Controller
     public function __construct()
     {
         $this->middleware('auth:admin');
+    }
+
+    /**
+     * Matches sidebar: Super Admin (role 1) or staff with grant_super_admin_access.
+     */
+    private function userCanAccessActivitySearch(): bool
+    {
+        $user = Auth::user();
+
+        return $user instanceof Staff
+            && app(CrmAccessService::class)->hasAdminConsoleLikeSuperAdminAccess($user);
+    }
+
+    /**
+     * @return string|null Error message if any submitted date is invalid.
+     */
+    private function validateActivitySearchDates(Request $request): ?string
+    {
+        foreach (['date_from', 'date_to'] as $field) {
+            if (! $request->filled($field)) {
+                continue;
+            }
+            try {
+                Carbon::parse($request->input($field));
+            } catch (\Throwable $e) {
+                return $field === 'date_from'
+                    ? 'Invalid Date From.'
+                    : 'Invalid Date To.';
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -62,9 +97,8 @@ class ActivitySearchController extends Controller
      */
     public function index(Request $request)
     {
-        // Check if user is Super Admin (role = 1)
-        if (Auth::user()->role != 1) {
-            return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only Super Admins can access Activity Search.');
+        if (! $this->userCanAccessActivitySearch()) {
+            return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only authorized administrators can access Activity Search.');
         }
 
         // Get all active staff
@@ -109,6 +143,13 @@ class ActivitySearchController extends Controller
 
         // Process search if form is submitted
         if ($request->has('search')) {
+            if ($message = $this->validateActivitySearchDates($request)) {
+                return redirect()
+                    ->back()
+                    ->withInput()
+                    ->with('error', $message);
+            }
+
             $query = ActivitiesLog::query()
                 ->select(
                     'activities_logs.*',
@@ -188,15 +229,47 @@ class ActivitySearchController extends Controller
     }
 
     /**
+     * Single activity row for the Activity Search modal (JSON).
+     */
+    public function activityJson(int $id): JsonResponse
+    {
+        if (! $this->userCanAccessActivitySearch()) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $activity = ActivitiesLog::query()->find($id);
+        if (! $activity) {
+            return response()->json(['status' => false, 'message' => 'Activity not found'], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'id' => $activity->id,
+                'subject' => $activity->subject,
+                'description' => strip_tags((string) ($activity->description ?? '')),
+                'activity_type' => $activity->activity_type,
+                'created_at' => $activity->created_at?->toAtomString(),
+            ],
+        ]);
+    }
+
+    /**
      * Export activities to CSV
      *
      * @return \Illuminate\Http\Response
      */
     public function export(Request $request)
     {
-        // Check if user is Super Admin (role = 1)
-        if (Auth::user()->role != 1) {
-            return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only Super Admins can export activities.');
+        if (! $this->userCanAccessActivitySearch()) {
+            return Redirect::to('/dashboard')->with('error', 'Unauthorized: Only authorized administrators can export activities.');
+        }
+
+        if ($message = $this->validateActivitySearchDates($request)) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', $message);
         }
 
         $query = ActivitiesLog::query()
@@ -327,6 +400,10 @@ class ActivitySearchController extends Controller
      */
     public function searchClients(Request $request)
     {
+        if (! $this->userCanAccessActivitySearch()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         $query = $request->get('q', '');
         
         if (strlen($query) < 2) {

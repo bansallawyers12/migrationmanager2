@@ -219,9 +219,12 @@
                                                                 @endif
                                                             </td>
                                                             <td>
-                                                                @if($activity->client_first_name)
-                                                                    <a href="{{ route('crm.clients.detail', $activity->client_id) }}" target="_blank">
-                                                                        {{ $activity->client_first_name }} {{ $activity->client_last_name }}
+                                                                @if($activity->client_id)
+                                                                    @php
+                                                                        $clientDisplayName = trim(($activity->client_first_name ?? '') . ' ' . ($activity->client_last_name ?? ''));
+                                                                    @endphp
+                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" target="_blank">
+                                                                        {{ $clientDisplayName !== '' ? $clientDisplayName : 'Client #' . $activity->client_id }}
                                                                     </a>
                                                                 @else
                                                                     <span class="text-muted">N/A</span>
@@ -236,6 +239,11 @@
                                                                         'document' => ['label' => 'Document', 'class' => 'info'],
                                                                         'note' => ['label' => 'Note', 'class' => 'warning'],
                                                                         'financial' => ['label' => 'Financial', 'class' => 'success'],
+                                                                        'lead_converted' => ['label' => 'Lead converted', 'class' => 'success'],
+                                                                        'followup_scheduled' => ['label' => 'Action scheduled', 'class' => 'info'],
+                                                                        'followup_completed' => ['label' => 'Action completed', 'class' => 'success'],
+                                                                        'followup_rescheduled' => ['label' => 'Action rescheduled', 'class' => 'warning'],
+                                                                        'followup_cancelled' => ['label' => 'Action cancelled', 'class' => 'danger'],
                                                                     ];
                                                                     $typeInfo = $typeLabels[$activity->activity_type] ?? ['label' => ucfirst($activity->activity_type ?? 'N/A'), 'class' => 'secondary'];
                                                                 @endphp
@@ -268,7 +276,7 @@
                                                                     <i class="fas fa-eye"></i>
                                                                 </button>
                                                                 @if($activity->client_id)
-                                                                    <a href="{{ route('crm.clients.detail', $activity->client_id) }}" 
+                                                                    <a href="{{ route('clients.detail', base64_encode(convert_uuencode($activity->client_id))) }}" 
                                                                        target="_blank" 
                                                                        class="btn btn-sm btn-primary"
                                                                        data-bs-toggle="tooltip" title="View Client">
@@ -329,7 +337,22 @@
 @endsection
 
 @section('scripts')
+@php
+    $activitySearchJsonUrlPrefix = preg_replace('#/0$#', '', route('adminconsole.system.activity-search.activity', ['id' => 0]));
+@endphp
 <script>
+function escapeHtml(text) {
+    if (text === null || text === undefined) {
+        return '';
+    }
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 $(document).ready(function() {
     // Initialize Select2
     $('.select2').select2({
@@ -383,21 +406,28 @@ function exportActivities() {
 
 function viewActivityDetails(activityId) {
     $('#activityDetailsModal').modal('show');
+    $('#activityDetailsContent').html('<div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
     
-    // Fetch activity details via AJAX
+    var detailUrl = @json($activitySearchJsonUrlPrefix) + '/' + encodeURIComponent(activityId);
+    
     $.ajax({
-        url: '/crm/activities',
+        url: detailUrl,
         method: 'GET',
-        data: { id: activityId },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json'
+        },
         success: function(response) {
-            if (response.status) {
-                let html = '<div class="activity-details">';
+            if (response.status && response.data) {
+                var d = response.data;
+                var created = d.created_at ? (typeof formatDisplayDateTime === 'function' ? (formatDisplayDateTime(d.created_at) || d.created_at) : String(d.created_at)) : 'N/A';
+                var html = '<div class="activity-details">';
                 html += '<table class="table table-borderless">';
-                html += '<tr><th width="30%">Activity ID:</th><td>#' + activityId + '</td></tr>';
-                html += '<tr><th>Subject:</th><td>' + (response.data.subject || 'N/A') + '</td></tr>';
-                html += '<tr><th>Description:</th><td>' + (response.data.description || 'N/A') + '</td></tr>';
-                html += '<tr><th>Activity Type:</th><td>' + (response.data.activity_type || 'N/A') + '</td></tr>';
-                html += '<tr><th>Created At:</th><td>' + (response.data.created_at ? (typeof formatDisplayDateTime === 'function' ? (formatDisplayDateTime(response.data.created_at) || 'N/A') : String(response.data.created_at)) : 'N/A') + '</td></tr>';
+                html += '<tr><th width="30%">Activity ID:</th><td>#' + escapeHtml(activityId) + '</td></tr>';
+                html += '<tr><th>Subject:</th><td>' + escapeHtml(d.subject || 'N/A') + '</td></tr>';
+                html += '<tr><th>Description:</th><td>' + escapeHtml(d.description || 'N/A') + '</td></tr>';
+                html += '<tr><th>Activity Type:</th><td>' + escapeHtml(d.activity_type || 'N/A') + '</td></tr>';
+                html += '<tr><th>Created At:</th><td>' + escapeHtml(created) + '</td></tr>';
                 html += '</table>';
                 html += '</div>';
                 

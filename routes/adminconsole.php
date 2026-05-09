@@ -206,7 +206,10 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         // Client Email List route
         Route::get('/clientsemaillist', [\App\Http\Controllers\CRM\ClientsController::class, 'clientsemaillist'])->name('clientsemaillist');
         
-        // Activity Search routes (Super Admin only)
+        // Activity Search routes (Super Admin + grant_super_admin_access; see ActivitySearchController)
+        Route::get('/activity-search/activity/{id}', [ActivitySearchController::class, 'activityJson'])
+            ->whereNumber('id')
+            ->name('activity-search.activity');
         Route::get('/activity-search', [ActivitySearchController::class, 'index'])->name('activity-search.index');
         Route::get('/activity-search/export', [ActivitySearchController::class, 'export'])->name('activity-search.export');
         Route::get('/activity-search/search-clients', [ActivitySearchController::class, 'searchClients'])->name('activity-search.search-clients');
