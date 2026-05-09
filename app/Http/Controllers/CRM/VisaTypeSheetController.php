@@ -293,7 +293,7 @@ class VisaTypeSheetController extends Controller
             ? "(SELECT {$cafTotalBlockFee} FROM cost_assignment_forms AS caf WHERE caf.client_matter_id = cm.id ORDER BY caf.created_at DESC, caf.id DESC LIMIT 1) AS checklist_block_fee"
             : 'NULL AS checklist_block_fee';
 
-        // Client matters with workflow=Checklist
+        // Client matters (clients + leads): workflow Checklist and/or at least one cp_doc_checklists row for this matter.
         $clientQuery = DB::table('client_matters as cm')
             ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
             ->leftJoin("{$refTable} as {$refAlias}", function ($j) use ($refAlias, $refType, $refTable) {
@@ -309,30 +309,43 @@ class VisaTypeSheetController extends Controller
             ->leftJoin('branches', 'cm.office_id', '=', 'branches.id')
             ->whereRaw($matterCondition)
             ->whereRaw('cm.matter_status = 1')
-            ->whereRaw("LOWER(TRIM(COALESCE(ws.name, ''))) = 'checklist'")
+            ->where(function ($q) {
+                $q->whereRaw("LOWER(TRIM(COALESCE(ws.name, ''))) = 'checklist'");
+                if (Schema::hasTable('cp_doc_checklists')) {
+                    $q->orWhereExists(function ($sub) {
+                        $sub->select(DB::raw('1'))
+                            ->from('cp_doc_checklists as cpdc')
+                            ->whereColumn('cpdc.client_matter_id', 'cm.id');
+                    });
+                }
+            })
             ->where(function ($q) use ($checklistCol) {
                 $q->whereNull("cm.{$checklistCol}")
                     ->orWhereIn("cm.{$checklistCol}", ['active', 'hold']);
             })
             ->where('admins.is_archived', 0)
             ->whereIn('admins.type', ['client', 'lead'])
-            ->whereNull('admins.is_deleted')
-            ->where(function ($q) {
-                $q->whereNull('admins.type')->orWhere('admins.type', '!=', 'lead');
-            });
+            ->whereNull('admins.is_deleted');
 
-        // Person Assisting role: restrict to matters where they are MA / PR / PA
+        // Person Assisting role: restrict to matters where they are MA / PR / PA,
+        // or leads allocated via admins.user_id (aligned with lead_matter_references branch).
         if ($paId = StaffClientVisibility::personAssistingStaffIdOrNull(Auth::user())) {
             $clientQuery->where(function ($q) use ($paId) {
-                $q->where('cm.sel_migration_agent', $paId)
-                    ->orWhere('cm.sel_person_responsible', $paId)
-                    ->orWhere('cm.sel_person_assisting', $paId);
+                $q->where(function ($q2) use ($paId) {
+                    $q2->where('cm.sel_migration_agent', $paId)
+                        ->orWhere('cm.sel_person_responsible', $paId)
+                        ->orWhere('cm.sel_person_assisting', $paId);
+                })->orWhere(function ($q2) use ($paId) {
+                    $q2->where('admins.type', 'lead')->where('admins.user_id', $paId);
+                });
             });
         }
 
         $clientQuery->select(
                 'cm.id as matter_internal_id',
                 'cm.client_id',
+                'cm.sel_matter_id',
+                'admins.type as admin_entity_type',
                 'admins.client_id as crm_ref',
                 'admins.first_name',
                 'admins.last_name',
@@ -387,6 +400,7 @@ class VisaTypeSheetController extends Controller
                         DB::raw('a."visaExpiry" as visa_expiry'),
                         DB::raw("CONCAT('Lead - ', COALESCE(m.title, '')) as client_unique_matter_no"),
                         'm.title as matter_title',
+                        'lr.matter_id as sel_matter_id',
                         DB::raw('NULL as deadline'),
                         DB::raw('NULL as other_reference'),
                         DB::raw('NULL as department_reference'),
@@ -427,8 +441,25 @@ class VisaTypeSheetController extends Controller
             }
         }
 
+        // Prefer the client_matters row when both exist (sent checklist created lead_matter_references + same matter).
+        $clientLeadMatterKeys = [];
         foreach ($clientRows as $r) {
-            $r->is_lead = 0;
+            if (isset($r->sel_matter_id)) {
+                $clientLeadMatterKeys[(int) $r->client_id . ':' . (int) $r->sel_matter_id] = true;
+            }
+        }
+        $leadRows = $leadRows->filter(function ($r) use ($clientLeadMatterKeys) {
+            $mid = isset($r->sel_matter_id) ? (int) $r->sel_matter_id : 0;
+            if ($mid <= 0) {
+                return true;
+            }
+
+            return ! isset($clientLeadMatterKeys[(int) $r->client_id . ':' . $mid]);
+        })->values();
+
+        foreach ($clientRows as $r) {
+            $r->is_lead = (($r->admin_entity_type ?? '') === 'lead') ? 1 : 0;
+            unset($r->admin_entity_type);
         }
         foreach ($leadRows as $r) {
             $r->is_lead = 1;
