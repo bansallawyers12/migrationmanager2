@@ -7362,6 +7362,9 @@ success: function(response) {
 
 
             var v = $(this).val();
+            if (!v) {
+                return;
+            }
 
             $.ajax({
 

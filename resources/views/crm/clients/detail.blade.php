@@ -1271,11 +1271,17 @@ $(document).ready(function() {
                     (res.matter_templates || []).forEach(function(t) {
                         $templateSelect.append($('<option></option>').attr('value', t.id).text(t.name || 'Template'));
                     });
-                    var fromSignature = $('#emailmodal').data('fromSignatureSend');
-                    var toSelect = res.template ? res.template.id : (res.matter_templates && res.matter_templates[0] ? res.matter_templates[0].id : null);
-                    if (toSelect) {
-                        $templateSelect.val(toSelect).trigger('change');
-                        if (fromSignature) $('#emailmodal').removeData('fromSignatureSend');
+                    // Reply/Forward from client email tab sets preserveReplyForwardBody so quoted content is not replaced by a template
+                    if (!$('#emailmodal').data('preserveReplyForwardBody')) {
+                        var fromSignature = $('#emailmodal').data('fromSignatureSend');
+                        var toSelect = res.template ? res.template.id : (res.matter_templates && res.matter_templates[0] ? res.matter_templates[0].id : null);
+                        if (toSelect) {
+                            $templateSelect.val(toSelect).trigger('change');
+                            if (fromSignature) $('#emailmodal').removeData('fromSignatureSend');
+                        }
+                    } else {
+                        // Keep body/subject from reply/forward; reset template UI without loading a template (empty val skips AJAX in .selecttemplate handler).
+                        $templateSelect.val('').trigger('change');
                     }
                 }
                 // Filter checklist table by matter using DataTables API

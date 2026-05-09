@@ -1443,6 +1443,11 @@
             return;
         }
 
+        // Skip default template auto-load on the client detail page so quoted reply/forward body is not overwritten.
+        if (typeof jQuery !== 'undefined') {
+            jQuery('#emailmodal').data('preserveReplyForwardBody', true);
+        }
+
         // Always set matter ID - use provided one or get from dropdown
         const matterIdInput = document.getElementById('compose_client_matter_id');
         if (matterIdInput) {
@@ -1461,31 +1466,26 @@
         // Set message (for TinyMCE editor)
         const messageTextarea = document.querySelector('#compose_email_message');
         if (messageTextarea && data.message) {
-            // Wait for modal to be fully shown before setting TinyMCE content
+            // Fill textarea immediately so content is not blank while TinyMCE initializes (~100ms after shown).
+            messageTextarea.value = data.message;
             const setMessageContent = () => {
-                // If TinyMCE is initialized, update it
                 if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
                     try {
-                        tinymce.get('compose_email_message').setContent(data.message);
+                        tinymce.get('compose_email_message').setContent(messageTextarea.value);
                     } catch (e) {
-                        // If TinyMCE not ready, set value directly
-                        messageTextarea.value = data.message;
+                        /* editor not ready */
                     }
-                } else {
-                    // Set the value directly if TinyMCE not initialized
-                    messageTextarea.value = data.message;
                 }
             };
-            
-            // If modal is already shown, set immediately, otherwise wait
+            // Defer sync into TinyMCE until after detail.blade.php initTinyMCEForModals (100ms timeout).
+            const delayMs = 180;
+            const scheduleBody = () => setTimeout(setMessageContent, delayMs);
             if (modal.classList.contains('show') || modal.style.display === 'block') {
-                setTimeout(setMessageContent, 200);
+                scheduleBody();
+            } else if (typeof jQuery !== 'undefined') {
+                jQuery(modal).one('shown.bs.modal', scheduleBody);
             } else {
-                // Wait for modal to be shown
-                modal.addEventListener('shown.bs.modal', setMessageContent, { once: true });
-                if (typeof jQuery !== 'undefined') {
-                    jQuery(modal).on('shown.bs.modal', setMessageContent);
-                }
+                modal.addEventListener('shown.bs.modal', scheduleBody, { once: true });
             }
         }
 
@@ -1525,12 +1525,10 @@
                 // If modal is already shown, set immediately, otherwise wait
                 if (modal.classList.contains('show') || modal.style.display === 'block') {
                     setToField();
+                } else if (typeof jQuery !== 'undefined') {
+                    jQuery(modal).one('shown.bs.modal', setToField);
                 } else {
-                    // Wait for modal to be shown
                     modal.addEventListener('shown.bs.modal', setToField, { once: true });
-                    if (typeof jQuery !== 'undefined') {
-                        jQuery(modal).on('shown.bs.modal', setToField);
-                    }
                 }
             }
         }
@@ -2161,6 +2159,13 @@
         // Auto-set matter ID when compose modal opens (for all email composes)
         const composeModal = document.getElementById('emailmodal');
         if (composeModal) {
+            if (typeof jQuery !== 'undefined') {
+                jQuery(composeModal)
+                    .off('hidden.bs.modal.preserveReplyForward')
+                    .on('hidden.bs.modal.preserveReplyForward', function() {
+                        jQuery(this).removeData('preserveReplyForwardBody');
+                    });
+            }
             // Listen for modal show event (Bootstrap 4)
             if (typeof jQuery !== 'undefined') {
                 jQuery(composeModal).on('show.bs.modal', function() {
