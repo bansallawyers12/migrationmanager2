@@ -261,8 +261,7 @@ class ClientEditService
     protected function getCountries()
     {
         return Country::query()
-            ->whereNotNull('phonecode')
-            ->where('phonecode', '!=', '')
+            ->whereDialCodePresent()
             ->select('id', 'name', 'sortname', 'phonecode')
             ->orderBy('name', 'ASC')
             ->get();

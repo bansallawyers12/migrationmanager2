@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -13,13 +14,27 @@ class Country extends Model
         'id', 'sortname', 'name', 'phonecode', 'status', 'created_at', 'updated_at',
     ];
 
+    /**
+     * Exclude countries with no usable dial code. MySQL may store phonecode as string;
+     * PostgreSQL often uses integer — comparing to '' there causes SQLSTATE[22P02].
+     */
+    public function scopeWhereDialCodePresent(Builder $query): Builder
+    {
+        $query->whereNotNull('phonecode');
+
+        return match ($query->getConnection()->getDriverName()) {
+            'pgsql' => $query->whereRaw('phonecode::text <> ?', ['']),
+            'sqlite' => $query->whereRaw('CAST(phonecode AS TEXT) <> ?', ['']),
+            default => $query->where('phonecode', '!=', ''),
+        };
+    }
+
     public static function getAllWithPhoneCodes()
     {
         $ttl = (int) config('phone.cache_ttl_seconds', 0);
 
         $callback = fn () => static::query()
-            ->whereNotNull('phonecode')
-            ->where('phonecode', '!=', '')
+            ->whereDialCodePresent()
             ->orderBy('name')
             ->get();
 
@@ -51,8 +66,7 @@ class Country extends Model
             $placeholders = implode(',', array_fill(0, count($upperPreferred), '?'));
 
             $countries = static::query()
-                ->whereNotNull('phonecode')
-                ->where('phonecode', '!=', '')
+                ->whereDialCodePresent()
                 ->whereRaw('UPPER(TRIM(sortname)) IN ('.$placeholders.')', $upperPreferred)
                 ->get();
 
