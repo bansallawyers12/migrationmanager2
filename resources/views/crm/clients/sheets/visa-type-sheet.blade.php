@@ -180,6 +180,9 @@
     .visa-sheet-page .pin-star.pinned:hover {
         color: #cbd5e0;
     }
+    .visa-sheet-page .visa-sheet-col-payment-request {
+        min-width: 10rem;
+    }
 </style>
 @endsection
 
@@ -332,7 +335,11 @@
                                         @endif
                                         <th>Client Name</th>
                                         <th>DOB</th>
+                                        @if($tab === 'checklist')
+                                        <th class="text-nowrap visa-sheet-col-payment-request" title="Payment Request">Payment Request</th>
+                                        @else
                                         <th>Payment Received</th>
+                                        @endif
                                         @if($tab !== 'checklist')
                                         <th>Branch</th>
                                         @endif
@@ -402,13 +409,21 @@
                                                 @endif
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
                                                 <td>{{ $row->dob ? \Carbon\Carbon::parse($row->dob)->format('d/m/Y') : '—' }}</td>
-                                                <td>
-                                                    @if(($row->total_payment ?? 0) > 0)
-                                                        ${{ number_format((float)($row->total_payment ?? 0), 2) }}
-                                                    @elseif($row->payment_display_note ?? null)
-                                                        {{ $row->payment_display_note }}
+                                                <td title="{{ $tab === 'checklist' ? 'Our Cost (Block Fees)' : '' }}">
+                                                    @if($tab === 'checklist')
+                                                        @if(isset($row->checklist_block_fee) && $row->checklist_block_fee !== null && $row->checklist_block_fee !== '')
+                                                            ${{ number_format((float) $row->checklist_block_fee, 2) }}
+                                                        @else
+                                                            —
+                                                        @endif
                                                     @else
-                                                        —
+                                                        @if(($row->total_payment ?? 0) > 0)
+                                                            ${{ number_format((float)($row->total_payment ?? 0), 2) }}
+                                                        @elseif($row->payment_display_note ?? null)
+                                                            {{ $row->payment_display_note }}
+                                                        @else
+                                                            —
+                                                        @endif
                                                     @endif
                                                 </td>
                                                 @if($tab !== 'checklist')

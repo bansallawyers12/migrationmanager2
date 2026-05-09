@@ -91,15 +91,18 @@ class VisaTypeSheetController extends Controller
 
             $rows->appends(array_merge($request->except('page'), ['tab' => $tab]));
 
-            $rows->getCollection()->transform(function ($row) {
+            $rows->getCollection()->transform(function ($row) use ($tab) {
                 $row->is_lead = $row->is_lead ?? false;
-                if (!$row->is_lead && isset($row->matter_internal_id)) {
-                    $payments = $this->calculatePaymentsForMatter($row->client_id, $row->matter_internal_id);
-                    $row->total_payment = $payments['total'];
-                    $row->pending_payment = $payments['pending'];
-                } else {
-                    $row->total_payment = 0;
-                    $row->pending_payment = 0;
+                // Checklist tab shows cost-assignment Our Cost (Block Fees); skip ledger payment totals.
+                if ($tab !== 'checklist') {
+                    if (!$row->is_lead && isset($row->matter_internal_id)) {
+                        $payments = $this->calculatePaymentsForMatter($row->client_id, $row->matter_internal_id);
+                        $row->total_payment = $payments['total'];
+                        $row->pending_payment = $payments['pending'];
+                    } else {
+                        $row->total_payment = 0;
+                        $row->pending_payment = 0;
+                    }
                 }
                 return $row;
             });
@@ -275,6 +278,15 @@ class VisaTypeSheetController extends Controller
         $leadRemindersTable = $config['lead_reminders_table'] ?? null;
         $matterCondition = $this->getMatterCondition($config);
 
+        // PostgreSQL lowercases unquoted identifiers; TotalBLOCKFEE requires quoting (same pattern as admins."visaExpiry").
+        $cafTotalBlockFee = DB::connection()->getDriverName() === 'pgsql'
+            ? 'caf."TotalBLOCKFEE"'
+            : 'caf.TotalBLOCKFEE';
+
+        $checklistBlockFeeSelect = Schema::hasTable('cost_assignment_forms')
+            ? "(SELECT {$cafTotalBlockFee} FROM cost_assignment_forms AS caf WHERE caf.client_matter_id = cm.id ORDER BY caf.created_at DESC, caf.id DESC LIMIT 1) AS checklist_block_fee"
+            : 'NULL AS checklist_block_fee';
+
         // Client matters with workflow=Checklist
         $clientQuery = DB::table('client_matters as cm')
             ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
@@ -336,6 +348,7 @@ class VisaTypeSheetController extends Controller
                 "{$refAlias}.checklist_sent_at",
                 "{$refAlias}.is_pinned",
                 DB::raw("COALESCE(cm.{$checklistCol}, 'active') as tr_checklist_status"),
+                DB::raw($checklistBlockFeeSelect),
                 DB::raw('cm.created_at as sheet_row_created_at'),
                 DB::raw('NULL as lead_ref_row_id'),
                 DB::raw('0 as is_lead')
@@ -347,6 +360,9 @@ class VisaTypeSheetController extends Controller
         if ($leadRefTable && Schema::hasTable($leadRefTable)) {
             $matterIds = DB::table(DB::raw('matters as m'))->whereRaw($matterCondition)->pluck('id');
             if ($matterIds->isNotEmpty()) {
+                $leadBlockFeeSql = Schema::hasTable('cost_assignment_forms')
+                    ? "(SELECT {$cafTotalBlockFee} FROM cost_assignment_forms AS caf INNER JOIN client_matters AS lcm ON caf.client_matter_id = lcm.id WHERE lcm.client_id = a.id AND lcm.sel_matter_id = lr.matter_id ORDER BY caf.created_at DESC, caf.id DESC LIMIT 1) AS checklist_block_fee"
+                    : 'NULL AS checklist_block_fee';
                 $leadQuery = DB::table($leadRefTable . ' as lr')
                     ->where('lr.type', $refType)
                     ->join('admins as a', 'lr.lead_id', '=', 'a.id')
@@ -379,6 +395,7 @@ class VisaTypeSheetController extends Controller
                         'lr.checklist_sent_at',
                         DB::raw('false as is_pinned'),
                         DB::raw("'active' as tr_checklist_status"),
+                        DB::raw($leadBlockFeeSql),
                         'lr.created_at as sheet_row_created_at',
                         'lr.id as lead_ref_row_id',
                         DB::raw('1 as is_lead')
