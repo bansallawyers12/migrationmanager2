@@ -336,6 +336,8 @@ class VisaTypeSheetController extends Controller
                 "{$refAlias}.checklist_sent_at",
                 "{$refAlias}.is_pinned",
                 DB::raw("COALESCE(cm.{$checklistCol}, 'active') as tr_checklist_status"),
+                DB::raw('cm.created_at as sheet_row_created_at'),
+                DB::raw('NULL as lead_ref_row_id'),
                 DB::raw('0 as is_lead')
             );
         $this->applyFilters($clientQuery, $request, $config, 'cm');
@@ -377,6 +379,8 @@ class VisaTypeSheetController extends Controller
                         'lr.checklist_sent_at',
                         DB::raw('false as is_pinned'),
                         DB::raw("'active' as tr_checklist_status"),
+                        'lr.created_at as sheet_row_created_at',
+                        'lr.id as lead_ref_row_id',
                         DB::raw('1 as is_lead')
                     );
                 // Person Assisting: restrict leads to those assigned to them
@@ -408,6 +412,32 @@ class VisaTypeSheetController extends Controller
         }
 
         $all = $clientRows->concat($leadRows);
+        $sheetRowTimestamp = static function ($row): int {
+            $raw = $row->sheet_row_created_at ?? null;
+            if ($raw === null || $raw === '') {
+                return 0;
+            }
+            try {
+                return Carbon::parse($raw)->timestamp;
+            } catch (\Exception $e) {
+                return 0;
+            }
+        };
+        $checklistSortTieBreaker = static function ($row): int {
+            return !empty($row->is_lead)
+                ? (int) ($row->lead_ref_row_id ?? 0)
+                : (int) ($row->matter_internal_id ?? 0);
+        };
+        // Newest-created first globally (matter created_at vs lead reference created_at).
+        $all = $all->sort(function ($a, $b) use ($sheetRowTimestamp, $checklistSortTieBreaker) {
+            $ta = $sheetRowTimestamp($a);
+            $tb = $sheetRowTimestamp($b);
+            if ($tb !== $ta) {
+                return $tb <=> $ta;
+            }
+
+            return $checklistSortTieBreaker($b) <=> $checklistSortTieBreaker($a);
+        })->values();
         if ($remindersTable && Schema::hasTable($remindersTable)) {
             foreach ($all as $row) {
                 if ($row->is_lead) {
