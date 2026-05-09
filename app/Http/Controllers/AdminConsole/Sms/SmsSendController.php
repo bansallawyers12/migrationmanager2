@@ -37,7 +37,7 @@ class SmsSendController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string',
-            'message' => 'required|string|max:1600',
+            'message' => 'required|string|max:' . (UnifiedSmsManager::SINGLE_SMS_SEGMENT_MAX_CHARS * 2),
             'client_id' => 'nullable|exists:admins,id',
             'contact_id' => 'nullable|exists:client_contacts,id',
         ]);

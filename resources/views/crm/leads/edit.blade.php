@@ -1278,12 +1278,9 @@
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('partnerInfo')">
                                     <i class="fas fa-pen"></i>
                                 </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('partner')" title="Add Partner">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-									</div>
-								</div> 
-                        
+                            </div>
+                        </div>
+
                         <!-- Summary View -->
                         <div id="partnerInfoSummary" class="summary-view">
                             @php
@@ -1297,20 +1294,20 @@
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">DETAILS:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $partner->relatedClient ? $partner->relatedClient->first_name . ' ' . $partner->relatedClient->last_name : $partner->details }}</span>
-							</div>
+                                                </div>
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELATIONSHIP:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $partner->relationship_type ?: 'Not set' }}</span>
-						</div>	
+                                                </div>
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">GENDER:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $partner->gender ?: 'Not set' }}</span>
-					</div>
+                                                </div>
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">COMPANY TYPE:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $partner->company_type ?: 'Not set' }}</span>
-				</div>  
-		</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -1319,7 +1316,7 @@
                                     <p>No partner information added yet.</p>
                                 </div>
                             @endif
-</div>
+                        </div>
 
                         <!-- Edit View -->
                         <div id="partnerInfoEdit" class="edit-view" style="display: none;">
@@ -1349,9 +1346,6 @@
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('childrenInfo')">
                                     <i class="fas fa-pen"></i>
-                                </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('children')" title="Add Child">
-                                    <i class="fas fa-plus"></i>
                                 </button>
                             </div>
                         </div>

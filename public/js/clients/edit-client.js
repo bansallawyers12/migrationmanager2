@@ -475,8 +475,30 @@ async function fetchCountries() {
  * Modified addPartnerRow to handle different types with hidden extra fields by default
  */
 function addPartnerRow(type) {
+    const sectionTypeMap = {
+        partner: 'partnerInfo',
+        children: 'childrenInfo',
+        parent: 'parentsInfo',
+        siblings: 'siblingsInfo',
+        others: 'othersInfo',
+    };
+    const sectionType = sectionTypeMap[type] || 'partnerInfo';
+    const summaryView = document.getElementById(sectionType + 'Summary');
+    const editView = document.getElementById(sectionType + 'Edit');
+    if (summaryView && editView) {
+        const summaryHidden =
+            summaryView.style.display === 'none' || summaryView.classList.contains('hidden');
+        if (!summaryHidden) {
+            toggleEditMode(sectionType);
+        }
+    }
+
     const containerId = type + 'Container';
     const container = document.getElementById(containerId);
+    if (!container) {
+        console.error('addPartnerRow: container not found:', containerId);
+        return;
+    }
     const index = container.children.length;
 
     let relationshipOptions = '';
@@ -619,7 +641,15 @@ function removePartnerRow(button, type, relationshipId = null) {
             hiddenInput.type = 'hidden';
             hiddenInput.name = `delete_${type}_ids[]`;
             hiddenInput.value = relationshipId;
-            document.getElementById('editClientForm').appendChild(hiddenInput);
+            const form =
+                document.getElementById('editCompanyForm') ||
+                document.getElementById('editClientForm') ||
+                document.getElementById('editLeadForm');
+            if (form) {
+                form.appendChild(hiddenInput);
+            } else {
+                console.error('removePartnerRow: edit form not found');
+            }
         }
         section.remove();
     }
@@ -633,8 +663,12 @@ function addEoiReference() {
     const summaryView = document.getElementById('eoiInfoSummary');
     const editView = document.getElementById('eoiInfoEdit');
     
-    if (summaryView && editView && summaryView.style.display !== 'none') {
-        toggleEditMode('eoiInfo');
+    if (summaryView && editView) {
+        const summaryHidden =
+            summaryView.style.display === 'none' || summaryView.classList.contains('hidden');
+        if (!summaryHidden) {
+            toggleEditMode('eoiInfo');
+        }
     }
     
     const container = document.getElementById('eoiReferencesContainer');

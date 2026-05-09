@@ -698,15 +698,16 @@ use App\Http\Controllers\Controller;
 						<div class="col-12">
 							<div class="form-group">
 								<label for="sms_message">Message <span class="span_req">*</span></label>
-								<textarea class="form-control" id="sms_message" name="message" rows="5" maxlength="1600" required></textarea>
-								<div class="d-flex justify-content-between">
-									<small class="form-text text-muted">
-										<span id="sms_char_count">0</span> / 1600 characters
-									</small>
-									<small class="form-text text-muted">
-										<span id="sms_parts_count">1</span> SMS part(s)
-									</small>
-								</div>
+							<textarea class="form-control" id="sms_message" name="message" rows="5" maxlength="320" required></textarea>
+							<div class="d-flex justify-content-between align-items-center mt-1">
+								<small class="text-muted">
+									<span id="sms_char_count">0</span> / <span id="sms_char_max">160</span> chars
+								</small>
+								<small>
+									<span id="sms_segment_badge" class="badge badge-success">1 SMS</span>
+									<span id="sms_chars_remaining" class="text-muted"> &nbsp;·&nbsp; 160 left in this SMS</span>
+								</small>
+							</div>
 							</div>
 						</div>
 						
@@ -1628,7 +1629,7 @@ $('.send-sms-btn').on('click', function() {
             
             if (response.success && response.data && response.data.length > 0) {
                 response.data.forEach(function(template) {
-                    templateSelect.append(`<option value="${template.id}" data-message="${template.message}">${template.title}</option>`);
+                    $('<option></option>').val(template.id).text(template.title).appendTo(templateSelect);
                 });
             }
         },
@@ -1648,44 +1649,74 @@ $('.send-sms-btn').on('click', function() {
     // Reset form
     $('#sms_message').val('');
     $('#sms_char_count').text('0');
-    $('#sms_parts_count').text('1');
     
     $('#sendSmsModal').modal('show');
 });
 
-// Template selection
+// Template selection (body loaded via API — avoids broken data-* with quotes/newlines)
 $('#sms_template').on('change', function() {
-    const selectedOption = $(this).find('option:selected');
-    const message = selectedOption.data('message');
-    if (message && smsClientName) {
-        // Replace placeholders with actual client data
-        let processedMessage = message;
-        
-        // Basic client variables
-        processedMessage = processedMessage.replace(/\{first_name\}/g, smsClientName.split(' ')[0] || '');
-        processedMessage = processedMessage.replace(/\{last_name\}/g, smsClientName.split(' ').slice(1).join(' ') || '');
-        processedMessage = processedMessage.replace(/\{client_name\}/g, smsClientName);
-        processedMessage = processedMessage.replace(/\{full_name\}/g, smsClientName);
-        
-        // New variables from ClientDetailConfig
-        processedMessage = processedMessage.replace(/\{staff_name\}/g, window.ClientDetailConfig.staffName || '');
-        processedMessage = processedMessage.replace(/\{matter_number\}/g, window.ClientDetailConfig.matterNumber || '');
-        
-        // Format office phone with country code
-        const officePhone = window.ClientDetailConfig.officeCountryCode + window.ClientDetailConfig.officePhone;
-        processedMessage = processedMessage.replace(/\{office_phone\}/g, officePhone || '');
-        
-        $('#sms_message').val(processedMessage).trigger('input');
+    const id = $(this).val();
+    if (!id) {
+        return;
     }
+    $.ajax({
+        url: '/clients/sms-template/' + id + '/compose',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (!response.success || !response.data) {
+                iziToast.error({
+                    title: 'Error',
+                    message: response.message || 'Could not load SMS template',
+                    position: 'topRight'
+                });
+                return;
+            }
+            const name = (typeof smsClientName === 'string') ? smsClientName : '';
+            let processedMessage = response.data.message || '';
+            processedMessage = processedMessage.replace(/\{first_name\}/g, name.split(' ')[0] || '');
+            processedMessage = processedMessage.replace(/\{last_name\}/g, name.split(' ').slice(1).join(' ') || '');
+            processedMessage = processedMessage.replace(/\{client_name\}/g, name);
+            processedMessage = processedMessage.replace(/\{full_name\}/g, name);
+            processedMessage = processedMessage.replace(/\{staff_name\}/g, window.ClientDetailConfig.staffName || '');
+            processedMessage = processedMessage.replace(/\{matter_number\}/g, window.ClientDetailConfig.matterNumber || '');
+            const officePhone = window.ClientDetailConfig.officeCountryCode + window.ClientDetailConfig.officePhone;
+            processedMessage = processedMessage.replace(/\{office_phone\}/g, officePhone || '');
+            var smsBodyMaxChars = 320;
+            if (processedMessage.length > smsBodyMaxChars) {
+                processedMessage = processedMessage.slice(0, smsBodyMaxChars);
+                iziToast.warning({
+                    title: 'SMS length',
+                    message: 'Template message was shortened to ' + smsBodyMaxChars + ' characters (2 SMS max).',
+                    position: 'topRight'
+                });
+            }
+            $('#sms_message').val(processedMessage).trigger('input');
+        },
+        error: function() {
+            iziToast.error({
+                title: 'Error',
+                message: 'Could not load SMS template',
+                position: 'topRight'
+            });
+        }
+    });
 });
 
 // Character counter
 $('#sms_message').on('input', function() {
-    const length = $(this).val().length;
-    $('#sms_char_count').text(length);
-    
-    const parts = Math.ceil(length / 160) || 1;
-    $('#sms_parts_count').text(parts);
+    var len     = $(this).val().length;
+    var segSize = 160;
+    var segs    = Math.max(1, Math.ceil(len / segSize));
+    var left    = (segs * segSize) - len;
+
+    $('#sms_char_count').text(len);
+    $('#sms_char_max').text(segs * segSize);
+    $('#sms_chars_remaining').html('&nbsp;&middot;&nbsp; ' + left + ' left in this SMS');
+    $('#sms_segment_badge')
+        .text(segs + ' SMS')
+        .removeClass('badge-success badge-warning')
+        .addClass(segs === 1 ? 'badge-success' : 'badge-warning');
 });
 
 // Form submission

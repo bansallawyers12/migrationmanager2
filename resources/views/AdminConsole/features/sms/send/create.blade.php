@@ -44,10 +44,16 @@
                                 
                                 <div class="form-group">
                                     <label for="message">Message <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" id="message" name="message" rows="4" placeholder="Enter your message here..." required></textarea>
-                                    <small class="form-text text-muted">
-                                        <span id="charCount">0</span>/1600 characters
-                                    </small>
+                                    <textarea class="form-control" id="message" name="message" rows="4" maxlength="320" placeholder="Enter your message here..." required></textarea>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <small class="text-muted">
+                                            <span id="charCount">0</span> / <span id="charMax">160</span> chars
+                                        </small>
+                                        <small>
+                                            <span id="segmentBadge" class="badge badge-success">1 SMS</span>
+                                            <span id="charsRemaining" class="text-muted"> &nbsp;·&nbsp; 160 left in this SMS</span>
+                                        </small>
+                                    </div>
                                 </div>
                                 
                                 <div class="form-group">
@@ -74,9 +80,20 @@ $(document).ready(function() {
     // Load templates
     loadTemplates();
     
-    // Character count
+    // Character counter
     $('#message').on('input', function() {
-        $('#charCount').text($(this).val().length);
+        var len     = $(this).val().length;
+        var segSize = 160;
+        var segs    = Math.max(1, Math.ceil(len / segSize));
+        var left    = (segs * segSize) - len;
+
+        $('#charCount').text(len);
+        $('#charMax').text(segs * segSize);
+        $('#charsRemaining').html('&nbsp;&middot;&nbsp; ' + left + ' left in this SMS');
+        $('#segmentBadge')
+            .text(segs + ' SMS')
+            .removeClass('badge-success badge-warning')
+            .addClass(segs === 1 ? 'badge-success' : 'badge-warning');
     });
     
     // Template selection
@@ -134,7 +151,7 @@ $(document).ready(function() {
                 if (response.success) {
                     const select = $('#template_id');
                     response.data.forEach(function(template) {
-                        select.append(`<option value="${template.id}">${template.title}</option>`);
+                        $('<option></option>').val(template.id).text(template.title).appendTo(select);
                     });
                 }
             }
@@ -143,12 +160,17 @@ $(document).ready(function() {
     
     function loadTemplateContent(templateId) {
         $.ajax({
-            url: `/adminconsole/features/sms/templates/${templateId}`,
+            url: '/clients/sms-template/' + templateId + '/compose',
             method: 'GET',
             success: function(response) {
                 if (response.success) {
-                    $('#message').val(response.data.message);
-                    $('#charCount').text(response.data.message.length);
+                    var msg = response.data.message || '';
+                    var smsBodyMaxChars = 320;
+                    if (msg.length > smsBodyMaxChars) {
+                        msg = msg.slice(0, smsBodyMaxChars);
+                        alert('Template message was shortened to ' + smsBodyMaxChars + ' characters (2 SMS max).');
+                    }
+                    $('#message').val(msg).trigger('input');
                 }
             }
         });

@@ -168,11 +168,32 @@ class SmsTemplateController extends Controller
     {
         $templates = SmsTemplate::where('is_active', true)
             ->orderBy('title')
-            ->get(['id', 'title', 'message', 'variables', 'category']);
+            ->get(['id', 'title']);
 
         return response()->json([
             'success' => true,
             'data' => $templates
+        ]);
+    }
+
+    /**
+     * Active template body for CRM / compose UIs (load on demand; keeps list payload small).
+     */
+    public function showComposeBody(int $id)
+    {
+        $template = SmsTemplate::whereKey($id)->where('is_active', true)->first();
+        if (! $template) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Template not found or inactive',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'message' => $template->message,
+            ],
         ]);
     }
 }

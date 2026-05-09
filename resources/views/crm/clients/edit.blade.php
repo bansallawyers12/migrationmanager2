@@ -1308,9 +1308,6 @@
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('partnerInfo')">
                                     <i class="fas fa-pen"></i>
                                 </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('partner')" title="Add Partner">
-                                    <i class="fas fa-plus"></i>
-                                </button>
                             </div>
                         </div>
                         
@@ -1716,9 +1713,6 @@
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('childrenInfo')">
                                     <i class="fas fa-pen"></i>
                                 </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('children')" title="Add Child">
-                                    <i class="fas fa-plus"></i>
-                                </button>
                             </div>
                         </div>
                         
@@ -1793,9 +1787,6 @@
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('parentsInfo')">
                                     <i class="fas fa-pen"></i>
-                                </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('parent')" title="Add Parent">
-                                    <i class="fas fa-plus"></i>
                                 </button>
                             </div>
                         </div>
@@ -1886,9 +1877,6 @@
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('siblingsInfo')">
                                     <i class="fas fa-pen"></i>
                                 </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('siblings')" title="Add Sibling">
-                                    <i class="fas fa-plus"></i>
-                                </button>
                             </div>
                         </div>
                         
@@ -1977,9 +1965,6 @@
                             <div class="section-actions">
                                 <button type="button" class="edit-section-btn" onclick="toggleEditMode('othersInfo')">
                                     <i class="fas fa-pen"></i>
-                                </button>
-                                <button type="button" class="add-section-btn" onclick="addPartnerRow('others')" title="Add Other">
-                                    <i class="fas fa-plus"></i>
                                 </button>
                             </div>
                         </div>

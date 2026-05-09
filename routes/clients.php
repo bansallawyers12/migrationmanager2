@@ -104,6 +104,8 @@ Route::get('/clients/change_assignee', [ClientsController::class, 'change_assign
 Route::get('/get-templates', [CRMUtilityController::class, 'gettemplates'])->name('clients.gettemplates');
 /** Active SMS templates for CRM (all authenticated staff); not behind Admin Console middleware. */
 Route::get('/clients/sms-templates-active', [SmsTemplateController::class, 'active'])->name('clients.sms.templates.active');
+/** Full template body for SMS compose modal (avoid embedding HTML data-* attributes). */
+Route::get('/clients/sms-template/{id}/compose', [SmsTemplateController::class, 'showComposeBody'])->name('clients.sms.template.compose')->whereNumber('id');
 /** Send a manual SMS from the CRM (all authenticated staff); not behind Admin Console middleware. */
 Route::post('/clients/sms/send', [\App\Http\Controllers\AdminConsole\Sms\SmsSendController::class, 'send'])->name('clients.sms.send');
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');

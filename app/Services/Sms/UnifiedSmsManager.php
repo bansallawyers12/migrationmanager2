@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Log;
  */
 class UnifiedSmsManager
 {
+    /** GSM single-segment length for standard Latin scripts (composer / manual-send limit). */
+    public const SINGLE_SMS_SEGMENT_MAX_CHARS = 160;
+
     protected SmsProviderInterface $cellcastService;
     protected SmsProviderInterface $smsService;
     
@@ -34,7 +37,7 @@ class UnifiedSmsManager
      * Send SMS with automatic provider selection and activity logging
      * 
      * @param string $to Phone number (9-10 digits for AU numbers)
-     * @param string $message SMS message content
+     * @param string $message SMS message content (manual type limited to SINGLE_SMS_SEGMENT_MAX_CHARS UTF-8 code points)
      * @param string $type Message type: verification|notification|manual|reminder
      * @param array $context Additional context (client_id, contact_id, template_id)
      * @return array Result with success status and data
@@ -78,6 +81,16 @@ class UnifiedSmsManager
                 'type' => $type,
                 'client_id' => $context['client_id'] ?? null
             ]);
+
+            // Manual composer traffic: cap at 2 SMS segments server-side.
+            if ($type === 'manual' && mb_strlen($message, 'UTF-8') > self::SINGLE_SMS_SEGMENT_MAX_CHARS * 2) {
+                return [
+                    'success' => false,
+                    'message' => 'Message must not exceed '
+                        . (self::SINGLE_SMS_SEGMENT_MAX_CHARS * 2)
+                        . ' characters (2 SMS) for manual SMS.',
+                ];
+            }
 
             // Send via appropriate provider
             $result = $this->sendViaProvider($provider, $formatted, $message);
