@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
+use App\Support\DocumentStoredFilename;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -551,21 +553,23 @@ class ClientPortalDocumentController extends Controller
             $documentId = $request->input('document_id');
             $file = $request->file('file');
 
-            // Get client information
-            $adminInfo = DB::table('admins')
-                ->select('client_id', 'first_name')
+            // Get client information (company name prefix when is_company)
+            $adminForPrefix = Admin::query()
+                ->select(['id', 'client_id', 'first_name', 'is_company'])
+                ->with('company:id,admin_id,company_name')
                 ->where('id', $clientId)
                 ->first();
 
-            if (!$adminInfo) {
+            if (!$adminForPrefix) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Client not found'
                 ], 404);
             }
 
-            $clientUniqueId = $adminInfo->client_id;
-            $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name);
+            $clientUniqueId = $adminForPrefix->client_id;
+            $sanitizedFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminForPrefix->first_name ?? '');
+            $namePrefix = DocumentStoredFilename::storedNamePrefix($adminForPrefix, $sanitizedFirstName);
 
             // Get the document record
             $document = DB::table('documents')
@@ -594,8 +598,9 @@ class ClientPortalDocumentController extends Controller
             $extension = $file->getClientOriginalExtension();
             $checklistName = $document->checklist;
 
-            // Build new file name: firstname_checklist_timestamp.ext
-            $newFileName = $clientFirstName . "_" . $checklistName . "_" . time() . "." . $extension;
+            $timestamp = time();
+            $fileNameStem = $namePrefix . "_" . $checklistName . "_" . $timestamp;
+            $newFileName = $fileNameStem . "." . $extension;
 
             // Build file path for AWS S3
             $filePath = $clientUniqueId . '/' . $document->doc_type . '/' . $newFileName;
@@ -608,7 +613,7 @@ class ClientPortalDocumentController extends Controller
 
             // Update document record
             $updateData = [
-                'file_name' => $clientFirstName . "_" . $checklistName . "_" . time(),
+                'file_name' => $fileNameStem,
                 'filetype' => $extension,
                 'myfile' => $fileUrl,
                 'myfile_key' => $newFileName,

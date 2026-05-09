@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Events\NotificationCountUpdated;
 use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Services\ClientPortalActionNoteService;
+use App\Support\DocumentStoredFilename;
 use App\Models\Notification;
 use App\Models\Staff;
 use Illuminate\Http\Request;
@@ -591,19 +593,29 @@ class ClientPortalWorkflowController extends Controller
                 ], 422);
             }
 
-            // Get client display info for file naming
-            $adminInfo = DB::table('admins')
-                ->select('client_id', 'first_name')
+            // Get client display info for file naming (company name prefix when is_company)
+            $adminForPrefix = Admin::query()
+                ->select(['id', 'client_id', 'first_name', 'is_company'])
+                ->with('company:id,admin_id,company_name')
                 ->where('id', $clientId)
                 ->first();
 
-            $clientUniqueId  = $adminInfo->client_id ?? $clientId;
-            $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name ?? 'client');
+            if (!$adminForPrefix) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            $clientUniqueId = $adminForPrefix->client_id ?? $clientId;
+            $sanitizedFirst = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminForPrefix->first_name ?? 'client');
+            $namePrefix = DocumentStoredFilename::storedNamePrefix($adminForPrefix, $sanitizedFirst);
             $checklistName   = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $checklistItem->cp_checklist_name ?? 'doc');
 
             $extension   = $file->getClientOriginalExtension();
             $fileSize    = $file->getSize();
-            $newFileName = $clientFirstName . '_' . $checklistName . '_' . time() . '.' . $extension;
+            $timestamp   = time();
+            $newFileName = $namePrefix . '_' . $checklistName . '_' . $timestamp . '.' . $extension;
             $filePath    = $clientUniqueId . '/workflow_checklist/' . $newFileName;
 
             // Upload to S3
@@ -616,7 +628,7 @@ class ClientPortalWorkflowController extends Controller
                 'user_id'         => $clientId,
                 'client_id'       => $clientId,
                 'client_matter_id'=> $clientMatterId,
-                'file_name'       => $clientFirstName . '_' . $checklistName . '_' . time(),
+                'file_name'       => $namePrefix . '_' . $checklistName . '_' . $timestamp,
                 'filetype'        => $extension,
                 'myfile'          => $fileUrl,
                 'myfile_key'      => $newFileName,
@@ -727,14 +739,22 @@ class ClientPortalWorkflowController extends Controller
                 ], 404);
             }
 
-            // Get client display info for file naming
-            $adminInfo = DB::table('admins')
-                ->select('client_id', 'first_name')
+            $adminForPrefix = Admin::query()
+                ->select(['id', 'client_id', 'first_name', 'is_company'])
+                ->with('company:id,admin_id,company_name')
                 ->where('id', $clientId)
                 ->first();
 
-            $clientUniqueId  = $adminInfo->client_id ?? $clientId;
-            $clientFirstName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminInfo->first_name ?? 'client');
+            if (!$adminForPrefix) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Client not found'
+                ], 404);
+            }
+
+            $clientUniqueId = $adminForPrefix->client_id ?? $clientId;
+            $sanitizedFirst = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $adminForPrefix->first_name ?? 'client');
+            $namePrefix = DocumentStoredFilename::storedNamePrefix($adminForPrefix, $sanitizedFirst);
 
             $uploadedDocuments = [];
             $errors            = [];
@@ -773,7 +793,8 @@ class ClientPortalWorkflowController extends Controller
                 $checklistName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $checklistItem->cp_checklist_name ?? 'doc');
                 $extension     = $file->getClientOriginalExtension();
                 $fileSize      = $file->getSize();
-                $newFileName   = $clientFirstName . '_' . $checklistName . '_' . time() . '_' . $index . '.' . $extension;
+                $timestamp     = time();
+                $newFileName   = $namePrefix . '_' . $checklistName . '_' . $timestamp . '_' . $index . '.' . $extension;
                 $filePath      = $clientUniqueId . '/workflow_checklist/' . $newFileName;
 
                 // Upload to S3
@@ -786,7 +807,7 @@ class ClientPortalWorkflowController extends Controller
                     'user_id'          => $clientId,
                     'client_id'        => $clientId,
                     'client_matter_id' => $clientMatterId,
-                    'file_name'        => $clientFirstName . '_' . $checklistName . '_' . time() . '_' . $index,
+                    'file_name'        => $namePrefix . '_' . $checklistName . '_' . $timestamp . '_' . $index,
                     'filetype'         => $extension,
                     'myfile'           => $fileUrl,
                     'myfile_key'       => $newFileName,

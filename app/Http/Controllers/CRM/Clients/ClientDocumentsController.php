@@ -22,6 +22,7 @@ use App\Models\NominationDocumentType;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
+use App\Support\DocumentStoredFilename;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
 use mikehaertl\pdftk\Pdf;
@@ -77,25 +78,6 @@ class ClientDocumentsController extends Controller
         }
 
         return false;
-    }
-
-    /**
-     * First segment of stored personal/education document filenames (S3 key and file_name).
-     * Company records use legal entity name; individual clients use first name.
-     */
-    private function personalDocumentStoredNamePrefix(?Admin $admin, string $sanitizedFirstName): string
-    {
-        if ($admin && (bool) $admin->is_company) {
-            $admin->loadMissing('company');
-            $companyName = $admin->company?->company_name ?? '';
-            if ($companyName !== '') {
-                return preg_replace('/[^a-zA-Z0-9_\-]/', '_', $companyName);
-            }
-
-            return 'company';
-        }
-
-        return $sanitizedFirstName !== '' ? $sanitizedFirstName : 'client';
     }
 
     /**
@@ -386,8 +368,10 @@ class ClientDocumentsController extends Controller
         }
         $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-        $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
-        $namePrefix = $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name);
+        $client_first_name = !empty($admin_info1)
+            ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
+            : 'client';
+        $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
     
         $doctype = $request->doctype ?? '';
     
@@ -1031,12 +1015,12 @@ class ClientDocumentsController extends Controller
         }
         $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
         $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-        $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
+        $client_first_name = !empty($admin_info1)
+            ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
+            : 'client';
     
         $doctype = isset($request->doctype)? $request->doctype : '';
-        $namePrefix = ($doctype === 'nomination')
-            ? $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name)
-            : $client_first_name;
+        $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
         
         try {
             if ($request->hasfile('document_upload')) {
@@ -1125,7 +1109,7 @@ class ClientDocumentsController extends Controller
                         exit;
                     }
 
-                    // Build new file name: firstname_checklist_timestamp.ext (company name for nomination when is_company)
+                    // Build new file name: prefix_checklist_timestamp.ext (company name when is_company)
                     $timestamp = time();
                     $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
 
@@ -3116,8 +3100,10 @@ class ClientDocumentsController extends Controller
             
             $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-            $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
-            $namePrefix = $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name);
+            $client_first_name = !empty($admin_info1)
+                ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
+                : 'client';
+            $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
             
             if (!$request->hasFile('files')) {
                 $response['message'] = 'No files uploaded';
@@ -3304,10 +3290,10 @@ class ClientDocumentsController extends Controller
             
             $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
             $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-            $client_first_name = !empty($admin_info1) ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', $admin_info1->first_name) : "client";
-            $namePrefix = ($doctype === 'nomination')
-                ? $this->personalDocumentStoredNamePrefix($admin_info1, $client_first_name)
-                : $client_first_name;
+            $client_first_name = !empty($admin_info1)
+                ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
+                : 'client';
+            $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
             
             if (!$request->hasFile('files')) {
                 $response['message'] = 'No files uploaded';
