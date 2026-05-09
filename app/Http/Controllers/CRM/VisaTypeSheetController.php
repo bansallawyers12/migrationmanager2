@@ -956,4 +956,68 @@ class VisaTypeSheetController extends Controller
             return response()->json(['success' => false, 'message' => 'Error updating pin status: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Update checklist tab status (active, hold, convert_to_client, discontinue) on client_matters.
+     * Applies to both clients and leads — same column per visa sheet type.
+     */
+    public function updateChecklistStatus(Request $request, string $visaType)
+    {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet($visaType)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $config = $this->getVisaTypeConfig($visaType);
+        if (! $config) {
+            return response()->json(['success' => false, 'message' => 'Invalid visa type'], 404);
+        }
+
+        $checklistCol = $config['checklist_status_column'] ?? '';
+        if ($checklistCol === '' || ! Schema::hasColumn('client_matters', $checklistCol)) {
+            return response()->json(['success' => false, 'message' => 'Checklist status is not available'], 500);
+        }
+
+        $matterInternalId = (int) $request->input('matter_internal_id', 0);
+        $status = strtolower(trim((string) $request->input('status', '')));
+
+        $allowed = ['active', 'hold', 'convert_to_client', 'discontinue'];
+        if ($matterInternalId <= 0 || ! in_array($status, $allowed, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid matter or status'], 400);
+        }
+
+        $matterCondition = $this->getMatterCondition($config);
+
+        $matterRow = DB::table('client_matters as cm')
+            ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
+            ->where('cm.id', $matterInternalId)
+            ->whereRaw($matterCondition)
+            ->whereRaw('cm.matter_status = 1')
+            ->select('cm.id', 'cm.client_id')
+            ->first();
+
+        if (! $matterRow) {
+            return response()->json(['success' => false, 'message' => 'Matter not found or not on this sheet'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $matterRow->client_id, Auth::user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            DB::table('client_matters')
+                ->where('id', $matterInternalId)
+                ->update([
+                    $checklistCol => $status,
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated',
+                'status' => $status,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Could not update status'], 500);
+        }
+    }
 }

@@ -452,18 +452,20 @@
                                                 </td>
                                                 @if($tab === 'checklist')
                                                 <td onclick="event.stopPropagation();" class="checklist-status-cell">
-                                                    @if($isLead)
-                                                    <span class="badge badge-info">Lead</span>
-                                                    @else
+                                                    @if(!empty($row->matter_internal_id))
                                                     @php
                                                         $currentStatus = $row->tr_checklist_status ?? 'active';
                                                         $statusLabels = ['active' => 'Active', 'convert_to_client' => 'Convert to client', 'discontinue' => 'Discontinue', 'hold' => 'Hold'];
                                                     @endphp
-                                                    <select class="form-control form-control-sm checklist-status-select" data-matter-id="{{ $matterId }}" title="Status">
+                                                    <select class="form-control form-control-sm checklist-status-select" data-matter-id="{{ $matterId }}" data-visa-type="{{ $visaType }}" title="Status">
                                                         @foreach($statusLabels as $val => $label)
                                                         <option value="{{ $val }}" {{ $currentStatus === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                         @endforeach
                                                     </select>
+                                                    @elseif($isLead)
+                                                    <span class="badge badge-info" title="{{ __('Lead row without a client matter; status is fixed until a matter exists.') }}">Lead</span>
+                                                    @else
+                                                    <span class="text-muted">—</span>
                                                     @endif
                                                 </td>
                                                 <td onclick="event.stopPropagation();" class="checklist-sent-cell">
@@ -638,8 +640,71 @@ jQuery(document).ready(function($) {
                 $star.css('pointer-events', 'auto');
             }
         });
-    }, true); // capture phase
+        }, true); // capture phase
     }
+
+    $('.visa-sheet-page .checklist-status-select').each(function() {
+        $(this).data('previous-status', $(this).val());
+    });
+
+    $(document).on('focus', '.visa-sheet-page .checklist-status-select', function() {
+        $(this).data('previous-status', $(this).val());
+    });
+    $(document).on('change', '.visa-sheet-page .checklist-status-select', function() {
+        var $sel = $(this);
+        var matterId = $sel.data('matter-id');
+        var visaType = $sel.data('visa-type');
+        var status = $sel.val();
+        var prev = $sel.data('previous-status');
+        if (!matterId || !visaType) {
+            if (prev !== undefined) {
+                $sel.val(prev);
+            }
+            return;
+        }
+        $sel.prop('disabled', true);
+        $.ajax({
+            url: '{{ url('/clients/sheets') }}/' + encodeURIComponent(String(visaType)) + '/checklist-status',
+            method: 'POST',
+            data: {
+                matter_internal_id: matterId,
+                status: status,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                $sel.prop('disabled', false);
+                if (response.success) {
+                    $sel.data('previous-status', status);
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Saved', message: response.message || 'Status updated', position: 'topRight', timeout: 2000 });
+                    }
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 450);
+                } else {
+                    if (prev !== undefined) {
+                        $sel.val(prev);
+                    }
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Could not update status', position: 'topRight' });
+                    }
+                }
+            },
+            error: function(xhr) {
+                $sel.prop('disabled', false);
+                if (prev !== undefined) {
+                    $sel.val(prev);
+                }
+                var msg = 'Could not update status.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            }
+        });
+    });
 });
 </script>
 @endpush
