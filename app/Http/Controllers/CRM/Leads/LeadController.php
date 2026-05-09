@@ -375,8 +375,15 @@ class LeadController extends Controller
      */
     public function create(Request $request)
     {
-        // Get countries for dropdowns
-        $countries = \App\Models\Country::getAllWithPhoneCodes();
+        $countriesPhoneData = \App\Models\Country::getAllWithPhoneCodes()
+            ->map(static fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'sortname' => $c->sortname,
+                'phonecode' => $c->phonecode,
+            ])
+            ->values();
+
         $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
         $leadStageLabels = [
             'new' => 'New',
@@ -385,7 +392,7 @@ class LeadController extends Controller
             'hostile' => 'Hostile',
         ];
 
-        return view('crm.leads.create', compact('countries', 'assignableStaff', 'leadStageLabels'));
+        return view('crm.leads.create', compact('countriesPhoneData', 'assignableStaff', 'leadStageLabels'));
     }
 
     /**

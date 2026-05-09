@@ -625,9 +625,7 @@
 
 @push('scripts')
     <script>
-        window.countriesData = @json($countries->map(function ($c) {
-            return ['id' => $c->id, 'name' => $c->name, 'sortname' => $c->sortname, 'phonecode' => $c->phonecode];
-        })->values());
+        window.countriesData = @json($countriesPhoneData ?? []);
         window.phonePopularIsoCodes = @json(config('phone.popular_countries'));
         window.phoneDefaultDialCode = @json(config('phone.default_country_code'));
     </script>
