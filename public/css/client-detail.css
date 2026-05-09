@@ -927,22 +927,42 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     border-radius: 4px;
 }
 
-/* Accounting/Financial Activity Styling */
+/* Financial activity (activities_logs.activity_type === financial) */
 .activity-type-financial {
     border-left: 3px solid #28a745 !important;
 }
 
-.feed-icon-accounting {
+.feed-icon-financial {
     background: linear-gradient(135deg, #28a745, #20c997) !important;
     color: #fff !important;
 }
 
-.feed-icon-accounting i {
+.feed-icon-financial i {
     color: #fff !important;
 }
 
 .activity-type-financial .feed-content {
     background: #f0fdf4;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* Uploaded / synced email log rows (activity_type email or legacy subject) */
+.activity-type-email {
+    border-left: 3px solid #007bff !important;
+}
+
+.feed-icon-email {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    color: #fff !important;
+}
+
+.feed-icon-email i {
+    color: #fff !important;
+}
+
+.activity-type-email .feed-content {
+    background: #f0f7ff;
     padding: 10px;
     border-radius: 4px;
 }

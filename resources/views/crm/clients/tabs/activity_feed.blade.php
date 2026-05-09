@@ -63,8 +63,8 @@
         <button class="activity-filter-btn" data-filter="signature">
             <i class="fas fa-file-signature"></i> Signatures
         </button>
-        <button class="activity-filter-btn" data-filter="accounting">
-            <i class="fas fa-dollar-sign"></i> Accounting
+        <button class="activity-filter-btn" data-filter="financial">
+            <i class="fas fa-dollar-sign"></i> Financial
         </button>
     </div>
     

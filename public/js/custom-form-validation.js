@@ -2983,18 +2983,24 @@ function getallactivities(client_id){
 				iconClass = 'feed-icon-stage';
 			} else if (activityType === 'financial') {
 				subjectIcon = '<i class="fas fa-dollar-sign"></i>';
-				iconClass = 'feed-icon-accounting';
+				iconClass = 'feed-icon-financial';
 			} else if (activityType === 'email') {
 				subjectIcon = '<i class="fas fa-envelope"></i>';
-				iconClass = '';
+				iconClass = 'feed-icon-email';
 			} else if (activityType === 'signature') {
 				subjectIcon = '<i class="fas fa-file-signature"></i>';
 				iconClass = 'feed-icon-signature';
 			} else if (activityType === 'document') {
 				subjectIcon = '<i class="fas fa-file-alt"></i>';
 				iconClass = '';
+			} else if (/uploaded email:/i.test(subjectLower)) {
+				subjectIcon = '<i class="fas fa-envelope"></i>';
+				iconClass = 'feed-icon-email';
 			} else if (subjectLower.indexOf('invoice') !== -1 || subjectLower.indexOf('receipt') !== -1 || subjectLower.indexOf('ledger') !== -1 || subjectLower.indexOf('payment') !== -1 || subjectLower.indexOf('account') !== -1) {
 				subjectIcon = '<i class="fas fa-dollar-sign"></i>';
+				iconClass = 'feed-icon-financial';
+			} else if (subjectLower.indexOf('document') !== -1 && !/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subjectLower)) {
+				subjectIcon = '<i class="fas fa-file-alt"></i>';
 				iconClass = '';
 			} else if (subjectLower.indexOf('document') !== -1) {
 				subjectIcon = '<i class="fas fa-file-alt"></i>';
@@ -3010,6 +3016,15 @@ function getallactivities(client_id){
 			var date = v.date ?? '';
 			var fullName = v.name ?? '';
 			var activityTypeClass = activityType ? 'activity-type-' + activityType : '';
+			if (!activityTypeClass) {
+				if (/uploaded email:/i.test(subjectLower)) {
+					activityTypeClass = 'activity-type-email';
+				} else if (subjectLower.indexOf('invoice') !== -1 || subjectLower.indexOf('receipt') !== -1 || subjectLower.indexOf('ledger') !== -1 || subjectLower.indexOf('payment') !== -1 || subjectLower.indexOf('account') !== -1) {
+					activityTypeClass = 'activity-type-financial';
+				} else if (subjectLower.indexOf('document') !== -1 && !/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subjectLower)) {
+					activityTypeClass = 'activity-type-document';
+				}
+			}
 			var headline = v.subject_without_staff_prefix === true ? subject : (fullName + ' ' + subject);
 			var feedItemClass = activityType === 'stage' ? 'feed-item--stage' : 'feed-item--email';
 			var createdAtYmd = v.created_at_ymd || '';

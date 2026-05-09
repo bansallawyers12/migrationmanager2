@@ -51,10 +51,10 @@
     }
 
     /**
-     * Subject-line patterns that identify accounting activities when activity_type is missing (legacy rows).
-     * Used by the Accounting filter fallback only (Notes are strict activity-type-note only).
+     * Subject-line patterns for legacy rows where activity_type is not set but the entry is financial
+     * (invoices, receipts, ledger, etc.). Aligns with activities_logs.activity_type === 'financial'.
      */
-    function getAccountingSubjectPatterns() {
+    function getFinancialSubjectPatterns() {
         return [
             'invoice',
             'added invoice',
@@ -84,6 +84,44 @@
         ];
     }
 
+    /** Ledger/financial receipt uploads — treat as financial, not generic "document" */
+    function isFinancialReceiptDocumentSubject(subjectText) {
+        return /(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subjectText || '');
+    }
+
+    /** Subject patterns for legacy rows without activity_type === 'document' (must match filterActivities) */
+    function getDocumentFallbackPatterns() {
+        return [
+            'document',
+            'added.*document',
+            'updated.*document',
+            'deleted.*document',
+            'renamed.*document',
+            'added.*migration document',
+            'updated.*migration document',
+            'added.*personal document',
+            'updated.*personal document',
+            'added.*visa document',
+            'updated.*visa document',
+            'added.*personal checklist',
+            'added.*visa checklist',
+            'updated.*checklist',
+            'signed document',
+            'signed cost agreement',
+            'document.*attached',
+            'document.*detached'
+        ];
+    }
+
+    function subjectMatchesDocumentFallback(subjectText) {
+        if (isFinancialReceiptDocumentSubject(subjectText)) {
+            return false;
+        }
+        return getDocumentFallbackPatterns().some(function(pattern) {
+            return new RegExp(pattern, 'i').test(subjectText || '');
+        });
+    }
+
     /** True for staff note rows: base class or structured note subtype (activity-type-note-*) */
     function isNoteFeedItem($item) {
         return $item.hasClass('activity-type-note') || $item.is('[class*="activity-type-note-"]');
@@ -103,7 +141,7 @@
 
     /**
      * Filter activities based on type
-     * @param {string} filterType - all | activity | note | email | document | signature | accounting
+     * @param {string} filterType - all | activity | note | email | document | signature | financial
      */
     function filterActivities(filterType) {
         if (filterType === 'all') {
@@ -151,52 +189,20 @@
                 }
                 var subject = $item.find('.feed-content strong').text().toLowerCase();
                 var subjectText = subject || '';
-                
-                // Document-related patterns to match (but exclude accounting-related receipt documents)
-                var documentPatterns = [
-                    'document',
-                    'added.*document',
-                    'updated.*document',
-                    'deleted.*document',
-                    'renamed.*document',
-                    'added.*migration document',
-                    'updated.*migration document',
-                    'added.*personal document',
-                    'updated.*personal document',
-                    'added.*visa document',
-                    'updated.*visa document',
-                    'added.*personal checklist',
-                    'added.*visa checklist',
-                    'updated.*checklist',
-                    'signed document',
-                    'signed cost agreement',
-                    'document.*attached',
-                    'document.*detached'
-                ];
-                
-                // Check if subject matches any document pattern (but not accounting receipt documents)
-                var isAccountingReceiptDoc = /(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subjectText);
-                var isDocument = !isAccountingReceiptDoc && documentPatterns.some(function(pattern) {
-                    var regex = new RegExp(pattern, 'i');
-                    return regex.test(subjectText);
-                });
-                
-                if (isDocument) {
+
+                if (subjectMatchesDocumentFallback(subjectText)) {
                     $item.show();
                 }
             });
         } else if (filterType === 'signature') {
             $('.feed-item.activity').hide();
             $('.feed-item.activity-type-signature').show();
-        } else if (filterType === 'accounting') {
+        } else if (filterType === 'financial') {
             $('.feed-item.activity').hide();
-            // Show accounting activities - check both class and subject text
+            // Financial: activity_type financial in DB => activity-type-financial; plus legacy subject fallback
             $('.feed-item.activity').each(function() {
                 var $item = $(this);
-                var hasFinancialClass = $item.hasClass('activity-type-financial');
-                
-                // If it has the financial class, show it
-                if (hasFinancialClass) {
+                if ($item.hasClass('activity-type-financial')) {
                     $item.show();
                     return;
                 }
@@ -208,22 +214,20 @@
                 if (isEmailFeedItem($item)) {
                     return;
                 }
-                
-                // Fallback: Check subject text for accounting-related keywords
-                // This handles legacy activities that don't have activity_type set
+
                 var subject = $item.find('.feed-content strong').text().toLowerCase();
                 var subjectText = subject || '';
 
-                var isAccounting = getAccountingSubjectPatterns().some(function(pattern) {
+                var isFinancial = getFinancialSubjectPatterns().some(function(pattern) {
                     return new RegExp(pattern, 'i').test(subjectText);
                 });
-                
-                if (isAccounting) {
+
+                if (isFinancial) {
                     $item.show();
                 }
             });
         } else {
-            // Show only activities with specific type (for other filters like document, accounting)
+            // Show only activities with a specific activity_type (matches activity-type-{filterType})
             $('.feed-item.activity').hide();
             $('.feed-item.activity-type-' + filterType).show();
         }
@@ -344,20 +348,18 @@
             if ($item.hasClass('activity-type-document')) return true;
             if (isEmailFeedItem($item)) return false;
             var subject = ($item.find('.feed-content strong').text() || '').toLowerCase();
-            if (/(receipt document|journal receipt document|client receipt document|office receipt document)/i.test(subject)) return false;
-            var docPatterns = ['document', 'added.*document', 'updated.*document', 'visa document', 'personal document', 'checklist', 'uploaded', 'signed document'];
-            return docPatterns.some(function(p) { return new RegExp(p, 'i').test(subject); });
+            return subjectMatchesDocumentFallback(subject);
         }
-        if (filterType === 'accounting') {
+        if (filterType === 'financial') {
             if ($item.hasClass('activity-type-financial')) return true;
             if (isNoteFeedItem($item)) return false;
             if (isEmailFeedItem($item)) return false;
             var subj = ($item.find('.feed-content strong').text() || '').toLowerCase();
-            return getAccountingSubjectPatterns().some(function(pattern) {
+            return getFinancialSubjectPatterns().some(function(pattern) {
                 return new RegExp(pattern, 'i').test(subj);
             });
         }
-        return true;
+        return $item.hasClass('activity-type-' + filterType);
     }
 
     /**
