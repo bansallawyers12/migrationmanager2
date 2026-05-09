@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Support\SendGridFromAllowedDomains;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -114,6 +115,16 @@ class SendGridSendersController extends Controller
         }
 
         $senders = collect($senders)->unique('email')->values()->toArray();
+        $hadAnyBeforeDomainFilter = $senders !== [];
+        $senders = SendGridFromAllowedDomains::filterSenders($senders);
+
+        if ($senders === [] && $hadAnyBeforeDomainFilter) {
+            Log::warning('SendGrid senders: none match from_allowed_domains', [
+                'domains' => SendGridFromAllowedDomains::domains(),
+            ]);
+
+            return [];
+        }
 
         if (empty($senders)) {
             return $this->getFallbackSendersFromEnv();
@@ -142,6 +153,7 @@ class SendGridSendersController extends Controller
                 ];
             }
         }
-        return $list;
+
+        return SendGridFromAllowedDomains::filterSenders($list);
     }
 }

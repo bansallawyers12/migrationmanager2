@@ -35,6 +35,7 @@ use App\Models\CompanyDirector;
 use App\Models\CompanyNomination;
 use App\Models\ActivitiesLog;
 use App\Models\Lead;
+use App\Helpers\PhoneHelper;
 use App\Services\LeadFollowUpNoteService;
 use App\Traits\LogsClientActivity;
 
@@ -2756,7 +2757,14 @@ class ClientPersonalDetailsController extends Controller
                 if (!empty($phoneData['phone'])) {
                     $contactType = $phoneData['contact_type'] ?? null;
                     $phone = $phoneData['phone'];
-                    $countryCode = $phoneData['country_code'] ?? '';
+                    $countryCode = PhoneHelper::formatForStorage($phoneData['country_code'] ?? '');
+
+                    if ($countryCode === '') {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Phone number '.($index + 1).': please select a valid country code.',
+                        ], 422);
+                    }
 
                     // Use centralized validation
                     $validation = \App\Helpers\PhoneValidationHelper::validatePhoneNumber($phone);
@@ -2817,7 +2825,7 @@ class ClientPersonalDetailsController extends Controller
                     $contactId = !empty($phoneData['id']) ? $phoneData['id'] : null;
                     $contactType = $phoneData['contact_type'] ?? null;
                     $phone = $phoneData['phone'];
-                    $countryCode = $phoneData['country_code'] ?? '';
+                    $countryCode = PhoneHelper::formatForStorage($phoneData['country_code'] ?? '');
                     
                     // Check for duplicates across all clients and handle universal number (4444444444)
                     // Check in admins table (excluding current client)
@@ -2917,7 +2925,7 @@ class ClientPersonalDetailsController extends Controller
                 if (!empty($lastPhoneData['phone'])) {
                     $lastPhone = $lastPhoneData['phone'];
                     $lastContactType = $lastPhoneData['contact_type'] ?? null;
-                    $lastCountryCode = $lastPhoneData['country_code'] ?? '';
+                    $lastCountryCode = PhoneHelper::formatForStorage($lastPhoneData['country_code'] ?? '');
                 }
             }
 

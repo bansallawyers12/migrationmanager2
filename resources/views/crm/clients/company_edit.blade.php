@@ -1027,6 +1027,12 @@
 
     @push('scripts')
     {{-- Select2 JS for contact person search --}}
+    <script>
+        window.countriesData = @json($countries ?? []);
+        window.phonePopularIsoCodes = @json(config('phone.popular_countries'));
+        window.phoneDefaultDialCode = @json(config('phone.default_country_code'));
+    </script>
+    <script src="{{ asset('js/shared/phone-country-select-builder.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{asset('js/clients/edit-client.js')}}"></script>
     <script src="{{asset('js/address-autocomplete.js')}}"></script>

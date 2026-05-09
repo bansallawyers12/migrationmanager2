@@ -82,16 +82,15 @@
             
             <!-- Configuration for external JavaScript -->
             <script>
-                // Configuration object for edit-client.js
                 window.editClientConfig = {
                     visaTypesRoute: '{{ route("getVisaTypes") }}',
                     countriesRoute: '{{ route("getCountries") }}',
                     searchPartnerRoute: '{{ route("clients.searchPartner") }}',
                     csrfToken: '{{ csrf_token() }}'
                 };
-                
-                // Current client ID for excluding from search results
                 window.currentClientId = '{{ $fetchedData->id }}';
+                window.currentClientType = @json($fetchedData->type);
+                window.latestClientMatterRef = null;
             </script>
 
             <!-- Main Content Area -->
@@ -1554,10 +1553,15 @@
 
     @push('scripts')
     <script>
-        // Pass countries data to JavaScript
+        window.phonePopularIsoCodes = @json(config('phone.popular_countries'));
+        window.phoneDefaultDialCode = @json(config('phone.default_country_code'));
+    </script>
+    <script src="{{ asset('js/shared/phone-country-select-builder.js') }}"></script>
+    <script>
         window.countriesData = @json($countries ?? []);
-
-        // Lead edit uses Summary/Edit sections like client edit, but historically missed the JS helpers.
+    </script>
+    <script src="{{asset('js/clients/edit-client.js')}}"></script>
+    <script>
         // Provide minimal, safe helpers so the pencil buttons work.
         window.toggleEditMode = window.toggleEditMode || function(sectionType) {
             const summaryView = document.getElementById(sectionType + 'Summary');

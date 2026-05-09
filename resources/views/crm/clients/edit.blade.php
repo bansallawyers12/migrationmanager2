@@ -2202,6 +2202,11 @@
 
     @push('scripts')
     <script>
+        window.phonePopularIsoCodes = @json(config('phone.popular_countries'));
+        window.phoneDefaultDialCode = @json(config('phone.default_country_code'));
+    </script>
+    <script src="{{ asset('js/shared/phone-country-select-builder.js') }}"></script>
+    <script>
         // Pass countries data to JavaScript
         window.countriesData = @json($countries);
     </script>

@@ -333,9 +333,9 @@
                                         var $error = $row.find('.error-message');
                                         
                                         // Standardized phone validation
-                                        var phoneRegex = /^[0-9]{10,15}$/;
+                                        var phoneRegex = /^[0-9]{7,15}$/;
                                         
-                                        if (phone.length >= 10 && phone.length <= 15 && phoneRegex.test(phone)) {
+                                        if (phone.length >= 7 && phone.length <= 15 && phoneRegex.test(phone)) {
                                             $input.removeClass('error-border');
                                             $error.hide();
                                             return true;

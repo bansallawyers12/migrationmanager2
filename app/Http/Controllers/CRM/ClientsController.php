@@ -16,6 +16,7 @@ use App\Models\Lead;
 use App\Models\ActivitiesLog;
 // use App\Models\OnlineForm; // REMOVED: OnlineForm model has been deleted
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\PhoneHelper;
 use Barryvdh\DomPDF\Facade as PDF;
 use App\Models\CheckinLog;
 use App\Models\Note;
@@ -1069,19 +1070,29 @@ class ClientsController extends Controller
             }
         }
 
+        foreach ($validated['phone'] as $index => $phone) {
+            if (!empty($phone)) {
+                if (PhoneHelper::formatForStorage($validated['country_code'][$index] ?? '') === '') {
+                    return redirect()->back()
+                        ->withErrors(['country_code' => 'Please select a valid country code for each phone number.'])
+                        ->withInput();
+                }
+            }
+        }
+
         // Check for duplicate Personal email types
         if (!empty($validated['email_type_hidden'])) {
             $personalEmailCount = array_count_values($validated['email_type_hidden'])['Personal'] ?? 0;
-            
+            if ($personalEmailCount > 1) {
+                return redirect()->back()->withErrors(['email' => 'Only one email address can be marked as Personal.'])->withInput();
+            }
+        }
+
         // Custom validation: DOB Verify Document is required when DOB is verified
         if (isset($validated['dob_verified']) && $validated['dob_verified'] === '1' && empty($requestData['dob_verify_document'])) {
             return redirect()->back()
                 ->withErrors(['dob_verify_document' => 'DOB Verify Document is required when DOB is verified.'])
                 ->withInput();
-        }
-            if ($personalEmailCount > 1) {
-                return redirect()->back()->withErrors(['email' => 'Only one email address can be marked as Personal.'])->withInput();
-            }
         }
 
         // Get the last email and email type
@@ -1107,7 +1118,7 @@ class ClientsController extends Controller
             for ($i = $phoneCount - 1; $i >= 0; $i--) {
                 if (!empty($validated['phone'][$i])) {
                     $lastContactType = $validated['contact_type_hidden'][$i];
-                    $lastCountryCode = $validated['country_code'][$i] ?? '';
+                    $lastCountryCode = PhoneHelper::formatForStorage($validated['country_code'][$i] ?? '');
                     $lastPhone = $validated['phone'][$i];
                     break;
                 }
@@ -1260,7 +1271,7 @@ class ClientsController extends Controller
                             'client_id' => $client->id,
                             'admin_id' => Auth::user()->id,
                             'contact_type' => $contact_type,
-                            'country_code' => $validated['country_code'][$index] ?? null,
+                            'country_code' => PhoneHelper::formatForStorage($validated['country_code'][$index] ?? ''),
                             'phone' => $phoneToSave,
                             'is_verified' => false,
                             'created_at' => now(),

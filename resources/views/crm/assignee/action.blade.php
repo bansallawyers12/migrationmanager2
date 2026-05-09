@@ -516,61 +516,7 @@
                 <div class="client-status" style="margin-right: 50px;">
                     <a class="btn btn-primary" style="border-radius: 0px;" id="assigned_by_me"  href="{{URL::to('/assigned_by_me')}}">Assigned by me</a>
                     <a class="btn btn-primary" style="border-radius: 0px;" id="archived-tab"  href="{{URL::to('/action_completed')}}">Completed</a>
-                    {{-- Inert template: keeps markup out of a giant data-content attribute and avoids duplicate IDs in the live DOM (matches Bootstrap 5.3.7 native Popover). --}}
-                    <template id="action-add-task-popover-template">
-                        <div class="modern-popover-content add-task-layout">
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa fa-user-circle"></i> Client</label>
-                                <select id="assign_client_id" class="form-control js-data-example-ajaxccsearch__addmytask" data-placeholder="Search and select client..."></select>
-                                <div id="client-error" class="error-message"></div>
-                            </div>
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa fa-users"></i> Assignees</label>
-                                <div class="dropdown-multi-select" style="width: 100%;">
-                                    <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
-                                        Select assignees <span class="selected-count"></span>
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="width: 100%;">
-                                        <div class="dropdown-search-wrapper" style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                                            <input type="text" class="form-control assignee-search-input" placeholder="Search assignees..." style="font-size: 13px; padding: 6px 10px;">
-                                        </div>
-                                        <label class="dropdown-item"><input type="checkbox" id="select-all" /> <strong>Select All</strong></label>
-                                        <div style="border-top: 1px solid #e2e8f0; margin: 5px 0;"></div>
-                                        <div class="assignee-list">
-                                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                @php
-                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
-                                                    $searchText = strtolower($admin->first_name . $admin->last_name . (@$branchname->office_name ?? ''));
-                                                    $searchText = str_replace(' ', '', $searchText);
-                                                @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}">
-                                                    <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
-                                                    {{ e($admin->first_name) }} {{ e($admin->last_name) }} ({{ e(@$branchname->office_name ?? '') }})
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                                <select class="d-none" id="rem_cat" name="rem_cat[]" multiple="multiple">
-                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                        <option value="{{ $admin->id }}">{{ e($admin->first_name) }} {{ e($admin->last_name) }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="assignees-error" class="error-message"></div>
-                            </div>
-                            <div class="form-group form-group-full-width">
-                                <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
-                                <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
-                                <div id="note-error" class="error-message"></div>
-                            </div>
-                            <input id="task_group" name="task_group" type="hidden" value="Personal Action">
-                            <div class="text-center">
-                                <button type="button" class="btn btn-primary" id="add_my_task">
-                                    <i class="fa fa-plus-circle"></i> Add My Task
-                                </button>
-                            </div>
-                        </div>
-                    </template>
+                    @include('components.crm.add-my-task-popover-template')
                     {{-- Must NOT use class "tab-button": global handler binds $('.tab-button') and reloads the DataTable / toggles filter "active". --}}
                     <button type="button" class="btn btn-primary add_my_task" title="Add New Task">
                         <i class="fas fa-plus"></i> Add My Task
@@ -1083,7 +1029,7 @@
 <script type="text/javascript">
 $(function () {
     function getActionAddTaskPopoverHtml() {
-        var tpl = document.getElementById('action-add-task-popover-template');
+        var tpl = document.getElementById('add-my-task-popover-template');
         return tpl ? tpl.innerHTML : '';
     }
 
@@ -1147,14 +1093,17 @@ $(function () {
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         "fnDrawCallback": function() {
-            // Initialize popovers for dynamically added elements (exclude update_task buttons which are initialized manually)
-            $('[data-bs-toggle="popover"]').not('.update_task').popover({
-                html: true,
-                sanitize: false,
-                trigger: 'click',
-                placement: 'bottom',
-                boundary: 'viewport',
-                container: 'body'
+            // Initialize any non-update_task popovers using Bootstrap 5 native API
+            document.querySelectorAll('[data-bs-toggle="popover"]:not(.update_task)').forEach(function(el) {
+                var existing = bootstrap.Popover.getInstance(el);
+                if (existing) { existing.dispose(); }
+                new bootstrap.Popover(el, {
+                    html: true,
+                    sanitize: false,
+                    trigger: 'click',
+                    placement: 'bottom',
+                    container: 'body'
+                });
             });
 
             // Update badge counts
@@ -1401,17 +1350,9 @@ $(function () {
     }
     
     // Ensure Add My Task popover works correctly (backup initialization on click)
-    $(document).on('click', '.add_my_task', function(e) {
-        // Backup initialization attempt - the main one happens on 'shown.bs.popover'
-        setTimeout(function() {
-            initializeClientSelect2();
-        }, 200);
-    });
-
-    // Initialize Update Task popover
+    // Initialize Update Task popover (placeholder for future enhancements)
     $(document).on('shown.bs.popover', '.update_task', function() {
-        //$('.assigneeselect2').select2();
-        //$('.summernote-simple').summernote();
+        // Reserved for future enhancements (e.g. Select2 inside update task popover)
     });
 
     // Update badge counts
@@ -1447,72 +1388,96 @@ $(function () {
         table.ajax.reload();
     });
 
-    // Handle Update Task button click
+    // Handle Update Task button click — Bootstrap 5 native Popover (no $.fn.popover)
     $('.yajra-datatable').on('click', '.update_task', function() {
-        var $button = $(this);
+        var btn = this;
+        var $button = $(btn);
         var assignedTo = $button.data('assignedto') || '';
-        var noteId = $button.data('noteid') || '';
-        var taskId = $button.data('taskid') || '';
-        var taskGroup = $button.data('taskgroupid') || '';
+        var noteId     = $button.data('noteid') || '';
+        var taskId     = $button.data('taskid') || '';
+        var taskGroup  = $button.data('taskgroupid') || '';
         var followupDate = $button.data('actiondate') || '';
-        var clientId = $button.data('clientid') || '';
+        var clientId   = $button.data('clientid') || '';
 
-        // Set popover content
-        $button.popover('dispose'); // Dispose of any existing popover
-        $button.popover({
+        // Hide all other open update/readmore popovers first
+        document.querySelectorAll('.update_task, .btn_readmore').forEach(function(el) {
+            if (el !== btn) {
+                var inst = bootstrap.Popover.getInstance(el);
+                if (inst) { inst.hide(); }
+            }
+        });
+
+        var existing = bootstrap.Popover.getInstance(btn);
+        if (existing) {
+            // Toggle: if already visible, hide it
+            existing.toggle();
+            return;
+        }
+
+        var pop = new bootstrap.Popover(btn, {
             html: true,
             sanitize: false,
             title: 'Update Task',
             content: getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId),
             trigger: 'manual',
             placement: 'auto',
-            boundary: 'viewport',
-            template: '<div class="popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>',
             container: 'body'
-        }).popover('show');
+        });
+        pop.show();
     });
 
-    // Close popover when clicking outside
+    // Close update/readmore popovers when clicking outside
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('.popover').length && !$(e.target).closest('.update_task').length && !$(e.target).closest('.btn_readmore').length) {
-            $('.update_task').popover('hide');
-            $('.btn_readmore').popover('hide');
+        if (!$(e.target).closest('.popover').length &&
+            !$(e.target).closest('.update_task').length &&
+            !$(e.target).closest('.btn_readmore').length) {
+            document.querySelectorAll('.update_task, .btn_readmore').forEach(function(el) {
+                var inst = bootstrap.Popover.getInstance(el);
+                if (inst) { inst.hide(); }
+            });
         }
     });
 
-    // Handle Read More button clicks specifically
+    // Handle Read More button clicks — Bootstrap 5 native Popover
     $(document).on('click', '.btn_readmore', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
-        var $button = $(this);
-        var fullContent = $button.data('full-content');
-        
-        // Only show popover if content exists
-        if (!fullContent) {
-            console.warn('No content found for read more button');
+
+        var btn = this;
+        var fullContent = $(btn).data('full-content');
+        if (!fullContent) { return; }
+
+        // Hide all other open popovers
+        document.querySelectorAll('.update_task, .btn_readmore').forEach(function(el) {
+            if (el !== btn) {
+                var inst = bootstrap.Popover.getInstance(el);
+                if (inst) { inst.hide(); }
+            }
+        });
+
+        var existing = bootstrap.Popover.getInstance(btn);
+        if (existing) {
+            existing.toggle();
             return;
         }
-        
-        // Hide any other open popovers
-        $('.update_task').popover('hide');
-        $('.btn_readmore').popover('hide');
-        
-        // Set popover content and show
-        $button.popover('dispose');
-        $button.popover({
+
+        var pop = new bootstrap.Popover(btn, {
             html: true,
             sanitize: false,
             content: fullContent,
             trigger: 'manual',
-            placement: 'top'
-        }).popover('show');
+            placement: 'top',
+            container: 'body'
+        });
+        pop.show();
     });
 
-    // Re-initialize popovers after DataTable redraw
+    // Dispose update/readmore popovers after DataTable redraw so stale instances don't accumulate
     $(document).on('draw.dt', '.yajra-datatable', function() {
-        // Destroy existing popovers
-        $('.btn_readmore').popover('dispose');
+        document.querySelectorAll('.btn_readmore, .update_task').forEach(function(el) {
+            var inst = bootstrap.Popover.getInstance(el);
+            if (inst) { inst.dispose(); }
+        });
     });
 
     // Handle Update Task submission
@@ -1564,7 +1529,10 @@ $(function () {
                 task_group: taskGroup
             },
             success: function(response) {
-                $('.update_task').popover('hide');
+                document.querySelectorAll('.update_task').forEach(function(el) {
+                    var inst = bootstrap.Popover.getInstance(el);
+                    if (inst) { inst.hide(); }
+                });
                 table.draw(false);
             },
             error: function(xhr) {
@@ -1732,6 +1700,7 @@ $(function () {
                     if (response && response.success) {
                         hideAddMyTaskPopover();
                         $('.popover-backdrop').removeClass('show');
+                        $('.custom-error').remove();
                         table.draw(false);
                     } else {
                         alert(response && response.message ? response.message : 'An error occurred');

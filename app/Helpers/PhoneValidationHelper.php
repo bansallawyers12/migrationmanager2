@@ -5,11 +5,10 @@ namespace App\Helpers;
 class PhoneValidationHelper
 {
     /**
-     * Standard phone number validation regex
-     * Allows 9-10 digits for Australian numbers (with/without leading 0)
-     * Allows up to 15 digits for international numbers
+     * National-number digits only (country code stored separately).
+     * ITU recommends up to 15 digits total E.164; many countries use 7–12 national digits.
      */
-    const PHONE_REGEX = '/^[0-9]{9,15}$/';
+    const PHONE_REGEX = '/^[0-9]{7,15}$/';
     
     /**
      * Placeholder number pattern
@@ -45,11 +44,10 @@ class PhoneValidationHelper
             ];
         }
 
-        // Check length - support 9-10 digits for AU numbers
-        if (strlen($cleaned) < 9) {
+        if (strlen($cleaned) < 7) {
             return [
                 'valid' => false,
-                'message' => 'Phone number must be at least 9 digits'
+                'message' => 'Phone number must be at least 7 digits'
             ];
         }
 
@@ -292,7 +290,7 @@ class PhoneValidationHelper
             $field => [
                 'required',
                 'string',
-                'min:9',
+                'min:7',
                 'max:15',
                 function ($attribute, $value, $fail) {
                     $validation = self::validatePhoneNumber($value);
@@ -313,7 +311,7 @@ class PhoneValidationHelper
             $field . '.*' => [
                 'required',
                 'string',
-                'min:9',
+                'min:7',
                 'max:15',
                 function ($attribute, $value, $fail) {
                     $validation = self::validatePhoneNumber($value);

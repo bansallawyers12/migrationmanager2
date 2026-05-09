@@ -36,6 +36,8 @@ return [
         'base_url' => env('SENDGRID_BASE_URL', 'https://api.sendgrid.com'),
         'from_email' => env('SENDGRID_FROM_EMAIL', ''),
         'senders' => env('SENDGRID_SENDERS', ''),
+        /* Compose From dropdown + send validation: comma-separated domains (no @). * = allow all verified SendGrid senders */
+        'from_allowed_domains' => env('SENDGRID_FROM_ALLOWED_DOMAINS', 'bansalimmigration.com.au'),
     ],
 
     /*

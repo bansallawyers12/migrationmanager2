@@ -12,7 +12,14 @@ function addPhoneNumber() {
     if (!container) return;
     
     const index = container.children.length;
-    
+
+    const defaultDial = (typeof window.phoneDefaultDialCode !== 'undefined' && window.phoneDefaultDialCode)
+        ? window.phoneDefaultDialCode
+        : '+61';
+    const dialOpts = typeof window.buildPhoneDialCodeOptionsHtml === 'function'
+        ? window.buildPhoneDialCodeOptionsHtml(defaultDial, { showPlaceholder: false })
+        : '<option value="+61" selected>+61 (Australia)</option>';
+
     const phoneNumberHTML = `
         <div class="repeatable-section" data-index="${index}">
             <button type="button" class="remove-item-btn" title="Remove Phone" onclick="removePhoneField(this)">
@@ -41,26 +48,7 @@ function addPhoneNumber() {
                 </div>
                 <div class="form-group">
                     <label>Country Code</label>
-                    <select name="country_code[${index}]" class="country-code-selector">
-                        <option value="+61">+61 (Australia)</option>
-                        <option value="+1">+1 (USA/Canada)</option>
-                        <option value="+44">+44 (UK)</option>
-                        <option value="+91">+91 (India)</option>
-                        <option value="+86">+86 (China)</option>
-                        <option value="+81">+81 (Japan)</option>
-                        <option value="+82">+82 (South Korea)</option>
-                        <option value="+65">+65 (Singapore)</option>
-                        <option value="+64">+64 (New Zealand)</option>
-                        <option value="+63">+63 (Philippines)</option>
-                        <option value="+60">+60 (Malaysia)</option>
-                        <option value="+66">+66 (Thailand)</option>
-                        <option value="+84">+84 (Vietnam)</option>
-                        <option value="+62">+62 (Indonesia)</option>
-                        <option value="+92">+92 (Pakistan)</option>
-                        <option value="+94">+94 (Sri Lanka)</option>
-                        <option value="+880">+880 (Bangladesh)</option>
-                        <option value="+977">+977 (Nepal)</option>
-                    </select>
+                    <select name="country_code[${index}]" class="country-code-selector">${dialOpts}</select>
                 </div>
                 <div class="form-group">
                     <label>Phone Number</label>

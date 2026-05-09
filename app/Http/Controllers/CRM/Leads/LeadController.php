@@ -22,6 +22,7 @@ use App\Services\ClientReferenceService;
 use App\Support\StaffClientVisibility;
 use App\Services\LeadFollowUpNoteService;
 use App\Models\Staff;
+use App\Helpers\PhoneHelper;
 
 class LeadController extends Controller
 {
@@ -375,7 +376,7 @@ class LeadController extends Controller
     public function create(Request $request)
     {
         // Get countries for dropdowns
-        $countries = \App\Models\Country::orderBy('name', 'asc')->get();
+        $countries = \App\Models\Country::getAllWithPhoneCodes();
         $assignableStaff = Staff::where('status', 1)->orderBy('first_name')->orderBy('last_name')->get();
         $leadStageLabels = [
             'new' => 'New',
@@ -622,6 +623,10 @@ class LeadController extends Controller
                 // The original primaryEmail is kept for ClientEmail - only admin record gets placeholder
             }
 
+            if ($primaryPhone && PhoneHelper::formatForStorage($requestData['country_code'][0] ?? '') === '') {
+                $errors['country_code.0'] = 'Please select a valid country code.';
+            }
+
             // If there are any custom errors, return them
             if (!empty($errors)) {
                 Log::warning('Custom validation errors: ' . json_encode($errors));
@@ -734,7 +739,7 @@ class LeadController extends Controller
                     
                     // Contact information
                     'contact_type' => $requestData['contact_type_hidden'][0] ?? null,
-                    'country_code' => $requestData['country_code'][0] ?? null,
+                    'country_code' => PhoneHelper::formatForStorage($requestData['country_code'][0] ?? ''),
                     'phone' => $primaryPhone,
                     'email_type' => $requestData['email_type_hidden'][0] ?? null,
                     'email' => $adminEmail,
@@ -775,7 +780,7 @@ class LeadController extends Controller
                 // Save phone number to client_contacts table
                 if ($primaryPhone) {
                     $contactType = $requestData['contact_type_hidden'][0] ?? 'Personal';
-                    $countryCode = $requestData['country_code'][0] ?? '';
+                    $countryCode = PhoneHelper::formatForStorage($requestData['country_code'][0] ?? '');
                     
                     ClientContact::create([
                         'admin_id' => Auth::user()->id,
@@ -911,7 +916,7 @@ class LeadController extends Controller
         }
 
         // Get countries for dropdown
-        $countries = \App\Models\Country::orderBy('name', 'asc')->get();
+        $countries = \App\Models\Country::getAllWithPhoneCodes();
         
         // Load contact data (required by edit form)
         $clientContacts = ClientContact::where('client_id', $id)->get() ?? collect();
@@ -1086,6 +1091,18 @@ class LeadController extends Controller
             }
         }
 
+        if (isset($requestData['phone']) && is_array($requestData['phone'])) {
+            foreach ($requestData['phone'] as $index => $phone) {
+                if (!empty($phone)) {
+                    if (PhoneHelper::formatForStorage($requestData['country_code'][$index] ?? '') === '') {
+                        return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['country_code' => 'Please select a valid country code for each phone number.']);
+                    }
+                }
+            }
+        }
+
         // Find the lead by ID using Lead model
         $lead = Lead::find($id);
         
@@ -1168,7 +1185,7 @@ class LeadController extends Controller
             }
             
             $lead->contact_type = $lastContactType;
-            $lead->country_code = $lastCountryCode;
+            $lead->country_code = PhoneHelper::formatForStorage($lastCountryCode ?? '');
             $lead->phone = $lastPhone;
             $lead->email_type = $lastEmailType;
             $lead->email = $lastEmail;
@@ -1228,7 +1245,7 @@ class LeadController extends Controller
                 foreach ($requestData['contact_type_hidden'] as $key => $contactType) {
                     $contactId = $requestData['contact_id'][$key] ?? null;
                     $phone = $requestData['phone'][$key] ?? null;
-                    $countryCode = $requestData['country_code'][$key] ?? '';
+                    $countryCode = PhoneHelper::formatForStorage($requestData['country_code'][$key] ?? '');
                     
                     if (!empty($phone)) {
                         if ($contactId) {

@@ -26,6 +26,7 @@ use App\Models\McqChapter;
 use App\Models\McqSubject;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
+use App\Support\SendGridFromAllowedDomains;
 use App\Support\StaffClientVisibility;
 use App\Support\WorkflowStageFreeze;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -1157,6 +1158,20 @@ public function getChapters(Request $request)
 		$associatedAdminId = $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
 		if ($associatedAdminId) {
 			$this->assertComposeEmailCanAccessCrmRecord($request, (int) $associatedAdminId);
+		}
+
+		$fromForCompose = trim((string) ($requestData['email_from'] ?? ''));
+		if ($fromForCompose === '' || ! SendGridFromAllowedDomains::allowsEmail($fromForCompose)) {
+			$msg = 'The selected From address is not allowed for this CRM.';
+			if ($request->ajax() || $request->wantsJson()) {
+				return response()->json([
+					'status' => false,
+					'success' => false,
+					'message' => $msg,
+				], 422);
+			}
+
+			return redirect()->back()->withErrors(['email_from' => $msg])->withInput();
 		}
 
 		$user_id = @Auth::user()->id;

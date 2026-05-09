@@ -52,62 +52,8 @@
                         </h3>
                         <span class="todo-count-badge">{{ $count_note_deadline }}</span>
                     </div>
-                    {{-- Add Task popover template (outside attribute to avoid unescaped & in JS) --}}
-                    <div id="add-task-popover-template" style="display:none;">
-                        <div class="modern-popover-content add-task-layout">
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa fa-user-circle"></i> Client</label>
-                                <select id="assign_client_id" class="form-control js-data-example-ajaxccsearch__addmytask" placeholder="Search and select client..."></select>
-                                <div id="client-error" class="error-message"></div>
-                            </div>
-                            <div class="form-group">
-                                <label class="control-label"><i class="fa fa-users"></i> Assignees</label>
-                                <div class="dropdown-multi-select" style="width: 100%;">
-                                    <button type="button" class="btn btn-default dropdown-toggle" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
-                                        Select assignees <span class="selected-count"></span>
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="width: 100%;">
-                                        <div class="dropdown-search-wrapper" style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                                            <input type="text" class="form-control assignee-search-input" placeholder="Search assignees..." style="font-size: 13px; padding: 6px 10px;">
-                                        </div>
-                                        <label class="dropdown-item"><input type="checkbox" id="select-all" /> <strong>Select All</strong></label>
-                                        <div style="border-top: 1px solid #e2e8f0; margin: 5px 0;"></div>
-                                        <div class="assignee-list">
-                                            @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                                @php
-                                                    $branchname = \App\Models\Branch::where('id',$admin->office_id)->first();
-                                                    $searchText = strtolower($admin->first_name . $admin->last_name . (@$branchname->office_name ?? ''));
-                                                    $searchText = str_replace(' ', '', $searchText);
-                                                @endphp
-                                                <label class="dropdown-item assignee-item" data-searchtext="{{ e($searchText) }}">
-                                                    <input type="checkbox" class="checkbox-item" value="{{ $admin->id }}">
-                                                    {{ e($admin->first_name) }} {{ e($admin->last_name) }} ({{ e(@$branchname->office_name ?? '') }})
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                                <select class="d-none" id="rem_cat" name="rem_cat[]" multiple="multiple">
-                                    @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
-                                        <option value="{{ $admin->id }}">{{ e($admin->first_name) }} {{ e($admin->last_name) }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="assignees-error" class="error-message"></div>
-                            </div>
-                            <div class="form-group form-group-full-width">
-                                <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
-                                <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description..."></textarea>
-                                <div id="note-error" class="error-message"></div>
-                            </div>
-                            <input id="task_group" name="task_group" type="hidden" value="Personal Action">
-                            <div class="text-center">
-                                <button type="button" class="btn btn-primary" id="add_my_task">
-                                    <i class="fa fa-plus-circle"></i> Add My Task
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="todo-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
+                    @include('components.crm.add-my-task-popover-template')
+                    <button type="button" class="todo-add-btn add_my_task" title="Add New Task">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
@@ -132,7 +78,7 @@
                             </div>
                             <h4>All caught up!</h4>
                             <p>You have no actions at the moment.</p>
-                            <button class="todo-empty-add-btn add_my_task" data-container="body" data-placement="bottom-start" data-html="true" data-content-id="add-task-popover-template" title="Add New Task">
+                            <button type="button" class="todo-empty-add-btn add_my_task" title="Add New Task">
                                 <i class="fas fa-plus"></i>
                                 Add an action
                             </button>
@@ -1024,7 +970,6 @@
 
 @push('scripts')
 @once
-<script src="{{URL::to('/')}}/js/popover.js"></script>
 <script src="{{URL::to('/')}}/js/components/dropdown-multi-select.js"></script>
 <script>
     // Define dashboard routes and data before loading the main script
@@ -1050,35 +995,49 @@
 <script src="{{ asset('js/dashboard-optimized.js') }}"></script>
 <script>
 $(function () {
-    // Initialize Add New Task popover - content from template (avoids unescaped & in data-content attribute)
-    $('.add_my_task').each(function() {
-        var $btn = $(this);
-        var contentId = $btn.data('content-id');
-        var popoverOpts = {
-            html: true,
-            sanitize: false,
-            trigger: 'click',
-            placement: 'top',
-            boundary: 'viewport',
-            container: 'body',
-            title: '<i class="fa fa-plus-circle"></i> Add New Task',
-            template: '<div class="popover add-my-task-popover" role="tooltip"><div class="popover-header"></div><div class="popover-body"></div></div>'
-        };
-        if (contentId && $('#' + contentId).length) {
-            popoverOpts.content = function() { return $('#' + contentId).html(); };
-        }
-        $btn.popover(popoverOpts);
-    });
-    
-    // Initialize client select for Add My Task popover
+    function getDashboardAddTaskPopoverHtml() {
+        var tpl = document.getElementById('add-my-task-popover-template');
+        return tpl ? tpl.innerHTML : '';
+    }
+
+    function hideAddMyTaskPopover() {
+        document.querySelectorAll('.add_my_task').forEach(function(btn) {
+            var inst = typeof bootstrap !== 'undefined' && bootstrap.Popover ? bootstrap.Popover.getInstance(btn) : null;
+            if (inst) {
+                inst.hide();
+            }
+        });
+    }
+
+    // Same pattern as /action: Bootstrap 5.3 native Popover + shared <template>
+    if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+        document.querySelectorAll('.add_my_task').forEach(function(btn) {
+            var existing = bootstrap.Popover.getInstance(btn);
+            if (existing) {
+                existing.dispose();
+            }
+            new bootstrap.Popover(btn, {
+                html: true,
+                sanitize: false,
+                trigger: 'click',
+                placement: 'top',
+                container: 'body',
+                customClass: 'add-my-task-popover',
+                title: '<i class="fa fa-plus-circle"></i> Add New Task',
+                content: getDashboardAddTaskPopoverHtml
+            });
+        });
+    } else {
+        console.error('Dashboard Add My Task: bootstrap.Popover is not available.');
+    }
+
     $(document).on('shown.bs.popover', '.add_my_task', function() {
-        var $popover = $('.popover.add-my-task-popover');
+        var $popover = $('.popover.add-my-task-popover.show').last();
         if ($popover.length === 0) {
-            $popover = $('.popover:visible').last();
+            $popover = $('.popover.show').last();
             $popover.addClass('add-my-task-popover');
         }
-        
-        // Center the popover
+
         $popover.css({
             'position': 'fixed',
             'left': '50%',
@@ -1087,55 +1046,49 @@ $(function () {
             'margin': '0',
             'z-index': '9999'
         });
-        
-        // Create and show backdrop
+
         if (!$('.popover-backdrop').length) {
             $('body').append('<div class="popover-backdrop"></div>');
         }
         $('.popover-backdrop').addClass('show');
-        
-        // Close popup when clicking backdrop
+
         $('.popover-backdrop').off('click').on('click', function() {
-            $('.add_my_task').popover('hide');
+            hideAddMyTaskPopover();
         });
-        
-        // Initialize client Select2
+
         setTimeout(function() {
             initializeClientSelect2();
         }, 100);
     });
-    
-    // Hide backdrop when popover is hidden
+
     $(document).on('hidden.bs.popover', '.add_my_task', function() {
         $('.popover-backdrop').removeClass('show');
     });
-    
-    // Function to initialize client Select2 (must target the visible popover — duplicate
-    // #assign_client_id exists in the hidden #add-task-popover-template, so never use $('#assign_client_id') alone.)
+
     function initializeClientSelect2() {
         var attempts = 0;
         var maxAttempts = 10;
-        
+
         function tryInitialize() {
             attempts++;
-            var $popoverCtx = $('.popover.add-my-task-popover:visible').last();
+            var $popoverCtx = $('.popover.add-my-task-popover.show').last();
             if (!$popoverCtx.length) {
-                $popoverCtx = $('.popover:visible').last();
+                $popoverCtx = $('.popover.show').last();
             }
             var $clientSelect = $popoverCtx.find('#assign_client_id');
-            
+
             if ($clientSelect.length && $clientSelect.is(':visible')) {
                 if ($clientSelect.hasClass('select2-hidden-accessible')) {
                     $clientSelect.select2('destroy');
                 }
-                
+
                 try {
                     $clientSelect.select2({
                         closeOnSelect: true,
                         placeholder: 'Search client...',
                         allowClear: true,
                         width: '100%',
-                        dropdownParent: $popoverCtx.length ? $popoverCtx : $('.popover:visible').last(),
+                        dropdownParent: $popoverCtx.length ? $popoverCtx : $('.popover.show').last(),
                         ajax: {
                             url: '{{URL::to('/clients/get-allclients')}}',
                             dataType: 'json',
@@ -1166,11 +1119,10 @@ $(function () {
                 setTimeout(tryInitialize, 50);
             }
         }
-        
+
         tryInitialize();
     }
-    
-    // Helper functions for Select2 templates
+
     function formatRepomainMYTask (repo) {
         if (repo.loading) {
             return repo.text;
@@ -1200,30 +1152,24 @@ $(function () {
     function formatRepoSelectionmainMYTask (repo) {
         return (repo && repo.name) || (repo && repo.text) || '';
     }
-    
-    // Add My Task submission - matching action page exactly
-    // Use event delegation on document to catch clicks on dynamically loaded popover content
+
     $(document).on('click', '#add_my_task', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Show loading overlay
+
         if ($(".popuploader").length) {
             $(".popuploader").show();
         }
-        
+
         var flag = true;
-        
-        // Remove any existing error messages
         $(".custom-error").remove();
 
-        // Get selected assignees - search within the popover
         var selectedRemCat = [];
         var $popover = $(this).closest('.popover');
         if ($popover.length === 0) {
-            $popover = $('.popover:visible');
+            $popover = $('.popover.show').last();
         }
-        
+
         $popover.find(".checkbox-item:checked").each(function() {
             selectedRemCat.push($(this).val());
         });
@@ -1253,11 +1199,11 @@ $(function () {
                 rem_cat: selectedRemCat,
                 task_group: $popover.find('#task_group').val()
             };
-            
+
             $.ajax({
                 type: 'post',
                 url: "{{URL::to('/')}}/clients/action/personal/store",
-                headers: { 
+                headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 dataType: 'json',
@@ -1267,10 +1213,9 @@ $(function () {
                         $(".popuploader").hide();
                     }
                     if (response && response.success) {
-                        $(".add_my_task").popover('hide');
+                        hideAddMyTaskPopover();
                         $('.popover-backdrop').removeClass('show');
-                        // Reload page to show new action
-                        setTimeout(() => {
+                        setTimeout(function() {
                             location.reload();
                         }, 500);
                     } else {
@@ -1281,7 +1226,7 @@ $(function () {
                     if ($(".popuploader").length) {
                         $(".popuploader").hide();
                     }
-                    
+
                     var errorMsg = 'Failed to add task. Please try again.';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
@@ -1291,7 +1236,7 @@ $(function () {
                             if (errorData.message) {
                                 errorMsg = errorData.message;
                             }
-                        } catch(e) {}
+                        } catch (err) {}
                     }
                     alert(errorMsg);
                 }
@@ -1301,7 +1246,7 @@ $(function () {
                 $(".popuploader").hide();
             }
         }
-        
+
         return false;
     });
 });

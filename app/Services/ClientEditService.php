@@ -260,7 +260,10 @@ class ClientEditService
      */
     protected function getCountries()
     {
-        return Country::select('id', 'name', 'sortname', 'phonecode')
+        return Country::query()
+            ->whereNotNull('phonecode')
+            ->where('phonecode', '!=', '')
+            ->select('id', 'name', 'sortname', 'phonecode')
             ->orderBy('name', 'ASC')
             ->get();
     }
