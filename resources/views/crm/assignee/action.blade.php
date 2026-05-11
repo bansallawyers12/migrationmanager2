@@ -1146,6 +1146,10 @@ $(function () {
         taskId = escapeHtml(taskId || '');
         taskGroup = String(taskGroup || '');
         clientId = escapeHtml(clientId || '');
+        var followupDateVal = '';
+        if (followupDate) {
+            followupDateVal = escapeHtml(String(followupDate).trim().split(/\s+/)[0] || '');
+        }
         
         return `
             <div id="popover-content" class="modern-popover-content update-task-layout">
@@ -1174,6 +1178,7 @@ $(function () {
                         <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
                         <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
                         <option value="Client Portal" ${taskGroup == 'Client Portal' ? 'selected' : ''}>🌐 Client Portal</option>
+                        <option value="Follow Up" ${taskGroup == 'Follow Up' ? 'selected' : ''}>📅 Follow Up</option>
                     </select>
                     <div id="task-group-error" class="error-message"></div>
                 </div>
@@ -1182,6 +1187,12 @@ $(function () {
                     <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
                     <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description...">${noteId}</textarea>
                     <div id="note-error" class="error-message"></div>
+                </div>
+
+                <div class="form-group form-group-full-width">
+                    <label class="control-label"><i class="fa fa-calendar"></i> Follow-up date</label>
+                    <input type="date" class="form-control" id="popoverdatetime" name="popoverdate" value="${followupDateVal}">
+                    <div id="date-error" class="error-message"></div>
                 </div>
                 
                 <input id="assign_note_id" type="hidden" value="${taskId}">
@@ -1517,18 +1528,31 @@ $(function () {
             return; // Stop submission if validation fails
         }
 
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
         $.ajax({
             type: 'post',
-            url: "{{URL::to('/')}}/update-action",
+            url: "{{ URL::to('/') }}/clients/action/update",
+            dataType: 'json',
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
             data: {
-                id: taskId,
-                client_id: clientId,
-                assigned_to: assignee,
+                note_id: taskId,
+                note_type: 'follow_up',
                 description: note,
+                client_id: clientId,
+                followup_datetime: $popover.find('#popoverdatetime').val() || '',
+                assignee_name: $popover.find('#rem_cat :selected').text(),
+                rem_cat: assignee,
                 task_group: taskGroup
             },
             success: function(response) {
+                $btn.prop('disabled', false);
+                var obj = (typeof response === 'string') ? jQuery.parseJSON(response) : response;
+                if (!obj || !obj.success) {
+                    alert((obj && obj.message) ? obj.message : 'Update failed.');
+                    return;
+                }
                 document.querySelectorAll('.update_task').forEach(function(el) {
                     var inst = bootstrap.Popover.getInstance(el);
                     if (inst) { inst.hide(); }
@@ -1536,8 +1560,13 @@ $(function () {
                 table.draw(false);
             },
             error: function(xhr) {
+                $btn.prop('disabled', false);
                 console.error('Error updating task:', xhr.responseText);
-                alert('An error occurred while updating the task. Please check the console for details.');
+                var msg = 'An error occurred while updating the task.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert(msg);
             }
         });
     });

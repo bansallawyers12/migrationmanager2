@@ -6882,6 +6882,19 @@ class ClientsController extends Controller
         try {
             // Find the existing action
             $action = \App\Models\Note::findOrFail($requestData['note_id']);
+
+            if ((int) $action->is_action !== 1 || (string) $action->type !== 'client') {
+                return response()->json(['success' => false, 'message' => 'Invalid task'], 400);
+            }
+
+            if ((string) $action->status === '1') {
+                return response()->json(['success' => false, 'message' => 'This task is already completed'], 400);
+            }
+
+            $staff = Auth::user();
+            if ($staff && (int) $staff->role !== 1 && (int) $action->assigned_to !== (int) $staff->id) {
+                return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+            }
             
             // Decode the client ID - handle empty/null for personal actions
             $clientId = null;
@@ -6899,7 +6912,18 @@ class ClientsController extends Controller
                 if (! $targetForAction) {
                     return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
                 }
-                if (! StaffClientVisibility::canAccessClientOrLead($clientId, Auth::user())) {
+                if (! StaffClientVisibility::canAccessClientOrLead($clientId, $staff)) {
+                    return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
+                }
+                $clientLabel = $this->actionClientDisplayName($targetForAction);
+            } elseif ($action->client_id !== null) {
+                // Keep linked client when the form does not post client_id (avoids clearing the client by mistake)
+                $clientId = (int) $action->client_id;
+                $targetForAction = $this->findClientOrLeadForAction($clientId);
+                if (! $targetForAction) {
+                    return response()->json(['success' => false, 'message' => 'Client or lead not found'], 404);
+                }
+                if (! StaffClientVisibility::canAccessClientOrLead($clientId, $staff)) {
                     return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
                 }
                 $clientLabel = $this->actionClientDisplayName($targetForAction);
@@ -6923,10 +6947,12 @@ class ClientsController extends Controller
                 $notification->sender_id = Auth::user()->id;
                 $notification->receiver_id = $action->assigned_to;
                 $notification->module_id = $clientId;
-                
-                // Set URL based on whether client exists
-                if (!empty($requestData['client_id'])) {
-                    $notification->url = URL::to('/clients/detail/' . $requestData['client_id']);
+
+                if ($clientId !== null) {
+                    $clientPath = !empty($requestData['client_id'])
+                        ? $requestData['client_id']
+                        : base64_encode(convert_uuencode($clientId));
+                    $notification->url = URL::to('/clients/detail/' . $clientPath);
                 } else {
                     $notification->url = URL::to('/action');
                 }
