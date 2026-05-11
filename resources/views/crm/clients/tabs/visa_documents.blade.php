@@ -180,8 +180,12 @@
                                                     $admin = \App\Models\Staff::where('id', $fetch->user_id)->first();
                                                     $isForm956 = !empty($fetch->form956_id);
 
-                                                    // Build file URL for normal docs; Form 956 uses forms.preview/forms.pdf
-                                                    if ($isForm956) {
+                                                    // Build file URL: once a file is uploaded to a Form 956 row, use it directly
+                                                    // so the preview shows the actual uploaded (agent-signed) PDF, not the server-regenerated form.
+                                                    if ($isForm956 && !empty($fetch->myfile)) {
+                                                        $fileUrl = $fetch->myfile;
+                                                        $downloadUrl = $fetch->myfile;
+                                                    } elseif ($isForm956) {
                                                         $fileUrl = url()->route('forms.preview', $fetch->form956_id);
                                                         $downloadUrl = url()->route('forms.pdf', $fetch->form956_id);
                                                     } elseif (!empty($fetch->myfile) && strpos($fetch->myfile, 'http') === 0) {
@@ -311,7 +315,10 @@
                                                     foreach ($signedDocs as $signedDoc):
                                                         $signedAdmin = \App\Models\Staff::where('id', $signedDoc->user_id)->first();
                                                         $signedIsForm956 = !empty($signedDoc->form956_id);
-                                                        if ($signedIsForm956) {
+                                                        if ($signedIsForm956 && !empty($signedDoc->myfile)) {
+                                                            $signedFileUrl = $signedDoc->myfile;
+                                                            $signedDownloadUrl = $signedDoc->myfile;
+                                                        } elseif ($signedIsForm956) {
                                                             $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
                                                             $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
                                                         } else {
@@ -352,7 +359,10 @@
                                                     foreach ($signedDocs as $signedDoc):
                                                         $signedAdmin = \App\Models\Staff::where('id', $signedDoc->user_id)->first();
                                                         $signedIsForm956 = !empty($signedDoc->form956_id);
-                                                        if ($signedIsForm956) {
+                                                        if ($signedIsForm956 && !empty($signedDoc->myfile)) {
+                                                            $signedFileUrl = $signedDoc->myfile;
+                                                            $signedDownloadUrl = $signedDoc->myfile;
+                                                        } elseif ($signedIsForm956) {
                                                             $signedFileUrl = url()->route('forms.preview', $signedDoc->form956_id);
                                                             $signedDownloadUrl = url()->route('forms.pdf', $signedDoc->form956_id);
                                                         } else {
