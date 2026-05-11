@@ -55,6 +55,9 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\CheckMigrationTablesExist',
         '\App\Console\Commands\MarkMigrationsAsRunCommand',
 
+        // CRM: align admins.type with active matters
+        '\App\Console\Commands\PromoteLeadsWithActiveMatters',
+
         // Visa Sheet Diagnostics
         '\App\Console\Commands\DiagnoseVisaSheet',
         '\App\Console\Commands\ExpireCrmAccessGrants',

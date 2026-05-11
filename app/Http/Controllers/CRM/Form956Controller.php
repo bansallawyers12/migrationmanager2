@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreForm956Request;
 //use App\Models\AgentDetails;
 use App\Models\Admin;
+use App\Models\ClientMatter;
 use App\Models\ClientVisaCountry;
 use App\Models\Document;
 use App\Models\Form956;
@@ -241,7 +242,7 @@ class Form956Controller extends Controller
             }
             //dd($date_lodged_arr_formated);
 
-            $visaSubclassLabel = $this->resolveClientVisaTypeLabelForForm956((int) $form->client_id);
+            $visaSubclassLabel = $this->resolveVisaSubclassLabelForForm956($form);
 
             $formData = [
                 // Client details
@@ -301,7 +302,7 @@ class Form956Controller extends Controller
                  // Question 15: Application Date lodged,Not yet lodged
                 'ta.lodged' => $date_lodged_arr_formated ?? '',
                 'ta.not yet' => $form->not_lodged == '1' ? 'IAAAS' : 'Off',
-                // Q15 Subclass of visa (application + cancellation blocks) — matches Personal Details visa type
+                // Q15 Subclass: matter sel_matter_id when client_matter_id set; else client visa row heuristic
                 'ta.type' => $visaSubclassLabel,
                 'ta.typecancel' => $visaSubclassLabel,
 
@@ -484,8 +485,54 @@ class Form956Controller extends Controller
     }
 
     /**
-     * Visa subclass label for Form 956 Q15 — same source as Personal Details → Visa Type
-     * (client_visa_countries + matters.title / nick_name).
+     * Form 956 Q15 subclass: prefer Matter linked via form's client_matter → sel_matter_id.
+     * Falls back to {@see resolveClientVisaTypeLabelForForm956} when unavailable.
+     */
+    protected function resolveVisaSubclassLabelForForm956(Form956 $form): string
+    {
+        $clientMatterId = $form->client_matter_id;
+        if ($clientMatterId) {
+            $selMatterId = ClientMatter::query()
+                ->where('id', $clientMatterId)
+                ->where('client_id', $form->client_id)
+                ->value('sel_matter_id');
+
+            if ($selMatterId !== null && $selMatterId !== '') {
+                $matter = Matter::query()
+                    ->select('id', 'title', 'nick_name')
+                    ->where('id', $selMatterId)
+                    ->first();
+
+                $label = $this->formatMatterTitleNickForForm956($matter);
+                if ($label !== '') {
+                    return $label;
+                }
+            }
+        }
+
+        return $this->resolveClientVisaTypeLabelForForm956((int) $form->client_id);
+    }
+
+    /**
+     * Same display string as historical Q15 (title, or title(nick_name)).
+     */
+    protected function formatMatterTitleNickForForm956(?Matter $matter): string
+    {
+        if (! $matter) {
+            return '';
+        }
+
+        $title = trim((string) ($matter->title ?? ''));
+        $nick = trim((string) ($matter->nick_name ?? ''));
+        if ($title === '') {
+            return '';
+        }
+
+        return $nick !== '' ? $title . '(' . $nick . ')' : $title;
+    }
+
+    /**
+     * Fallback Q15 label: client_visa_countries row (latest visa_expiry_date, else latest id with null expiry).
      */
     protected function resolveClientVisaTypeLabelForForm956(int $clientId): string
     {
@@ -519,17 +566,7 @@ class Form956Controller extends Controller
             ->where('id', $row->visa_type)
             ->first();
 
-        if (! $matter) {
-            return '';
-        }
-
-        $title = trim((string) ($matter->title ?? ''));
-        $nick = trim((string) ($matter->nick_name ?? ''));
-        if ($title === '') {
-            return '';
-        }
-
-        return $nick !== '' ? $title . '(' . $nick . ')' : $title;
+        return $this->formatMatterTitleNickForForm956($matter);
     }
 
     /**
@@ -913,7 +950,7 @@ class Form956Controller extends Controller
             }
             //dd($date_lodged_arr_formated);
             // Pass to PDF/blade
-            $visaSubclassLabel = $this->resolveClientVisaTypeLabelForForm956((int) $form->client_id);
+            $visaSubclassLabel = $this->resolveVisaSubclassLabelForForm956($form);
 
             $formData = [
                 // Client details
@@ -972,7 +1009,7 @@ class Form956Controller extends Controller
                  // Question 15: Application Date lodged,Not yet lodged
                 'ta.lodged' => $date_lodged_arr_formated ?? '',
                 'ta.not yet' => $form->not_lodged == '1' ? 'IAAAS' : 'Off',
-                // Q15 Subclass of visa (application + cancellation blocks) — matches Personal Details visa type
+                // Q15 Subclass: matter sel_matter_id when client_matter_id set; else client visa row heuristic
                 'ta.type' => $visaSubclassLabel,
                 'ta.typecancel' => $visaSubclassLabel,
 

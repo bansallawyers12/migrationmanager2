@@ -326,6 +326,34 @@ class Admin extends Authenticatable
     }
 
     /**
+     * Align admins.type with lifecycle: a lead with at least one active client_matter should be a client.
+     * Used when matters are created/saved and for one-off backfills (visa sheets read type for is_lead).
+     */
+    public static function promoteLeadWithActiveMatterToClient(int $adminId): bool
+    {
+        $admin = static::query()->whereKey($adminId)->first();
+        if (!$admin || $admin->type !== 'lead') {
+            return false;
+        }
+
+        $hasActive = ClientMatter::query()
+            ->where('client_id', $adminId)
+            ->where('matter_status', 1)
+            ->exists();
+        if (!$hasActive) {
+            return false;
+        }
+
+        $admin->type = 'client';
+        $admin->lead_status = 'converted';
+        if ((string) ($admin->status ?? '') !== '1') {
+            $admin->status = '1';
+        }
+
+        return $admin->save();
+    }
+
+    /**
      * Get display name (company name or personal name)
      * For companies: "Company Name (Contact: Person Name)"
      * For personal: "First Name Last Name"

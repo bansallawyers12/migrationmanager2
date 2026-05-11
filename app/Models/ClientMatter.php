@@ -362,5 +362,12 @@ class ClientMatter extends Model
                 ]);
             }
         });
+
+        static::saved(function (ClientMatter $model) {
+            if ((int) $model->matter_status !== 1 || !$model->client_id) {
+                return;
+            }
+            Admin::promoteLeadWithActiveMatterToClient((int) $model->client_id);
+        });
     }
 }

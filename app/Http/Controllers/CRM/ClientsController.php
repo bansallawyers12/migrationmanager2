@@ -5770,8 +5770,8 @@ class ClientsController extends Controller
             $lastInsertedId = $obj5->id; // ← This gets the last inserted ID
             if($saved5) 
             {
-                // Lead conversion is now explicit: user must click "Convert to Client" button
-                // (Convert Lead to Client modal in sidebar - no auto-conversion here)
+                // Saving an active matter for a lead auto-promotes admins.type to 'client'
+                // via the ClientMatter::saved hook (Admin::promoteLeadWithActiveMatterToClient).
 
                 if( isset($requestData['surcharge']) && $requestData['surcharge'] != '') {
                     $surcharge = $requestData['surcharge'];
@@ -6411,6 +6411,15 @@ class ClientsController extends Controller
                     Log::info('ConvertLeadToClient: success, redirecting', ['redirect_url' => $redirectUrl]);
                     return Redirect::to($redirectUrl)->with('success', $msg);
                 } else if($slug == 'lead' ) {
+                    $activeMatters = ClientMatter::where('client_id', (int) $id)->where('matter_status', 1)->count();
+                    if ($activeMatters > 0) {
+                        Log::info('ConvertLeadToClient: blocked revert to lead — active matters', ['admin_id' => $id, 'active_matters' => $activeMatters]);
+
+                        return Redirect::to('/clients/detail/'.base64_encode(convert_uuencode(@$id)))->with(
+                            'error',
+                            "Cannot revert to lead while {$activeMatters} active matter(s) exist. Close or set matters inactive first."
+                        );
+                    }
                     $obj->type = $slug;
                     $obj->user_id = "";
                     $saved = $obj->save();
