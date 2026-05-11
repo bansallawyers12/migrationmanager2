@@ -14,7 +14,12 @@ Version: 1.0.0
 """
 
 import sys
+
+# Higher limit for deeply forwarded .msg chains (extract_msg can recurse on embedded messages)
+sys.setrecursionlimit(5000)
+
 import logging
+import time
 from pathlib import Path
 from typing import Dict, Any
 
@@ -414,31 +419,38 @@ async def convert_docx_to_pdf_json(file: UploadFile = File(...)):
 @app.post("/email/parse")
 async def parse_email(file: UploadFile = File(...)):
     """Parse .msg file and extract email data."""
+    temp_path = None
     try:
         logger.info(f"Parsing email file: {file.filename}")
-        
+
         # Validate file
         if not validate_file_type(file.filename, ['.msg']):
             raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
-        
-        # Save file temporarily
-        temp_path = Path(f"temp/{file.filename}")
+
+        # Unique temp filename to avoid collisions when concurrent uploads share the same name
+        temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
+        temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
-        
+
         content = await file.read()
         temp_path.write_bytes(content)
-        
+
         # Parse email
         result = email_parser.parse_msg_file(str(temp_path))
-        
-        # Clean up
-        temp_path.unlink()
-        
+
         return JSONResponse(content=result)
-        
+
     except Exception as e:
         logger.error(f"Error parsing email: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        # Always clean up temp file regardless of success or failure
+        if temp_path and temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception as cleanup_err:
+                logger.warning(f"Could not delete temp file {temp_path}: {cleanup_err}")
 
 
 @app.post("/email/analyze")
@@ -492,7 +504,6 @@ async def parse_analyze_render_email(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Invalid file type. Only .msg files are allowed.")
         
         # Save file temporarily with unique name to avoid conflicts
-        import time
         temp_filename = f"{int(time.time() * 1000)}_{file.filename}"
         temp_path = Path(f"temp/{temp_filename}")
         temp_path.parent.mkdir(exist_ok=True)
@@ -522,7 +533,6 @@ async def parse_analyze_render_email(file: UploadFile = File(...)):
         
         # Clean up - retry mechanism for Windows file locking
         if temp_path and temp_path.exists():
-            import time
             for attempt in range(3):
                 try:
                     temp_path.unlink()
@@ -543,8 +553,8 @@ async def parse_analyze_render_email(file: UploadFile = File(...)):
         if temp_path and temp_path.exists():
             try:
                 temp_path.unlink()
-            except:
-                logger.warning(f"Could not clean up temp file on error: {temp_path}")
+            except Exception as cleanup_err:
+                logger.warning(f"Could not clean up temp file on error: {temp_path}: {cleanup_err}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -5,12 +5,10 @@ Handles parsing of .msg files using the extract_msg library.
 Provides comprehensive email data extraction including metadata, content, and attachments.
 """
 
-import json
 import sys
 import os
 import base64
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
 try:
@@ -82,8 +80,12 @@ class EmailParserService:
                 if email_data['sent_date']:
                     email_data['received_date'] = email_data['sent_date']
                 
-                # Extract attachments
-                email_data['attachments'] = self._extract_attachments(msg)
+                # Extract attachments (reuse body/html already read — avoids second msg.body/msg.htmlBody access)
+                email_data['attachments'] = self._extract_attachments(
+                    msg,
+                    body_text=email_data['text_content'],
+                    html_body=email_data['html_content'],
+                )
                 
                 # Extract headers
                 email_data['headers'] = self._extract_headers(msg)
@@ -95,9 +97,23 @@ class EmailParserService:
                 # Always close the message to release file handle (critical for Windows)
                 try:
                     msg.close()
-                except:
+                except Exception:
                     pass
-            
+
+        except RecursionError:
+            logger.error(
+                "Recursion depth exceeded parsing %s — likely deeply nested forwarded/embedded .msg",
+                file_path,
+            )
+            return {
+                'success': False,
+                'error': (
+                    'This email contains deeply nested forwarded messages that exceed the parser depth limit. '
+                    'Try saving or uploading the innermost message as its own .msg file.'
+                ),
+                'file_path': file_path,
+            }
+
         except Exception as e:
             logger.error(f"Error parsing .msg file {file_path}: {str(e)}")
             return {
@@ -106,8 +122,11 @@ class EmailParserService:
                 'file_path': file_path
             }
     
-    def _safe_get(self, value: Any, default: Any = None) -> Any:
+    def _safe_get(self, value: Any, default: Any = None, _depth: int = 0) -> Any:
         """Safely get value and convert to JSON-serializable format."""
+        if _depth > 50:
+            return default
+
         if value is None:
             return default
         
@@ -116,7 +135,7 @@ class EmailParserService:
         elif isinstance(value, bytes):
             try:
                 return value.decode('utf-8', errors='ignore')
-            except:
+            except Exception:
                 return str(value)
         elif isinstance(value, datetime):
             # Ensure datetime is timezone-aware before converting to ISO
@@ -128,13 +147,16 @@ class EmailParserService:
         elif isinstance(value, (int, float, bool)):
             return value
         elif isinstance(value, (list, tuple)):
-            return [self._safe_get(item) for item in value]
+            return [self._safe_get(item, default=None, _depth=_depth + 1) for item in value]
         elif isinstance(value, dict):
-            return {str(k): self._safe_get(v) for k, v in value.items()}
+            return {
+                str(k): self._safe_get(v, default=None, _depth=_depth + 1)
+                for k, v in value.items()
+            }
         else:
             try:
                 return str(value)
-            except:
+            except Exception:
                 return default
     
     def _extract_sender_info(self, msg) -> Dict[str, str]:
@@ -155,7 +177,7 @@ class EmailParserService:
                     if value:
                         sender_info = value
                         break
-            except:
+            except Exception:
                 continue
         
         if not sender_info:
@@ -188,7 +210,7 @@ class EmailParserService:
                             recipients.extend([str(r).strip() for r in value])
                         elif hasattr(value, '__iter__') and not isinstance(value, (str, bytes)):
                             recipients.extend([str(r).strip() for r in value])
-            except:
+            except Exception:
                 continue
         
         # Remove duplicates and empty values
@@ -221,7 +243,7 @@ class EmailParserService:
                 # Validate email
                 if '@' in email_part and '.' in email_part.split('@')[1]:
                     return name_part if name_part else None, email_part
-            except:
+            except Exception:
                 pass
         
         # Format: "email@domain.com" or "Name email@domain.com"
@@ -243,14 +265,19 @@ class EmailParserService:
         # No valid email found
         return text if text else None, None
     
-    def _extract_attachments(self, msg) -> list:
+    def _extract_attachments(
+        self,
+        msg,
+        body_text: str = '',
+        html_body: str = '',
+    ) -> list:
         """Extract attachment information from message."""
         attachments = []
-        
-        # Get email body to check for inline references
-        body = self._safe_get(msg.body, '')
-        html_body = self._safe_get(msg.htmlBody, '')
-        combined_body = f"{body}{html_body}".lower()
+
+        # Use pre-extracted body strings (from parse_msg_file) for cid: inline detection
+        body = body_text or ''
+        html = html_body or ''
+        combined_body = f"{body}{html}".lower()
         
         try:
             for attachment in msg.attachments:
@@ -334,23 +361,24 @@ class EmailParserService:
         """Test parsing on a specific file and return debug information."""
         try:
             logger.info(f"Testing parsing for: {file_path}")
-            
+
             result = self.parse_msg_file(file_path)
-            
+            parse_ok = result.get('success', False)
+
             return {
-                'success': True,
+                'success': parse_ok,
                 'file_path': file_path,
                 'file_exists': os.path.exists(file_path),
                 'file_size': os.path.getsize(file_path) if os.path.exists(file_path) else 0,
                 'parsed_data': result,
-                'extract_msg_available': 'extract_msg' in sys.modules
+                'extract_msg_available': 'extract_msg' in sys.modules,
             }
-            
+
         except Exception as e:
             logger.error(f"Error in test parsing: {str(e)}")
             return {
                 'success': False,
                 'error': str(e),
                 'file_path': file_path,
-                'file_exists': os.path.exists(file_path)
+                'file_exists': os.path.exists(file_path),
             }
