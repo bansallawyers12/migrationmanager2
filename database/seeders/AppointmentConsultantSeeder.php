@@ -116,12 +116,21 @@ class AppointmentConsultantSeeder extends Seeder
                 'is_active' => true,
                 'show_in_filter' => true,
             ],
+            [
+                'name' => 'Adelaide Education',
+                'email' => null,
+                'calendar_type' => 'adelaide_education',
+                'location' => 'adelaide',
+                'specializations' => json_encode([4, 5]),
+                'is_active' => true,
+                'show_in_filter' => true,
+            ],
         ];
 
-        // Insert consultants in order so they get IDs 1-8
+        // Insert consultants in order so they get IDs 1-9 (append-only so legacy idMapping for 1-8 stays valid)
         foreach ($consultants as $index => $consultant) {
             AppointmentConsultant::create([
-                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6, 7, 8
+                'id' => $index + 1, // Explicitly set ID: 1, 2, 3, 4, 5, 6, 7, 8, 9
                 'name' => $consultant['name'],
                 'email' => $consultant['email'],
                 'calendar_type' => $consultant['calendar_type'],

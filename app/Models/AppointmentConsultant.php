@@ -110,6 +110,7 @@ class AppointmentConsultant extends Model
                 'education' => 'Education/Student Visa',
                 'tourist' => 'Tourist Visa',
                 'adelaide' => 'Adelaide Office',
+                'adelaide_education' => 'Adelaide Education',
                 'ajay' => 'Ajay Calendar',
                 'kunal' => 'Kunal Calendar',
                 'arun' => 'Arun Calendar',

@@ -10,7 +10,7 @@ class ConsultantAssignmentService
     /**
      * Assign consultant based on appointment details.
      *
-     * Adelaide: all bookings for that office → Adelaide calendar.
+     * Adelaide: education (NOE 5) or tourist (NOE 4) → Adelaide Education calendar; all other Adelaide bookings → Adelaide calendar.
      * Melbourne: calendar follows service line (tourist, education, Ajay, JRP, employer-sponsored, Kunal, etc.).
      */
     public function assignConsultant(array $appointmentData): ?AppointmentConsultant
@@ -52,6 +52,10 @@ class ConsultantAssignmentService
         $noeId = $this->resolveNoeId($appointment);
 
         if ($this->isAdelaideOffice($location, $inpersonAddress)) {
+            if (in_array($noeId, [4, 5], true)) {
+                return 'adelaide_education';
+            }
+
             return 'adelaide';
         }
 

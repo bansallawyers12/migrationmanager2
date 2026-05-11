@@ -42,6 +42,9 @@
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}">
                         <i class="fas fa-city mr-2"></i> Adelaide
                     </a>
+                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'adelaide_education']) }}">
+                        <i class="fas fa-graduation-cap mr-2"></i> Adelaide Education
+                    </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}">
                         <i class="fas fa-calendar-alt mr-2"></i> Ajay Calendar
                     </a>

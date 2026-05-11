@@ -35,6 +35,10 @@
                        class="btn btn-sm {{ $type === 'adelaide' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-city"></i> Adelaide
                     </a>
+                    <a href="{{ route('booking.appointments.calendar', ['type' => 'adelaide_education']) }}" 
+                       class="btn btn-sm {{ $type === 'adelaide_education' ? 'btn-primary' : 'btn-outline-primary' }}">
+                        <i class="fas fa-graduation-cap"></i> Adelaide Education
+                    </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'ajay']) }}" 
                        class="btn btn-sm {{ $type === 'ajay' ? 'btn-primary' : 'btn-outline-primary' }}">
                         <i class="fas fa-calendar-alt"></i> Ajay Calendar

@@ -84,6 +84,30 @@ class ConsultantAssignmentServiceMelbournePunjabiTest extends TestCase
         ]));
     }
 
+    public function test_adelaide_tourist_goes_adelaide_education_calendar(): void
+    {
+        $this->assertSame('adelaide_education', $this->calendarType([
+            'noe_id' => 4,
+            'location' => 'adelaide',
+            'inperson_address' => 1,
+            'service_id' => 1,
+            'specific_service' => 'paid-consultation',
+            'service_type' => 'tourist-visa',
+        ]));
+    }
+
+    public function test_adelaide_education_noe_goes_adelaide_education_calendar(): void
+    {
+        $this->assertSame('adelaide_education', $this->calendarType([
+            'noe_id' => 5,
+            'location' => 'adelaide',
+            'inperson_address' => 1,
+            'service_id' => 2,
+            'specific_service' => 'consultation',
+            'service_type' => 'education-visa',
+        ]));
+    }
+
     public function test_melbourne_punjabi_tourist_unchanged(): void
     {
         $this->assertSame('tourist', $this->calendarType([
