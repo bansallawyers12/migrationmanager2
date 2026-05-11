@@ -403,8 +403,11 @@
                                     $trcls = '';
                                 }
                                 
-                                // Make unpaid/partial invoices drop zones for drag & drop allocation
-                                $isDropZone = in_array($inc_val->invoice_status, [0, 2]) && $inc_val->void_invoice != 1;
+                                // Make unpaid/partial invoices drop zones for drag & drop allocation (exclude drafts)
+                                $saveTypeLower = strtolower(trim((string)($inc_val->save_type ?? '')));
+                                $isDropZone = $saveTypeLower !== 'draft'
+                                    && in_array($inc_val->invoice_status, [0, 2])
+                                    && $inc_val->void_invoice != 1;
                                 $dropZoneClass = $isDropZone ? 'invoice-drop-zone' : '';
                                 ?>
                                 <tr class="drow_account_invoice invoiceTrRow <?php echo $trcls;?> <?php echo $dropZoneClass;?>" 
@@ -419,7 +422,7 @@
                                                 <?php echo $inc_val->trans_no;?> <i class="fas fa-caret-down" style="font-size: 11px; opacity: 0.6; margin-left: 3px;"></i>
                                             </span>
                                             <div class="dropdown-menu" aria-labelledby="dropdownInvoice{{$inc_val->id}}">
-                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <?php if($saveTypeLower === 'final') { ?>
                                                 <a class="dropdown-item" href="{{URL::to('/clients/genInvoice')}}/{{$inc_val->receipt_id}}/{{$fetchedData->id}}" target="_blank">
                                                     <i class="fas fa-eye"></i> View Invoice
                                                 </a>
@@ -434,7 +437,7 @@
                                                     <i class="fas fa-envelope"></i> Send to Client
                                                 </a>
                                                 <?php } ?>
-                                                <?php if($inc_val->save_type == 'draft'){ ?>
+                                                <?php if($saveTypeLower === 'draft'){ ?>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>">
                                                     <i class="fas fa-edit"></i> Edit Draft Invoice
                                                 </a>
@@ -444,7 +447,7 @@
                                                     <i class="fas fa-copy"></i> Copy Invoice #
                                                 </a>
                                                 
-                                                <?php if($inc_val->save_type == 'final') { ?>
+                                                <?php if($saveTypeLower === 'final') { ?>
                                                 <div class="dropdown-divider"></div>
                                                 <?php 
                                                 // Check if invoice has been sent to Hubdoc
@@ -858,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('📝 Selecting Invoice Form');
             
             // CRITICAL: Set function_type to "add" for new invoices
-            $('#function_type').val('add');
+            $('#invoice_receipt_form input[name="function_type"]').val('add');
             console.log('✏️ Set function_type to: add');
             
             // Set the matter ID
@@ -883,7 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Re-ensure critical fields are set (in case change event cleared them)
             if (receiptType == '3') {
-                $('#function_type').val('add');
+                $('#invoice_receipt_form input[name="function_type"]').val('add');
                 $('#client_matter_id_invoice').val(selectedMatter);
                 console.log('🔄 Re-verified invoice form settings');
             } else if (receiptType == '1') {

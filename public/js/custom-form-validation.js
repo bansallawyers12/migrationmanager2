@@ -915,237 +915,66 @@ function customValidate(formName, savetype = '')
 										return;
 									}
 								}
-								alert('Invoice No - '+ obj.invoice_no + ' is generated');
+								if (!obj || !(obj.status === true || obj.status === 1)) {
+									var failMsg = (obj && obj.message) ? obj.message : 'Could not save invoice. Please try again.';
+									alert(failMsg);
+									return;
+								}
+								var invNo = obj.invoice_no || '';
+								var edited = obj.function_type === 'edit';
+								var okSuffix = edited ? ' updated.' : (savetype === 'draft' ? ' saved as draft.' : ' created.');
+								var okMsg = invNo
+									? ('Invoice No - ' + invNo + okSuffix)
+									: (edited ? 'Invoice updated.' : (savetype === 'draft' ? 'Draft saved.' : 'Invoice created.'));
+								alert(okMsg);
 								$('#createreceiptmodal').modal('hide');
                                 localStorage.setItem('activeTab', 'accounts');
                                 
-                                // Get the matter ID that was used to create the invoice
                                 var matterIdUsed = $('#client_matter_id_invoice').val();
                                 
-                                // Extract encoded client ID from current URL (already properly encoded)
-                                // URL structure: /clients/detail/{encoded_client_id}/{matter_ref?}/{tab?}
                                 var currentPath = window.location.pathname;
                                 var pathMatch = currentPath.match(/\/clients\/detail\/([^\/]+)/);
                                 var encodedClientId = pathMatch ? pathMatch[1] : null;
                                 
                                 if (!encodedClientId) {
-                                    // Fallback: just reload if we can't determine client ID
                                     console.error('Could not extract client ID from URL, using location.reload()');
                                     location.reload();
                                     return;
                                 }
                                 
-                                // Get matter reference number from the selected matter option
                                 var matterRefNo = '';
                                 if (matterIdUsed && matterIdUsed !== '' && matterIdUsed !== 'null') {
-                                    // Try to find the matter reference from the dropdown
                                     var $selectedOption = $('#sel_matter_id_client_detail option[value="' + matterIdUsed + '"]');
                                     if ($selectedOption.length) {
                                         matterRefNo = $selectedOption.data('clientuniquematterno') || '';
                                     }
-                                    
-                                    // If not found in dropdown, check current URL for matter reference
                                     if (!matterRefNo) {
                                         var urlSegments = window.location.pathname.split('/');
-                                        // URL structure: /clients/detail/{client_id}/{matter_ref}/{tab}
                                         if (urlSegments.length > 4 && urlSegments[4] && urlSegments[4] !== 'account' && urlSegments[4] !== 'personaldetails' && urlSegments[4] !== 'notes' && urlSegments[4] !== 'emails') {
                                             matterRefNo = urlSegments[4];
                                         }
                                     }
                                 } else {
-                                    // No matter selected - check current URL for matter reference
-                                    var urlSegments = window.location.pathname.split('/');
-                                    if (urlSegments.length > 4 && urlSegments[4] && urlSegments[4] !== 'account' && urlSegments[4] !== 'personaldetails' && urlSegments[4] !== 'notes' && urlSegments[4] !== 'emails') {
-                                        matterRefNo = urlSegments[4];
+                                    var urlSegments2 = window.location.pathname.split('/');
+                                    if (urlSegments2.length > 4 && urlSegments2[4] && urlSegments2[4] !== 'account' && urlSegments2[4] !== 'personaldetails' && urlSegments2[4] !== 'notes' && urlSegments2[4] !== 'emails') {
+                                        matterRefNo = urlSegments2[4];
                                     }
                                 }
                                 
-                                // Build the URL with matter reference to preserve context
                                 var baseUrl = window.location.origin + '/clients/detail/' + encodedClientId;
                                 if (matterRefNo) {
                                     baseUrl += '/' + encodeURIComponent(matterRefNo);
                                 }
                                 baseUrl += '/account';
-                                
-                                // Navigate to the URL with matter context preserved
                                 window.location.href = baseUrl;
-								if(obj.status)
-								{
-									if(obj.function_type == 'add')
-									{
-										/*
-                                        if(obj.requestData)
-										{
-											var reqData = obj.requestData;
-											var trRows_invoice = "";
-											$.each(reqData, function(index, subArray) {
-												var unique_invoice_id = "invoiceTrRow_" + subArray.id;
-												var trcls = (subArray.void_invoice == 1) ? "strike-through" : "";
-
-												// Generate action link
-												var actionLink = '';
-												if(subArray.save_type === 'draft'){
-													actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-												} else if(subArray.save_type === 'final') {
-													var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
-													actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
-												}
-
-												// Status mapping
-												var statusMap = {
-													'0': {class: 'status-unpaid', text: 'Unpaid'},
-													'1': {class: 'status-paid', text: 'Paid'},
-													'2': {class: 'status-partial', text: 'Partial'},
-													'3': {class: 'status-void', text: 'Void'}
-												};
-												var statusInfo = statusMap[subArray.invoice_status] || {class: '', text: ''};
-
-												trRows_invoice += "<tr class='invoiceTrRow "+trcls+"' id='"+unique_invoice_id+"'>" +
-													"<td>"+subArray.trans_no+" "+actionLink+"</td>" +
-													"<td>"+subArray.trans_date+"</td>" +
-													"<td>"+subArray.description+"</td>" +
-													"<td class='currency'>$ "+parseFloat(subArray.withdraw_amount).toFixed(2)+"</td>" +
-													"<td><span class='status-badge "+statusInfo.class+"'>"+statusInfo.text+"</span></td>" +
-													"</tr>";
-											});
-											$('.productitemList_invoice').append(trRows_invoice);
-										}*/
-
-                                        if (obj.requestData && obj.requestData.length > 0) {
-                                            var subArray = obj.requestData[obj.requestData.length - 1]; // last item
-                                            //var allAmounts = obj.requestData.map(item => parseFloat(item.balance_amount));
-                                            //var totalAmount = allAmounts.reduce((acc, val) => acc + val, 0); // sum all amounts
-
-                                            var totalAmount = obj.total_balance_amount; //alert(totalAmount);
-                                            var unique_invoice_id = "invoiceTrRow_" + subArray.id;
-                                            var trcls = (subArray.void_invoice == 1) ? "strike-through" : "";
-
-                                            // Generate action link
-                                            var actionLink = '';
-                                            if (subArray.save_type === 'draft') {
-                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-                                            } else if (subArray.save_type === 'final') {
-                                                var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
-                                                actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
-                                            }
-
-                                            // Status mapping
-                                            var statusMap = {
-                                                '0': {class: 'status-unpaid', text: 'Unpaid'},
-                                                '1': {class: 'status-paid', text: 'Paid'},
-                                                '2': {class: 'status-partial', text: 'Partial'},
-                                                '3': {class: 'status-void', text: 'Void'}
-                                            };
-                                            var statusInfo = statusMap[subArray.invoice_status] || {class: '', text: ''};
-
-                                            var trRow = "<tr class='invoiceTrRow "+trcls+"' id='"+unique_invoice_id+"'>" +
-                                                "<td>"+subArray.trans_no+" "+actionLink+"</td>" +
-                                                "<td>"+subArray.trans_date+"</td>" +
-                                                "<td>"+subArray.description+"</td>" +
-                                                "<td class='currency'>$ "+totalAmount.toFixed(2)+"</td>" + // show sum here
-                                                "<td><span class='status-badge "+statusInfo.class+"'>"+statusInfo.text+"</span></td>" +
-                                                "</tr>";
-
-                                            $('.productitemList_invoice').append(trRow);
-                                        }
-
-                                        //Update Outstanding Balance by adding new unpaid/partial to current balance
-                                        var currentBalanceText = $('.outstanding-balance').text().replace(/[$,]/g, '').trim();
-                                        var currentBalance = parseFloat(currentBalanceText) || 0;
-
-                                        var newOutstanding = 0;
-                                        $.each(obj.requestData, function(index, item) {
-                                            if (item.invoice_status == '0' || item.invoice_status == '2') {
-                                                newOutstanding += parseFloat(item.withdraw_amount);
-                                            }
-                                        });
-                                        var updatedOutstanding = currentBalance + newOutstanding;
-                                        $('.outstanding-balance').text('$ ' + updatedOutstanding.toFixed(2));
-                                        //Fetch All Activities
-                                        getallactivities(client_id);
-                                    }
-
-									if(obj.function_type == 'edit')
-									{
-										//for delete
-										if(obj.requestDeleteDataType == 'delete'){
-											if(obj.requestDeleteData){
-												var requestDeleteData = obj.requestDeleteData;
-												$.each(requestDeleteData, function(index1, subArray1) {
-													$('#invoiceTrRow_'+subArray1).remove();
-												});
-											}
-										}
-
-										//for add new entry
-										if(obj.requestAddDataType == 'add'){
-											if(obj.requestAddData){
-												var trRows_invoice2 = "";
-												var requestAddData = obj.requestAddData;
-												$.each(requestAddData, function(index2, subArray2) {
-													if(subArray2.save_type == 'draft'){
-														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
-														var draftlink2 = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray2.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.trans_no+" "+draftlink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
-													}
-													else if(subArray2.save_type == 'final') {
-														var unique_invoice_id2 = "invoiceTrRow_"+subArray2.id;
-														var invoiceUrl2 = "/clients/genInvoice/"+subArray2.receipt_id;
-														var finallink2 = '<a target="_blank" class="link-primary" href="'+invoiceUrl2+'"><i class="fas fa-file-pdf"></i></a>';
-														trRows_invoice2 += "<tr class='invoiceTrRow' id='"+unique_invoice_id2+"'><td>"+subArray2.trans_no+" "+finallink2+"</td><td>"+subArray2.trans_date+"</td><td>"+subArray2.entry_date+"</td><td>"+subArray2.trans_no+"</td><td>"+subArray2.gst_included+"</td><td>"+subArray2.payment_type+"</td><td>"+subArray2.description+"</td><td>$"+subArray2.deposit_amount+"</td></tr>";
-													}
-												});
-												$('.productitemList_invoice tr:last').before(trRows_invoice2);
-											}
-										}
-
-
-										if(obj.requestData){
-											var reqData = obj.requestData;
-											//var trRows_invoice = "";
-											$.each(reqData, function(index, subArray) {
-												$('#invoiceTrRow_'+subArray.id).empty();
-												//console.log('save_type='+subArray.save_type);
-												if(subArray.save_type == 'draft'){
-													var draftlink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-													var trRows_invoice = "<td>"+subArray.trans_no+" "+draftlink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
-												}
-												else if(subArray.save_type == 'final') {
-													var invoiceUrl = "/clients/genInvoice/"+subArray.receipt_id;
-													var finallink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
-													var trRows_invoice = "<td>"+subArray.trans_no+" "+finallink+"</td><td>"+subArray.trans_date+"</td><td>"+subArray.entry_date+"</td><td>"+subArray.trans_no+"</td><td>"+subArray.gst_included+"</td><td>"+subArray.payment_type+"</td><td>"+subArray.description+"</td><td>$"+subArray.deposit_amount+"</td>";
-												}
-												$('#invoiceTrRow_'+subArray.id).append(trRows_invoice);
-											});
-										}
-										//console.log('trRows_invoice='+trRows_invoice);
-										//$('.lastRow_invoice').before(trRows_invoice);
-										if(obj.db_total_deposit_amount){
-											$('.totDepoAmTillNow_invoice').html("$"+obj.db_total_deposit_amount);
-											$('#sum_of_invoice').val("$"+obj.db_total_deposit_amount);
-
-
-											//Calculation Of Total balance
-											var sum_of_invoice = $('#sum_of_invoice').val();
-											sum_of_invoice = sum_of_invoice.replace('$', '');
-
-											var sum_of_client_receipts = $('#sum_of_client_receipts').val();
-											sum_of_client_receipts = sum_of_client_receipts.replace('$', '');
-
-											var sum_of_office_receipts = $('#sum_of_office_receipts').val();
-											sum_of_office_receipts = sum_of_office_receipts.replace('$', '');
-
-											var Total_balance = sum_of_invoice - sum_of_client_receipts - sum_of_office_receipts;
-											if(Total_balance<0){
-												Total_balance = 0;
-											}
-											$('#total_balance').val("$"+Total_balance);
-										}
-									}
-									$('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
+							},
+							error: function(xhr) {
+								$('.popuploader').hide();
+								var msg = 'Could not save invoice. Please try again.';
+								if (xhr.responseJSON && xhr.responseJSON.message) {
+									msg = xhr.responseJSON.message;
 								}
+								alert(msg);
 							}
 						});
 					}
@@ -1328,69 +1157,34 @@ function customValidate(formName, savetype = '')
 							data: fd,
 							success: function(response){
 								$('.popuploader').hide();
-								var obj = $.parseJSON(response);
-								$('#createadjustinvoicereceiptmodal').modal('hide');
-                                location.reload();
-								if(obj.status)
-								{
-									if(obj.function_type == 'add')
-									{
-
-                                        if (obj.requestData && obj.requestData.length > 0) {
-                                            var subArray = obj.requestData[obj.requestData.length - 1]; // last item
-                                            var totalAmount = obj.total_balance_amount; //alert(totalAmount);
-                                            var unique_invoice_id = "invoiceTrRow_" + subArray.id;
-                                            var trcls = (subArray.void_invoice == 1) ? "strike-through" : "";
-
-                                            // Generate action link
-                                            var actionLink = '';
-                                            if (subArray.save_type === 'draft') {
-                                                actionLink = '<a class="link-primary updatedraftinvoice" href="javascript:;" data-receiptid="'+subArray.receipt_id+'"><i class="fas fa-pencil-alt"></i></a>';
-                                            } else if (subArray.save_type === 'final') {
-                                                var invoiceUrl = "/clients/genInvoice/" + subArray.receipt_id;
-                                                actionLink = '<a target="_blank" class="link-primary" href="'+invoiceUrl+'"><i class="fas fa-file-pdf"></i></a>';
-                                            }
-
-                                            // Status mapping
-                                            var statusMap = {
-                                                '0': {class: 'status-unpaid', text: 'Unpaid'},
-                                                '1': {class: 'status-paid', text: 'Paid'},
-                                                '2': {class: 'status-partial', text: 'Partial'},
-                                                '3': {class: 'status-void', text: 'Void'}
-                                            };
-                                            var statusInfo = statusMap[subArray.invoice_status] || {class: '', text: ''};
-
-                                            var trRow = "<tr class='invoiceTrRow "+trcls+"' id='"+unique_invoice_id+"'>" +
-                                                "<td>"+subArray.trans_no+" "+actionLink+"</td>" +
-                                                "<td>"+subArray.trans_date+"</td>" +
-                                                "<td>"+subArray.description+"</td>" +
-                                                "<td class='currency'>$ "+totalAmount.toFixed(2)+"</td>" + // show sum here
-                                                "<td><span class='status-badge "+statusInfo.class+"'>"+statusInfo.text+"</span></td>" +
-                                                "</tr>";
-
-                                            $('.productitemList_invoice').append(trRow);
-                                        }
-
-                                        //Update Outstanding Balance by adding new unpaid/partial to current balance
-                                        var currentBalanceText = $('.outstanding-balance').text().replace(/[$,]/g, '').trim();
-                                        var currentBalance = parseFloat(currentBalanceText) || 0;
-
-                                        var newOutstanding = 0;
-                                        $.each(obj.requestData, function(index, item) {
-                                            if (item.invoice_status == '0' || item.invoice_status == '2') {
-                                                newOutstanding += parseFloat(item.withdraw_amount);
-                                            }
-                                        });
-                                        var updatedOutstanding = currentBalance + newOutstanding;
-                                        $('.outstanding-balance').text('$ ' + updatedOutstanding.toFixed(2));
-
-                                        //Fetch All Activities
-                                        getallactivities(client_id);
-                                    }
-                                    $('.custom-error-msg').html('<span class="alert alert-success">'+obj.message+'</span>');
-								}else{
-									$('.custom-error-msg').html('<span class="alert alert-danger">'+obj.message+'</span>');
+								var obj = response;
+								if (typeof response === 'string') {
+									try {
+										obj = $.parseJSON(response);
+									} catch (e) {
+										obj = null;
+									}
 								}
+								if (!obj || typeof obj !== 'object') {
+									alert('Invalid server response. Please try again.');
+									return;
+								}
+								$('#createadjustinvoicereceiptmodal').modal('hide');
+								if (obj.status === true || obj.status === 1) {
+									localStorage.setItem('activeTab', 'accounts');
+									location.reload();
+								} else {
+									var adjMsg = obj.message || 'Could not save invoice. Please try again.';
+									alert(adjMsg);
+								}
+							},
+							error: function(xhr) {
+								$('.popuploader').hide();
+								var msg = 'Could not save invoice. Please try again.';
+								if (xhr.responseJSON && xhr.responseJSON.message) {
+									msg = xhr.responseJSON.message;
+								}
+								alert(msg);
 							}
 						});
 					}
@@ -2665,6 +2459,13 @@ function customValidate(formName, savetype = '')
 								$('.custom-error-msg').html('<span class="alert alert-danger">'+msg+'</span>');
 							}
 						});
+						return true;
+					}
+					else if(formName == 'create_invoice_receipt')
+					{
+						$('form[name="create_invoice_receipt"] input[name="save_type"]').val(savetype);
+						$(".popuploader").hide();
+						$("form[name="+formName+"]").submit();
 						return true;
 					}
 					else if(formName == 'convert_lead_to_client')

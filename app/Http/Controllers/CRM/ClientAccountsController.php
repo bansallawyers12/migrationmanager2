@@ -2154,6 +2154,10 @@ class ClientAccountsController extends Controller
               )
               ->where('client_id', $clientId)
               ->where('receipt_type', 3)
+              ->where(function ($q) {
+                  $q->whereNull('save_type')
+                      ->orWhereRaw('LOWER(TRIM(COALESCE(save_type, \'\'))) <> ?', ['draft']);
+              })
               ->where(function ($query) {
                   $query->whereIn('invoice_status', [0, 2])
                         ->orWhereNull('invoice_status');
@@ -2187,6 +2191,10 @@ class ClientAccountsController extends Controller
                   )
                   ->where('client_id', $clientId)
                   ->where('receipt_type', 3)
+                  ->where(function ($q) {
+                      $q->whereNull('save_type')
+                          ->orWhereRaw('LOWER(TRIM(COALESCE(save_type, \'\'))) <> ?', ['draft']);
+                  })
                   ->where(function ($query) {
                       $query->whereIn('invoice_status', [0, 2])
                             ->orWhereNull('invoice_status');
@@ -2644,6 +2652,10 @@ class ClientAccountsController extends Controller
           ->where('client_id', $queryClientId)
           ->where('receipt_type', 3)
           ->first();
+
+      if ($receipt_entry && strtolower(trim((string) ($receipt_entry->save_type ?? ''))) === 'draft') {
+          abort(403, 'Draft invoices cannot be viewed as PDF until finalized.');
+      }
 
       // ============= START CACHING LOGIC =============
       

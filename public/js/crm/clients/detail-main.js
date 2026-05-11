@@ -423,9 +423,10 @@
 
                 else if(selected == 'invoice_receipt'){
 
-                    if($('#function_type').val() == '' || $('#function_type').val() == 'add' ) {
+                    var $fn = $('#invoice_receipt_form input[name="function_type"]');
+                    if($fn.val() == '' || $fn.val() == 'add' ) {
 
-                        $('#function_type').val("add");
+                        $fn.val("add");
 
                     }
 
@@ -2575,7 +2576,7 @@ success: function(response) {
                     if (!obj) return;
                     if(obj.status){
 
-                        $('#function_type').val("edit");
+                        $('#invoice_receipt_form input[name="function_type"]').val("edit");
 
                         $('#createreceiptmodal').modal('show');
 
@@ -2605,9 +2606,13 @@ success: function(response) {
 
                             var sum = 0;
 
-                            $('.productitem_invoice tr.clonedrow_invoice').remove();
+                            $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').remove();
 
-                            $('.productitem_invoice tr.product_field_clone_invoice').remove();
+                            $('#invoice_receipt_form .productitem_invoice tr.product_field_clone_invoice').remove();
+
+                            if (record_get.length > 0 && record_get[0].client_matter_id != null && record_get[0].client_matter_id !== '') {
+                                $('#client_matter_id_invoice').val(record_get[0].client_matter_id);
+                            }
 
                             $.each(record_get, function(index, subArray) {
 
@@ -2625,7 +2630,7 @@ success: function(response) {
 
 
 
-                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a></td></tr>';
+                                //var trRows_office = '<tr class="'+rowCls+'"><td><input name="id[]" type="hidden" value="'+subArray.id+'" /><input data-valid="required" class="form-control report_date_fields_invoice" name="trans_date[]" type="text" value="'+subArray.trans_date+'" /></td><td><input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="'+subArray.entry_date+'" /></td><td><select class="form-control gst_included_cls" name="gst_included[]"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select></td><td><select class="form-control payment_type_cls" name="payment_type[]"><option value="">Select</option><option value="Professional Fee">Professional Fee</option><option value="Department Charges">Department Charges</option><option value="Surcharge">Surcharge</option><option value="Disbursements">Disbursements</option><option value="Other Cost">Other Cost</option></select></td><td><input data-valid="required" class="form-control" name="description[]" type="text" value="'+subArray.description+'" /></td><td><span class="currencyinput">$</span><input data-valid="required" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="'+subArray.withdraw_amount+'" /></td><td><a class="removeitems_invoice" href="javascript:;"><i class="fa fa-times"></i></a></td></tr>';
 
                                 var trRows_office = `<tr class="${rowCls}">
 
@@ -2639,7 +2644,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" />
+                                        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" />
 
                                     </td>
 
@@ -2661,7 +2666,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <select class="form-control payment_type_cls" name="payment_type[]">
+                                        <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
 
                                             <option value="">Select</option>
 
@@ -2691,7 +2696,7 @@ success: function(response) {
 
                                         <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
 
-                                        <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="${subArray.withdraw_amount}" />
+                                        <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row payment_type_invoice_per_row" name="withdraw_amount[]" type="text" value="${subArray.withdraw_amount}" />
 
                                     </td>
 
@@ -2707,7 +2712,7 @@ success: function(response) {
 
                                 let $newRow = $(trRows_office);
 
-                                $('.productitem_invoice').append($newRow);
+                                $('#invoice_receipt_form .productitem_invoice').append($newRow);
 
 
 
@@ -2715,7 +2720,7 @@ success: function(response) {
 
                                 $newRow.find('.gst_included_cls').val(subArray.gst_included);
 
-                                $newRow.find('.payment_type_cls').val(subArray.payment_type);
+                                $newRow.find('.payment_type_invoice_per_row').val(subArray.payment_type);
 
 
 
@@ -2733,12 +2738,12 @@ success: function(response) {
                                     if ($('.invoice_no').length) {
                                         $('.invoice_no').val(invNo);
                                     }
-                                    $('#receipt_id').val(subArray.receipt_id);
+                                    $('#invoice_receipt_form input[name="receipt_id"]').val(subArray.receipt_id);
                                 }
 
                             });
 
-                            $('.total_withdraw_amount_all_rows_invoice').text("$"+sum.toFixed(2));
+                            $('#invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text("$"+sum.toFixed(2));
 
                         }
 
@@ -2770,7 +2775,7 @@ success: function(response) {
                     if (!obj) return;
                     if (obj.status) {
 
-                        $('#function_type').val("edit");
+                        $('#invoice_receipt_form input[name="function_type"]').val("edit");
 
                         $('#createreceiptmodal').modal('show');
 
@@ -2794,11 +2799,13 @@ success: function(response) {
 
                             var sum = 0;
 
-                            $('.productitem_invoice tr.clonedrow_invoice').remove();
+                            $('#invoice_receipt_form .productitem_invoice tr.clonedrow_invoice').remove();
 
-                            $('.productitem_invoice tr.product_field_clone_invoice').remove();
+                            $('#invoice_receipt_form .productitem_invoice tr.product_field_clone_invoice').remove();
 
-
+                            if (record_get.length > 0 && record_get[0].client_matter_id != null && record_get[0].client_matter_id !== '') {
+                                $('#client_matter_id_invoice').val(record_get[0].client_matter_id);
+                            }
 
                             $.each(record_get, function (index, subArray) {
 
@@ -2828,7 +2835,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <input data-valid="required" class="form-control report_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" />
+                                        <input data-valid="required" class="form-control report_entry_date_fields_invoice" name="entry_date[]" type="text" value="${subArray.entry_date}" />
 
                                     </td>
 
@@ -2848,7 +2855,7 @@ success: function(response) {
 
                                     <td>
 
-                                        <select class="form-control payment_type_cls" name="payment_type[]">
+                                        <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
 
                                             <option value="">Select</option>
 
@@ -2878,7 +2885,7 @@ success: function(response) {
 
                                         <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
 
-                                        <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="${subArray.withdraw_amount}" />
+                                        <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row payment_type_invoice_per_row" name="withdraw_amount[]" type="text" value="${subArray.withdraw_amount}" />
 
                                     </td>
 
@@ -2894,7 +2901,7 @@ success: function(response) {
 
                                 let $newRow = $(trRows_office);
 
-                                $('.productitem_invoice').append($newRow);
+                                $('#invoice_receipt_form .productitem_invoice').append($newRow);
 
 
 
@@ -2914,14 +2921,14 @@ success: function(response) {
                                     if ($('.invoice_no').length) {
                                         $('.invoice_no').val(invNo);
                                     }
-                                    $('#receipt_id').val(subArray.receipt_id);
+                                    $('#invoice_receipt_form input[name="receipt_id"]').val(subArray.receipt_id);
                                 }
 
                             });
 
 
 
-                            $('.total_withdraw_amount_all_rows_invoice').text("$" + sum.toFixed(2));
+                            $('#invoice_receipt_form .total_withdraw_amount_all_rows_invoice').text("$" + sum.toFixed(2));
 
                         }
 
@@ -2933,6 +2940,16 @@ success: function(response) {
 
         }
 
+        window.getInfoByReceiptId = getInfoByReceiptId;
+
+        $(document).on('click', '.updatedraftinvoice', function (e) {
+            e.preventDefault();
+            var rid = $(this).data('receiptid');
+            if (rid === undefined || rid === null || String(rid).trim() === '') {
+                return;
+            }
+            getInfoByReceiptId(rid);
+        });
 
 
 
@@ -3243,7 +3260,7 @@ success: function(response) {
 
                             <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
 
-                            <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" value="" />
+                            <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row payment_type_invoice_per_row" name="withdraw_amount[]" type="text" value="" />
 
                         </td>
 

@@ -389,7 +389,7 @@
 
                                             <td>
                                                 <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
+                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row payment_type_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
                                             </td>
 
                                             <td>
@@ -839,8 +839,8 @@
 				<input type="hidden" name="client_id" value="{{$fetchedData->id}}">
                 <input type="hidden" name="loggedin_staffid" value="{{@Auth::user()->id}}">
                 <input type="hidden" name="receipt_type" value="3">
-                <input type="hidden" name="receipt_id" id="receipt_id" value="">
-                <input type="hidden" name="function_type" id="function_type" value="">
+                <input type="hidden" name="receipt_id" value="">
+                <input type="hidden" name="function_type" value="add">
 
 					<div class="row">
 						<div class="col-6 col-md-6 col-lg-6">
@@ -905,7 +905,7 @@
                                             </td>
 
                                             <td>
-                                                <select class="form-control" name="payment_type[]">
+                                                <select class="form-control payment_type_invoice_per_row" name="payment_type[]">
                                                     <option value="">Select</option>
                                                     <option value="Professional Fee">Professional Fee</option>
                                                     <option value="Department Charges">Department Charges</option>
@@ -921,7 +921,7 @@
 
                                             <td>
                                                 <span class="currencyinput" style="display: inline-block;color: #34395e;">$</span>
-                                                <input data-valid="required" style="display: inline-block;" class="form-control deposit_amount_invoice_per_row" name="deposit_amount[]" type="text" value="" />
+                                                <input data-valid="required" style="display: inline-block;" class="form-control withdraw_amount_invoice_per_row payment_type_invoice_per_row" name="withdraw_amount[]" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1').replace(/(\.\d{2}).*/g, '$1')" value="" />
                                             </td>
 
                                             <td>
@@ -936,7 +936,7 @@
                                         <tr>
                                             <td colspan="5" style="width:83.6%;text-align:right;color: #34395e;">Totals</td>
                                             <td colspan="2">
-                                                <span class="total_deposit_amount_all_rows_invoice" style="color: #34395e;"></span>
+                                                <span class="total_withdraw_amount_all_rows_invoice" style="color: #34395e;"></span>
                                             </td>
                                         </tr>
                                     </tbody>
