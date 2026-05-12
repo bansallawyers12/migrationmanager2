@@ -94,7 +94,7 @@ class AppointmentReminder extends Mailable
     protected function getLocationPhone(string $location): string
     {
         return match ($location) {
-            'adelaide' => '08 8317 1340',
+            'adelaide' => '0883171340',
             'melbourne' => '+61 3 9602 1330',
             default => '1300 859 368',
         };

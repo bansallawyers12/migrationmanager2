@@ -32,6 +32,14 @@ class PublicPhoneCallController extends Controller
             return '+61 3 9602 1330';
         }
 
+        if ($digits === '61883171340') {
+            return '0883171340';
+        }
+
+        if ($digits === '611300859368') {
+            return '1300 859 368';
+        }
+
         return '+'.$digits;
     }
 }

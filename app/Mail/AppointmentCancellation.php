@@ -57,8 +57,8 @@ class AppointmentCancellation extends Mailable
     {
         $clientName = $this->details['client_name'] ?? 'Valued Client';
         $locationKey = $this->normalizeLocationKey($this->details['location'] ?? null);
-        $locationPhone = '+61 3 9602 1330';
-        $callUsHref = $this->buildCallUsWebUrl('61396021330');
+        $locationPhone = $this->getLocationPhone($locationKey);
+        $callUsHref = $this->buildCallUsWebUrl($this->getCallBridgeDigits($locationKey));
         $rescheduleBody = "Hi Bansal Immigration Team,\r\n\r\nI would like to reschedule my cancelled appointment. Please let me know your available slots.\r\n\r\nRegards";
         $rescheduleMailtoHref = 'mailto:info@bansalimmigration.com.au?subject='.rawurlencode(
             'Reschedule Request – '.$clientName
@@ -114,6 +114,27 @@ class AppointmentCancellation extends Mailable
         $loc = strtolower(trim($location));
 
         return $loc !== '' ? $loc : 'melbourne';
+    }
+
+    protected function getLocationPhone(string $location): string
+    {
+        return match ($location) {
+            'adelaide' => '0883171340',
+            'melbourne' => '+61 3 9602 1330',
+            default => '1300 859 368',
+        };
+    }
+
+    /**
+     * Digits for /phone-call?n= (bridge prepends "+" for tel:).
+     */
+    protected function getCallBridgeDigits(string $location): string
+    {
+        return match ($location) {
+            'adelaide' => '61883171340',
+            'melbourne' => '61396021330',
+            default => '611300859368',
+        };
     }
 
     /**
