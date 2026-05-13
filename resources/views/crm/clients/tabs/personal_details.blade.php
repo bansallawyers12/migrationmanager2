@@ -376,10 +376,10 @@
                                                 $verifiedVisaTick = '<i class="far fa-circle unverified-icon fa-lg"></i>';
                                             }
                                             
-                                            // Check if visa is expiring within 7 days
-                                            $expiryDate = \Carbon\Carbon::parse($visa_Info->visa_expiry_date);
-                                            $today = \Carbon\Carbon::now();
-                                            $daysUntilExpiry = $today->diffInDays($expiryDate, false);
+                                            // Check if visa is expiring within 7 days (calendar days; avoids fractional diffInDays from time-of-day)
+                                            $expiryDate = \Carbon\Carbon::parse($visa_Info->visa_expiry_date)->startOfDay();
+                                            $today = \Carbon\Carbon::now()->startOfDay();
+                                            $daysUntilExpiry = (int) $today->diffInDays($expiryDate, false);
                                             
                                             $expiryClass = '';
                                             $expiryWarning = '';
