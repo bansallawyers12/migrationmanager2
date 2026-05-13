@@ -288,26 +288,19 @@
                                     <span class="field-label">ABN</span>
                                     <span class="field-value">{{ ($nomCompany && !empty($nomCompany->ABN_number)) ? $nomCompany->ABN_number : 'N/A' }}</span>
                                 </div>
+                                @php
+                                    $nominationTrnDisplay = trim((string) ($nomRow->trn ?? ''));
+                                @endphp
+                                <div class="field-group">
+                                    <span class="field-label">TRN</span>
+                                    <span class="field-value">{{ $nominationTrnDisplay !== '' ? $nominationTrnDisplay : 'N/A' }}</span>
+                                </div>
                                 @if($nomRow->position_title)
                                 <div class="field-group">
                                     <span class="field-label">Position</span>
                                     <span class="field-value">{{ $nomRow->position_title }}</span>
                                 </div>
                                 @endif
-                                {{-- TRN / Status hidden in Nominated by employer (restore if needed)
-                                @if($nomRow->trn)
-                                <div class="field-group">
-                                    <span class="field-label">TRN</span>
-                                    <span class="field-value">{{ $nomRow->trn }}</span>
-                                </div>
-                                @endif
-                                @if($nomRow->status)
-                                <div class="field-group">
-                                    <span class="field-label">Status</span>
-                                    <span class="field-value">{{ $nomRow->status }}</span>
-                                </div>
-                                @endif
-                                --}}
                                 @if($nomRow->nomination_date)
                                 <div class="field-group">
                                     <span class="field-label">Nomination date</span>
