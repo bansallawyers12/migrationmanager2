@@ -2624,6 +2624,72 @@ class ClientDocumentsController extends Controller
         }
     }
 
+    /**
+     * Delete Visa Document Category (allowed roles: config crm.visa_document_category_delete_role_ids;
+     * empty categories only; matter-specific rows only — default/global rows have client_matter_id NULL)
+     */
+    public function deleteVisaDocCategory(Request $request) {
+        try {
+            $allowedRoles = config('crm.visa_document_category_delete_role_ids', [1, 16]);
+            if (! in_array((int) (Auth::user()->role ?? 0), $allowedRoles, true)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not allowed to delete visa document categories.',
+                ]);
+            }
+
+            $request->validate([
+                'id' => 'required|exists:visa_document_types,id',
+            ]);
+
+            $category = VisaDocumentType::findOrFail($request->id);
+
+            if ($category->client_matter_id === null) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Default categories cannot be deleted.',
+                ]);
+            }
+
+            if ($category->client_id !== null && $category->client_id !== '' && is_numeric($category->client_id)) {
+                if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $category->client_id)) {
+                    return $deny;
+                }
+            }
+
+            $documentCount = Document::query()->where('folder_name', $category->id)
+                ->where('doc_type', 'visa')
+                ->count();
+
+            if ($documentCount > 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Cannot delete category. It contains ' . $documentCount . ' document(s). Please remove all documents first.',
+                ]);
+            }
+
+            $categoryTitle = $category->title;
+            $category->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Category "' . $categoryTitle . '" deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting visa document category', [
+                'category_id' => $request->id ?? null,
+                'user_id' => Auth::user()->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Error deleting category: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
     public function addNominationDocCategory(Request $request)
     {
         $categoryTitle = trim($request->input('nomination_doc_category'));
@@ -2759,15 +2825,16 @@ class ClientDocumentsController extends Controller
     }
 
     /**
-     * Delete Personal Document Category (Superadmin only, empty categories only)
+     * Delete Personal Document Category (allowed roles: config crm.personal_document_category_delete_role_ids;
+     * empty categories only; client-specific categories only — default/global rows have client_id NULL and cannot be deleted)
      */
     public function deletePersonalDocCategory(Request $request) {
         try {
-            // Check if user is superadmin (role = 1)
-            if (Auth::user()->role !== 1) {
+            $allowedRoles = config('crm.personal_document_category_delete_role_ids', [1, 16]);
+            if (! in_array((int) (Auth::user()->role ?? 0), $allowedRoles, true)) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Only superadmin can delete categories.'
+                    'message' => 'You are not allowed to delete document categories.',
                 ]);
             }
 
@@ -2776,6 +2843,14 @@ class ClientDocumentsController extends Controller
             ]);
 
             $category = PersonalDocumentType::findOrFail($request->id);
+
+            // System/default categories (global, not tied to a client) cannot be deleted
+            if ($category->client_id === null) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Default categories cannot be deleted.',
+                ]);
+            }
 
             // Check if category is empty (no documents with this folder_name)
             $documentCount = Document::query()->where('folder_name', $category->id)

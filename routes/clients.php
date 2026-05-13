@@ -216,6 +216,7 @@ Route::post('/documents/delete-personal-category', [ClientDocumentsController::c
 Route::post('/documents/add-visa-category', [ClientDocumentsController::class, 'addVisaDocCategory'])->name('clients.documents.addVisaDocCategory');
 Route::post('/documents/add-nomination-category', [ClientDocumentsController::class, 'addNominationDocCategory'])->name('clients.documents.addNominationDocCategory');
 Route::post('/documents/update-visa-category', [ClientDocumentsController::class, 'updateVisaDocCategory'])->name('clients.documents.updateVisaDocCategory');
+Route::post('/documents/delete-visa-category', [ClientDocumentsController::class, 'deleteVisaDocCategory'])->name('clients.documents.deleteVisaDocCategory');
 Route::post('/documents/update-nomination-category', [ClientDocumentsController::class, 'updateNominationDocCategory'])->name('clients.documents.updateNominationDocCategory');
 Route::post('/documents/get-auto-checklist-matches', [ClientDocumentsController::class, 'getAutoChecklistMatches'])->name('clients.documents.getAutoChecklistMatches');
 Route::post('/documents/bulk-upload-personal', [ClientDocumentsController::class, 'bulkUploadPersonalDocuments'])->name('clients.documents.bulkUploadPersonalDocuments');

@@ -4,7 +4,8 @@
                     <?php
                     $clientId = $fetchedData->id ?? null;
                     $companyDocumentsOnlyGeneral = !empty($companyDocumentsOnlyGeneral);
-                    $isSuperAdmin = \Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->role == 1;
+                    $canDeletePersonalDocCategory = \Illuminate\Support\Facades\Auth::check()
+                        && in_array((int) (\Illuminate\Support\Facades\Auth::user()->role ?? 0), config('crm.personal_document_category_delete_role_ids', [1, 16]), true);
                     $personalDocTypeScope = $companyDocumentsOnlyGeneral
                         ? ['company', 'both']
                         : ['personal', 'both'];
@@ -55,12 +56,10 @@
                                         <button class="subtab2-button <?= $isActive ?>" data-subtab2="<?= $id ?>">
                                             <?= htmlspecialchars($catVal->title) ?>
                                         </button>
-                                        <?php if ($isClientGenerated || $isSuperAdmin): ?>
+                                        <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons" style="display: none; position: absolute; top: 0; right: -8px;">
-                                                <?php if ($isClientGenerated): ?>
-                                                    <button class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-edit" aria-hidden="true"></i></button>
-                                                <?php endif; ?>
-                                                <?php if ($isSuperAdmin): ?>
+                                                <button class="btn btn-sm btn-warning update-personal-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                                <?php if ($canDeletePersonalDocCategory): ?>
                                                     <button class="btn btn-sm btn-danger delete-personal-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-trash" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                             </div>

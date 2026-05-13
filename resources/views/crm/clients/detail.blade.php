@@ -1408,6 +1408,7 @@ $(document).ready(function() {
             updateVisaCategory: '{{ route("clients.documents.updateVisaDocCategory") }}',
             updateNominationCategory: '{{ route("clients.documents.updateNominationDocCategory") }}',
             deletePersonalCategory: '{{ route("clients.documents.deletePersonalDocCategory") }}',
+            deleteVisaCategory: '{{ route("clients.documents.deleteVisaDocCategory") }}',
             sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',
             sendOfficeReceiptToClient: '{{ url("/clients/send-office-receipt-to-client") }}',

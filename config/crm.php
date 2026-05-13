@@ -19,6 +19,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Personal document category delete (CRM client/company documents tab)
+    |--------------------------------------------------------------------------
+    |
+    | Who may delete empty personal document categories (folder tabs). Default:
+    | Super Admin (1) and Migration Agent (16). Override via
+    | CRM_PERSONAL_DOC_CATEGORY_DELETE_ROLE_IDS e.g. "1,16,12".
+    |
+    */
+    'personal_document_category_delete_role_ids' => (($__personalDocCatDeleteRoles = array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_PERSONAL_DOC_CATEGORY_DELETE_ROLE_IDS', '1,16'))
+    ), static fn (int $id) => $id > 0))) !== [])
+        ? $__personalDocCatDeleteRoles
+        : [1, 16],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Visa document category delete (CRM client visa documents tab)
+    |--------------------------------------------------------------------------
+    |
+    | Who may delete empty matter-specific visa document categories. Default:
+    | Super Admin (1) and Migration Agent (16). System/default rows have
+    | client_matter_id NULL and cannot be deleted. Override via
+    | CRM_VISA_DOC_CATEGORY_DELETE_ROLE_IDS e.g. "1,16,12".
+    |
+    */
+    'visa_document_category_delete_role_ids' => (($__visaDocCatDeleteRoles = array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_VISA_DOC_CATEGORY_DELETE_ROLE_IDS', '1,16'))
+    ), static fn (int $id) => $id > 0))) !== [])
+        ? $__visaDocCatDeleteRoles
+        : [1, 16],
+
+    /*
+    |--------------------------------------------------------------------------
     | Matter discontinue / reopen: allowed staff roles (staff.role → user_roles.id)
     |--------------------------------------------------------------------------
     |

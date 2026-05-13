@@ -74,6 +74,9 @@
                         ", [$SelectedClientId, $client_selected_matter_id1, $SelectedClientId])
                         ->get();
 
+                    $canDeleteVisaDocCategory = \Illuminate\Support\Facades\Auth::check()
+                        && in_array((int) (\Illuminate\Support\Facades\Auth::user()->role ?? 0), config('crm.visa_document_category_delete_role_ids', [1, 16]), true);
+
                     ?>
 
                     <!-- Visa Documents Content -->
@@ -95,6 +98,9 @@
                                         <?php if ($isClientGenerated): ?>
                                             <div class="action-buttons" style="display: none; position: absolute; top: 0; right: -8px;">
                                                 <button class="btn btn-sm btn-warning update-visa-cat-title" data-id="<?= $id ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-edit" aria-hidden="true"></i></button>
+                                                <?php if ($canDeleteVisaDocCategory): ?>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-visa-cat-title" data-id="<?= $id ?>" data-title="<?= htmlspecialchars($catVal->title) ?>" style="padding: 2px 0px 2px 6px;"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>

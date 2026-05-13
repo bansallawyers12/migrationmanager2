@@ -90,6 +90,59 @@
             }
         });
 
+        // ---- Delete Visa Document Category ----
+        $(document).on('click', '.delete-visa-cat-title', function(e) {
+            e.preventDefault();
+            var url = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.deleteVisaCategory)
+                ? window.ClientDetailConfig.urls.deleteVisaCategory
+                : '';
+            if (!url) {
+                alert('Visa category delete is not configured.');
+                return;
+            }
+            var id = $(this).data('id');
+            var title = $(this).data('title') || 'this category';
+            var warningMessage = '⚠️ WARNING: You are about to delete the visa category "' + title + '"\n\n' +
+                'This action will permanently remove the category from the system.\n\n' +
+                'Requirements:\n' +
+                '• Category must be empty (no documents)\n' +
+                '• Default categories cannot be deleted\n' +
+                '• Only authorized staff can perform this action\n\n' +
+                'This action CANNOT be undone!\n\n' +
+                'Do you want to proceed?';
+            if (confirm(warningMessage)) {
+                var confirmMessage = '⚠️ FINAL CONFIRMATION\n\n' +
+                    'Are you absolutely sure you want to delete "' + title + '"?\n\n' +
+                    'This will permanently delete the category.\n\n' +
+                    'Click OK to delete or Cancel to abort.';
+                if (confirm(confirmMessage)) {
+                    $.ajax({
+                        url: url,
+                        method: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            id: id
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                alert('✓ Success: ' + response.message);
+                                location.reload();
+                            } else {
+                                alert('✗ Error: ' + (response.message || 'Failed to delete category.'));
+                            }
+                        },
+                        error: function(xhr) {
+                            var errorMsg = 'An error occurred while deleting the category.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            }
+                            alert('✗ Error: ' + errorMsg);
+                        }
+                    });
+                }
+            }
+        });
+
         // ---- Delete Personal Document Category ----
         $(document).on('click', '.delete-personal-cat-title', function(e) {
             e.preventDefault();
@@ -99,7 +152,7 @@
                 'This action will permanently remove the category from the system.\n\n' +
                 'Requirements:\n' +
                 '• Category must be empty (no documents)\n' +
-                '• Only superadmin can perform this action\n\n' +
+                '• Only authorized staff can perform this action\n\n' +
                 'This action CANNOT be undone!\n\n' +
                 'Do you want to proceed?';
             if (confirm(warningMessage)) {
