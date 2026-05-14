@@ -86,6 +86,7 @@ use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
 use App\Services\FCMService;
 use App\Services\ClientImportService;
+use App\Services\VisaAgreementTemplateResolver;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\ClientQueries;
@@ -4511,37 +4512,31 @@ class ClientsController extends Controller
                 Log::info('Created templates directory: ' . $templatesDir);
             }
             
-            // Determine template filename based on matter type (nick_name)
-            $templateFileName = 'agreement_template.docx'; // Default template
+            // Determine template filename (company / skill / conflict / default paths + legacy fallbacks)
             $matterNickName = null;
-            
-            // Get matter info to determine which template to use
-            if (isset($request->client_matter_id) && $request->client_matter_id != '') {
-                $client_matter_info = DB::table('client_matters')->select('sel_matter_id')->where('id', $request->client_matter_id)->first();
-                if ($client_matter_info && $client_matter_info->sel_matter_id) {
-                    $matter_info_temp = DB::table('matters')->select('nick_name')->where('id', $client_matter_info->sel_matter_id)->first();
-                    if ($matter_info_temp && !empty($matter_info_temp->nick_name)) {
-                        $matterNickName = strtolower(trim($matter_info_temp->nick_name));
-                        
-                        // Map matter nick_name to template filename
-                        // Only ART, skillassessment, and JRP have specific templates
-                        // Everything else uses the default template
-                        $templateMapping = [
-                            'art' => 'agreement_template-ART.docx',
-                            'skillassessment' => 'agreement_template-skillassment.docx',
-                            'skillassment' => 'agreement_template-skillassment.docx', // Handle variant spelling
-                            'jrp' => 'agreement_template-JRP.docx',
-                        ];
-                        
-                        if (isset($templateMapping[$matterNickName])) {
-                            $templateFileName = $templateMapping[$matterNickName];
-                        }
-                        // For all other matter types (including GN), use default template
-                    }
+            $templateResolution = app(VisaAgreementTemplateResolver::class)->resolve(
+                $client,
+                isset($request->client_matter_id) ? (string) $request->client_matter_id : null
+            );
+            $matterNickName = $templateResolution['matter_nick_name'];
+            $templateCandidates = $templateResolution['candidates'];
+            Log::info('Agreement template resolution', [
+                'rule' => $templateResolution['rule'],
+                'candidates' => $templateCandidates,
+                'client_id' => $client->id,
+                'matter_nick' => $matterNickName,
+            ]);
+
+            $templateFileName = config('visa_agreement_templates.default', 'Service_Agreement_general.docx');
+            $templatePath = storage_path('app/templates/' . $templateFileName);
+            foreach ($templateCandidates as $candidateBasename) {
+                $candidatePath = storage_path('app/templates/' . $candidateBasename);
+                if (file_exists($candidatePath)) {
+                    $templateFileName = $candidateBasename;
+                    $templatePath = $candidatePath;
+                    break;
                 }
             }
-            
-            $templatePath = storage_path('app/templates/' . $templateFileName);
 
             if (!file_exists($templatePath)) {
                 Log::error('Agreement template file not found at: ' . $templatePath);
@@ -4561,7 +4556,7 @@ class ClientsController extends Controller
                     ], 404);
                 }
             } else {
-                Log::info('Using template: ' . $templateFileName . ' for matter type: ' . ($matterNickName ?? 'default'));
+                Log::info('Using template: ' . $templateFileName . ' for matter type: ' . ($matterNickName ?? 'default') . ' (rule: ' . ($templateResolution['rule'] ?? '') . ')');
             }
 
             // Option 2: Patch template so "Amount incl Surcharge" total cell uses TotalDoHAChargesInclSurcharge
