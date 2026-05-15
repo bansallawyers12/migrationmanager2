@@ -4835,6 +4835,15 @@ class ClientsController extends Controller
                 }
             }
 
+            // ${TotalDoHASurcharges} in agreements: sum of UI "Total DoHA Charges" + "Total DoHA Surcharges" + Additional Fee 1
+            // (DB field TotalDoHASurcharges is only the surcharge portion; the macro is the combined figure for that template row.)
+            $TotalDoHASurchargesMacroSum = number_format(
+                floatval($TotalDoHACharges) + floatval($TotalDoHASurcharges) + floatval($TotalEstimatedOtherCosts),
+                2,
+                '.',
+                ''
+            );
+
             // Replace placeholders
             $replacements = [
                 'ClientID' => $client->client_id,
@@ -4903,7 +4912,7 @@ class ClientsController extends Controller
                 'DoHANonInternetSurcharge'=>$DoHANonInternetSurcharge,
 
                 'TotalDoHACharges'=>$TotalDoHACharges,
-                'TotalDoHASurcharges'=>$TotalDoHASurcharges,
+                'TotalDoHASurcharges'=>$TotalDoHASurchargesMacroSum,
                 'TotalDoHAChargesInclSurcharge'=>$TotalDoHAChargesInclSurcharge,
 
                 'TotalEstimatedOthCosts'=>$TotalEstimatedOtherCosts,
