@@ -4759,33 +4759,63 @@ class ClientsController extends Controller
                     $BlocktotalfeesincltaxFormated = number_format($Blocktotalfeesincltax, 2, '.', '');
                     //dd($BlocktotalfeesincltaxFormated);
 
+                    $surchargeApply = property_exists($matter_info, 'surcharge') ? $matter_info->surcharge : null;
+
                     $DoHAMainApplicantChargePersonCount = ($matter_info->Dept_Base_Application_Charge_no_of_person ?? 0) ."Person" ;
                     $DoHAMainApplicantCharge = $matter_info->Dept_Base_Application_Charge_after_person ?? 0;
-                    $DoHAMainApplicantSurcharge = $matter_info->Dept_Base_Application_Charge_after_person_surcharge ?? 0;
+                    $DoHAMainApplicantSurcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Base_Application_Charge_after_person ?? 0),
+                        $matter_info->Dept_Base_Application_Charge_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $DoHAAdditionalApplicantCharge18PlusPersonCount = ($matter_info->Dept_Additional_Applicant_Charge_18_Plus_no_of_person ?? 0) ."Person" ;
                     $DoHAAdditionalApplicantCharge18Plus = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person ?? 0;
-                    $DoHAAdditional18PlusSurcharge = $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge ?? 0;
+                    $DoHAAdditional18PlusSurcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person ?? 0),
+                        $matter_info->Dept_Additional_Applicant_Charge_18_Plus_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $DoHAAdditionalApplicantChargeUnder18PersonCount = ($matter_info->Dept_Additional_Applicant_Charge_Under_18_no_of_person ?? 0) ."Person" ;
                     $DoHAAdditionalApplicantChargeUnder18 = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person ?? 0;
-                    $DoHAAdditionalUnder18Surcharge = $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge ?? 0;
+                    $DoHAAdditionalUnder18Surcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person ?? 0),
+                        $matter_info->Dept_Additional_Applicant_Charge_Under_18_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $DoHASecondInstalmentMainPersonCount = ($matter_info->Dept_Subsequent_Temp_Application_Charge_no_of_person ?? 0) ."Person" ;
                     $DoHASecondInstalmentMain = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person ?? 0;
-                    $DoHASecondInstalmentMainSurcharge = $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge ?? 0;
+                    $DoHASecondInstalmentMainSurcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Subsequent_Temp_Application_Charge_after_person ?? 0),
+                        $matter_info->Dept_Subsequent_Temp_Application_Charge_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $DoHASubsequentApplicantCharge18PlusPersonCount = ($matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_no_of_person ?? 0) ."Person" ;
                     $DoHASubsequentApplicantCharge18Plus = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person ?? 0;
-                    $DoHASubsequentApplicantCharge18PlusSurcharge = $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge ?? 0;
+                    $DoHASubsequentApplicantCharge18PlusSurcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person ?? 0),
+                        $matter_info->Dept_Second_VAC_Instalment_Charge_18_Plus_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $DoHASubsequentApplicantChargeUnder18PersonCount = ($matter_info->Dept_Second_VAC_Instalment_Under_18_no_of_person ?? 0) ."Person" ;
                     $DoHASubsequentTempAppCharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person ?? 0;
-                    $DoHASubsequentTempAppSurcharge = $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge ?? 0;
+                    $DoHASubsequentTempAppSurcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Second_VAC_Instalment_Under_18_after_person ?? 0),
+                        $matter_info->Dept_Second_VAC_Instalment_Under_18_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $DoHANonInternetChargePersonCount = ($matter_info->Dept_Non_Internet_Application_Charge_no_of_person ?? 0) ."Person" ;
                     $DoHANonInternetCharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person ?? 0;
-                    $DoHANonInternetSurcharge = $matter_info->Dept_Non_Internet_Application_Charge_after_person_surcharge ?? 0;
+                    $DoHANonInternetSurcharge = $this->resolveDoHaAmountInclSurcharge(
+                        floatval($matter_info->Dept_Non_Internet_Application_Charge_after_person ?? 0),
+                        $matter_info->Dept_Non_Internet_Application_Charge_after_person_surcharge ?? null,
+                        $surchargeApply
+                    );
 
                     $TotalDoHACharges = $matter_info->TotalDoHACharges ?? 0;
                     $TotalDoHASurcharges = $matter_info->TotalDoHASurcharges ?? 0;
@@ -5051,6 +5081,33 @@ class ClientsController extends Controller
                 'message' => 'Error generating document: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Resolve per-line "amount incl surcharge" for agreement macros.
+     *
+     * Some legacy or partial saves left *_after_person_surcharge at 0 while *_after_person had
+     * the base total. Recalculate only in that case using the same rule as cost assignment save:
+     * surcharge only when the cost assignment `surcharge` flag is Yes (1.4% of line base).
+     */
+    protected function resolveDoHaAmountInclSurcharge(float $afterPerson, $storedInclSurcharge, $surchargeFlag): float
+    {
+        $base = $afterPerson;
+        $stored = floatval($storedInclSurcharge ?? 0);
+
+        if ($base <= 0) {
+            return $stored;
+        }
+
+        if ($stored > 0) {
+            return $stored;
+        }
+
+        if (is_string($surchargeFlag) && trim($surchargeFlag) === 'Yes') {
+            return round($base * 0.014, 2) + $base;
+        }
+
+        return $base;
     }
 
     //Get Migration Agent Detail
