@@ -462,14 +462,23 @@ class DashboardService
     }
 
     /**
-     * Get workflow stages
+     * Get workflow stages.
+     *
+     * Cache plain rows only — caching Eloquent collections can deserialize as
+     * __PHP_Incomplete_Class and break Blade (sanitizeComponentAttribute / method_exists).
      */
-    private function getWorkflowStages()
+    private function getWorkflowStages(): Collection
     {
-        return Cache::remember('workflow_stages', 3600, function () {
-            return WorkflowStage::orderByRaw('COALESCE(sort_order, id) ASC')
-                ->get();
+        $rows = Cache::remember('workflow_stages_v2', 3600, function () {
+            return WorkflowStage::query()
+                ->orderByRaw('COALESCE(sort_order, id) ASC')
+                ->get(['id', 'name'])
+                ->map(fn (WorkflowStage $stage) => $stage->only(['id', 'name']))
+                ->values()
+                ->all();
         });
+
+        return collect($rows)->map(fn (array $attrs) => (object) $attrs);
     }
 
     /**
