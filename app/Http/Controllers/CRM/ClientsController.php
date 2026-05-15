@@ -4575,13 +4575,24 @@ class ClientsController extends Controller
                         $xml = $zip->getFromName('word/document.xml');
                         if ($xml !== false) {
                             $patched = false;
-                            // Try full placeholder first (PhpWord format)
                             $oldPlaceholder = '${TotalDoHASurcharges}';
                             $newPlaceholder = '${TotalDoHAChargesInclSurcharge}';
+                            $countFullPlaceholder = substr_count($xml, $oldPlaceholder);
+                            $countBareName = substr_count($xml, 'TotalDoHASurcharges');
+                            // Try full placeholder first (PhpWord format)
                             $lastPos = strrpos($xml, $oldPlaceholder);
                             if ($lastPos !== false) {
                                 $xml = substr_replace($xml, $newPlaceholder, $lastPos, strlen($oldPlaceholder));
                                 $patched = true;
+                                Log::info('[AgreementMacro:TotalDoHASurcharges] DOCX patch REPLACED last exact placeholder with TotalDoHAChargesInclSurcharge', [
+                                    'client_id' => $request->client_id,
+                                    'client_matter_id' => $request->client_matter_id ?? null,
+                                    'occurrences_${TotalDoHASurcharges}' => $countFullPlaceholder,
+                                    'occurrences_substring_TotalDoHASurcharges' => $countBareName,
+                                    'last_match_byte_offset' => $lastPos,
+                                    'patch_mode' => 'full_placeholder',
+                                    'note' => 'Clause 4 cell will merge TotalDoHAChargesInclSurcharge (line-sum), NOT TotalDoHASurchargesMacroSum (DB triple sum).',
+                                ]);
                             } else {
                                 // Word may split placeholder across XML runs; try name only (last occurrence)
                                 $oldName = 'TotalDoHASurcharges';
@@ -4590,7 +4601,24 @@ class ClientsController extends Controller
                                 if ($lastPos !== false) {
                                     $xml = substr_replace($xml, $newName, $lastPos, strlen($oldName));
                                     $patched = true;
+                                    Log::info('[AgreementMacro:TotalDoHASurcharges] DOCX patch REPLACED last bare name with TotalDoHAChargesInclSurcharge', [
+                                        'client_id' => $request->client_id,
+                                        'client_matter_id' => $request->client_matter_id ?? null,
+                                        'occurrences_${TotalDoHASurcharges}' => $countFullPlaceholder,
+                                        'occurrences_substring_TotalDoHASurcharges' => $countBareName,
+                                        'last_match_byte_offset' => $lastPos,
+                                        'patch_mode' => 'bare_name_only',
+                                        'note' => 'Clause 4 cell will merge TotalDoHAChargesInclSurcharge (line-sum), NOT TotalDoHASurchargesMacroSum (DB triple sum).',
+                                    ]);
                                 }
+                            }
+                            if (!$patched) {
+                                Log::info('[AgreementMacro:TotalDoHASurcharges] DOCX patch skipped (no TotalDoHASurcharges found in document.xml)', [
+                                    'client_id' => $request->client_id,
+                                    'client_matter_id' => $request->client_matter_id ?? null,
+                                    'occurrences_${TotalDoHASurcharges}' => $countFullPlaceholder,
+                                    'occurrences_substring_TotalDoHASurcharges' => $countBareName,
+                                ]);
                             }
                             if ($patched) {
                                 $zip->deleteName('word/document.xml');
@@ -4620,6 +4648,22 @@ class ClientsController extends Controller
             }
 
             $templateProcessor = new TemplateProcessor($pathToLoad);
+
+            try {
+                $tplVars = $templateProcessor->getVariables();
+                $tplHasTdhs = in_array('TotalDoHASurcharges', $tplVars, true);
+                $tplHasTdhcis = in_array('TotalDoHAChargesInclSurcharge', $tplVars, true);
+                Log::info('[AgreementMacro:TotalDoHASurcharges] PhpWord template variables after load', [
+                    'client_id' => $request->client_id,
+                    'client_matter_id' => $request->client_matter_id ?? null,
+                    'template_loaded_from_patched_copy' => ($pathToLoad !== $templatePath),
+                    'has_placeholder_TotalDoHASurcharges' => $tplHasTdhs,
+                    'has_placeholder_TotalDoHAChargesInclSurcharge' => $tplHasTdhcis,
+                    'total_distinct_placeholders' => count($tplVars),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('[AgreementMacro:TotalDoHASurcharges] Could not read template variables: ' . $e->getMessage());
+            }
 
             // Log the values we're trying to set
             Log::info('Generating document for client: ' . $client->client_id);
@@ -4844,15 +4888,35 @@ class ClientsController extends Controller
                     ->where('client_matter_id', $request->client_matter_id)
                     ->first(['TotalDoHACharges', 'TotalDoHASurcharges', 'additional_fee_1']);
                 if ($costRowForMacro !== null) {
+                    $dbBase = floatval($costRowForMacro->TotalDoHACharges ?? 0);
+                    $dbSurchargeOnly = floatval($costRowForMacro->TotalDoHASurcharges ?? 0);
+                    $dbAdditionalFee1 = floatval($costRowForMacro->additional_fee_1 ?? 0);
                     $TotalDoHASurchargesMacroSum = number_format(
-                        floatval($costRowForMacro->TotalDoHACharges ?? 0)
-                        + floatval($costRowForMacro->TotalDoHASurcharges ?? 0)
-                        + floatval($costRowForMacro->additional_fee_1 ?? 0),
+                        $dbBase + $dbSurchargeOnly + $dbAdditionalFee1,
                         2,
                         '.',
                         ''
                     );
+                    Log::info('[AgreementMacro:TotalDoHASurcharges] DB triple-sum for merge key TotalDoHASurcharges', [
+                        'client_id' => $request->client_id,
+                        'client_matter_id' => $request->client_matter_id,
+                        'TotalDoHACharges' => $dbBase,
+                        'TotalDoHASurcharges_surcharge_only' => $dbSurchargeOnly,
+                        'additional_fee_1' => $dbAdditionalFee1,
+                        'macro_TotalDoHASurcharges_merge_value' => $TotalDoHASurchargesMacroSum,
+                        'compare_TotalDoHAChargesInclSurcharge_line_sum' => $TotalDoHAChargesInclSurcharge,
+                        'note' => 'If clause 4 shows line_sum instead, DOCX patch rewrote placeholder to TotalDoHAChargesInclSurcharge.',
+                    ]);
+                } else {
+                    Log::warning('[AgreementMacro:TotalDoHASurcharges] No cost_assignment_forms row for client/matter — macro stays 0.00', [
+                        'client_id' => $request->client_id,
+                        'client_matter_id' => $request->client_matter_id,
+                    ]);
                 }
+            } else {
+                Log::warning('[AgreementMacro:TotalDoHASurcharges] Missing client_matter_id — macro stays 0.00', [
+                    'client_id' => $request->client_id,
+                ]);
             }
 
             // Replace placeholders
