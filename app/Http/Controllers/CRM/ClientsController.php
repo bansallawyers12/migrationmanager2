@@ -4563,6 +4563,7 @@ class ClientsController extends Controller
             // (replaces last occurrence of ${TotalDoHASurcharges} in word/document.xml to fix the total display)
             $pathToLoad = $templatePath;
             $patchedTempPath = null; // used for cleanup after saveAs; set only when patch is applied
+            $scheduleATempPath = null; // working copy so Schedule A XML injection never mutates the stored template
             try {
                 $tempDir = storage_path('app/temp');
                 if (!is_dir($tempDir)) {
@@ -4645,6 +4646,24 @@ class ClientsController extends Controller
                     @unlink($patchedTempPath);
                     $patchedTempPath = null;
                 }
+            }
+
+            if ($pathToLoad === $templatePath && is_file($pathToLoad)) {
+                $tempDir = storage_path('app/temp');
+                if (! is_dir($tempDir)) {
+                    @mkdir($tempDir, 0755, true);
+                }
+                $scheduleATempPath = $tempDir . '/agreement_schedule_a_' . getmypid() . '_' . time() . '.docx';
+                if (@copy($pathToLoad, $scheduleATempPath)) {
+                    $pathToLoad = $scheduleATempPath;
+                } else {
+                    $scheduleATempPath = null;
+                    Log::warning('Could not copy agreement template for Schedule A injection; skipping placeholder injection to protect original file.');
+                }
+            }
+
+            if ($pathToLoad !== $templatePath) {
+                $this->injectScheduleAFamilyPlaceholdersIfNeeded($pathToLoad);
             }
 
             $templateProcessor = new TemplateProcessor($pathToLoad);
@@ -4919,6 +4938,8 @@ class ClientsController extends Controller
                 ]);
             }
 
+            $scheduleAFamily = $this->buildScheduleAFamilyMacroStrings((int) $id);
+
             // Replace placeholders
             $replacements = [
                 'ClientID' => $client->client_id,
@@ -4991,7 +5012,10 @@ class ClientsController extends Controller
                 'TotalDoHAChargesInclSurcharge'=>$TotalDoHAChargesInclSurcharge,
 
                 'TotalEstimatedOthCosts'=>$TotalEstimatedOtherCosts,
-                'GrandTotalFeesAndCosts'=>$GrandTotalFeesAndCostsFormated
+                'GrandTotalFeesAndCosts'=>$GrandTotalFeesAndCostsFormated,
+
+                'ScheduleA_PartnerList' => $scheduleAFamily['partners'],
+                'ScheduleA_ChildList' => $scheduleAFamily['children'],
             ];
 
             // Log each replacement
@@ -5034,6 +5058,9 @@ class ClientsController extends Controller
             // Remove patched temp template if Option 2 was used
             if (isset($patchedTempPath) && $patchedTempPath !== null && file_exists($patchedTempPath)) {
                 @unlink($patchedTempPath);
+            }
+            if (isset($scheduleATempPath) && $scheduleATempPath !== null && file_exists($scheduleATempPath)) {
+                @unlink($scheduleATempPath);
             }
 
             Log::info('Document generated successfully at: ' . $outputPath);
@@ -5165,6 +5192,196 @@ class ClientsController extends Controller
                 'message' => 'Error generating document: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Ensure Schedule A partner/child merge fields exist in Service_Agreement_general-style templates.
+     * Idempotent: skips when placeholders are already present or sample paragraphs were removed.
+     */
+    protected function injectScheduleAFamilyPlaceholdersIfNeeded(string $docxPath): void
+    {
+        if (! is_file($docxPath)) {
+            return;
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($docxPath) !== true) {
+            return;
+        }
+
+        $xml = $zip->getFromName('word/document.xml');
+        if ($xml === false) {
+            $zip->close();
+
+            return;
+        }
+
+        $original = $xml;
+
+        if (! str_contains($xml, 'ScheduleA_PartnerList')) {
+            $partnerRun = '<w:r><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr>'
+                . '<w:t>${ScheduleA_PartnerList}</w:t></w:r>';
+            $partner = ' partner: </w:t></w:r></w:p>';
+            if (substr_count($xml, $partner) === 1) {
+                $xml = str_replace($partner, ' partner: </w:t></w:r>' . $partnerRun . '</w:p>', $xml);
+            }
+        }
+
+        if (! str_contains($xml, 'ScheduleA_ChildList')) {
+            $oldSampleChildren = '<w:p w14:paraId="76AE0EE9" w14:textId="19E35E7E" w:rsidR="002E3F6E" w:rsidRDefault="002E3F6E" w:rsidP="002E3F6E">'
+                . '<w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="1"/><w:numId w:val="39"/></w:numPr>'
+                . '<w:spacing w:before="480"/><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+                . '<w:proofErr w:type="spellStart"/><w:r><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr>'
+                . '<w:t>Gdsf</w:t></w:r><w:proofErr w:type="spellEnd"/><w:r><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr>'
+                . '<w:t xml:space="preserve"> (1/1/19xx)</w:t></w:r></w:p>'
+                . '<w:p w14:paraId="0E3F9316" w14:textId="76EFE0F1" w:rsidR="002E3F6E" w:rsidRDefault="002E3F6E" w:rsidP="002E3F6E">'
+                . '<w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="1"/><w:numId w:val="39"/></w:numPr>'
+                . '<w:spacing w:before="480"/><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+                . '<w:r><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr><w:t>Sf</w:t></w:r></w:p>'
+                . '<w:p w14:paraId="3BC3631A" w14:textId="0BAE766C" w:rsidR="00A81247" w:rsidRPr="002E3F6E" w:rsidRDefault="002E3F6E" w:rsidP="002E3F6E">'
+                . '<w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="1"/><w:numId w:val="39"/></w:numPr>'
+                . '<w:spacing w:before="480"/><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+                . '<w:r><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr><w:t>sf</w:t></w:r>'
+                . '<w:bookmarkStart w:id="3" w:name="_Hlk95643751"/></w:p>';
+
+            $newChildParagraph = '<w:p w14:paraId="76AE0EE9" w14:textId="19E35E7E" w:rsidR="002E3F6E" w:rsidRDefault="002E3F6E" w:rsidP="002E3F6E">'
+                . '<w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="1"/><w:numId w:val="39"/></w:numPr>'
+                . '<w:spacing w:before="480"/><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+                . '<w:r><w:rPr><w:rFonts w:cstheme="minorHAnsi"/><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="en-US"/></w:rPr>'
+                . '<w:t>${ScheduleA_ChildList}</w:t></w:r><w:bookmarkStart w:id="3" w:name="_Hlk95643751"/></w:p>';
+
+            if (str_contains($xml, $oldSampleChildren)) {
+                $xml = str_replace($oldSampleChildren, $newChildParagraph, $xml);
+            }
+        }
+
+        if ($xml !== $original) {
+            $zip->deleteName('word/document.xml');
+            $zip->addFromString('word/document.xml', $xml);
+            Log::info('Injected Schedule A family placeholders into agreement template', ['path' => $docxPath]);
+        }
+
+        $zip->close();
+    }
+
+    /**
+     * Build multi-line merge values for Schedule A (partner rows; lettered child rows).
+     *
+     * @return array{partners: string, children: string}
+     */
+    protected function buildScheduleAFamilyMacroStrings(int $clientAdminId): array
+    {
+        $partnerTypes = ['Husband', 'Wife', 'Ex-Husband', 'Ex-Wife', 'Defacto', 'Engaged'];
+        $childTypes = ['Son', 'Daughter', 'Step Son', 'Step Daughter'];
+
+        $rows = ClientRelationship::query()
+            ->where('client_id', $clientAdminId)
+            ->with(['relatedClient:id,first_name,last_name,client_id,dob'])
+            ->orderBy('id')
+            ->get();
+
+        $partnerLines = [];
+        foreach ($rows as $r) {
+            if (in_array($r->relationship_type, $partnerTypes, true)) {
+                $partnerLines[] = $this->formatVisaAgreementFamilyLineForPartner($r);
+            }
+        }
+
+        $childLines = [];
+        $letterIndex = 0;
+        foreach ($rows as $r) {
+            if (in_array($r->relationship_type, $childTypes, true)) {
+                if ($letterIndex < 26) {
+                    $prefix = chr(ord('a') + $letterIndex) . '. ';
+                } else {
+                    $prefix = (string) ($letterIndex + 1) . '. ';
+                }
+                $childLines[] = $prefix . $this->formatVisaAgreementFamilyLineForChild($r);
+                $letterIndex++;
+            }
+        }
+
+        return [
+            'partners' => $partnerLines === [] ? 'No' : implode("\n", $partnerLines),
+            'children' => $childLines === [] ? 'No' : implode("\n", $childLines),
+        ];
+    }
+
+    protected function formatVisaAgreementFamilyLineForPartner(ClientRelationship $relationship): string
+    {
+        $name = $this->agreementFamilyMemberDisplayName($relationship);
+        $rel = trim((string) ($relationship->relationship_type ?? ''));
+
+        return $rel !== '' ? $name . ' — ' . $rel : $name;
+    }
+
+    protected function formatVisaAgreementFamilyLineForChild(ClientRelationship $relationship): string
+    {
+        $name = $this->agreementFamilyMemberDisplayName($relationship);
+        $dob = $this->agreementFormatDobSuffixForRelationship($relationship);
+
+        return $dob !== '' ? $name . ' (' . $dob . ')' : $name;
+    }
+
+    protected function agreementFormatDobSuffixForRelationship(ClientRelationship $relationship): string
+    {
+        $raw = $relationship->dob;
+        if (($raw === null || $raw === '') && $relationship->relationLoaded('relatedClient') && $relationship->relatedClient) {
+            $raw = $relationship->relatedClient->dob ?? null;
+        }
+        if ($raw === null || $raw === '') {
+            return '';
+        }
+        try {
+            return Carbon::parse($raw)->format('d/m/Y');
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    /**
+     * Plain-text display name aligned with client detail Relationships / family forms.
+     */
+    protected function agreementFamilyMemberDisplayName(ClientRelationship $relationship): string
+    {
+        if (! empty($relationship->related_client_id)) {
+            $relatedClientInfo = $relationship->relatedClient;
+            if ($relatedClientInfo) {
+                $relatedClientId = (string) ($relatedClientInfo->client_id ?? '');
+                $clientFirstName = trim((string) ($relatedClientInfo->first_name ?? ''));
+                $clientLastName = trim((string) ($relatedClientInfo->last_name ?? ''));
+
+                if ($clientFirstName === '' && $clientLastName === '') {
+                    return 'Client ID: ' . $relatedClientId;
+                }
+                if ($clientFirstName === '') {
+                    return trim($clientLastName . ' — ' . $relatedClientId);
+                }
+                if ($clientLastName === '') {
+                    return trim($clientFirstName . ' — ' . $relatedClientId);
+                }
+
+                return trim($clientFirstName . ' ' . $clientLastName . ' — ' . $relatedClientId);
+            }
+
+            return 'Client not found';
+        }
+
+        $firstName = trim((string) ($relationship->first_name ?? ''));
+        $lastName = trim((string) ($relationship->last_name ?? ''));
+        if ($firstName === '' && $lastName === '') {
+            $detailsFallback = trim((string) ($relationship->details ?? ''));
+
+            return $detailsFallback !== '' ? $detailsFallback : 'Name not provided';
+        }
+        if ($firstName === '') {
+            return $lastName;
+        }
+        if ($lastName === '') {
+            return $firstName;
+        }
+
+        return $firstName . ' ' . $lastName;
     }
 
     /**
