@@ -4835,14 +4835,25 @@ class ClientsController extends Controller
                 }
             }
 
-            // ${TotalDoHASurcharges} in agreements: sum of UI "Total DoHA Charges" + "Total DoHA Surcharges" + Additional Fee 1
-            // (DB field TotalDoHASurcharges is only the surcharge portion; the macro is the combined figure for that template row.)
-            $TotalDoHASurchargesMacroSum = number_format(
-                floatval($TotalDoHACharges) + floatval($TotalDoHASurcharges) + floatval($TotalEstimatedOtherCosts),
-                2,
-                '.',
-                ''
-            );
+            // ${TotalDoHASurcharges}: read only from cost_assignment_forms — sum of Total DoHA Charges + Total DoHA Surcharges + Additional Fee 1
+            // (Isolated from other agreement variables so the macro always matches the three DB fields on that form row.)
+            $TotalDoHASurchargesMacroSum = '0.00';
+            if (isset($request->client_matter_id) && $request->client_matter_id !== '') {
+                $costRowForMacro = DB::table('cost_assignment_forms')
+                    ->where('client_id', $request->client_id)
+                    ->where('client_matter_id', $request->client_matter_id)
+                    ->first(['TotalDoHACharges', 'TotalDoHASurcharges', 'additional_fee_1']);
+                if ($costRowForMacro !== null) {
+                    $TotalDoHASurchargesMacroSum = number_format(
+                        floatval($costRowForMacro->TotalDoHACharges ?? 0)
+                        + floatval($costRowForMacro->TotalDoHASurcharges ?? 0)
+                        + floatval($costRowForMacro->additional_fee_1 ?? 0),
+                        2,
+                        '.',
+                        ''
+                    );
+                }
+            }
 
             // Replace placeholders
             $replacements = [
