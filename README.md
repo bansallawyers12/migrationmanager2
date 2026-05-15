@@ -37,7 +37,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 ## Technology Stack
 
-- **Backend**: Laravel 12.x (PHP 8.3+)
+- **Backend**: Laravel 13.x (PHP 8.3+)
 - **Frontend**: Bootstrap 4/5, jQuery, DataTables, Select2, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
 - **Build**: Vite 7.x
 - **Database**: PostgreSQL (Primary), MySQL (optional for migration), SQLite (Development)
@@ -585,7 +585,7 @@ This project is open-sourced software licensed under the [MIT license](https://o
 ## Recent Changes
 
 - **PostgreSQL**: Primary database is now PostgreSQL (default in config); MySQL supported for legacy migration.
-- **Laravel 12**: Upgraded from Laravel 10; requires PHP 8.3+.
+- **Laravel 13**: Upgraded from Laravel 12; requires PHP 8.3+.
 - **Matter-based tracking**: Legacy `applications` table removed; visa tracking is via `client_matters` (Matter model).
 - **Flatpickr migration**: All date pickers now use Flatpickr (DD/MM/YYYY format). Bootstrap Datepicker removed.
 - **Company Employer Sponsorship**: Full implementation including Trust entities, trading names, directors (with client/lead linking), nominations, sponsorship tracking, and per-section AJAX save.
