@@ -10,7 +10,7 @@ On the production server:
 
 ```bash
 # Start Reverb (or use Supervisor to keep it running)
-php82 artisan reverb:start
+php83 artisan reverb:start
 ```
 
 Reverb must listen on **port 8080** (default). Check with:
