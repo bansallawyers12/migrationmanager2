@@ -52,11 +52,11 @@ class OthersController extends Controller
     }
 
     /**
-     * Map student-calc-lists course_duration id to years for the Bansal API (ids 1–11 = months, 12–36 = 1–25 years).
+     * Parse course_duration as the same preset id Bansal uses (see GET /student-calc-lists): 1–11 months, 12–36 = 1–25 years.
      *
-     * @return float|int|null Null if the value is not a valid list id.
+     * @return int|null Null if not a whole id in range.
      */
-    private function tryResolveStudentCalcCourseDurationYearsFromId(mixed $courseDuration): float|int|null
+    private function tryParseStudentCalcCourseDurationPresetId(mixed $courseDuration): ?int
     {
         if ($courseDuration === null || $courseDuration === '') {
             return null;
@@ -69,11 +69,8 @@ class OthersController extends Controller
         if ($id < 1 || $id > 36 || abs($num - $id) > 1e-9) {
             return null;
         }
-        if ($id <= 11) {
-            return round($id / 12, 8);
-        }
 
-        return $id - 11;
+        return $id;
     }
 
     /**
@@ -603,15 +600,15 @@ class OthersController extends Controller
             $requestData['oshc_type'] = 0;
 
             if (array_key_exists('course_duration', $requestData)) {
-                $years = $this->tryResolveStudentCalcCourseDurationYearsFromId($requestData['course_duration']);
-                if ($years === null) {
+                $presetId = $this->tryParseStudentCalcCourseDurationPresetId($requestData['course_duration']);
+                if ($presetId === null) {
                     return response()->json([
                         'success' => false,
                         'message' => 'course_duration must be a list id from GET /student-calc-lists: 1 (1 month) through 36 (25 years).',
                     ], 422);
                 }
-                // Bansal CRM validates course_duration as integer years, minimum 1 (no fractional years).
-                $requestData['course_duration'] = (int) max(1, (int) ceil((float) $years));
+                // Same preset id Bansal expects (do not convert to years — that breaks month presets).
+                $requestData['course_duration'] = $presetId;
             }
 
             // Make API call to Bansal API
