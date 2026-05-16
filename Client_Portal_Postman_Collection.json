@@ -8118,7 +8118,7 @@
 								"student-calc-lists"
 							]
 						},
-						"description": "Get Student Calculator lists from the external Bansal API.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Response:**\n- `200`: Student Calculator lists retrieved successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-lists`"
+						"description": "Get Student Calculator lists from the external Bansal API.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Response:**\n- `200`: Student Calculator lists retrieved successfully. This proxy adds `course_duration` (array of `{ label, id }` where ids 1–11 are months and 12–36 are 1–25 years) immediately before `partner_spouse_options`, and omits `additional_accommodation_options` and `oshc_options` when present upstream.\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-lists`"
 					},
 					"response": [
 						{
@@ -8177,7 +8177,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"course_duration\": 2,\n    \"annual_tuition_fee\": 30000,\n    \"partner_spouse\": 1,\n    \"dependent_children\": 1,\n    \"school_age_children\": 1,\n    \"additional_accommodation\": 20000,\n    \"oshc_type\": 1800,\n    \"travel_expenses\": 2000\n}",
+							"raw": "{\n    \"course_duration\": 13,\n    \"annual_tuition_fee\": 30000,\n    \"partner_spouse\": 1,\n    \"dependent_children\": 1,\n    \"school_age_children\": 1,\n    \"travel_expenses\": 2000\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8193,7 +8193,7 @@
 								"student-calc-result"
 							]
 						},
-						"description": "Calculate Student Financial Requirements based on provided criteria from the external Bansal API.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Request Body:**\n- `course_duration` (required): Course duration in years (integer)\n- `annual_tuition_fee` (required): Annual tuition fee (integer)\n- `partner_spouse` (required): Number of partner/spouse (integer)\n- `dependent_children` (required): Number of dependent children (integer)\n- `school_age_children` (required): Number of school age children (integer)\n- `additional_accommodation` (required): Additional accommodation cost (integer)\n- `oshc_type` (required): OSHC (Overseas Student Health Cover) type cost (integer)\n- `travel_expenses` (required): Travel expenses (integer)\n\n**Response:**\n- `200`: Student Financial Requirements calculated successfully\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-result`"
+						"description": "Calculate Student Financial Requirements based on provided criteria from the external Bansal API.\n\n**Auth:** Requires client portal login — `Authorization: Bearer {{auth_token}}` (Sanctum). `401` if unauthenticated.\n\n**Request Body:**\n- `course_duration` (when sent): **Id** from `GET /student-calc-lists` → `course_duration` list (`1` = 1 month … `11` = 11 months, `12` = 1 year … `36` = 25 years). The server maps this to years for the upstream API.\n- `annual_tuition_fee` (required): Annual tuition fee (integer)\n- `partner_spouse` (required): Number of partner/spouse (integer)\n- `dependent_children` (required): Number of dependent children (integer)\n- `school_age_children` (required): Number of school age children (integer)\n- `travel_expenses` (required): Travel expenses (integer)\n\n**Do not send** `additional_accommodation` or `oshc_type` — they are stripped and not forwarded.\n\n**Response:**\n- `200`: Student Financial Requirements calculated successfully (`oshc` from upstream is omitted in this proxy response).\n- `422`: Invalid `course_duration` (must be a whole id 1–36).\n- `500`: API configuration error or external API failure\n\n**Note:** This endpoint proxies requests to `https://www.bansalimmigration.com.au/api/crm/student-calc-result`"
 					},
 					"response": [
 						{
@@ -8212,7 +8212,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"course_duration\": 2,\n    \"annual_tuition_fee\": 30000,\n    \"partner_spouse\": 1,\n    \"dependent_children\": 1,\n    \"school_age_children\": 1,\n    \"additional_accommodation\": 20000,\n    \"oshc_type\": 1800,\n    \"travel_expenses\": 2000\n}",
+									"raw": "{\n    \"course_duration\": 13,\n    \"annual_tuition_fee\": 30000,\n    \"partner_spouse\": 1,\n    \"dependent_children\": 1,\n    \"school_age_children\": 1,\n    \"travel_expenses\": 2000\n}",
 									"options": {
 										"raw": {
 											"language": "json"

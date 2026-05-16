@@ -52,6 +52,31 @@ class OthersController extends Controller
     }
 
     /**
+     * Map student-calc-lists course_duration id to years for the Bansal API (ids 1–11 = months, 12–36 = 1–25 years).
+     *
+     * @return float|int|null Null if the value is not a valid list id.
+     */
+    private function tryResolveStudentCalcCourseDurationYearsFromId(mixed $courseDuration): float|int|null
+    {
+        if ($courseDuration === null || $courseDuration === '') {
+            return null;
+        }
+        if (! is_numeric($courseDuration)) {
+            return null;
+        }
+        $num = (float) $courseDuration;
+        $id = (int) round($num);
+        if ($id < 1 || $id > 36 || abs($num - $id) > 1e-9) {
+            return null;
+        }
+        if ($id <= 11) {
+            return round($id / 12, 8);
+        }
+
+        return $id - 11;
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
@@ -573,6 +598,17 @@ class OthersController extends Controller
 
             $requestData = $request->all();
             unset($requestData['additional_accommodation'], $requestData['oshc_type']);
+
+            if (array_key_exists('course_duration', $requestData)) {
+                $years = $this->tryResolveStudentCalcCourseDurationYearsFromId($requestData['course_duration']);
+                if ($years === null) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'course_duration must be a list id from GET /student-calc-lists: 1 (1 month) through 36 (25 years).',
+                    ], 422);
+                }
+                $requestData['course_duration'] = $years;
+            }
 
             // Make API call to Bansal API
             $response = Http::timeout($timeout)
