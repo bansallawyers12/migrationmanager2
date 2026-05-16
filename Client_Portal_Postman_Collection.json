@@ -11121,7 +11121,7 @@
 			"name": "Chatbot",
 			"item": [
 				{
-					"name": "Chat (Claude)",
+					"name": "Send chat message",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -11153,7 +11153,44 @@
 								"chatbot"
 							]
 						},
-						"description": "Send a chat message to Claude via the server (Anthropic Messages API). Requires Bearer auth (auth:sanctum). Set ANTHROPIC_API_KEY in .env.\n\nBody:\n- message (required): latest user message.\n- conversation (optional): prior turns only — array of {role, content} starting with user, alternating, ending with assistant. Omit or [] for first message.\n- model (optional): default claude-sonnet-4-6.\n- max_tokens (optional): default 1024.\n\nSystem prompt: resources/prompts/bansal_immigration_chatbot_system.txt (override path with CHATBOT_SYSTEM_PROMPT_PATH). History length cap: CHATBOT_MAX_CONVERSATION_MESSAGES (default 24)."
+						"description": "Bearer auth (Sanctum). The server chooses one of two paths:\n\n1) Scripted FAQ (exact training text) — When the latest message matches seeded `chatbot_faqs` above `CHATBOT_FAQ_THRESHOLD` (see `config/chatbot.php`). Anthropic is not called. Look for `data.chatbot_meta.source` = `training_script_exact`, `data.model` = `bansal-training-script-exact`, and optionally `matched_faq_id` / `confidence`. Import rows: run `php artisan chatbot:seed-faq-library` (source array: `database/chatbot_training/faq_entries.php`).\n\n2) Claude — Fallback calls Anthropic Messages API; requires `ANTHROPIC_API_KEY`. Look for `data.chatbot_meta.source` = `claude`.\n\nResponse:\n- `data.content`: same Claude-style `{type,text}` blocks (backward compatible).\n- `data.reply`: plain assistant reply string (use for UI shortcuts).\n- `data.chatbot_meta`: `{ source, model?, matched_faq_id?, confidence?, category?, note }`.\n\nBody:\n- `message` (required): newest user utterance.\n- `conversation` (optional): prior turns only — must alternate `user`/`assistant` and **end with `assistant`**. Omit history with `[]`.\n- `model` (optional): only honored if `CHATBOT_ALLOW_CLIENT_MODEL=true`; otherwise `CHATBOT_DEFAULT_MODEL`.\n- `max_tokens` (optional): capped by `CHATBOT_MAX_TOKENS_CEILING`.\n\nEnv / files: `ANTHROPIC_API_KEY`, `CHATBOT_*` vars, system prompt file `resources/prompts/bansal_immigration_chatbot_system.txt` (or `CHATBOT_SYSTEM_PROMPT_PATH`), rolling history cap `CHATBOT_MAX_CONVERSATION_MESSAGES`."
+					},
+					"response": []
+				},
+				{
+					"name": "Send chat message (no prior history)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text",
+								"description": "Bearer token from Login"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"What offices do you have?\",\n    \"conversation\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot"
+							]
+						},
+						"description": "Same as **Send chat message**, but with an empty `conversation` — first screen / cold start without prior turns.\n\nIf you send a non-empty `conversation`, every block must strictly alternate roles and **end with assistant**."
 					},
 					"response": []
 				}
