@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Services\Chatbot\ChatbotKnowledgeMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -10,10 +11,11 @@ use Illuminate\Support\Facades\Validator;
 class ChatbotController extends BaseController
 {
     /**
-     * Proxy a user message to Anthropic Messages API (Claude).
+     * Proxy a user message to Anthropic Messages API (Claude), unless the scripted
+     * FAQ library resolves with high confidence — then the exact approved training text returns.
      * Sends Bansal training prompt as `system` and optional prior turns as `conversation`.
      */
-    public function chat(Request $request)
+    public function chat(Request $request, ChatbotKnowledgeMatcher $faqMatcher)
     {
         $validator = Validator::make($request->all(), [
             'message' => ['required', 'string', 'max:2000'],
@@ -39,18 +41,41 @@ class ChatbotController extends BaseController
         $maxPrior = (int) config('chatbot.max_conversation_messages', 24);
         $priorTurns = $this->truncateConversation($priorTurns, $maxPrior);
 
+        $scriptedMatch = $faqMatcher->resolve((string) $data['message']);
+        if ($scriptedMatch !== null) {
+            $payload = $this->buildAnthropicCompatibleScriptedBody(
+                $scriptedMatch['answer'],
+                [
+                    'source' => 'training_script_exact',
+                    'matched_faq_id' => $scriptedMatch['faq_id'],
+                    'confidence' => $scriptedMatch['confidence'],
+                    'category' => $scriptedMatch['category'],
+                ]
+            );
+
+            return $this->sendResponse($payload, 'OK');
+        }
+
         $messages = $priorTurns;
         $messages[] = ['role' => 'user', 'content' => $data['message']];
 
         $systemPrompt = $this->loadSystemPrompt();
 
         $apiKey = env('ANTHROPIC_API_KEY');
-        if (empty($apiKey)) {
+        if ($apiKey === null || trim((string) $apiKey) === '') {
             return $this->sendError('Chat service is not configured.', [], 503);
         }
 
-        $model = $data['model'] ?? 'claude-sonnet-4-6';
-        $maxTokens = $data['max_tokens'] ?? 1024;
+        $model = filter_var(config('chatbot.allow_client_model_override', false), FILTER_VALIDATE_BOOLEAN) && isset($data['model'])
+            ? $data['model']
+            : (string) config('chatbot.default_model', 'claude-sonnet-4-6');
+
+        $requestedTokens = isset($data['max_tokens'])
+            ? (int) $data['max_tokens']
+            : (int) config('chatbot.max_tokens_default', 1024);
+        $ceiling = (int) config('chatbot.max_tokens_ceiling', 2048);
+
+        $maxTokens = max(1, min($requestedTokens, $ceiling));
 
         $payload = [
             'model' => $model,
@@ -87,7 +112,9 @@ class ChatbotController extends BaseController
             ], 500);
         }
 
-        return $this->sendResponse($response->json(), 'OK');
+        $body = $response->json();
+
+        return $this->sendResponse($this->envelopeClaudePayload(is_array($body) ? $body : [], $model), 'OK');
     }
 
     private function loadSystemPrompt(): string
@@ -102,6 +129,77 @@ class ChatbotController extends BaseController
         $text = file_get_contents($path);
 
         return is_string($text) ? trim($text) : '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta  chatbot_meta (source-specific fields)
+     * @return array<string, mixed>
+     */
+    private function buildAnthropicCompatibleScriptedBody(string $assistantText, array $meta): array
+    {
+        return [
+            'id' => 'chatbotfaq_'.($meta['matched_faq_id'] ?? uniqid('', true)),
+            'type' => 'message',
+            'role' => 'assistant',
+            'model' => 'bansal-training-script-exact',
+            'content' => [
+                ['type' => 'text', 'text' => $assistantText],
+            ],
+            'stop_reason' => 'end_turn',
+            'usage' => [
+                'input_tokens' => 0,
+                'output_tokens' => mb_strlen($assistantText, 'UTF-8'),
+            ],
+            'reply' => $assistantText,
+            'chatbot_meta' => array_merge(
+                ['note' => 'Exact text from `chatbot_faqs` (training library). Import: `php artisan chatbot:seed-faq-library`.'],
+                $meta
+            ),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $anthropicPayload
+     * @return array<string, mixed>
+     */
+    private function envelopeClaudePayload(array $anthropicPayload, string $resolvedModel): array
+    {
+        $assistantText = $this->assistantTextFromAnthropicBody($anthropicPayload);
+
+        $anthropicPayload['reply'] = $assistantText;
+
+        $anthropicPayload['chatbot_meta'] = [
+            'source' => 'claude',
+            'model' => $resolvedModel,
+        ];
+
+        return $anthropicPayload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     */
+    private function assistantTextFromAnthropicBody(array $body): string
+    {
+        $content = $body['content'] ?? [];
+        if (! is_array($content)) {
+            return '';
+        }
+
+        $parts = [];
+        foreach ($content as $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+            if (($block['type'] ?? '') !== 'text') {
+                continue;
+            }
+
+            $t = isset($block['text']) ? (string) $block['text'] : '';
+            $parts[] = trim($t);
+        }
+
+        return trim(implode("\n", array_filter($parts)));
     }
 
     /**
