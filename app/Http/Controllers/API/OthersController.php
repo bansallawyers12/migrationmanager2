@@ -610,7 +610,8 @@ class OthersController extends Controller
                         'message' => 'course_duration must be a list id from GET /student-calc-lists: 1 (1 month) through 36 (25 years).',
                     ], 422);
                 }
-                $requestData['course_duration'] = $years;
+                // Bansal CRM validates course_duration as integer years, minimum 1 (no fractional years).
+                $requestData['course_duration'] = (int) max(1, (int) ceil((float) $years));
             }
 
             // Make API call to Bansal API
