@@ -26,23 +26,25 @@ class OthersController extends Controller
     }
 
     /**
-     * Course length options for student calc lists; values are years (fractional for months).
+     * Course length options for student calc lists (1 month … 25 years).
      *
-     * @return array<int, array{label: string, value: float|int}>
+     * @return array<int, array{label: string, id: int}>
      */
     private function buildStudentCalcCourseDurationOptions(): array
     {
         $options = [];
+        $id = 1;
+
         for ($m = 1; $m <= 11; $m++) {
             $options[] = [
                 'label' => $m === 1 ? '1 month' : "{$m} months",
-                'value' => round($m / 12, 4),
+                'id' => $id++,
             ];
         }
         for ($y = 1; $y <= 25; $y++) {
             $options[] = [
                 'label' => $y === 1 ? '1 year' : "{$y} years",
-                'value' => $y,
+                'id' => $id++,
             ];
         }
 
