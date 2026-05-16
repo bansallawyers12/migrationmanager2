@@ -598,6 +598,9 @@ class OthersController extends Controller
 
             $requestData = $request->all();
             unset($requestData['additional_accommodation'], $requestData['oshc_type']);
+            // Upstream may require these keys; mobile does not send them.
+            $requestData['additional_accommodation'] = 0;
+            $requestData['oshc_type'] = 0;
 
             if (array_key_exists('course_duration', $requestData)) {
                 $years = $this->tryResolveStudentCalcCourseDurationYearsFromId($requestData['course_duration']);
@@ -617,18 +620,32 @@ class OthersController extends Controller
                 ->post("{$baseUrl}/student-calc-result", $requestData);
 
             if ($response->failed()) {
+                $upstream = $response->json();
+                $logBody = $response->body();
                 Log::error('Bansal API Calculate Student Financial Requirements Error', [
                     'method' => 'calculateStudentFinancialRequirements',
                     'status' => $response->status(),
-                    'body' => $response->body(),
+                    'body' => $logBody,
                     'request_data' => $requestData
                 ]);
 
-                return response()->json([
+                $message = 'Failed to calculate Student Financial Requirements from external API';
+                if (is_array($upstream) && isset($upstream['message']) && is_string($upstream['message']) && $upstream['message'] !== '') {
+                    $message = $upstream['message'];
+                }
+
+                $payload = [
                     'success' => false,
-                    'message' => 'Failed to calculate Student Financial Requirements from external API',
-                    'error' => $response->status() === 404 ? 'Student Financial Requirements calculation not found' : 'API request failed'
-                ], $response->status());
+                    'message' => $message,
+                    'error' => $response->status() === 404 ? 'Student Financial Requirements calculation not found' : 'API request failed',
+                ];
+                if (is_array($upstream)) {
+                    $payload['upstream'] = $upstream;
+                } elseif ($logBody !== '') {
+                    $payload['upstream_body'] = strlen($logBody) > 8000 ? substr($logBody, 0, 8000).'…' : $logBody;
+                }
+
+                return response()->json($payload, $response->status());
             }
 
             $data = $response->json();
