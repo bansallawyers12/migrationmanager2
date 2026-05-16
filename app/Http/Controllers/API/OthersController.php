@@ -26,6 +26,55 @@ class OthersController extends Controller
     }
 
     /**
+     * Course length options for student calc lists; values are years (fractional for months).
+     *
+     * @return array<int, array{label: string, value: float|int}>
+     */
+    private function buildStudentCalcCourseDurationOptions(): array
+    {
+        $options = [];
+        for ($m = 1; $m <= 11; $m++) {
+            $options[] = [
+                'label' => $m === 1 ? '1 month' : "{$m} months",
+                'value' => round($m / 12, 4),
+            ];
+        }
+        for ($y = 1; $y <= 25; $y++) {
+            $options[] = [
+                'label' => $y === 1 ? '1 year' : "{$y} years",
+                'value' => $y,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function insertStudentCalcCourseDurationBeforePartnerSpouse(array $payload): array
+    {
+        $courseDuration = $this->buildStudentCalcCourseDurationOptions();
+
+        if (! array_key_exists('partner_spouse_options', $payload)) {
+            $payload['course_duration'] = $courseDuration;
+
+            return $payload;
+        }
+
+        $ordered = [];
+        foreach ($payload as $key => $value) {
+            if ($key === 'partner_spouse_options') {
+                $ordered['course_duration'] = $courseDuration;
+            }
+            $ordered[$key] = $value;
+        }
+
+        return $ordered;
+    }
+
+    /**
      * Get Blog List
      * GET /api/blogs/list
      */
@@ -449,7 +498,16 @@ class OthersController extends Controller
 
             $data = $response->json();
 
-            // Return the response as-is from the external API
+            if (is_array($data)) {
+                unset($data['additional_accommodation_options'], $data['oshc_options']);
+
+                if (isset($data['data']) && is_array($data['data'])) {
+                    $data['data'] = $this->insertStudentCalcCourseDurationBeforePartnerSpouse($data['data']);
+                } else {
+                    $data = $this->insertStudentCalcCourseDurationBeforePartnerSpouse($data);
+                }
+            }
+
             return response()->json($data, $response->status());
 
         } catch (RequestException $e) {
@@ -511,8 +569,8 @@ class OthersController extends Controller
                 ], 500);
             }
 
-            // Get request body data
             $requestData = $request->all();
+            unset($requestData['additional_accommodation'], $requestData['oshc_type']);
 
             // Make API call to Bansal API
             $response = Http::timeout($timeout)
@@ -537,7 +595,10 @@ class OthersController extends Controller
 
             $data = $response->json();
 
-            // Return the response as-is from the external API
+            if (is_array($data)) {
+                unset($data['oshc']);
+            }
+
             return response()->json($data, $response->status());
 
         } catch (RequestException $e) {
