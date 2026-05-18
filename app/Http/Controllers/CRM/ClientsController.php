@@ -5276,7 +5276,7 @@ class ClientsController extends Controller
 
         $rows = ClientRelationship::query()
             ->where('client_id', $clientAdminId)
-            ->with(['relatedClient:id,first_name,last_name,client_id,dob'])
+            ->with(['relatedClient:id,first_name,last_name,client_id,dob,email'])
             ->orderBy('id')
             ->get();
 
@@ -5311,16 +5311,24 @@ class ClientsController extends Controller
     {
         $name = $this->agreementFamilyMemberDisplayName($relationship);
         $rel = trim((string) ($relationship->relationship_type ?? ''));
+        $line = $rel !== '' ? $name . ' — ' . $rel : $name;
 
-        return $rel !== '' ? $name . ' — ' . $rel : $name;
+        $email = $this->agreementPartnerEmailForDisplay($relationship);
+        if ($email !== '' && stripos($line, $email) === false) {
+            $line .= ' — ' . $email;
+        }
+
+        return $line;
     }
 
     protected function formatVisaAgreementFamilyLineForChild(ClientRelationship $relationship): string
     {
         $name = $this->agreementFamilyMemberDisplayName($relationship);
         $dob = $this->agreementFormatDobSuffixForRelationship($relationship);
+        $line = $dob !== '' ? $name . ' (' . $dob . ')' : $name;
+        $rel = trim((string) ($relationship->relationship_type ?? ''));
 
-        return $dob !== '' ? $name . ' (' . $dob . ')' : $name;
+        return $rel !== '' ? $line . ' — ' . $rel : $line;
     }
 
     protected function agreementFormatDobSuffixForRelationship(ClientRelationship $relationship): string
@@ -5382,6 +5390,35 @@ class ClientsController extends Controller
         }
 
         return $firstName . ' ' . $lastName;
+    }
+
+    /**
+     * Email for Schedule A partner lines: relationship row, linked profile, or extracted from details.
+     */
+    protected function agreementPartnerEmailForDisplay(ClientRelationship $relationship): string
+    {
+        $fromColumn = trim((string) ($relationship->email ?? ''));
+        if ($fromColumn !== '') {
+            return $fromColumn;
+        }
+
+        if ($relationship->relationLoaded('relatedClient') && $relationship->relatedClient) {
+            $fromClient = trim((string) ($relationship->relatedClient->email ?? ''));
+            if ($fromClient !== '') {
+                return $fromClient;
+            }
+        }
+
+        $details = (string) ($relationship->details ?? '');
+        if ($details !== '' && preg_match('/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/', $details, $m)) {
+            return $m[0];
+        }
+
+        if ($details !== '' && preg_match('/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/', $details, $m)) {
+            return $m[0];
+        }
+
+        return '';
     }
 
     /**

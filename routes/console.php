@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Chatbot\ChatbotFaqInstaller;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -17,3 +18,8 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->describe('Display an inspiring quote');
+
+Artisan::command('chatbot:seed-faq-library', function () {
+    ChatbotFaqInstaller::installFromPhpArray();
+    $this->info('Chatbot training FAQs imported from database/chatbot_training/faq_entries.php');
+})->describe('Load scripted Bansal Immigration chatbot FAQs (exact training-document answers)');

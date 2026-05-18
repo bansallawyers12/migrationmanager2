@@ -26,6 +26,79 @@ class OthersController extends Controller
     }
 
     /**
+     * Course length options for student calc lists (1 month … 25 years).
+     *
+     * @return array<int, array{label: string, id: int}>
+     */
+    private function buildStudentCalcCourseDurationOptions(): array
+    {
+        $options = [];
+        $id = 1;
+
+        for ($m = 1; $m <= 11; $m++) {
+            $options[] = [
+                'label' => $m === 1 ? '1 month' : "{$m} months",
+                'id' => $id++,
+            ];
+        }
+        for ($y = 1; $y <= 25; $y++) {
+            $options[] = [
+                'label' => $y === 1 ? '1 year' : "{$y} years",
+                'id' => $id++,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * Parse course_duration as the same preset id Bansal uses (see GET /student-calc-lists): 1–11 months, 12–36 = 1–25 years.
+     *
+     * @return int|null Null if not a whole id in range.
+     */
+    private function tryParseStudentCalcCourseDurationPresetId(mixed $courseDuration): ?int
+    {
+        if ($courseDuration === null || $courseDuration === '') {
+            return null;
+        }
+        if (! is_numeric($courseDuration)) {
+            return null;
+        }
+        $num = (float) $courseDuration;
+        $id = (int) round($num);
+        if ($id < 1 || $id > 36 || abs($num - $id) > 1e-9) {
+            return null;
+        }
+
+        return $id;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function insertStudentCalcCourseDurationBeforePartnerSpouse(array $payload): array
+    {
+        $courseDuration = $this->buildStudentCalcCourseDurationOptions();
+
+        if (! array_key_exists('partner_spouse_options', $payload)) {
+            $payload['course_duration'] = $courseDuration;
+
+            return $payload;
+        }
+
+        $ordered = [];
+        foreach ($payload as $key => $value) {
+            if ($key === 'partner_spouse_options') {
+                $ordered['course_duration'] = $courseDuration;
+            }
+            $ordered[$key] = $value;
+        }
+
+        return $ordered;
+    }
+
+    /**
      * Get Blog List
      * GET /api/blogs/list
      */
@@ -449,7 +522,16 @@ class OthersController extends Controller
 
             $data = $response->json();
 
-            // Return the response as-is from the external API
+            if (is_array($data)) {
+                unset($data['additional_accommodation_options'], $data['oshc_options']);
+
+                if (isset($data['data']) && is_array($data['data'])) {
+                    $data['data'] = $this->insertStudentCalcCourseDurationBeforePartnerSpouse($data['data']);
+                } else {
+                    $data = $this->insertStudentCalcCourseDurationBeforePartnerSpouse($data);
+                }
+            }
+
             return response()->json($data, $response->status());
 
         } catch (RequestException $e) {
@@ -511,8 +593,23 @@ class OthersController extends Controller
                 ], 500);
             }
 
-            // Get request body data
             $requestData = $request->all();
+            unset($requestData['additional_accommodation'], $requestData['oshc_type']);
+            // Upstream may require these keys; mobile does not send them.
+            $requestData['additional_accommodation'] = 0;
+            $requestData['oshc_type'] = 0;
+
+            if (array_key_exists('course_duration', $requestData)) {
+                $presetId = $this->tryParseStudentCalcCourseDurationPresetId($requestData['course_duration']);
+                if ($presetId === null) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'course_duration must be a list id from GET /student-calc-lists: 1 (1 month) through 36 (25 years).',
+                    ], 422);
+                }
+                // Same preset id Bansal expects (do not convert to years — that breaks month presets).
+                $requestData['course_duration'] = $presetId;
+            }
 
             // Make API call to Bansal API
             $response = Http::timeout($timeout)
@@ -521,23 +618,40 @@ class OthersController extends Controller
                 ->post("{$baseUrl}/student-calc-result", $requestData);
 
             if ($response->failed()) {
+                $upstream = $response->json();
+                $logBody = $response->body();
                 Log::error('Bansal API Calculate Student Financial Requirements Error', [
                     'method' => 'calculateStudentFinancialRequirements',
                     'status' => $response->status(),
-                    'body' => $response->body(),
+                    'body' => $logBody,
                     'request_data' => $requestData
                 ]);
 
-                return response()->json([
+                $message = 'Failed to calculate Student Financial Requirements from external API';
+                if (is_array($upstream) && isset($upstream['message']) && is_string($upstream['message']) && $upstream['message'] !== '') {
+                    $message = $upstream['message'];
+                }
+
+                $payload = [
                     'success' => false,
-                    'message' => 'Failed to calculate Student Financial Requirements from external API',
-                    'error' => $response->status() === 404 ? 'Student Financial Requirements calculation not found' : 'API request failed'
-                ], $response->status());
+                    'message' => $message,
+                    'error' => $response->status() === 404 ? 'Student Financial Requirements calculation not found' : 'API request failed',
+                ];
+                if (is_array($upstream)) {
+                    $payload['upstream'] = $upstream;
+                } elseif ($logBody !== '') {
+                    $payload['upstream_body'] = strlen($logBody) > 8000 ? substr($logBody, 0, 8000).'…' : $logBody;
+                }
+
+                return response()->json($payload, $response->status());
             }
 
             $data = $response->json();
 
-            // Return the response as-is from the external API
+            if (is_array($data)) {
+                unset($data['oshc']);
+            }
+
             return response()->json($data, $response->status());
 
         } catch (RequestException $e) {
