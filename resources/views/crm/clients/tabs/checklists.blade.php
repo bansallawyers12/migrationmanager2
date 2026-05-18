@@ -19,7 +19,7 @@
                                                     <label for="checklist_migration_agent">Migration Agent <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_migration_agent" id="checklist_migration_agent">
                                                         <option value="">Select Migration Agent</option>
-                                                        @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
+                                                        @foreach(\App\Models\Staff::assignmentDropdownMigrationAgentsQuery()->get() as $migAgntlist)
                                                             <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
                                                         @endforeach
                                                     </select>
@@ -32,7 +32,7 @@
                                                     <label for="checklist_person_responsible">Person Responsible <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_person_responsible" id="checklist_person_responsible">
                                                         <option value="">Select Person Responsible</option>
-                                                        @foreach(\App\Models\Staff::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
+                                                        @foreach(\App\Models\Staff::assignmentDropdownPersonResponsibleQuery()->get() as $perreslist)
                                                             <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
                                                         @endforeach
                                                     </select>
@@ -45,7 +45,7 @@
                                                     <label for="checklist_person_assisting">Person Assisting <span class="span_req">*</span></label>
                                                     <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_person_assisting" id="checklist_person_assisting">
                                                         <option value="">Select Person Assisting</option>
-                                                        @foreach(\App\Models\Staff::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
+                                                        @foreach(\App\Models\Staff::assignmentDropdownPersonAssistingQuery()->get() as $perassislist)
                                                             <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
                                                         @endforeach
                                                     </select>
@@ -415,7 +415,8 @@
 }
 
 .checklist-add-wrapper { position: relative; }
-/* Outer shell must not clip dropdown: menu is appended here (dropdownParent). */
+/* Create Checklist popup: Tom Select menus use dropdownParent: body + .mm-checklist-create-dropdown
+   so they position under the control (viewport coords). z-index must stay above this shell. */
 .checklist-create-dropdown {
     position: fixed;
     top: 50%;
@@ -437,7 +438,7 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
-/* Checklist cost panel: dropdown attached to body (see initChecklistMmSelect). Wide menu + z-index above transformed panel. */
+/* Menu is appended to body (see initChecklistMmSelect); keep above .checklist-create-dropdown (1060) */
 .ts-dropdown.mm-checklist-create-dropdown {
     z-index: 100060 !important;
     width: min(520px, 92vw) !important;

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Document;
 use App\Support\CrmSheets;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -195,6 +196,72 @@ class Staff extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('status', 1);
+    }
+
+    /**
+     * Exclude staff explicitly marked inactive (status = 0); include active (1) and legacy NULL rows.
+     */
+    public function scopeAssignableForMatterDropdowns($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('status')->orWhere('status', '<>', 0);
+        });
+    }
+
+    /**
+     * Migration Agent choices for checklist create + cost assignment modals.
+     */
+    public static function assignmentDropdownMigrationAgentsQuery(): Builder
+    {
+        $roleIds = config('crm.assignment_dropdown_migration_agent_role_ids', [16]);
+        if (! is_array($roleIds) || $roleIds === []) {
+            $roleIds = [16];
+        }
+
+        return static::query()
+            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->assignableForMatterDropdowns()
+            ->where(function ($q) use ($roleIds) {
+                $q->whereIn('role', $roleIds)->orWhere('is_migration_agent', 1);
+            })
+            ->orderBy('first_name')
+            ->orderBy('last_name');
+    }
+
+    /**
+     * Person Responsible choices (same modals).
+     */
+    public static function assignmentDropdownPersonResponsibleQuery(): Builder
+    {
+        $roleIds = config('crm.assignment_dropdown_person_responsible_role_ids', [12]);
+        if (! is_array($roleIds) || $roleIds === []) {
+            $roleIds = [12];
+        }
+
+        return static::query()
+            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->assignableForMatterDropdowns()
+            ->whereIn('role', $roleIds)
+            ->orderBy('first_name')
+            ->orderBy('last_name');
+    }
+
+    /**
+     * Person Assisting choices (same modals). Role IDs align with CRM person_assisting_role_ids.
+     */
+    public static function assignmentDropdownPersonAssistingQuery(): Builder
+    {
+        $roleIds = config('crm.person_assisting_role_ids', [13]);
+        if (! is_array($roleIds) || $roleIds === []) {
+            $roleIds = [13];
+        }
+
+        return static::query()
+            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->assignableForMatterDropdowns()
+            ->whereIn('role', $roleIds)
+            ->orderBy('first_name')
+            ->orderBy('last_name');
     }
 
     /**

@@ -148,7 +148,18 @@
 
     if (legacyOpts.dropdownParent) {
       var dp = legacyOpts.dropdownParent;
-      opts.dropdownParent = typeof dp === 'string' ? document.querySelector(dp) : dp[0] || dp;
+      // Tom Select 2.6.x only runs positionDropdown() when settings.dropdownParent === "body" (string).
+      // Passing document.body breaks menu placement (e.g. bottom of viewport).
+      if (typeof dp === 'string') {
+        opts.dropdownParent = dp === 'body' ? 'body' : document.querySelector(dp);
+      } else {
+        var el = dp && dp.jquery ? dp[0] : dp;
+        if (el === document.body) {
+          opts.dropdownParent = 'body';
+        } else {
+          opts.dropdownParent = el;
+        }
+      }
     }
 
     if (legacyOpts.dropdownCssClass) {

@@ -215,4 +215,27 @@ return [
         ? $__fdCheckinRoles
         : [1, 12, 14, 17],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Checklist create: MA / PR assignment role IDs (staff.role → user_roles.id)
+    |--------------------------------------------------------------------------
+    |
+    | Used by Staff::assignmentDropdown*Query() on the client checklists tab only.
+    | Migration Agent list also includes is_migration_agent = 1 (see Staff model).
+    |
+    */
+    'assignment_dropdown_migration_agent_role_ids' => (($__assignMaRoles = array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_ASSIGNMENT_DROPDOWN_MIGRATION_AGENT_ROLE_IDS', '16'))
+    ), static fn (int $id) => $id > 0))) !== [])
+        ? $__assignMaRoles
+        : [16],
+
+    'assignment_dropdown_person_responsible_role_ids' => (($__assignPrRoles = array_values(array_filter(array_map(
+        'intval',
+        explode(',', (string) env('CRM_ASSIGNMENT_DROPDOWN_PERSON_RESPONSIBLE_ROLE_IDS', '12'))
+    ), static fn (int $id) => $id > 0))) !== [])
+        ? $__assignPrRoles
+        : [12],
+
 ];
