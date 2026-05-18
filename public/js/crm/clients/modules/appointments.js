@@ -211,10 +211,10 @@
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
                 var schedExtra = getMmSchedulePayload();
 
-                // Initialize datepicker when location is selected
-                // Destroy existing datepicker instance if it exists
-                if ($('#datetimepicker').data('datepicker')) {
-                    $('#datetimepicker').datepicker('destroy');
+                // Initialize flatpickr when location is selected
+                // Destroy existing flatpickr instance if it exists
+                if ($('#datetimepicker')[0] && $('#datetimepicker')[0]._flatpickr) {
+                    $('#datetimepicker')[0]._flatpickr.destroy();
                 }
 
                 // Fetch appointment settings from backend

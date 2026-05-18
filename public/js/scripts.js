@@ -374,7 +374,7 @@ $(function () {
       "3B82F6", "Light Blue", "8B5CF6", "Light Purple", "EC4899", "Light Pink"
     ];
 
-    // Configuration for simple TinyMCE editors (replacing .summernote-simple)
+    // Configuration for simple TinyMCE editors (.tinymce-editor)
     // Optimized for quick notes with essential features
     var tinymceSimpleConfig = {
       license_key: 'gpl',
@@ -413,9 +413,8 @@ $(function () {
       }
     };
 
-    // Initialize TinyMCE for .summernote-simple (keeping class for backward compatibility during migration)
-    // Also initialize for .tinymce-editor
-    var editorsToInit = '.summernote-simple, .tinymce-editor';
+    // Initialize TinyMCE for lightweight rich-text areas (.tinymce-editor)
+    var editorsToInit = '.tinymce-editor';
     
     // Check if editors exist and initialize them
     $(editorsToInit).each(function() {
@@ -906,16 +905,6 @@ $(function () {
       });
     }
   } // End: if (isClientDetailPage) check
-
-  // Timepicker
-  if (jQuery().timepicker && $(".timepicker").length) {
-    $(".timepicker").timepicker({
-      icons: {
-        up: "fas fa-chevron-up",
-        down: "fas fa-chevron-down"
-      }
-    });
-  }
 
   $("#mini_sidebar_setting").on("change", function () {
     var _val = $(this).is(":checked") ? "checked" : "unchecked";

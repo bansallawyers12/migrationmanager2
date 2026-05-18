@@ -7372,11 +7372,11 @@ success: function(response) {
                     if (!res) return;
                     $('.selectedsubject').val(res.subject);
 
-                    clearEditor("#emailmodal .summernote-simple");
+                    clearEditor("#emailmodal .tinymce-editor");
 
-                    setEditorContent("#emailmodal .summernote-simple", res.description);
+                    setEditorContent("#emailmodal .tinymce-editor", res.description);
 
-                    $("#emailmodal .summernote-simple").val(res.description);
+                    $("#emailmodal .tinymce-editor").val(res.description);
 
                 }
 
@@ -7502,7 +7502,7 @@ success: function(response) {
 
                     $('.selectedsubject').val(subjct_message);
 
-                    clearEditor("#emailmodal .summernote-simple");
+                    clearEditor("#emailmodal .tinymce-editor");
 
 
 

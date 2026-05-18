@@ -13,17 +13,14 @@
     <link rel="icon" type="image/png" href="{{asset('img/favicon.png')}}">
     <link rel="stylesheet" href="{{asset('css/app.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/fullcalendar.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
-    <link rel="stylesheet" href="{{asset('css/bootstrap-timepicker.min.css')}}">
     @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/bootstrap-formhelpers.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
-    <link rel="stylesheet" href="{{asset('css/dataTables_min_latest.css')}}">
+    <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
@@ -1731,17 +1728,13 @@
     var dataformat = '{{$dataformat}}';
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
-    <script src="{{asset('js/fullcalendar.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
-    <script src="https://momentjs.com/downloads/moment.js"></script>
-    <script src="{{asset('js/dataTables.bootstrap4.js')}}"></script>
+    <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-timepicker.min.js')}}"></script>
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
-    <script src="{{asset('js/bootstrap-formhelpers.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

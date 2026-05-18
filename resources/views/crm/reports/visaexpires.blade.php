@@ -168,7 +168,7 @@
 
 @section('scripts')
 {{-- Load FullCalendar v6 from CDN --}}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
 <script>
 // Wait for FullCalendar to fully load
 (function checkFullCalendar() {

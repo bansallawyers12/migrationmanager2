@@ -220,7 +220,7 @@ body, html { overflow-x: hidden !important; max-width: 100% !important; }
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="summernote-simple" name="message"></textarea>
+								<textarea class="tinymce-editor" name="message"></textarea>
 								@if ($errors->has('message'))<span class="custom-error" role="alert"><strong>{{ @$errors->first('message') }}</strong></span>@endif
 							</div>
 						</div>

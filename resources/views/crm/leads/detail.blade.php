@@ -408,7 +408,7 @@
 						<div class="col-12 col-md-12 col-lg-12">
 							<div class="form-group">
 								<label for="message">Message <span class="span_req">*</span></label>
-								<textarea class="summernote-simple selectedmessage" name="message"></textarea>
+								<textarea class="tinymce-editor selectedmessage" name="message"></textarea>
 								@if ($errors->has('message'))
 									<span class="custom-error" role="alert">
 										<strong>{{ @$errors->first('message') }}</strong>
@@ -503,7 +503,7 @@ $(document).delegate('.selecttemplate', 'change', function(){
 			var res = JSON.parse(response);
 			$('.selectedsubject').val(res.subject);
 			 // Clear and set TinyMCE editor content
-                    $("#emailmodal .summernote-simple").each(function() {
+                    $("#emailmodal .tinymce-editor").each(function() {
                         var editorId = $(this).attr('id');
                         if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
                             tinymce.get(editorId).setContent(res.description || '');

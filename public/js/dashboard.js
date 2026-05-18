@@ -28,7 +28,7 @@ $(function () {
   }) */
 
   // TinyMCE - text editor (replacing Summernote)
-  // TinyMCE is initialized in scripts.js for .summernote-simple and .tinymce-editor classes
+  // TinyMCE is initialized in scripts.js for .tinymce-editor (and .summernote for full editor)
   // $('.textarea').summernote() // Removed - using TinyMCE now
 
   // Initialize Flatpickr for date range picker
