@@ -480,9 +480,14 @@
             opacity: 1;
         }
         
-        /* Sidebar Matter Selection */
+        /* Sidebar matter selector: room for chevron, menu not clipped */
         .sidebar-matter-selection {
             margin: 0 0 10px 0;
+            min-width: 0;
+            width: 100%;
+            position: relative;
+            z-index: 4;
+            overflow: visible;
         }
         
         .visa-dropdown {
@@ -505,13 +510,6 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
         
-        /* Sidebar matter dropdown (Tom Select) - wrap long names */
-        .sidebar-matter-selection {
-            min-width: 0;
-            overflow: hidden;
-            width: 100%;
-        }
-        
         .matter-dropdown-wrap .option {
             white-space: normal !important;
             word-wrap: break-word !important;
@@ -522,13 +520,73 @@
         .sidebar-matter-selection .ts-wrapper {
             width: 100% !important;
             max-width: 100% !important;
+            position: relative;
+            z-index: 4;
         }
-        .sidebar-matter-selection .ts-control {
+        /* Tom Select strips chevron on .form-control; restore + keep label clear of icon */
+        .sidebar-matter-selection .ts-wrapper.single {
+            --ts-pr-caret: 2.25rem;
+        }
+        .sidebar-matter-selection .ts-wrapper.single .ts-control {
             height: auto !important;
             min-height: 38px;
+            align-items: center;
+            padding-right: 2.25rem !important;
+            background-color: #ffffff !important;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23374151' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E") !important;
+            background-position: right 0.65rem center !important;
+            background-repeat: no-repeat !important;
+            background-size: 16px 12px !important;
+            overflow: visible !important;
+        }
+        .sidebar-matter-selection .ts-wrapper.single .ts-control > .item {
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: calc(100% - 1.5rem);
             white-space: normal !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word !important;
+            line-height: 1.35;
+        }
+        /* Opaque panel: unset/missing Bootstrap vars can make .ts-dropdown background invalid (fully transparent) */
+        .sidebar-matter-selection .ts-dropdown,
+        .sidebar-matter-selection .ts-dropdown.matter-dropdown-wrap {
+            z-index: 2000;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #1a202c !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14) !important;
+            opacity: 1 !important;
+        }
+        .sidebar-matter-selection .ts-dropdown-content {
+            background-color: #ffffff !important;
+        }
+        .sidebar-matter-selection .matter-dropdown-wrap .option {
+            background-color: #ffffff !important;
+            color: #1a202c !important;
+            display: block !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            opacity: 1 !important;
+        }
+        .sidebar-matter-selection .matter-dropdown-wrap .option:hover,
+        .sidebar-matter-selection .matter-dropdown-wrap .option.active,
+        .sidebar-matter-selection .matter-dropdown-wrap .create:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            opacity: 1 !important;
+        }
+        .sidebar-matter-selection .ts-dropdown .optgroup-header {
+            background-color: #f8fafc !important;
+            color: #475569 !important;
+            opacity: 1 !important;
+        }
+        .sidebar-matter-selection .ts-dropdown .no-results,
+        .sidebar-matter-selection .ts-dropdown .spinner {
+            background-color: #ffffff !important;
+            color: #475569 !important;
+            opacity: 1 !important;
         }
         
         /* Application Status Badge */
