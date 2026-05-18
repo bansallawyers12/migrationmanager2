@@ -790,6 +790,19 @@
             });
         }
 
+        /** Tear down Tom Select on lead cost-assignment fields so copied values bind to the native selects before re-init (avoids blank labels when reopening). */
+        function destroyLeadCostAssignmentMmSelect() {
+            if (typeof $.fn.mmSelect === 'undefined') {
+                return;
+            }
+            $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').each(function() {
+                var el = this;
+                if (el.tomselect) {
+                    $(el).mmSelect('destroy');
+                }
+            });
+        }
+
         // Toggle dropdown on plus button click
         $btnAdd.on('click', function(e) {
             e.stopPropagation();
@@ -861,13 +874,19 @@
             }
 
             // Open Lead cost assignment modal (creates ClientMatter + CostAssignmentForm)
+            destroyLeadCostAssignmentMmSelect();
             $('#cost_assignment_lead_id').val(clientId);
-            $('#sel_matter_id_lead').val(matterId).trigger('change');
-            $('#sel_migration_agent_id_lead').val(migrationAgent).trigger('change');
-            $('#sel_person_responsible_id_lead').val(personResponsible).trigger('change');
-            $('#sel_person_assisting_id_lead').val(personAssisting).trigger('change');
-            $('#sel_office_id_lead').val(officeId).trigger('change');
-            $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').mmSelect({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
+            $('#sel_matter_id_lead').val(matterId);
+            $('#sel_migration_agent_id_lead').val(migrationAgent);
+            $('#sel_person_responsible_id_lead').val(personResponsible);
+            $('#sel_person_assisting_id_lead').val(personAssisting);
+            $('#sel_office_id_lead').val(officeId);
+            $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').mmSelect({
+                dropdownParent: $('#costAssignmentCreateFormModelLead'),
+                minimumResultsForSearch: 0,
+                width: '100%'
+            });
+            $('#sel_matter_id_lead').trigger('change');
             $('#costAssignmentCreateFormModelLead').modal('show');
             destroyChecklistMmSelect();
             $dropdown.hide();
