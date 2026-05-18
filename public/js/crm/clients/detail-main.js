@@ -758,6 +758,92 @@ $(document).ready(function() {
 
 
 
+    // Add Personal / Visa / Nomination checklist modals: Tom Select after modal is shown (reliable
+    // positioning); dropdown on body + .mm-checklist-create-dropdown z-index (see modals/checklists CSS).
+    function initDocChecklistModalSelect($select) {
+
+        if (!$select.length || typeof $.fn.mmSelect !== 'function') {
+
+            return;
+
+        }
+
+        if ($select.data('mmSelect')) {
+
+            $select.mmSelect('destroy');
+
+        }
+
+        $select.mmSelect({
+
+            dropdownParent: $('body'),
+
+            dropdownCssClass: 'mm-checklist-create-dropdown',
+
+            minimumResultsForSearch: 0,
+
+            width: '100%'
+
+        });
+
+    }
+
+    $(document).on('shown.bs.modal', '#openeducationdocsmodal', function () {
+
+        initDocChecklistModalSelect($('#checklist'));
+
+    });
+
+    $(document).on('shown.bs.modal', '#openmigrationdocsmodal', function () {
+
+        initDocChecklistModalSelect($('#visa_checklist'));
+
+    });
+
+    $(document).on('shown.bs.modal', '#opennominationdocsmodal', function () {
+
+        initDocChecklistModalSelect($('#nomination_checklist'));
+
+    });
+
+    $(document).on('hidden.bs.modal', '#openeducationdocsmodal', function () {
+
+        var $el = $('#checklist');
+
+        if ($el.data('mmSelect')) {
+
+            $el.mmSelect('destroy');
+
+        }
+
+    });
+
+    $(document).on('hidden.bs.modal', '#openmigrationdocsmodal', function () {
+
+        var $el = $('#visa_checklist');
+
+        if ($el.data('mmSelect')) {
+
+            $el.mmSelect('destroy');
+
+        }
+
+    });
+
+    $(document).on('hidden.bs.modal', '#opennominationdocsmodal', function () {
+
+        var $el = $('#nomination_checklist');
+
+        if ($el.data('mmSelect')) {
+
+            $el.mmSelect('destroy');
+
+        }
+
+    });
+
+
+
     // Tags modal: add tag pill(s) from input on comma or Enter
 
     $(document).on('keydown', '#tags_modal_container #tag_input', function(e){
@@ -8176,8 +8262,6 @@ success: function(response) {
 
             $('.create_education_docs').modal('show');
 
-            $("#checklist").mmSelect({dropdownParent: $(".create_education_docs")});
-
         });
 
 
@@ -8256,8 +8340,6 @@ success: function(response) {
 
             $('.create_migration_docs').modal('show');
 
-            $("#visa_checklist").mmSelect({dropdownParent: $("#openmigrationdocsmodal")});
-
         });
 
         $(document).delegate('.add_nomination_doc', 'click', function (e) {
@@ -8271,8 +8353,6 @@ success: function(response) {
             $("#nomination_folder_name").val($(this).attr('data-categoryid'));
 
             $('.create_nomination_docs').modal('show');
-
-            $("#nomination_checklist").mmSelect({dropdownParent: $("#opennominationdocsmodal")});
 
         });
 

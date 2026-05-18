@@ -1,4 +1,13 @@
 <!-- Legacy create_checklist modal removed - functionality moved to adminconsole DocumentChecklist -->
+<style>
+/* Tom Select menu appended to body while these modals are open; stack above modal + backdrop */
+.ts-dropdown.mm-checklist-create-dropdown {
+	z-index: 100060 !important;
+	width: min(520px, 92vw) !important;
+	min-width: 260px !important;
+	box-sizing: border-box;
+}
+</style>
 
 <!-- Add Personal Checklist Modal -->
 <div class="modal fade create_education_docs custom_modal" id="openeducationdocsmodal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
