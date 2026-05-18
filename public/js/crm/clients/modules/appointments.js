@@ -252,29 +252,40 @@
 
                                 var datesForDisable = obj.disabledatesarray || obj.disableddatesarray || [];
 
-                                // Destroy existing datepicker instance if it exists (before reinitializing)
-                                if ($('#datetimepicker').data('datepicker')) {
-                                    $('#datetimepicker').datepicker('destroy');
+                                // Destroy existing flatpickr instance before reinitializing
+                                if ($('#datetimepicker')[0] && $('#datetimepicker')[0]._flatpickr) {
+                                    $('#datetimepicker')[0]._flatpickr.destroy();
                                 }
 
-                                // Initialize datepicker and attach changeDate handler
-                                $('#datetimepicker').datepicker({
+                                // Convert dd/mm/yyyy disabled dates to Date objects for flatpickr
+                                var parsedDisabledDates = (datesForDisable || []).map(function(d) {
+                                    if (!d) return null;
+                                    var parts = String(d).split('/');
+                                    return parts.length === 3
+                                        ? new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+                                        : new Date(d);
+                                }).filter(Boolean);
 
+                                // Build disable rules: specific dates + disabled days of week
+                                var disableRules = parsedDisabledDates.slice();
+                                if (daysOfWeek && daysOfWeek.length) {
+                                    disableRules.push(function(date) {
+                                        return daysOfWeek.indexOf(date.getDay()) !== -1;
+                                    });
+                                }
+
+                                // Initialize flatpickr inline calendar
+                                flatpickr('#datetimepicker', {
                                     inline: true,
+                                    minDate: 'today',
+                                    disable: disableRules,
+                                    dateFormat: 'd/m/Y',
+                                    locale: { firstDayOfWeek: 1 },
+                                    onChange: function(selectedDates, dateStr) {
 
-                                    startDate: new Date(),
+                                    var date = dateStr;
 
-                                    datesDisabled: datesForDisable,
-
-                                    daysOfWeekDisabled: daysOfWeek,
-
-                                    format: 'dd/mm/yyyy'
-
-                                }).off('changeDate').on('changeDate', function(e) {
-
-                                    var date = e.format();
-
-                                    var checked_date=e.date.toLocaleDateString('en-US');
+                                    var checked_date = selectedDates[0].toLocaleDateString('en-US');
 
 
 
@@ -448,7 +459,8 @@
                                     });
                                     // End of getDisabledDateTime AJAX call
 
-                                });
+                                    } // end onChange
+                                }); // end flatpickr
 
                             if(id != ""){
 
@@ -680,8 +692,10 @@
 
             }
             
-            // Destroy existing datepicker and reload with new slot_overwrite value
-            $('#datetimepicker').datepicker('destroy');
+            // Destroy existing flatpickr and reload with new slot_overwrite value
+            if ($('#datetimepicker')[0] && $('#datetimepicker')[0]._flatpickr) {
+                $('#datetimepicker')[0]._flatpickr.destroy();
+            }
             $('.timeslots').html(''); // Clear time slots
             
             // Trigger location change to reload calendar with new settings
