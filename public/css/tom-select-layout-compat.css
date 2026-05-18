@@ -1,4 +1,55 @@
 /* Tom Select layout helpers (.ts-wrapper / .ts-control) */
+
+/*
+ * Opaque dropdown panels (all Tom Select instances)
+ * tom-select.bootstrap5.min.css uses var(--bs-body-bg) / var(--bs-tertiary-bg).
+ * On some CRM screens those variables are unset or invalid, so backgrounds drop
+ * and menus look fully transparent. Force solid surfaces everywhere.
+ */
+.ts-dropdown,
+.ts-dropdown.form-control,
+.ts-dropdown.form-select {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #212529 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
+  opacity: 1 !important;
+}
+
+.ts-dropdown-content {
+  background-color: #ffffff !important;
+}
+
+.ts-dropdown .option {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .create:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.ts-dropdown .option.active,
+.ts-dropdown .create.active {
+  background-color: #e9ecef !important;
+  color: #212529 !important;
+}
+
+.ts-dropdown .optgroup-header {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+}
+
+.ts-dropdown .no-results,
+.ts-dropdown .spinner,
+.ts-dropdown .create {
+  background-color: #ffffff !important;
+  color: #495057 !important;
+}
+
 .card .card-body .form-group .ts-wrapper,
 .modal .modal-body .form-group .ts-wrapper {
   display: block;

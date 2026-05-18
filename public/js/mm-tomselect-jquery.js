@@ -34,6 +34,16 @@
     return String(x);
   }
 
+  /**
+   * Tom Select treats string render output without "<" as a CSS selector (document.querySelector).
+   * Plain display names like "Ravi Rai (Demo ID)" throw DOMException. Escape unless clearly HTML.
+   */
+  function stringOutputForTomSelect(str, trustHtml, escape) {
+    if (str == null || str === '') return '';
+    if (trustHtml && str.indexOf('<') !== -1) return str;
+    return escape(String(str));
+  }
+
   function legacyResultToOpt(r) {
     if (!r || typeof r !== 'object') return { value: '', text: '' };
     var opt = {};
@@ -43,6 +53,7 @@
     if (opt.value === undefined && opt.id !== undefined) opt.value = String(opt.id);
     if (opt.value === undefined) opt.value = '';
     if (opt.text === undefined && opt.label !== undefined) opt.text = opt.label;
+    if (opt.text === undefined && opt.name !== undefined) opt.text = opt.name;
     if (opt.text === undefined) opt.text = String(opt.value);
     return opt;
   }
@@ -51,6 +62,7 @@
     var d = $.extend(true, {}, raw);
     d.id = raw.id !== undefined ? raw.id : raw.value;
     if (d.text === undefined && raw.label !== undefined) d.text = raw.label;
+    if (d.text === undefined && raw.name !== undefined) d.text = raw.name;
     if (d.text === undefined) d.text = String(valueKey);
     return d;
   }
@@ -175,6 +187,9 @@
           var d = optionToLegacyData(data, data.value);
           var out = legacyOpts.templateResult(d);
           if (out == null) return '';
+          if (typeof out === 'string') {
+            return stringOutputForTomSelect(out, trustHtml, escape);
+          }
           if (trustHtml) return jqToHtml(out);
           var html = jqToHtml(out);
           return html || escape(String(d.text || ''));
@@ -185,7 +200,9 @@
         if (legacyOpts.templateSelection) {
           var sel = legacyOpts.templateSelection(d);
           if (sel == null) return '';
-          if (typeof sel === 'string') return trustHtml ? sel : escape(sel);
+          if (typeof sel === 'string') {
+            return stringOutputForTomSelect(sel, trustHtml, escape);
+          }
           return jqToHtml(sel);
         }
         return escape(String(d.text || ''));

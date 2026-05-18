@@ -6919,6 +6919,29 @@ success: function(response) {
 
 
 
+        /** Compose Email "To" field: shared Tom Select options (ajax + formatRepo) */
+        function emailModalRecipientsTomSelectBase() {
+            return {
+                multiple: true,
+                closeOnSelect: false,
+                dropdownParent: $('#emailmodal'),
+                ajax: {
+                    url: window.ClientDetailConfig.urls.getRecipients,
+                    dataType: 'json',
+                    processResults: function (data) {
+                        return {
+                            results: data.items
+                        };
+                    },
+                    cache: true
+                },
+                templateResult: formatRepo,
+                templateSelection: formatRepoSelection
+            };
+        }
+
+
+
         $(document).delegate('.clientemail', 'click', function(){
 
             if ($('.general_matter_checkbox_client_detail').is(':checked')) {
@@ -6956,6 +6979,10 @@ success: function(response) {
             data.push({
 
                 id: id,
+
+                name: name,
+
+                email: email,
 
                 text: name,
 
@@ -6995,29 +7022,7 @@ success: function(response) {
 
 
 
-            $(".js-data-example-ajax").mmSelect({
-
-                data: data,
-
-                escapeMarkup: function(markup) {
-
-                    return markup;
-
-                },
-
-                templateResult: function(data) {
-
-                    return data.html;
-
-                },
-
-                templateSelection: function(data) {
-
-                    return data.text;
-
-                }
-
-            })
+            $(".js-data-example-ajax").mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }))
 
 
 
@@ -7073,6 +7078,10 @@ success: function(response) {
 
                 id: id,
 
+                name: name,
+
+                email: email,
+
                 text: name,
 
                 html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
@@ -7101,17 +7110,7 @@ success: function(response) {
 
             });
 
-            $(".js-data-example-ajax").mmSelect({
-
-                data: data,
-
-                escapeMarkup: function(markup) { return markup; },
-
-                templateResult: function(data) { return data.html; },
-
-                templateSelection: function(data) { return data.text; }
-
-            });
+            $(".js-data-example-ajax").mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }));
 
             $('.js-data-example-ajax').val(array);
 
@@ -7391,45 +7390,7 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajax').mmSelect({
-
-                multiple: true,
-
-                closeOnSelect: false,
-
-                dropdownParent: $('#emailmodal'),
-
-                ajax: {
-
-                    url: window.ClientDetailConfig.urls.getRecipients,
-
-                    dataType: 'json',
-
-                    processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-
-
-                    },
-
-                    cache: true
-
-
-
-                },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
-
-        });
+        $('.js-data-example-ajax').mmSelect(emailModalRecipientsTomSelectBase());
 
 
 

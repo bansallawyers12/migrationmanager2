@@ -548,45 +548,9 @@
             overflow-wrap: break-word !important;
             line-height: 1.35;
         }
-        /* Opaque panel: unset/missing Bootstrap vars can make .ts-dropdown background invalid (fully transparent) */
-        .sidebar-matter-selection .ts-dropdown,
-        .sidebar-matter-selection .ts-dropdown.matter-dropdown-wrap {
+        /* Sidebar matter list stacks over nav; z-index higher than default .ts-dropdown */
+        .sidebar-matter-selection .ts-dropdown {
             z-index: 2000;
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-            color: #1a202c !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14) !important;
-            opacity: 1 !important;
-        }
-        .sidebar-matter-selection .ts-dropdown-content {
-            background-color: #ffffff !important;
-        }
-        .sidebar-matter-selection .matter-dropdown-wrap .option {
-            background-color: #ffffff !important;
-            color: #1a202c !important;
-            display: block !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-            opacity: 1 !important;
-        }
-        .sidebar-matter-selection .matter-dropdown-wrap .option:hover,
-        .sidebar-matter-selection .matter-dropdown-wrap .option.active,
-        .sidebar-matter-selection .matter-dropdown-wrap .create:hover {
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-            opacity: 1 !important;
-        }
-        .sidebar-matter-selection .ts-dropdown .optgroup-header {
-            background-color: #f8fafc !important;
-            color: #475569 !important;
-            opacity: 1 !important;
-        }
-        .sidebar-matter-selection .ts-dropdown .no-results,
-        .sidebar-matter-selection .ts-dropdown .spinner {
-            background-color: #ffffff !important;
-            color: #475569 !important;
-            opacity: 1 !important;
         }
         
         /* Application Status Badge */

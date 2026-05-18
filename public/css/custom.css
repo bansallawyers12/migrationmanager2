@@ -783,11 +783,21 @@ text-overflow: ellipsis;white-space: nowrap;}
 }
 
 .dropdown-menu {
+    background-color: #ffffff;
     border: none;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     padding: 8px 0;
     margin-top: 8px;
+}
+
+.dropdown-menu-dark {
+    background-color: #343a40;
+    color: #e9ecef;
+}
+
+.dropdown-menu-dark .dropdown-item {
+    color: #e9ecef;
 }
 
 .dropdown-item {
