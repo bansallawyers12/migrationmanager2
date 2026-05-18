@@ -126,7 +126,7 @@ use App\Http\Controllers\Controller;
                                 return 0; // Maintain original order for other matters
                             });
                             ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control mm-select visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
@@ -161,7 +161,7 @@ use App\Http\Controllers\Controller;
                                 $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                                 $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                                 ?>
-                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                                <select name="matter_id" id="sel_matter_id_client_detail" class="form-control mm-select visa-dropdown" data-valid="required">
                                     <option value="">Select Matters</option>
                                     @foreach($matter_list_arr as $matterlist)
                                         @php
@@ -198,7 +198,7 @@ use App\Http\Controllers\Controller;
                             $latestClientMatter = \App\Models\ClientMatter::where('client_id',$fetchedData->id)->where('matter_status',1)->latest()->first();
                             $latestClientMatterId = $latestClientMatter ? $latestClientMatter->id : null;
                             ?>
-                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control select2 visa-dropdown" data-valid="required">
+                            <select name="matter_id" id="sel_matter_id_client_detail" class="form-control mm-select visa-dropdown" data-valid="required">
                                 <option value="">Select Matters</option>
                                 @foreach($matter_list_arr as $matterlist)
                                     @php
@@ -550,7 +550,7 @@ use App\Http\Controllers\Controller;
                                     $clientAssigneeName = 'NA';
                                 }
                                 ?>
-								<select data-valid="" class="form-control select2 selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
+								<select data-valid="" class="form-control mm-select selecttemplate" name="template" data-clientid="{{@$fetchedData->id}}" data-clientfirstname="{{@$fetchedData->first_name}}" data-clientvisaExpiry="{{@$fetchedData->visaExpiry}}" data-clientreference_number="{{@$fetchedData->client_id}}" data-clientassignee_name="{{@$clientAssigneeName}}">
 									<option value="">Select</option>
 									@foreach( \App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
@@ -958,7 +958,7 @@ use App\Http\Controllers\Controller;
                         <input id="mail_type" name="mail_type" type="hidden" value="inbox">
                         <input id="staff_mail" name="staff_mail" type="hidden" value="">
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
-						<select id="reassign_client_id" name="reassign_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
+						<select id="reassign_client_id" name="reassign_client_id" class="form-control mm-select" style="width: 100%;" data-mm-select-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
 							@foreach(\App\Models\Admin::where('type','client')->get() as $clientItem)
 							<option value="{{@$clientItem->id}}">{{@$clientItem->first_name}} {{@$clientItem->last_name}}({{@$clientItem->client_id}})</option>
@@ -969,7 +969,7 @@ use App\Http\Controllers\Controller;
 
                 <div class="form-group row">
 					<div class="col-sm-12">
-						<select id="reassign_client_matter_id" name="reassign_client_matter_id" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" disabled>
+						<select id="reassign_client_matter_id" name="reassign_client_matter_id" class="form-control mm-select " style="width: 100%;" data-mm-select-id="1" tabindex="-1" aria-hidden="true" disabled>
 						</select>
 					</div>
 				</div>
@@ -1002,7 +1002,7 @@ use App\Http\Controllers\Controller;
                         <input id="mail_type" name="mail_type" type="hidden" value="sent">
                         <input id="staff_mail" name="staff_mail" type="hidden" value="">
                         <input id="uploaded_doc_id" name="uploaded_doc_id" type="hidden" value="">
-						<select id="reassign_sent_client_id" name="reassign_sent_client_id" class="form-control select2" style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
+						<select id="reassign_sent_client_id" name="reassign_sent_client_id" class="form-control mm-select" style="width: 100%;" data-mm-select-id="1" tabindex="-1" aria-hidden="true" data-valid="required">
 							<option value="">Select Client</option>
 							@foreach(\App\Models\Admin::where('type','client')->get() as $clientItem)
 							<option value="{{@$clientItem->id}}">{{@$clientItem->first_name}} {{@$clientItem->last_name}}({{@$clientItem->client_id}})</option>
@@ -1013,7 +1013,7 @@ use App\Http\Controllers\Controller;
 
                 <div class="form-group row">
 					<div class="col-sm-12">
-						<select id="reassign_sent_client_matter_id" name="reassign_sent_client_matter_id" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true" disabled>
+						<select id="reassign_sent_client_matter_id" name="reassign_sent_client_matter_id" class="form-control mm-select " style="width: 100%;" data-mm-select-id="1" tabindex="-1" aria-hidden="true" disabled>
 						</select>
 					</div>
 				</div>

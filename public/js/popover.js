@@ -366,7 +366,7 @@ console.log(timestring);
     //var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
     $("[data-role=popover]").on('shown.bs.popover', function(){
 
-        /*$("#rem_cat").select2({
+        /*$("#rem_cat").mmSelect({
             ajax: {
                 url: "/clients/getAllStaff",
                 type: 'POST',
@@ -400,7 +400,7 @@ console.log(timestring);
 
 
 
-        $('.js-data-example-ajaxccsearch__addmytask').select2({
+        $('.js-data-example-ajaxccsearch__addmytask').mmSelect({
             closeOnSelect: true,
             minimumInputLength: 2,
             ajax: {
@@ -492,15 +492,15 @@ console.log(timestring);
             return user.text;
         }
         var $container = $(
-            "<div class='select2-result-product clearfix'>" +
-            "<div class='select2-result-product__title'></div>" +
+            "<div class='mm-result-product clearfix'>" +
+            "<div class='mm-result-product__title'></div>" +
             "</div>" +
             "</div>" +
             "</div>"
         );
 
-        $container.find(".select2-result-product__title").text(user.first_name);
-        //$container.find(".select2-result-product__description").text(user.description);
+        $container.find(".mm-result-product__title").text(user.first_name);
+        //$container.find(".mm-result-product__description").text(user.description);
 
         return $container;
     }
@@ -516,16 +516,16 @@ console.log(timestring);
         }
 
         var $container = $(
-            "<div class='select2-result-product clearfix'>" +
-            "<div class='select2-result-product__title'></div>" +
-            "<div class='select2-result-product__description'></div>" +
+            "<div class='mm-result-product clearfix'>" +
+            "<div class='mm-result-product__title'></div>" +
+            "<div class='mm-result-product__description'></div>" +
             "</div>" +
             "</div>" +
             "</div>"
         );
 
-        $container.find(".select2-result-product__title").text(product.first_name);
-        //$container.find(".select2-result-product__description").text(product.description);
+        $container.find(".mm-result-product__title").text(product.first_name);
+        //$container.find(".mm-result-product__description").text(product.description);
 
         return $container;
     }
@@ -544,29 +544,29 @@ console.log(timestring);
         }
 
         var $container = $(
-            "<div dataid="+repo.cid+" class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center')'>" +
+            "<div dataid="+repo.cid+" class='selectclient mm-result-repository ag-flex ag-space-between ag-align-center')'>" +
 
             "<div  class='ag-flex ag-align-start'>" +
-                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small ></div>" +
 
             "</div>" +
             "</div>" +
             "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                "<span class='select2resultrepositorystatistics'>" +
+                "<span class='mm-result-repository-stats'>" +
 
                 "</span>" +
             "</div>" +
             "</div>"
         );
 
-        $container.find(".select2-result-repository__title").text(repo.name);
-        $container.find(".select2-result-repository__description").text(repo.email);
+        $container.find(".mm-result-repository__title").text(repo.name);
+        $container.find(".mm-result-repository__description").text(repo.email);
         if(repo.status == 'Archived'){
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+repo.status+'</span>');
+            $container.find(".mm-result-repository-stats").append('<span class="ui label  mm-result-repository__statistics">'+repo.status+'</span>');
         }else{
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+repo.status+'</span>');
+            $container.find(".mm-result-repository-stats").append('<span class="ui label yellow mm-result-repository__statistics">'+repo.status+'</span>');
         }
         return $container;
     }

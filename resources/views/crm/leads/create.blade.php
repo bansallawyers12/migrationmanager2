@@ -95,7 +95,7 @@
             grid-column: 1 / -1;
         }
         
-        .select2-contact-person {
+        .mm-select-contact-person {
             width: 100% !important;
         }
     </style>
@@ -391,7 +391,7 @@
                                         <div class="form-group full-width">
                                             <label for="contactPersonEmail">Search Contact Person <span class="text-danger">*</span></label>
                                             <select id="contactPersonEmail" name="contact_person_id" 
-                                                    class="form-control select2-contact-person company-required" 
+                                                    class="form-control mm-select-contact-person company-required" 
                                                     data-placeholder="Type phone, email, name, or client ID to search..."
                                                     style="width: 100%;">
                                                 @if(old('contact_person_id'))
@@ -966,17 +966,17 @@
         const contactPersonSelect = $('#contactPersonEmail');
         
         // Check if Select2 is already initialized
-        if (contactPersonSelect.hasClass('select2-hidden-accessible')) {
+        if (contactPersonSelect.hasClass('mm-select-initialized')) {
             return; // Already initialized
         }
         
         // Check if Select2 library is available
-        if (typeof $.fn.select2 === 'undefined') {
+        if (typeof $.fn.mmSelect === 'undefined') {
             console.warn('Select2 library not loaded. Contact person search will not work.');
             return;
         }
         
-        contactPersonSelect.select2({
+        contactPersonSelect.mmSelect({
             ajax: {
                 url: '{{ route("api.search.contact.person") }}',
                 dataType: 'json',
@@ -1042,7 +1042,7 @@
         });
         
         // Auto-fill contact person details when selected
-        contactPersonSelect.on('select2:select', function (e) {
+        contactPersonSelect.on('mmselect:select', function (e) {
             const data = e.params.data;
             
             // Auto-fill fields
@@ -1059,7 +1059,7 @@
         });
         
         // Clear fields when selection is cleared
-        contactPersonSelect.on('select2:clear', function (e) {
+        contactPersonSelect.on('mmselect:clear', function (e) {
             $('#contactPersonFirstName').val('');
             $('#contactPersonLastName').val('');
             $('#contactPersonPhone').val('');

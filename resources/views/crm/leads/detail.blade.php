@@ -385,7 +385,7 @@
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="template">Templates </label>
-								<select data-valid="" class="form-control select2 selecttemplate" name="template">
+								<select data-valid="" class="form-control mm-select selecttemplate" name="template">
 									<option value="">Select</option>
 									@foreach(\App\Models\EmailTemplate::crm()->orderBy('id', 'desc')->get() as $list)
 										<option value="{{$list->id}}">{{$list->name}}</option>
@@ -457,17 +457,17 @@ jQuery(document).ready(function($){
 			data.push({
 				id: id,
   text: name,
-  html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+  html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
       "<div  class='ag-flex ag-align-start'>" +
-        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+        "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>"+email+"</small ></div>" +
       
       "</div>" +
       "</div>" +
 	   "<div class='ag-flex ag-flex-column ag-align-end'>" +
         
-        "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+        "<span class='ui label yellow mm-result-repository__statistics'>"+ status +
           
         "</span>" +
       "</div>" +
@@ -475,7 +475,7 @@ jQuery(document).ready(function($){
   title: name
 				});
 	
-	$(".js-data-example-ajax").select2({
+	$(".js-data-example-ajax").mmSelect({
   data: data,
   escapeMarkup: function(markup) {
     return markup;

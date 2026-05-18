@@ -389,7 +389,7 @@
                                 <div class="form-group full-width">
                                     <label for="contactPersonSearch">Search Contact Person <span class="text-danger">*</span></label>
                                     <select id="contactPersonSearch" name="contact_person_id" 
-                                            class="form-control select2-contact-person" 
+                                            class="form-control mm-select-contact-person" 
                                             data-placeholder="Type phone, email, name, or client ID to search..."
                                             style="width: 100%;">
                                         @if($contactPerson)
@@ -1037,7 +1037,7 @@
     <script>
     $(document).ready(function() {
         // Initialize Select2 for contact person search
-        $('#contactPersonSearch').select2({
+        $('#contactPersonSearch').mmSelect({
             ajax: {
                 url: window.editClientConfig.searchContactPersonRoute,
                 dataType: 'json',
@@ -1071,7 +1071,7 @@
         });
         
         // Auto-fill contact person details when selected
-        $('#contactPersonSearch').on('select2:select', function (e) {
+        $('#contactPersonSearch').on('mmselect:select', function (e) {
             const data = e.params.data;
             
             // Auto-fill fields
@@ -1085,7 +1085,7 @@
         });
         
         // Clear fields when selection is cleared
-        $('#contactPersonSearch').on('select2:clear', function (e) {
+        $('#contactPersonSearch').on('mmselect:clear', function (e) {
             $('#contactPersonFirstName').val('');
             $('#contactPersonLastName').val('');
             $('#contactPersonPhone').val('');
@@ -1114,8 +1114,8 @@
 
         // Init Select2 for nomination person search (existing rows)
         $('.nomination-person-select').each(function() {
-            if (!$(this).hasClass('select2-hidden-accessible')) {
-                $(this).select2({
+            if (!$(this).hasClass('mm-select-initialized')) {
+                $(this).mmSelect({
                     ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
                     minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
                 });
@@ -1123,8 +1123,8 @@
         });
         // Init Select2 for director person search (existing rows)
         $('.director-person-select').each(function() {
-            if (!$(this).hasClass('select2-hidden-accessible')) {
-                $(this).select2({
+            if (!$(this).hasClass('mm-select-initialized')) {
+                $(this).mmSelect({
                     ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
                     minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
                 });
@@ -1177,8 +1177,8 @@
             '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDirectorRow(this)"><i class="fas fa-times"></i> Remove</button></div></div>';
         container.append(row);
         container.find('.director-row').each(function(i) { $(this).find('input[name="director_primary"]').val(i); });
-        if (typeof $().select2 === 'function') {
-            container.find('.director-person-select').last().select2({
+        if (typeof $.fn.mmSelect === 'function') {
+            container.find('.director-person-select').last().mmSelect({
                 ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
                 minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
             });
@@ -1222,8 +1222,8 @@
             '<div class="form-group"><label>Expiry Date</label><input type="date" name="nomination_expiries[]"></div>' +
             '<div class="form-group" style="align-self:end;"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeNominationRow(this)"><i class="fas fa-times"></i> Remove</button></div></div></div>';
         container.append(row);
-        if (typeof $().select2 === 'function') {
-            container.find('.nomination-person-select').last().select2({
+        if (typeof $.fn.mmSelect === 'function') {
+            container.find('.nomination-person-select').last().mmSelect({
                 ajax: { url: window.editClientConfig.searchContactPersonRoute, dataType: 'json', delay: 250, data: function(p) { return { q: p.term, exclude_id: window.currentClientId }; }, processResults: function(d) { return { results: d.results || [] }; } },
                 minimumInputLength: 2, allowClear: true, placeholder: 'Search client/lead...'
             });

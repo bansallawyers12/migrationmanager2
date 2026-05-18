@@ -731,7 +731,7 @@
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
-    <script src="{{asset('js/jquery-select2-tomselect-shim.js')}}"></script>
+    <script src="{{asset('js/mm-tomselect-jquery.js')}}"></script>
     <script src="{{asset('vendor/intl-tel-input/js/intlTelInput.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.jquery-bridge.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
@@ -757,11 +757,11 @@
                 this.value =  this.value;
             });
 
-            $('.assineeselect2').select2({
+            $('.assignee-mm-select').mmSelect({
                 dropdownParent: $('#checkinmodal'),
             });
 
-            $('.js-data-example-ajaxccsearch').select2({
+            $('.js-data-example-ajaxccsearch').mmSelect({
                 closeOnSelect: true,
                 minimumInputLength: 2,
                 ajax: {
@@ -789,38 +789,38 @@
                 }
 
                 var $container = $(
-                    "<div dataid='" + (repo.cid || '').toString().replace(/'/g, '&#39;').replace(/&/g, '&amp;') + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                    "<div dataid='" + (repo.cid || '').toString().replace(/'/g, '&#39;').replace(/&/g, '&amp;') + "' class='selectclient mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                     "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'></span>\u00A0</div>" +
+                        "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small ></div>" +
 
                     "</div>" +
                     "</div>" +
                     "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                        "<span class='select2resultrepositorystatistics'>" +
+                        "<span class='mm-result-repository-stats'>" +
 
                         "</span>" +
                     "</div>" +
                     "</div>"
                 );
 
-                $container.find(".select2-result-repository__title").text(repo.name);
-                $container.find(".select2-result-repository__description").text(repo.email);
+                $container.find(".mm-result-repository__title").text(repo.name);
+                $container.find(".mm-result-repository__description").text(repo.email);
                 if (repo.locked) {
                     $container.addClass('opacity-75');
-                    $container.find(".select2-result-repository__title").prepend('<span class="mr-1" title="No access">&#128274;</span> ');
+                    $container.find(".mm-result-repository__title").prepend('<span class="mr-1" title="No access">&#128274;</span> ');
                     var ui = repo.access_ui || {};
                     if (ui.show_quick) {
-                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Quick</span> ');
+                        $container.find(".mm-result-repository-stats").append('<span class="ui label tiny">Quick</span> ');
                     }
                     if (ui.show_supervisor) {
-                        $container.find(".select2resultrepositorystatistics").append('<span class="ui label tiny">Supervisor</span> ');
+                        $container.find(".mm-result-repository-stats").append('<span class="ui label tiny">Supervisor</span> ');
                     }
                 }
-                var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
-                $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status || ''));
+                var statClass = (repo.status == 'Archived') ? 'ui label mm-result-repository__statistics' : 'ui label yellow mm-result-repository__statistics';
+                $container.find(".mm-result-repository-stats").append($('<span class="' + statClass + '"></span>').text(repo.status || ''));
                 return $container;
             }
 
@@ -828,7 +828,7 @@
                 return repo.name || repo.text;
             }
 
-            $('.js-data-example-ajaxccsearch').on('select2:select', function (e) {
+            $('.js-data-example-ajaxccsearch').on('mmselect:select', function (e) {
                 var data = e.params.data || {};
                 if (data.locked && typeof window.openCrmAccessModal === 'function') {
                     $(this).val(null).trigger('change');
@@ -1363,7 +1363,7 @@
                 $('.card .card-body .grid_data').show();
             });
 
-            $('.js-data-example-ajax-check').on("select2:select", function(e) {
+            $('.js-data-example-ajax-check').on("mmselect:select", function(e) {
                 var data = e.params.data;
                 console.log(data);
                 // Ensure status is set, default to 'Client' if not provided
@@ -1382,11 +1382,11 @@
             });
 
             // Also handle when selection is cleared
-            $('.js-data-example-ajax-check').on("select2:clear", function(e) {
+            $('.js-data-example-ajax-check').on("mmselect:clear", function(e) {
                 $('#utype').val('');
             });
 
-            $('.js-data-example-ajax-check').select2({
+            $('.js-data-example-ajax-check').mmSelect({
                 multiple: true,
                 closeOnSelect: false,
                 dropdownParent: $('#checkinmodal'),
@@ -1411,27 +1411,27 @@
                 }
 
                 var $container = $(
-                    "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                    "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                     "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'></span>\u00A0</div>" +
+                        "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small ></div>" +
 
                     "</div>" +
                     "</div>" +
                     "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                        "<span class='select2resultrepositorystatistics'>" +
+                        "<span class='mm-result-repository-stats'>" +
 
                         "</span>" +
                     "</div>" +
                     "</div>"
                 );
 
-                $container.find(".select2-result-repository__title").text(repo.name);
-                $container.find(".select2-result-repository__description").text(repo.email);
-                var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
-                $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status || ''));
+                $container.find(".mm-result-repository__title").text(repo.name);
+                $container.find(".mm-result-repository__description").text(repo.email);
+                var statClass = (repo.status == 'Archived') ? 'ui label mm-result-repository__statistics' : 'ui label yellow mm-result-repository__statistics';
+                $container.find(".mm-result-repository-stats").append($('<span class="' + statClass + '"></span>').text(repo.status || ''));
                 return $container;
             }
 

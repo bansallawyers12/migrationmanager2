@@ -1082,12 +1082,12 @@ $(function () {
             var $clientSelect = $popoverCtx.find('#assign_client_id');
 
             if ($clientSelect.length && $clientSelect.is(':visible')) {
-                if ($clientSelect.hasClass('select2-hidden-accessible')) {
-                    $clientSelect.select2('destroy');
+                if ($clientSelect.hasClass('mm-select-initialized')) {
+                    $clientSelect.mmSelect('destroy');
                 }
 
                 try {
-                    $clientSelect.select2({
+                    $clientSelect.mmSelect({
                         closeOnSelect: true,
                         placeholder: 'Search client...',
                         allowClear: true,
@@ -1133,22 +1133,22 @@ $(function () {
         }
         var cidSafe = String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
         var $container = $(
-            "<div dataid='" + cidSafe + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+            "<div dataid='" + cidSafe + "' class='selectclient mm-result-repository ag-flex ag-space-between ag-align-center'>" +
             "<div class='ag-flex ag-align-start'>" +
-                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small></div>" +
+                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='mm-result-repository__title text-semi-bold'></span>\u00A0</div>" +
+                "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small></div>" +
             "</div>" +
             "</div>" +
             "<div class='ag-flex ag-flex-column ag-align-end'>" +
-                "<span class='select2resultrepositorystatistics'></span>" +
+                "<span class='mm-result-repository-stats'></span>" +
             "</div>" +
             "</div>"
         );
-        $container.find(".select2-result-repository__title").text(repo.name || '');
-        $container.find(".select2-result-repository__description").text(repo.email || '');
-        var statClass = (repo.status == 'Archived') ? 'ui label select2-result-repository__statistics' : 'ui label yellow select2-result-repository__statistics';
+        $container.find(".mm-result-repository__title").text(repo.name || '');
+        $container.find(".mm-result-repository__description").text(repo.email || '');
+        var statClass = (repo.status == 'Archived') ? 'ui label mm-result-repository__statistics' : 'ui label yellow mm-result-repository__statistics';
         if (repo.status) {
-            $container.find(".select2resultrepositorystatistics").append($('<span class="' + statClass + '"></span>').text(repo.status));
+            $container.find(".mm-result-repository-stats").append($('<span class="' + statClass + '"></span>').text(repo.status));
         }
         return $container;
     }

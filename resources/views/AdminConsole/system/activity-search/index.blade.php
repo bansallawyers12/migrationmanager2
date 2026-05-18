@@ -41,7 +41,7 @@
                                         <label for="assigner_id" class="form-label">
                                             <i class="fas fa-user-tag"></i> Assigner (Who Created)
                                         </label>
-                                        <select name="assigner_id" id="assigner_id" class="form-control select2">
+                                        <select name="assigner_id" id="assigner_id" class="form-control mm-select">
                                             <option value="">All Assigners</option>
                                             @foreach($staffList as $staff)
                                                 <option value="{{ $staff['id'] }}" 
@@ -57,7 +57,7 @@
                                         <label for="assignee_id" class="form-label">
                                             <i class="fas fa-user-check"></i> Assignee (Assigned To)
                                         </label>
-                                        <select name="assignee_id" id="assignee_id" class="form-control select2">
+                                        <select name="assignee_id" id="assignee_id" class="form-control mm-select">
                                             <option value="">All Assignees</option>
                                             @foreach($staffList as $staff)
                                                 <option value="{{ $staff['id'] }}" 
@@ -75,7 +75,7 @@
                                         <label for="client_id" class="form-label">
                                             <i class="fas fa-user"></i> Client
                                         </label>
-                                        <select name="client_id" id="client_id" class="form-control select2-ajax">
+                                        <select name="client_id" id="client_id" class="form-control mm-select-ajax">
                                             <option value="">All Clients</option>
                                             @if(request('client_id'))
                                                 <option value="{{ request('client_id') }}" selected>
@@ -90,7 +90,7 @@
                                         <label for="activity_type" class="form-label">
                                             <i class="fas fa-list"></i> Activity Type
                                         </label>
-                                        <select name="activity_type" id="activity_type" class="form-control select2">
+                                        <select name="activity_type" id="activity_type" class="form-control mm-select">
                                             <option value="">All Types</option>
                                             @foreach($activityTypes as $key => $label)
                                                 <option value="{{ $key }}" 
@@ -108,7 +108,7 @@
                                         <label for="task_group" class="form-label">
                                             <i class="fas fa-tasks"></i> Action Category
                                         </label>
-                                        <select name="task_group" id="task_group" class="form-control select2">
+                                        <select name="task_group" id="task_group" class="form-control mm-select">
                                             <option value="">All Categories</option>
                                             @foreach($taskGroups as $key => $label)
                                                 <option value="{{ $key }}" 
@@ -124,7 +124,7 @@
                                         <label for="task_status" class="form-label">
                                             <i class="fas fa-check-circle"></i> Action Status
                                         </label>
-                                        <select name="task_status" id="task_status" class="form-control select2">
+                                        <select name="task_status" id="task_status" class="form-control mm-select">
                                             <option value="">All Statuses</option>
                                             <option value="0" {{ request('task_status') === '0' ? 'selected' : '' }}>Incomplete</option>
                                             <option value="1" {{ request('task_status') === '1' ? 'selected' : '' }}>Completed</option>
@@ -355,14 +355,14 @@ function escapeHtml(text) {
 
 $(document).ready(function() {
     // Initialize Select2
-    $('.select2').select2({
+    $('.mm-select').mmSelect({
         placeholder: 'Select an option',
         allowClear: true,
         width: '100%'
     });
     
     // Initialize Select2 for client search with AJAX
-    $('#client_id').select2({
+    $('#client_id').mmSelect({
         placeholder: 'Search for a client...',
         allowClear: true,
         width: '100%',
@@ -391,7 +391,7 @@ $(document).ready(function() {
 
 function resetForm() {
     $('#searchForm')[0].reset();
-    $('.select2').val(null).trigger('change');
+    $('.mm-select').val(null).trigger('change');
     window.location.href = '{{ route("adminconsole.system.activity-search.index") }}';
 }
 

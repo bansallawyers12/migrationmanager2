@@ -80,6 +80,10 @@
         z-index: 100000;
         width: 100% !important;
     }
+    .listing-container .ts-wrapper {
+        z-index: 100000;
+        width: 100% !important;
+    }
 
     /* Page-specific margin fix for action page */
     .listing-container {
@@ -193,7 +197,7 @@
                                                                     <div class="form-group row" style="margin-bottom:12px">
                                                                         <label for="rem_cat" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Select Assignee</label>
                                                                         <div class="col-sm-9">
-                                                                            <select class="assigneeselect2 form-control selec_reg" id="rem_cat" name="rem_cat">
+                                                                            <select class="assignee-mm-select form-control selec_reg" id="rem_cat" name="rem_cat">
                                                                                 <option value="">Select</option>
                                                                                 @foreach (\App\Models\Staff::where('status', 1)->orderBy('first_name', 'ASC')->get() as $admin)
                                                                                     @php
@@ -219,7 +223,7 @@
                                                                     <div class="form-group row" style="margin-bottom:12px">
                                                                         <label for="task_group" class="col-sm-3 control-label c6 f13" style="margin-top:8px">Group</label>
                                                                         <div class="col-sm-9">
-                                                                            <select class="assigneeselect2 form-control selec_reg" id="task_group" name="task_group">
+                                                                            <select class="assignee-mm-select form-control selec_reg" id="task_group" name="task_group">
                                                                                 <option value="">Select</option>
                                                                                 <option value="Call">Call</option>
                                                                                 <option value="Checklist">Checklist</option>
@@ -325,7 +329,7 @@
 <script>
     jQuery(document).ready(function($) {
         // Initialize Select2 for assignee dropdowns
-        $('.listing-container .assigneeselect2').select2({
+        $('.listing-container .assignee-mm-select').mmSelect({
             dropdownParent: $('#openassigneview'),
         });
 

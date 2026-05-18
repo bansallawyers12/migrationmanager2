@@ -16,3 +16,16 @@
 .sidebar-matter-selection .ts-wrapper {
   width: 100%;
 }
+
+.new_fee_option .modal-body .ts-wrapper {
+  min-width: 120px;
+}
+.new_fee_option .modal-body .ts-control {
+  min-height: 35px;
+  line-height: 35px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.fee_type_sec .fee_fields .ts-wrapper {
+  width: 100% !important;
+}

@@ -72,7 +72,7 @@
     }
 
     function initializeSelect2() {
-        $('#eoi-states').select2({
+        $('#eoi-states').mmSelect({
             placeholder: 'Select state(s)',
             allowClear: true,
             width: '100%',

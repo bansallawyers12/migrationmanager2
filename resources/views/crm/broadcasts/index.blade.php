@@ -1613,7 +1613,7 @@
             toggleRecipientsVisibility();
             
             // Re-initialize Select2 when dropdown becomes visible to fix width/position issues
-            if (scopeSelect.value === 'specific' && !recipientSelect.data('select2-initialized')) {
+            if (scopeSelect.value === 'specific' && !recipientSelect.data('mm-select-initialized')) {
                 initializeRecipientSelect();
             }
         });
@@ -1621,7 +1621,7 @@
         function initializeRecipientSelect() {
             console.log('🔧 Initializing recipient Select2 dropdown...');
             
-            recipientSelect.select2({
+            recipientSelect.mmSelect({
                 width: '100%',
                 placeholder: recipientSelect.data('placeholder') || 'Select recipients',
                 minimumInputLength: 0,  // Allow showing all users when clicking dropdown
@@ -1708,7 +1708,7 @@
                 },
             });
             
-            recipientSelect.data('select2-initialized', true);
+            recipientSelect.data('mm-select-initialized', true);
         }
 
         toggleRecipientsVisibility();

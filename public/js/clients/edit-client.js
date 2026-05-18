@@ -6204,7 +6204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fallback: If Select2 fails to initialize, try again after a delay
     setTimeout(function() {
         const relatedFilesSelect = $('#relatedFiles');
-        if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('select2-hidden-accessible')) {
+        if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('mm-select-initialized')) {
             console.log('Select2 not initialized, retrying...');
             initializeRelatedFilesSelect2();
         }
@@ -6213,7 +6213,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Another fallback after longer delay
     setTimeout(function() {
         const relatedFilesSelect = $('#relatedFiles');
-        if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('select2-hidden-accessible')) {
+        if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('mm-select-initialized')) {
             console.log('Select2 still not initialized, final retry...');
             initializeRelatedFilesSelect2();
         }
@@ -6228,10 +6228,10 @@ function initializeRelatedFilesSelect2() {
 
     if (relatedFilesSelect.length === 0) return;
     
-    if (relatedFilesSelect.length > 0 && typeof $.fn.select2 !== 'undefined') {
+    if (relatedFilesSelect.length > 0 && typeof $.fn.mmSelect !== 'undefined') {
         console.log('Initializing Related Files Select2...');
         
-        relatedFilesSelect.select2({
+        relatedFilesSelect.mmSelect({
             multiple: true,
             closeOnSelect: false,
             placeholder: 'Search for clients by name or client ID',
@@ -6299,11 +6299,11 @@ function initializeRelatedFilesSelect2() {
         });
         
         // Debug: Log when Select2 is initialized
-        relatedFilesSelect.on('select2:open', function() {
+        relatedFilesSelect.on('mmselect:open', function() {
             console.log('Select2 dropdown opened');
         });
         
-        relatedFilesSelect.on('select2:select', function(e) {
+        relatedFilesSelect.on('mmselect:select', function(e) {
             console.log('Item selected:', e.params.data);
         });
         
@@ -6332,7 +6332,7 @@ function initializeRelatedFilesSelect2() {
     } else {
         console.error('Related Files Select2 initialization failed:', {
             elementExists: relatedFilesSelect.length > 0,
-            select2Available: typeof $.fn.select2 !== 'undefined'
+            mmSelectAvailable: typeof $.fn.mmSelect !== 'undefined'
         });
     }
 }
@@ -6343,8 +6343,8 @@ window.reinitializeRelatedFilesSelect2 = function() {
     const relatedFilesSelect = $('#relatedFiles');
     if (relatedFilesSelect.length > 0) {
         // Destroy existing Select2 if it exists
-        if (relatedFilesSelect.hasClass('select2-hidden-accessible')) {
-            relatedFilesSelect.select2('destroy');
+        if (relatedFilesSelect.hasClass('mm-select-initialized')) {
+            relatedFilesSelect.mmSelect('destroy');
         }
         // Reinitialize
         setTimeout(function() {
@@ -6362,13 +6362,13 @@ function formatRelatedFileResult(partner) {
     }
 
     var $container = $(
-        '<div class="select2-result-partner" style="padding: 8px;">' +
-        '<div class="select2-result-partner__title" style="font-weight: 600; color: #333; font-size: 14px;"></div>' +
+        '<div class="mm-result-partner" style="padding: 8px;">' +
+        '<div class="mm-result-partner__title" style="font-weight: 600; color: #333; font-size: 14px;"></div>' +
         '</div>'
     );
 
     // Show only name and client ID
-    $container.find('.select2-result-partner__title').text(partner.text);
+    $container.find('.mm-result-partner__title').text(partner.text);
 
     return $container;
 }

@@ -45,7 +45,7 @@ function customValidate(formName, savetype = '')
 				{
 					var for_class = $(this).attr('class') || '';
 					var $element = $(this);
-					var isSelect2 = $element.hasClass('select2-hidden-accessible') || $element.data('select2');
+					var isSelect2 = $element.hasClass('mm-select-initialized') || $element.data('mmSelect');
 					var isMultiple = $element.prop('multiple');
 					
 					if(for_class.indexOf('multiselect_subject') != -1)
@@ -60,7 +60,7 @@ function customValidate(formName, savetype = '')
 						}
 					else if(isSelect2 && isMultiple)
 						{
-							// Handle Select2 multiple select
+							// Tom Select / legacy enhanced multi-select
 							var selectedValues = $element.val();
 							if(!selectedValues || selectedValues.length === 0 || (selectedValues.length === 1 && selectedValues[0] === ''))
 								{

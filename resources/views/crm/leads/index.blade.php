@@ -523,7 +523,7 @@
         <div class="form-group row">
             <div class="col-sm-12">
                 <input id="mlead_id" name="mlead_id" type="hidden" value="">
-                <select name="assignto" class="form-control select2 " style="width: 100%;" data-select2-id="1" tabindex="-1" aria-hidden="true">
+                <select name="assignto" class="form-control mm-select " style="width: 100%;" data-mm-select-id="1" tabindex="-1" aria-hidden="true">
                     <option value="">Select</option>
                     @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $ulist)
                     <option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}</option>
@@ -759,17 +759,17 @@
                 data.push({
                     id: id,
                     text: name,
-                    html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                    html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                         "<div  class='ag-flex ag-align-start'>" +
-                            "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-                            "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                            "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+                            "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>"+email+"</small ></div>" +
 
                         "</div>" +
                         "</div>" +
                         "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                            "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+                            "<span class='ui label yellow mm-result-repository__statistics'>"+ status +
 
                             "</span>" +
                         "</div>" +
@@ -778,7 +778,7 @@
                 });
             });
 
-            $(".js-data-example-ajax").select2({
+            $(".js-data-example-ajax").mmSelect({
                 data: data,
                 escapeMarkup: function(markup) {
                     return markup;
@@ -810,17 +810,17 @@
             data.push({
                 id: id,
                 text: name,
-                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                     "<div  class='ag-flex ag-align-start'>" +
-                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                        "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+                        "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>"+email+"</small ></div>" +
 
                     "</div>" +
                     "</div>" +
                     "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                        "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+                        "<span class='ui label yellow mm-result-repository__statistics'>"+ status +
 
                         "</span>" +
                     "</div>" +
@@ -828,7 +828,7 @@
                 title: name
             });
 
-            $(".js-data-example-ajax").select2({
+            $(".js-data-example-ajax").mmSelect({
                 data: data,
                 escapeMarkup: function(markup) {
                     return markup;
@@ -869,7 +869,7 @@
             });
         });
 
-        $('.js-data-example-ajax').select2({
+        $('.js-data-example-ajax').mmSelect({
             multiple: true,
             closeOnSelect: false,
             dropdownParent: $('#emailmodal'),
@@ -888,7 +888,7 @@
             templateSelection: formatRepoSelection
         });
 
-        $('.js-data-example-ajaxcc').select2({
+        $('.js-data-example-ajaxcc').mmSelect({
             multiple: true,
             closeOnSelect: false,
             dropdownParent: $('#emailmodal'),
@@ -913,26 +913,26 @@
             }
 
             var $container = $(
-                "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                 "<div  class='ag-flex ag-align-start'>" +
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small ></div>" +
 
                 "</div>" +
                 "</div>" +
                 "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                    "<span class='ui label yellow select2-result-repository__statistics'>" +
+                    "<span class='ui label yellow mm-result-repository__statistics'>" +
 
                     "</span>" +
                 "</div>" +
                 "</div>"
             );
 
-            $container.find(".select2-result-repository__title").text(repo.name);
-            $container.find(".select2-result-repository__description").text(repo.email);
-            $container.find(".select2-result-repository__statistics").append(repo.status);
+            $container.find(".mm-result-repository__title").text(repo.name);
+            $container.find(".mm-result-repository__description").text(repo.email);
+            $container.find(".mm-result-repository__statistics").append(repo.status);
 
             return $container;
         }

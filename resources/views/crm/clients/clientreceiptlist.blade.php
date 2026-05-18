@@ -171,6 +171,16 @@
         border-color: #667eea;
     }
 
+    .listing-container .ts-wrapper .ts-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        min-height: 44px;
+        padding: 6px 16px;
+    }
+    .listing-container .ts-wrapper.focus .ts-control {
+        border-color: #667eea;
+    }
+
     .listing-container .btn-info {
         background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
         color: white;
@@ -509,7 +519,7 @@
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="client_id" class="col-form-label" style="color:#4a5568 !important;">Client ID</label>
-                                        <select name="client_id" id="client_id" class="form-control select2" style="max-width: 150px;">
+                                        <select name="client_id" id="client_id" class="form-control mm-select" style="max-width: 150px;">
                                             <option value="">Select Client</option>
                                             @foreach($clientIds as $client)
                                                 <option value="{{ $client->client_id }}" {{ request('client_id') == $client->client_id ? 'selected' : '' }}>
@@ -522,7 +532,7 @@
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="client_matter_id" class="col-form-label" style="color:#4a5568 !important;">Client Matter ID</label>
-                                        <select name="client_matter_id" id="client_matter_id" class="form-control select2" style="max-width: 150px;">
+                                        <select name="client_matter_id" id="client_matter_id" class="form-control mm-select" style="max-width: 150px;">
                                             <option value="">Select Matter</option>
                                             @foreach($matterIds as $matter)
                                                 <option value="{{ $matter->client_matter_id }}" {{ request('client_matter_id') == $matter->client_matter_id ? 'selected' : '' }}>
@@ -814,12 +824,12 @@ jQuery(document).ready(function($){
 	});
 
     // Initialize Select2 for searchable dropdowns
-    $('.listing-container .select2').select2({
+    $('.listing-container .mm-select').mmSelect({
         placeholder: "Search...",
         allowClear: true,
         width: '100%',
         dropdownParent: $('body') // Ensure dropdown appears above other elements
-    }).on('select2:open', function() {
+    }).on('mmselect:open', function() {
         $('.ts-dropdown').css('z-index', '9999');
     });
 

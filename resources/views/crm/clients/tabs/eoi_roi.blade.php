@@ -91,7 +91,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>State(s) <span class="text-danger">*</span></label>
-                            <select class="form-control select2-multiple" id="eoi-states" name="eoi_states[]" 
+                            <select class="form-control mm-select-multiple" id="eoi-states" name="eoi_states[]" 
                                     multiple="multiple" required style="min-width: 200px;">
                                 <option value="ACT">ACT</option>
                                 <option value="NSW">NSW</option>
@@ -454,6 +454,27 @@
 
 .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
     color: #dc3545;
+}
+
+/* Tom Select (#eoi-states multi) */
+#eoi-states + .ts-wrapper {
+    width: 100% !important;
+}
+#eoi-states + .ts-wrapper .ts-control {
+    min-height: 38px !important;
+    padding: 6px 8px !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 0.25rem !important;
+    background-color: #fff !important;
+}
+#eoi-states + .ts-wrapper .item {
+    background-color: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 4px;
+    color: #1976d2;
+    font-size: 14px;
+    padding: 4px 8px;
+    margin: 2px 4px 2px 0;
 }
 
 .checkbox-inline {

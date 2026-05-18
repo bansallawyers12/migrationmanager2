@@ -709,24 +709,24 @@ jQuery(document).ready(function($){
         data.push({
             id: id,
             text: name,
-            html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+            html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                 "<div  class='ag-flex ag-align-start'>" +
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>"+email+"</small ></div>" +
 
                 "</div>" +
                 "</div>" +
                 "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+                    "<span class='ui label yellow mm-result-repository__statistics'>"+ status +
 
                     "</span>" +
                 "</div>" +
                 "</div>",
             title: name
         });
-        $(".js-data-example-ajax").select2({
+        $(".js-data-example-ajax").mmSelect({
             data: data,
             escapeMarkup: function(markup) {
                 return markup;
@@ -765,7 +765,7 @@ jQuery(document).ready(function($){
         });
     });
 
-    $('.js-data-example-ajax').select2({
+    $('.js-data-example-ajax').mmSelect({
         multiple: true,
         closeOnSelect: false,
         dropdownParent: $('#emailmodal'),
@@ -782,7 +782,7 @@ jQuery(document).ready(function($){
         templateSelection: formatRepoSelection
     });
 
-    $('.js-data-example-ajaxcc').select2({
+    $('.js-data-example-ajaxcc').mmSelect({
         multiple: true,
         closeOnSelect: false,
         dropdownParent: $('#emailmodal'),
@@ -806,25 +806,25 @@ jQuery(document).ready(function($){
             return repo.text;
         }
         var $container = $(
-            "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+            "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
             "<div  class='ag-flex ag-align-start'>" +
-                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+                "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small ></div>" +
 
             "</div>" +
             "</div>" +
             "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                "<span class='ui label yellow select2-result-repository__statistics'>" +
+                "<span class='ui label yellow mm-result-repository__statistics'>" +
 
                 "</span>" +
             "</div>" +
             "</div>"
         );
-        $container.find(".select2-result-repository__title").text(repo.name);
-        $container.find(".select2-result-repository__description").text(repo.email);
-        $container.find(".select2-result-repository__statistics").append(repo.status);
+        $container.find(".mm-result-repository__title").text(repo.name);
+        $container.find(".mm-result-repository__description").text(repo.email);
+        $container.find(".mm-result-repository__statistics").append(repo.status);
         return $container;
     }
 

@@ -790,8 +790,12 @@
     width: 100% !important;
     max-width: 100% !important;
 }
+.popover .ts-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+}
 
-.popover .assigneeselect2 {
+.popover .assignee-mm-select {
     width: 100% !important;
     max-width: 100% !important;
 }
@@ -1156,7 +1160,7 @@ $(function () {
             <div id="popover-content" class="modern-popover-content update-task-layout">
                 <div class="form-group">
                     <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
-                    <select class="assigneeselect2 form-control" id="rem_cat" name="rem_cat">
+                    <select class="assignee-mm-select form-control" id="rem_cat" name="rem_cat">
                         <option value="">Select Assignee...</option>
                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
@@ -1170,7 +1174,7 @@ $(function () {
                 
                 <div class="form-group">
                     <label class="control-label"><i class="fa fa-tag"></i> Task Group</label>
-                    <select class="assigneeselect2 form-control" id="task_group" name="task_group">
+                    <select class="assignee-mm-select form-control" id="task_group" name="task_group">
                         <option value="">Select Group...</option>
                         <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
                         <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>✓ Checklist</option>
@@ -1261,12 +1265,12 @@ $(function () {
             var $clientSelect = $popoverCtx.find('#assign_client_id');
             
             if ($clientSelect.length && $clientSelect.is(':visible')) {
-                if ($clientSelect.hasClass('select2-hidden-accessible')) {
-                    $clientSelect.select2('destroy');
+                if ($clientSelect.hasClass('mm-select-initialized')) {
+                    $clientSelect.mmSelect('destroy');
                 }
                 
                 try {
-                    $clientSelect.select2({
+                    $clientSelect.mmSelect({
                         closeOnSelect: true,
                         placeholder: 'Search client...',
                         allowClear: true,
@@ -1335,24 +1339,24 @@ $(function () {
 
         var cidSafe = String(repo.cid || '').replace(/'/g, '&#39;').replace(/&/g, '&amp;');
         var $container = $(
-            "<div dataid='" + cidSafe + "' class='selectclient select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+            "<div dataid='" + cidSafe + "' class='selectclient mm-result-repository ag-flex ag-space-between ag-align-center'>" +
             "<div class='ag-flex ag-align-start'>" +
-                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'></span>\u00A0</div>" +
-                "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small></div>" +
+                "<div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='mm-result-repository__title text-semi-bold'></span>\u00A0</div>" +
+                "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small></div>" +
             "</div>" +
             "</div>" +
             "<div class='ag-flex ag-flex-column ag-align-end'>" +
-                "<span class='select2resultrepositorystatistics'></span>" +
+                "<span class='mm-result-repository-stats'></span>" +
             "</div>" +
             "</div>"
         );
 
-        $container.find(".select2-result-repository__title").text(repo.name || '');
-        $container.find(".select2-result-repository__description").text(repo.email || '');
+        $container.find(".mm-result-repository__title").text(repo.name || '');
+        $container.find(".mm-result-repository__description").text(repo.email || '');
         if(repo.status == 'Archived'){
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label  select2-result-repository__statistics">'+(repo.status || '')+'</span>');
+            $container.find(".mm-result-repository-stats").append('<span class="ui label  mm-result-repository__statistics">'+(repo.status || '')+'</span>');
         } else if(repo.status) {
-            $container.find(".select2resultrepositorystatistics").append('<span class="ui label yellow select2-result-repository__statistics">'+(repo.status || '')+'</span>');
+            $container.find(".mm-result-repository-stats").append('<span class="ui label yellow mm-result-repository__statistics">'+(repo.status || '')+'</span>');
         }
         return $container;
     }

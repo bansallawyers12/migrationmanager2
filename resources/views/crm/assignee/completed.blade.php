@@ -153,7 +153,7 @@
 														<div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
 															<label for=&quot;inputSub3&quot; class=&quot;col-sm-3 control-label c6 f13&quot; style=&quot;margin-top:8px&quot;>Select Assignee</label>
 															<div class=&quot;col-sm-9&quot;>
-																<select class=&quot;assigneeselect2 form-control selec_reg&quot; id=&quot;rem_cat&quot; name=&quot;rem_cat&quot; onchange=&quot;&quot;>
+																<select class=&quot;assignee-mm-select form-control selec_reg&quot; id=&quot;rem_cat&quot; name=&quot;rem_cat&quot; onchange=&quot;&quot;>
 																	<option value=&quot;&quot; >Select</option>
 																	@foreach(\App\Models\Staff::orderby('first_name','ASC')->get() as $admin)
 																	<?php
@@ -188,7 +188,7 @@
                                                     <div class=&quot;form-group row&quot; style=&quot;margin-bottom:12px&quot; >
                                                         <label for=&quot;inputSub3&quot; class=&quot;col-sm-3 control-label c6 f13&quot; style=&quot;margin-top:8px&quot;>Group</label>
                                                         <div class=&quot;col-sm-9&quot;>
-                                                            <select class=&quot;assigneeselect2 form-control selec_reg&quot; id=&quot;task_group&quot; name=&quot;task_group&quot;>
+                                                            <select class=&quot;assignee-mm-select form-control selec_reg&quot; id=&quot;task_group&quot; name=&quot;task_group&quot;>
                                                                 <option value=&quot;&quot;>Select</option>
                                                                 <option value=&quot;Call&quot;>Call</option>
                                                                 <option value=&quot;Checklist&quot;>Checklist</option>

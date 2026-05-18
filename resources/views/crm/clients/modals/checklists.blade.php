@@ -23,7 +23,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control select2" name="checklist[]" id="checklist" multiple>
+								<select data-valid="required" class="form-control mm-select" name="checklist[]" id="checklist" multiple>
 									<option value="">Select</option>
 									<?php
 									$eduChkList = \App\Models\DocumentChecklist::where('status',1)->where('doc_type',1)->get();
@@ -75,7 +75,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="visa_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control select2" name="visa_checklist[]" id="visa_checklist" multiple>
+								<select data-valid="required" class="form-control mm-select" name="visa_checklist[]" id="visa_checklist" multiple>
 									<option value="">Select</option>
 									<?php
 									$visaChkList = \App\Models\DocumentChecklist::where('status',1)->where('doc_type',2)->get();
@@ -128,7 +128,7 @@
                         <div class="col-6 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="nomination_checklist">Select Checklist<span class="span_req">*</span></label>
-								<select data-valid="required" class="form-control select2" name="nomination_checklist[]" id="nomination_checklist" multiple>
+								<select data-valid="required" class="form-control mm-select" name="nomination_checklist[]" id="nomination_checklist" multiple>
 									<option value="">Select</option>
 									<?php
 									$nomChkList = \App\Models\DocumentChecklist::where('status',1)->where('doc_type',3)->get();

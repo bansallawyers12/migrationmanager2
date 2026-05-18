@@ -17,7 +17,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_migration_agent">Migration Agent <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_migration_agent" id="checklist_migration_agent">
+                                                    <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_migration_agent" id="checklist_migration_agent">
                                                         <option value="">Select Migration Agent</option>
                                                         @foreach(\App\Models\Staff::where('role',16)->select('id','first_name','last_name','email')->where('status',1)->get() as $migAgntlist)
                                                             <option value="{{$migAgntlist->id}}">{{@$migAgntlist->first_name}} {{@$migAgntlist->last_name}} ({{@$migAgntlist->email}})</option>
@@ -30,7 +30,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_person_responsible">Person Responsible <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_person_responsible" id="checklist_person_responsible">
+                                                    <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_person_responsible" id="checklist_person_responsible">
                                                         <option value="">Select Person Responsible</option>
                                                         @foreach(\App\Models\Staff::where('role',12)->select('id','first_name','last_name','email')->where('status',1)->get() as $perreslist)
                                                             <option value="{{$perreslist->id}}">{{@$perreslist->first_name}} {{@$perreslist->last_name}} ({{@$perreslist->email}})</option>
@@ -43,7 +43,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_person_assisting">Person Assisting <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_person_assisting" id="checklist_person_assisting">
+                                                    <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_person_assisting" id="checklist_person_assisting">
                                                         <option value="">Select Person Assisting</option>
                                                         @foreach(\App\Models\Staff::where('role',13)->select('id','first_name','last_name','email')->where('status',1)->get() as $perassislist)
                                                             <option value="{{$perassislist->id}}">{{@$perassislist->first_name}} {{@$perassislist->last_name}} ({{@$perassislist->email}})</option>
@@ -56,7 +56,7 @@
                                             <div class="col-12 col-md-12 col-lg-12">
                                                 <div class="form-group">
                                                     <label for="checklist_office">Handling Office <span class="span_req">*</span></label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_office" id="checklist_office">
+                                                    <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_office" id="checklist_office">
                                                         <option value="">Select Office</option>
                                                         @foreach(\App\Models\Branch::orderBy('office_name')->get() as $office)
                                                             <option value="{{$office->id}}" {{ Auth::user()->office_id == $office->id ? 'selected' : '' }}>{{$office->office_name}}</option>
@@ -77,7 +77,7 @@
                                                         <label class="form-check-label" for="checklist_general_matter_checkbox">General Matter</label>
                                                     </div>
                                                     <label class="form-check-label">Or Select any option</label>
-                                                    <select data-valid="required" class="form-control select2 checklist-field" name="checklist_matter" id="checklist_matter_select">
+                                                    <select data-valid="required" class="form-control mm-select checklist-field" name="checklist_matter" id="checklist_matter_select">
                                                         <option value="">Select Matter</option>
                                                         @php
                                                             $matterQuery = \App\Models\Matter::select('id','title')->where('status',1)
@@ -438,14 +438,14 @@
     overflow-x: hidden;
 }
 /* Select2 menus for this panel use dropdownParent: body (see initChecklistSelect2).
-   Fixes invisible lists caused by transform on the panel + global custom.css width:200px on all .select2-dropdown. */
-.select2-container--default .select2-dropdown.select2-checklist-create-dropdown {
+   Fixes invisible lists caused by transform on the panel + global custom.css width:200px on legacy dropdowns. */
+.ts-dropdown.mm-checklist-create-dropdown {
     z-index: 100060 !important;
     width: min(520px, 92vw) !important;
     min-width: 260px !important;
     box-sizing: border-box;
 }
-.ts-dropdown.select2-checklist-create-dropdown {
+.ts-dropdown.mm-checklist-create-dropdown {
     z-index: 100060 !important;
     width: min(520px, 92vw) !important;
     min-width: 260px !important;
@@ -785,13 +785,13 @@
         var $matterSelect = $('#checklist_matter_select');
 
         function destroyChecklistSelect2() {
-            if (typeof $.fn.select2 === 'undefined') {
+            if (typeof $.fn.mmSelect === 'undefined') {
                 return;
             }
             $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office').each(function() {
                 var $el = $(this);
-                if ($el.data('select2')) {
-                    $el.select2('destroy');
+                if ($el.data('mmSelect')) {
+                    $el.mmSelect('destroy');
                 }
             });
         }
@@ -818,7 +818,7 @@
             if ($dropdown.is(e.target) || $dropdown.has(e.target).length) {
                 return;
             }
-            if ($(e.target).closest('.select2-dropdown, .ts-dropdown').length && $dropdown.find('.select2-container--open, .ts-wrapper.dropdown-active').length) {
+            if ($(e.target).closest('.ts-dropdown').length && $dropdown.find('.ts-wrapper.dropdown-active').length) {
                 return;
             }
             destroyChecklistSelect2();
@@ -873,23 +873,23 @@
             $('#sel_person_responsible_id_lead').val(personResponsible).trigger('change');
             $('#sel_person_assisting_id_lead').val(personAssisting).trigger('change');
             $('#sel_office_id_lead').val(officeId).trigger('change');
-            $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
+            $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').mmSelect({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
             $('#costAssignmentCreateFormModelLead').modal('show');
             destroyChecklistSelect2();
             $dropdown.hide();
         });
 
         function initChecklistSelect2() {
-            if (typeof $.fn.select2 === 'undefined') {
+            if (typeof $.fn.mmSelect === 'undefined') {
                 return;
             }
             destroyChecklistSelect2();
             var $fields = $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
             $fields.each(function() {
-                $(this).select2({
+                $(this).mmSelect({
                     dropdownParent: $('body'),
                     width: '100%',
-                    dropdownCssClass: 'select2-checklist-create-dropdown',
+                    dropdownCssClass: 'mm-checklist-create-dropdown',
                     minimumResultsForSearch: 0
                 });
             });
@@ -960,19 +960,19 @@
                 data.push({
                     id: clientId,
                     text: clientName || clientEmail,
-                    html: "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
-                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'>Client</span></div></div>",
+                    html: "<div class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
+                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='mm-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
+                        "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
+                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow mm-result-repository__statistics'>Client</span></div></div>",
                     title: clientName || clientEmail
                 });
             }
 
             var $toSelect = $('#emailmodal .js-data-example-ajax');
-            if ($toSelect.data('select2')) {
-                $toSelect.select2('destroy');
+            if ($toSelect.data('mmSelect')) {
+                $toSelect.mmSelect('destroy');
             }
-            $toSelect.select2({
+            $toSelect.mmSelect({
                 data: data,
                 escapeMarkup: function(markup) { return markup; },
                 templateResult: function(d) { return d.html; },
@@ -1069,19 +1069,19 @@
                 data.push({
                     id: clientId,
                     text: clientName || clientEmail,
-                    html: "<div class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
-                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='select2-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
-                        "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
-                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow select2-result-repository__statistics'>Client</span></div></div>",
+                    html: "<div class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
+                        "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span class='mm-result-repository__title text-semi-bold'>" + (clientName || clientEmail) + "</span></div>" +
+                        "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>" + clientEmail + "</small></div></div></div>" +
+                        "<div class='ag-flex ag-flex-column ag-align-end'><span class='ui label yellow mm-result-repository__statistics'>Client</span></div></div>",
                     title: clientName || clientEmail
                 });
             }
 
             var $toSelect = $('.js-data-example-ajax');
-            if ($toSelect.length && $toSelect.data('select2')) {
-                $toSelect.select2('destroy');
+            if ($toSelect.length && $toSelect.data('mmSelect')) {
+                $toSelect.mmSelect('destroy');
             }
-            $('.js-data-example-ajax').select2({
+            $('.js-data-example-ajax').mmSelect({
                 data: data,
                 escapeMarkup: function(markup) { return markup; },
                 templateResult: function(d) { return d.html; },

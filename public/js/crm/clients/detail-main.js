@@ -729,9 +729,9 @@ $(document).ready(function() {
 
             var $el = $(this);
 
-            if ($el.data('select2')) $el.select2('destroy');
+            if ($el.data('mmSelect')) $el.mmSelect('destroy');
 
-            $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+            $el.mmSelect({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
 
         });
 
@@ -748,9 +748,9 @@ $(document).ready(function() {
 
             var $el = $(this);
 
-            if ($el.data('select2')) $el.select2('destroy');
+            if ($el.data('mmSelect')) $el.mmSelect('destroy');
 
-            $el.select2({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+            $el.mmSelect({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
 
         });
 
@@ -1310,13 +1310,13 @@ $(document).ready(function() {
 
 
         // Initialize Select2 for the matter dropdown (dropdownCssClass for wrapping long names)
-        $('#sel_matter_id_client_detail').select2({
+        $('#sel_matter_id_client_detail').mmSelect({
             dropdownCssClass: 'matter-dropdown-wrap'
         });
 
 
 
-        $('.selecttemplate').select2({dropdownParent: $('#emailmodal')});
+        $('.selecttemplate').mmSelect({dropdownParent: $('#emailmodal')});
 
 
 
@@ -1380,9 +1380,9 @@ $(document).ready(function() {
 
         //Initialize both Select2 dropdowns
 
-        $('#reassign_client_id').select2();
+        $('#reassign_client_id').mmSelect();
 
-        $('#reassign_client_matter_id').select2();
+        $('#reassign_client_matter_id').mmSelect();
 
 
 
@@ -1442,11 +1442,11 @@ success: function(response) {
 
                 });
 
-                $('#reassign_client_matter_id').prop('disabled', false).select2();
+                $('#reassign_client_matter_id').prop('disabled', false).mmSelect();
 
             } else {
 
-                $('#reassign_client_matter_id').prop('disabled', true).select2();
+                $('#reassign_client_matter_id').prop('disabled', true).mmSelect();
 
             }
 
@@ -1500,9 +1500,9 @@ success: function(response) {
 
         //Initialize both Select2 dropdowns
 
-        $('#reassign_sent_client_id').select2();
+        $('#reassign_sent_client_id').mmSelect();
 
-        $('#reassign_sent_client_matter_id').select2();
+        $('#reassign_sent_client_matter_id').mmSelect();
 
 
 
@@ -1558,11 +1558,11 @@ success: function(response) {
 
                 });
 
-                $('#reassign_sent_client_matter_id').prop('disabled', false).select2();
+                $('#reassign_sent_client_matter_id').prop('disabled', false).mmSelect();
 
             } else {
 
-                $('#reassign_sent_client_matter_id').prop('disabled', true).select2();
+                $('#reassign_sent_client_matter_id').prop('disabled', true).mmSelect();
 
             }
 
@@ -3487,9 +3487,9 @@ success: function(response) {
 
 
 
-        //Set select2 drop down box width
+        //Set Tom Select wrapper width for change assignee
 
-        $('#changeassignee').select2();
+        $('#changeassignee').mmSelect();
 
         $('#changeassignee').next('.ts-wrapper').first().css('width', '220px');
 
@@ -4957,7 +4957,7 @@ success: function(response) {
 
                 $('#cost_assignment_lead_id').val(window.ClientDetailConfig.clientId);
 
-                $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').select2({
+                $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').mmSelect({
 
                     dropdownParent: $('#costAssignmentCreateFormModelLead')
 
@@ -6802,7 +6802,7 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajaxccapp').select2({
+        $('.js-data-example-ajaxccapp').mmSelect({
 
                 multiple: true,
 
@@ -6844,7 +6844,7 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajaxcontact').select2({
+        $('.js-data-example-ajaxcontact').mmSelect({
 
                 multiple: true,
 
@@ -6959,15 +6959,15 @@ success: function(response) {
 
                 text: name,
 
-                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
 
 
                 "<div  class='ag-flex ag-align-start'>" +
 
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
 
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>"+email+"</small ></div>" +
 
 
 
@@ -6979,7 +6979,7 @@ success: function(response) {
 
 
 
-                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+                    "<span class='ui label yellow mm-result-repository__statistics'>"+ status +
 
 
 
@@ -6995,7 +6995,7 @@ success: function(response) {
 
 
 
-            $(".js-data-example-ajax").select2({
+            $(".js-data-example-ajax").mmSelect({
 
                 data: data,
 
@@ -7075,13 +7075,13 @@ success: function(response) {
 
                 text: name,
 
-                html:  "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                html:  "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
                     "<div  class='ag-flex ag-align-start'>" +
 
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>"+name+"</span>&nbsp;</div>" +
 
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'>"+email+"</small ></div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>"+email+"</small ></div>" +
 
                     "</div>" +
 
@@ -7089,7 +7089,7 @@ success: function(response) {
 
                     "<div class='ag-flex ag-flex-column ag-align-end'>" +
 
-                    "<span class='ui label yellow select2-result-repository__statistics'>"+ status +
+                    "<span class='ui label yellow mm-result-repository__statistics'>"+ status +
 
                     "</span>" +
 
@@ -7101,7 +7101,7 @@ success: function(response) {
 
             });
 
-            $(".js-data-example-ajax").select2({
+            $(".js-data-example-ajax").mmSelect({
 
                 data: data,
 
@@ -7391,7 +7391,7 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajax').select2({
+        $('.js-data-example-ajax').mmSelect({
 
                 multiple: true,
 
@@ -7433,7 +7433,7 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajaxccd').select2({
+        $('.js-data-example-ajaxccd').mmSelect({
 
             multiple: true,
 
@@ -7483,15 +7483,15 @@ success: function(response) {
 
             var $container = $(
 
-                "<div  class='select2-result-repository ag-flex ag-space-between ag-align-center'>" +
+                "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
 
 
 
                     "<div  class='ag-flex ag-align-start'>" +
 
-                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='select2-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'></span>&nbsp;</div>" +
 
-                    "<div class='ag-flex ag-align-center'><small class='select2-result-repository__description'></small ></div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'></small ></div>" +
 
 
 
@@ -7503,7 +7503,7 @@ success: function(response) {
 
 
 
-                    "<span class='ui label yellow select2-result-repository__statistics'>" +
+                    "<span class='ui label yellow mm-result-repository__statistics'>" +
 
 
 
@@ -7517,11 +7517,11 @@ success: function(response) {
 
 
 
-            $container.find(".select2-result-repository__title").text(repo.name);
+            $container.find(".mm-result-repository__title").text(repo.name);
 
-            $container.find(".select2-result-repository__description").text(repo.email);
+            $container.find(".mm-result-repository__description").text(repo.email);
 
-            $container.find(".select2-result-repository__statistics").append(repo.status);
+            $container.find(".mm-result-repository__statistics").append(repo.status);
 
             return $container;
 
@@ -8190,7 +8190,7 @@ success: function(response) {
 
             $('.create_education_docs').modal('show');
 
-            $("#checklist").select2({dropdownParent: $(".create_education_docs")});
+            $("#checklist").mmSelect({dropdownParent: $(".create_education_docs")});
 
         });
 
@@ -8270,7 +8270,7 @@ success: function(response) {
 
             $('.create_migration_docs').modal('show');
 
-            $("#visa_checklist").select2({dropdownParent: $("#openmigrationdocsmodal")});
+            $("#visa_checklist").mmSelect({dropdownParent: $("#openmigrationdocsmodal")});
 
         });
 
@@ -8286,7 +8286,7 @@ success: function(response) {
 
             $('.create_nomination_docs').modal('show');
 
-            $("#nomination_checklist").select2({dropdownParent: $("#opennominationdocsmodal")});
+            $("#nomination_checklist").mmSelect({dropdownParent: $("#opennominationdocsmodal")});
 
         });
 

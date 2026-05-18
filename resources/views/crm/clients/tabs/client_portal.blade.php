@@ -3428,18 +3428,21 @@
 #create_checklist .modal-body textarea,
 #create_checklist .modal-body select,
 #create_checklist .modal-body button,
-#create_checklist .modal-body .select2-container {
+#create_checklist .modal-body .select2-container,
+#create_checklist .modal-body .ts-wrapper {
     pointer-events: auto !important;
     opacity: 1 !important;
 }
 
-#create_checklist .modal-body .select2-container {
+#create_checklist .modal-body .select2-container,
+#create_checklist .modal-body .ts-wrapper {
     width: 100% !important;
     display: block !important;
     min-height: 38px !important;
 }
-/* Ensure Select2 dropdown is visible above modal content */
-#create_checklist .select2-dropdown {
+/* Enhanced select dropdown above modal content */
+#create_checklist .select2-dropdown,
+#create_checklist .ts-dropdown {
     z-index: 1062 !important;
 }
 
@@ -5144,7 +5147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 $(document).ready(function () {
 
     // Initialise Select2 on the checklist multi-select inside the modal
-    $('#cp_checklist_names').select2({
+    $('#cp_checklist_names').mmSelect({
         dropdownParent: $('#create_checklist'),
         placeholder: 'Search and select checklists...',
         allowClear: true,

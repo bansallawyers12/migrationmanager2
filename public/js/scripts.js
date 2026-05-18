@@ -324,9 +324,9 @@ $(function () {
     container: "body"
   });
 
-  // Enhanced selects (Tom Select via jquery-select2-tomselect-shim.js)
-  if (jQuery.fn.select2) {
-    $(".select2").select2();
+  // Enhanced selects (Tom Select + mm-tomselect-jquery.js)
+  if (jQuery.fn.mmSelect) {
+    $('.mm-select').mmSelect();
   }
 
   // Selectric

@@ -130,18 +130,18 @@ function showuser_pref_dateformat(heading,description,button,action)
 	}
 	$("#pop_action").html($("#popup_user-preference_contents").html()); //load into popuop
 	if(!isMobile){
-		$('#pop_action #format').select2({
+		$('#pop_action #format').mmSelect({
 			width:"320px"		//No I18N
-			}).on("select2:close", function (e) {
+			}).on("mmselect:close", function (e) {
 				var $t = $(e.target);
 				var $w = $t.next('.ts-wrapper');
 				if ($w.length) {
 					$w.find('.ts-control').focus();
 				} else {
-					$t.siblings(".select2").find(".select2-selection--single").focus();
+					$t.siblings('.mm-select').first().next('.ts-wrapper').find('.ts-control').focus();
 				}
 		});
-		$('#pop_action #hours_type').select2({
+		$('#pop_action #hours_type').mmSelect({
 			width:"320px",//No I18N
 			minimumResultsForSearch: Infinity
 		});
@@ -173,7 +173,7 @@ function showuser_pref_dateformat(heading,description,button,action)
 	closePopup(close_popupscreen,"common_popup");//No I18N
 	
 	
-	$("#user_pref_dateformat .select2-selection:first").focus(); 
+	$("#user_pref_dateformat select").next('.ts-wrapper').find('.ts-control').first().focus(); 
 }
 
 function save_date_format(f)
@@ -1220,13 +1220,13 @@ function show_deletepopup()
 	});
 	if(!isMobile)
 	{
-		$("#delete_acc_reason").select2({
+		$("#delete_acc_reason").mmSelect({
 			minimumResultsForSearch: Infinity
 		});
 	}
 	popup_blurHandler('6','.5');
 	control_Enter(".blue"); //No i18N
-	$("#delete_acc_reason~.select2 .select2-selection").focus();
+	$("#delete_acc_reason").next('.ts-wrapper').find('.ts-control').focus();
 	closePopup(close_deleteaccount,"popup_deleteaccount_close");//No I18N
 	
 }

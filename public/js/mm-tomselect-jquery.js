@@ -1,6 +1,6 @@
 /**
- * Maps jQuery .select2() usage to Tom Select (global TomSelect from tom-select.complete.min.js).
- * Keeps select2:* jQuery events and data("select2") checks working for incremental migration.
+ * jQuery bridge for Tom Select (window.TomSelect from tom-select.complete.min.js).
+ * Use $('.mm-select').mmSelect({ ... }) with legacy Select2-shaped option objects.
  */
 (function (factory) {
   if (typeof jQuery !== 'undefined' && typeof TomSelect !== 'undefined') {
@@ -8,6 +8,9 @@
   }
 })(function ($, TomSelect) {
   'use strict';
+
+  var INIT_CLASS = 'mm-select-initialized';
+  var DATA_KEY = 'mmSelect';
 
   function identityEscapeMarkup(fn) {
     if (typeof fn !== 'function') return false;
@@ -26,7 +29,7 @@
     return String(x);
   }
 
-  function s2ResultToOpt(r) {
+  function legacyResultToOpt(r) {
     if (!r || typeof r !== 'object') return { value: '', text: '' };
     var opt = {};
     for (var k in r) {
@@ -39,7 +42,7 @@
     return opt;
   }
 
-  function optionToSelect2Data(raw, valueKey) {
+  function optionToLegacyData(raw, valueKey) {
     var d = $.extend(true, {}, raw);
     d.id = raw.id !== undefined ? raw.id : raw.value;
     if (d.text === undefined && raw.label !== undefined) d.text = raw.label;
@@ -47,23 +50,23 @@
     return d;
   }
 
-  function bindSelect2Events(ts, el, s2opts) {
+  function bindBridgeEvents(ts, el) {
     ts.on('item_add', function (value) {
       var raw = ts.options[value];
-      var data = raw ? optionToSelect2Data(raw, value) : { id: value, text: value };
-      $(el).trigger($.Event('select2:select', { params: { data: data } }));
+      var data = raw ? optionToLegacyData(raw, value) : { id: value, text: value };
+      $(el).trigger($.Event('mmselect:select', { params: { data: data } }));
     });
 
     ts.on('clear', function () {
-      $(el).trigger($.Event('select2:clear', { params: {} }));
+      $(el).trigger($.Event('mmselect:clear', { params: {} }));
     });
 
     ts.on('dropdown_open', function () {
-      $(el).trigger($.Event('select2:open', { params: {} }));
+      $(el).trigger($.Event('mmselect:open', { params: {} }));
     });
 
     ts.on('dropdown_close', function () {
-      $(el).trigger($.Event('select2:close', { params: {} }));
+      $(el).trigger($.Event('mmselect:close', { params: {} }));
     });
   }
 
@@ -76,54 +79,54 @@
     }
   }
 
-  /** Build Tom Select settings from Select2-style options */
-  function buildSettings($el, s2opts) {
-    var isMulti = !!(s2opts.multiple || $el.prop('multiple'));
+  /** Build Tom Select settings from legacy Select2-shaped options */
+  function buildSettings($el, legacyOpts) {
+    var isMulti = !!(legacyOpts.multiple || $el.prop('multiple'));
     var plugins = [];
 
     if (isMulti) plugins.push('remove_button');
-    if (!isMulti && s2opts.allowClear) plugins.push('clear_button');
+    if (!isMulti && legacyOpts.allowClear) plugins.push('clear_button');
 
     var maxItems = isMulti ? null : 1;
-    if (isMulti && s2opts.maximumSelectionLength != null) {
-      maxItems = s2opts.maximumSelectionLength;
+    if (isMulti && legacyOpts.maximumSelectionLength != null) {
+      maxItems = legacyOpts.maximumSelectionLength;
     }
 
     var opts = {
       plugins: plugins,
       diacritics: true,
       maxItems: maxItems,
-      allowEmptyOption: !!s2opts.allowClear,
-      closeAfterSelect: s2opts.closeOnSelect === false ? false : true,
-      loadThrottle: s2opts.ajax && s2opts.ajax.delay != null ? s2opts.ajax.delay : 300,
-      placeholder: s2opts.placeholder || undefined,
+      allowEmptyOption: !!legacyOpts.allowClear,
+      closeAfterSelect: legacyOpts.closeOnSelect === false ? false : true,
+      loadThrottle: legacyOpts.ajax && legacyOpts.ajax.delay != null ? legacyOpts.ajax.delay : 300,
+      placeholder: legacyOpts.placeholder || undefined,
       maxOptions: null,
     };
 
-    if (s2opts.minimumResultsForSearch === Infinity) {
+    if (legacyOpts.minimumResultsForSearch === Infinity) {
       opts.searchField = [];
     }
 
-    if (s2opts.dropdownParent) {
-      var dp = s2opts.dropdownParent;
+    if (legacyOpts.dropdownParent) {
+      var dp = legacyOpts.dropdownParent;
       opts.dropdownParent = typeof dp === 'string' ? document.querySelector(dp) : dp[0] || dp;
     }
 
-    if (s2opts.dropdownCssClass) {
-      opts.dropdownClass = ('ts-dropdown ' + String(s2opts.dropdownCssClass).trim()).trim();
+    if (legacyOpts.dropdownCssClass) {
+      opts.dropdownClass = ('ts-dropdown ' + String(legacyOpts.dropdownCssClass).trim()).trim();
     }
 
-    if (s2opts.ajax) {
+    if (legacyOpts.ajax) {
       opts.persist = false;
       if (isMulti) opts.hideSelected = true;
 
-      var minLen = s2opts.minimumInputLength;
+      var minLen = legacyOpts.minimumInputLength;
       if (minLen === undefined) minLen = 0;
       opts.shouldLoad = function (query) {
         return query.length >= minLen;
       };
 
-      var ajax = s2opts.ajax;
+      var ajax = legacyOpts.ajax;
       opts.load = function (query, callback) {
         if (query.length < minLen) {
           callback();
@@ -143,7 +146,7 @@
               ? ajax.processResults(resp, { term: query, page: 1 })
               : { results: resp };
             var results = processed.results || [];
-            callback(results.map(s2ResultToOpt));
+            callback(results.map(legacyResultToOpt));
           },
           error: function () {
             callback();
@@ -152,14 +155,14 @@
       };
     }
 
-    var trustHtml = identityEscapeMarkup(s2opts.escapeMarkup);
+    var trustHtml = identityEscapeMarkup(legacyOpts.escapeMarkup);
 
-    if (s2opts.templateResult || s2opts.templateSelection) {
+    if (legacyOpts.templateResult || legacyOpts.templateSelection) {
       opts.render = {};
-      if (s2opts.templateResult) {
+      if (legacyOpts.templateResult) {
         opts.render.option = function (data, escape) {
-          var d = optionToSelect2Data(data, data.value);
-          var out = s2opts.templateResult(d);
+          var d = optionToLegacyData(data, data.value);
+          var out = legacyOpts.templateResult(d);
           if (out == null) return '';
           if (trustHtml) return jqToHtml(out);
           var html = jqToHtml(out);
@@ -167,9 +170,9 @@
         };
       }
       opts.render.item = function (data, escape) {
-        var d = optionToSelect2Data(data, data.value);
-        if (s2opts.templateSelection) {
-          var sel = s2opts.templateSelection(d);
+        var d = optionToLegacyData(data, data.value);
+        if (legacyOpts.templateSelection) {
+          var sel = legacyOpts.templateSelection(d);
           if (sel == null) return '';
           if (typeof sel === 'string') return trustHtml ? sel : escape(sel);
           return jqToHtml(sel);
@@ -178,16 +181,15 @@
       };
     }
 
-    if (s2opts.data && Array.isArray(s2opts.data)) {
-
-      opts.options = s2opts.data.map(s2ResultToOpt);
+    if (legacyOpts.data && Array.isArray(legacyOpts.data)) {
+      opts.options = legacyOpts.data.map(legacyResultToOpt);
       opts.persist = false;
     }
 
     return opts;
   }
 
-  if (!$.fn.select2PatchedVal) {
+  if (!$.fn.mmSelectPatchedVal) {
     var _val = $.fn.val;
     $.fn.val = function (value) {
       if (arguments.length && this.length && this[0].tomselect) {
@@ -204,18 +206,18 @@
       }
       return _val.apply(this, arguments);
     };
-    $.fn.select2PatchedVal = true;
+    $.fn.mmSelectPatchedVal = true;
   }
 
-  $.fn.select2 = function (options) {
+  $.fn.mmSelect = function (options) {
     if (options === 'destroy') {
       return this.each(function () {
         var el = this;
         if (el.tomselect) {
           el.tomselect.destroy();
         }
-        $(el).removeData('select2');
-        $(el).removeClass('select2-hidden-accessible');
+        $(el).removeData(DATA_KEY);
+        $(el).removeClass(INIT_CLASS);
       });
     }
 
@@ -223,7 +225,7 @@
       return this;
     }
 
-    var s2opts = options || {};
+    var legacyOpts = options || {};
 
     return this.each(function () {
       var el = this;
@@ -233,12 +235,12 @@
         el.tomselect.destroy();
       }
 
-      var opts = buildSettings($(el), s2opts);
+      var opts = buildSettings($(el), legacyOpts);
       var ts = new TomSelect(el, opts);
-      $(el).data('select2', { tomselect: true });
-      $(el).addClass('select2-hidden-accessible');
-      bindSelect2Events(ts, el, s2opts);
-      applyWidth($(el), s2opts.width);
+      $(el).data(DATA_KEY, { tomselect: true });
+      $(el).addClass(INIT_CLASS);
+      bindBridgeEvents(ts, el);
+      applyWidth($(el), legacyOpts.width);
     });
   };
 });
