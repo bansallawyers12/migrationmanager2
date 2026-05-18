@@ -668,15 +668,15 @@ $(function () {
     });
   }
 
-  // Date pickers (Flatpickr - standardized)
+  // Date pickers (Flatpickr — class names like .datepicker / .datetimepicker are legacy hooks only)
   if (typeof flatpickr !== 'undefined') {
-    // Client detail layouts load Flatpickr via crm-flatpickr.js (detected below); skip duplicate init here.
+    // Client detail layout already loads crm-flatpickr.js before this file; skip duplicate .datepicker init.
     var isClientDetailPage = $('.report_date_fields').length > 0 || 
                              $('.client-navigation-sidebar').length > 0;
     
     if (isClientDetailPage) {
       console.log('✅ Client detail page detected - Flatpickr will handle dates');
-      // Skip Flatpickr initialization on client detail pages (handled by detail-main.js)
+      // Other selectors below (dobdatepicker, filterdatepicker, etc.) still run when present.
     } else {
       // Initialize Flatpickr for all other pages
       if ($(".datepicker").length && typeof flatpickr !== 'undefined') {
@@ -855,7 +855,7 @@ $(function () {
         }
       });
     }
-    // Initialize Flatpickr for datetime pickers
+    // Inputs with class .datetimepicker (name predates Flatpickr); time picker via Flatpickr
     if ($(".datetimepicker").length && typeof flatpickr !== 'undefined') {
       $(".datetimepicker").each(function() {
         var $this = $(this);

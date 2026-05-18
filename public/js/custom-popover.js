@@ -494,18 +494,18 @@ function isNumberKey1(evt)
             if (dateEl && dateEl.inputmask) dateEl.inputmask.remove();
             if (timeEl && timeEl.inputmask) timeEl.inputmask.remove();
             if (dateEl) {
-                Inputmask({
-                    alias: 'datetime',
-                    inputFormat: 'dd/mm/yyyy',
+                Inputmask('99/99/9999', {
                     placeholder: 'dd/mm/yyyy',
+                    showMaskOnHover: true,
+                    showMaskOnFocus: true,
                     clearIncomplete: true
                 }).mask(dateEl);
             }
             if (timeEl) {
-                Inputmask({
-                    alias: 'datetime',
-                    inputFormat: 'hh:MM tt',
+                Inputmask('99:99 aa', {
                     placeholder: 'hh:mm am',
+                    showMaskOnHover: true,
+                    showMaskOnFocus: true,
                     clearIncomplete: true
                 }).mask(timeEl);
             }

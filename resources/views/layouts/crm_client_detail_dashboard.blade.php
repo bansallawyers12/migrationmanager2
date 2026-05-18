@@ -16,7 +16,7 @@
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/intlTelInput.css')}}">
+    <link rel="stylesheet" href="{{asset('vendor/intl-tel-input/css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
@@ -729,7 +729,8 @@
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/select2.full.min.js')}}"></script>
-    <script src="{{asset('js/intlTelInput.js')}}"></script>
+    <script src="{{asset('vendor/intl-tel-input/js/intlTelInput.min.js')}}"></script>
+    <script src="{{asset('js/intlTelInput.jquery-bridge.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>

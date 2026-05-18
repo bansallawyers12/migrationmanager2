@@ -5,8 +5,8 @@
  * 
  * Migration from CRM_DatePicker (daterangepicker) to CRM_Flatpickr (flatpickr)
  *
- * Do not load legacy public/js/bootstrap-datepicker.js or public/js/global-datepicker.js;
- * they are unused by Blade/layouts (grep the repo before reintroducing).
+ * Do not load legacy jQuery/Bootstrap datepicker bundles (removed from public/js and
+ * public/css); layouts use Flatpickr only. Grep the repo before re-adding vendor scripts.
  *
  * Usage Guide:
  * - For NEW code: Use CRM_Flatpickr methods
@@ -448,7 +448,7 @@ $(document).ready(function() {
         CRM_Flatpickr.initRange(this);
     });
 
-    // Backward compatibility: data-datepicker (was daterangepicker/global-datepicker)
+    // Backward compatibility: data-datepicker (legacy CRM/daterangepicker attribute naming)
     $('[data-datepicker="standard"]').each(function() {
         CRM_Flatpickr.initStandard(this);
     });

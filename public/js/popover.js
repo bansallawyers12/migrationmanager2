@@ -173,18 +173,20 @@ console.log(timestring);
         if (dateEl && dateEl.inputmask) dateEl.inputmask.remove();
         if (timeEl && timeEl.inputmask) timeEl.inputmask.remove();
         if (dateEl) {
-            Inputmask({
-                alias: 'datetime',
-                inputFormat: 'yyyy-mm-dd',
+            // explicit mask — no alias needed; vanilla bundle has no date extension
+            Inputmask('9999-99-99', {
                 placeholder: 'yyyy-mm-dd',
+                showMaskOnHover: true,
+                showMaskOnFocus: true,
                 clearIncomplete: true
             }).mask(dateEl);
         }
         if (timeEl) {
-            Inputmask({
-                alias: 'datetime',
-                inputFormat: 'hh:MM tt',
+            // '9' = digit, 'a' = any letter (am/pm validated separately via regex)
+            Inputmask('99:99 aa', {
                 placeholder: 'hh:mm am',
+                showMaskOnHover: true,
+                showMaskOnFocus: true,
                 clearIncomplete: true
             }).mask(timeEl);
         }

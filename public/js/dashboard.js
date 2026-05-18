@@ -1,8 +1,8 @@
 /*
- * Author: Abdullah A Almsaeed
- * Date: 4 Jan 2014
- * Description:
- *      This is a demo file used only for the main dashboard (index.html)
+ * Originally the AdminLTE v2 dashboard demo (Abdullah A Almsaeed, 4 Jan 2014).
+ * This repo does not reference this file from Blade layouts; the CRM dashboard
+ * loads js/dashboard-optimized.js. Date ranges and the inline calendar use Flatpickr.
+ * Keep only if you wire it in manually; otherwise safe to delete.
  **/
 
 $(function () {
@@ -119,9 +119,8 @@ $(function () {
   sparkline2.draw([515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921]);
   sparkline3.draw([15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21]); */
 
-  // Legacy AdminLTE demo used jQuery datetimepicker on #calendar. That id is used elsewhere
-  // (e.g. FullCalendar), and the plugin is not shipped. Optional inline Flatpickr only on a
-  // dedicated hook so we never attach to the wrong element.
+  // AdminLTE's old demo targeted #calendar with a jQuery datetime plugin; #calendar is used
+  // elsewhere (e.g. FullCalendar). Inline Flatpickr runs only on #dashboard-inline-calendar.
   if (typeof flatpickr !== 'undefined' && document.getElementById('dashboard-inline-calendar')) {
     flatpickr('#dashboard-inline-calendar', {
       inline: true,
