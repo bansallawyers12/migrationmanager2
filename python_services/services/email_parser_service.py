@@ -9,7 +9,7 @@ import sys
 import os
 import base64
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, Iterator
 
 try:
     import extract_msg
@@ -26,7 +26,79 @@ class EmailParserService:
     
     def __init__(self):
         logger.info("Email Parser Service initialized")
-    
+
+    @staticmethod
+    def _is_recoverable_codec_failure(exc: BaseException) -> bool:
+        """True when extract_msg failed due to string decoding (e.g. wrong cp950 assumption)."""
+        if isinstance(exc, (UnicodeDecodeError, UnicodeError)):
+            return True
+        msg = str(exc).lower()
+        return (
+            "codec can't decode" in msg
+            or "illegal multibyte sequence" in msg
+            or "unexpected end of data" in msg
+        )
+
+    def _message_open_strategies(self) -> Iterator[Tuple[str, Dict[str, Any]]]:
+        """
+        Try the default parse first (unchanged behaviour), then fallbacks only if decoding fails.
+
+        extract_msg supports overrideEncoding / ignoreRtfDeErrors / delayAttachments — see
+        extract_msg.Message.__init__ docstring.
+        """
+        yield ("default", {})
+        yield ("ignore_rtf_de_errors", {"ignoreRtfDeErrors": True})
+        yield ("override_utf8", {"overrideEncoding": "utf-8", "ignoreRtfDeErrors": True})
+        yield ("override_utf16_le", {"overrideEncoding": "utf-16-le", "ignoreRtfDeErrors": True})
+        yield ("override_cp1252", {"overrideEncoding": "cp1252", "ignoreRtfDeErrors": True})
+        yield ("delay_attach_utf8", {
+            "delayAttachments": True,
+            "overrideEncoding": "utf-8",
+            "ignoreRtfDeErrors": True,
+        })
+        # Byte-preserving: never raises on decode (may show mojibake for wrong charset)
+        yield ("override_latin1", {"overrideEncoding": "latin-1", "ignoreRtfDeErrors": True})
+
+    def _extract_email_payload(self, msg: Any, file_path: str) -> Dict[str, Any]:
+        """Build the parsed email dict from an open extract_msg.Message (does not close msg)."""
+        email_data = {
+            'success': True,
+            'subject': self._safe_get(msg.subject, ''),
+            'sender_name': '',
+            'sender_email': '',
+            'sent_date': self._safe_get(msg.date),
+            'received_date': None,
+            'html_content': self._safe_get(msg.htmlBody, ''),
+            'text_content': self._safe_get(msg.body, ''),
+            'recipients': [],
+            'attachments': [],
+            'headers': {},
+            'message_id': self._safe_get(getattr(msg, 'messageId', ''), ''),
+            'file_path': file_path,
+            'file_size': os.path.getsize(file_path),
+        }
+
+        sender_info = self._extract_sender_info(msg)
+        email_data['sender_name'] = sender_info['name']
+        email_data['sender_email'] = sender_info['email']
+
+        email_data['recipients'] = self._extract_recipients(msg)
+
+        if email_data['sent_date']:
+            email_data['received_date'] = email_data['sent_date']
+
+        email_data['attachments'] = self._extract_attachments(
+            msg,
+            body_text=email_data['text_content'],
+            html_body=email_data['html_content'],
+        )
+
+        email_data['headers'] = self._extract_headers(msg)
+
+        logger.info(f"Successfully parsed email: {email_data['subject']}")
+
+        return email_data
+
     def parse_msg_file(self, file_path: str) -> Dict[str, Any]:
         """
         Parse a .msg file and extract all email data.
@@ -46,59 +118,75 @@ class EmailParserService:
                     'error': f'File not found: {file_path}'
                 }
             
-            # Parse the .msg file
-            msg = extract_msg.Message(file_path)
-            
-            try:
-                # Extract basic information
-                email_data = {
-                    'success': True,
-                    'subject': self._safe_get(msg.subject, ''),
-                    'sender_name': '',
-                    'sender_email': '',
-                    'sent_date': self._safe_get(msg.date),
-                    'received_date': None,
-                    'html_content': self._safe_get(msg.htmlBody, ''),
-                    'text_content': self._safe_get(msg.body, ''),
-                    'recipients': [],
-                    'attachments': [],
-                    'headers': {},
-                    'message_id': self._safe_get(getattr(msg, 'messageId', ''), ''),
-                    'file_path': file_path,
-                    'file_size': os.path.getsize(file_path)
-                }
-                
-                # Extract sender information
-                sender_info = self._extract_sender_info(msg)
-                email_data['sender_name'] = sender_info['name']
-                email_data['sender_email'] = sender_info['email']
-                
-                # Extract recipients
-                email_data['recipients'] = self._extract_recipients(msg)
-                
-                # Set received date (usually same as sent date for incoming emails)
-                if email_data['sent_date']:
-                    email_data['received_date'] = email_data['sent_date']
-                
-                # Extract attachments (reuse body/html already read — avoids second msg.body/msg.htmlBody access)
-                email_data['attachments'] = self._extract_attachments(
-                    msg,
-                    body_text=email_data['text_content'],
-                    html_body=email_data['html_content'],
-                )
-                
-                # Extract headers
-                email_data['headers'] = self._extract_headers(msg)
-                
-                logger.info(f"Successfully parsed email: {email_data['subject']}")
-                
-                return email_data
-            finally:
-                # Always close the message to release file handle (critical for Windows)
+            # Parse with extract_msg: default path unchanged; fallbacks only on codec/decode failures
+            # (covers both Message() and lazy property access such as body/htmlBody).
+            last_codec_error: Optional[BaseException] = None
+
+            for strategy_name, kwargs in self._message_open_strategies():
+                msg = None
                 try:
-                    msg.close()
-                except Exception:
-                    pass
+                    msg = extract_msg.Message(file_path, **kwargs)
+                    email_data = self._extract_email_payload(msg, file_path)
+                    if strategy_name != "default":
+                        logger.info("Parsed .msg using fallback strategy: %s", strategy_name)
+                    return email_data
+                except RecursionError:
+                    logger.error(
+                        "Recursion depth exceeded parsing %s — likely deeply nested forwarded/embedded .msg",
+                        file_path,
+                    )
+                    return {
+                        'success': False,
+                        'error': (
+                            'This email contains deeply nested forwarded messages that exceed the parser depth limit. '
+                            'Try saving or uploading the innermost message as its own .msg file.'
+                        ),
+                        'file_path': file_path,
+                    }
+                except Exception as e:
+                    if self._is_recoverable_codec_failure(e):
+                        last_codec_error = e
+                        logger.warning(
+                            "Parse attempt failed (%s), retrying if another strategy exists: %s",
+                            strategy_name,
+                            e,
+                        )
+                        continue
+                    logger.error(
+                        "Error parsing .msg file %s (strategy %s): %s",
+                        file_path,
+                        strategy_name,
+                        str(e),
+                    )
+                    return {
+                        'success': False,
+                        'error': str(e),
+                        'file_path': file_path,
+                    }
+                finally:
+                    if msg is not None:
+                        try:
+                            msg.close()
+                        except Exception:
+                            pass
+
+            if last_codec_error is not None:
+                logger.error(
+                    "All decode fallbacks failed for %s: %s",
+                    file_path,
+                    last_codec_error,
+                )
+                return {
+                    'success': False,
+                    'error': str(last_codec_error),
+                    'file_path': file_path,
+                }
+
+            return {
+                'success': False,
+                'error': 'Failed to parse email file',
+                'file_path': file_path,
+            }
 
         except RecursionError:
             logger.error(
