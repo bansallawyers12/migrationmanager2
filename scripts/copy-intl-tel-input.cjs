@@ -12,6 +12,14 @@ const root = path.resolve(__dirname, '..');
 const build = path.join(root, 'node_modules', 'intl-tel-input', 'build');
 const outBase = path.join(root, 'public', 'vendor', 'intl-tel-input');
 
+if (!fs.existsSync(build)) {
+    console.error(
+        'intl-tel-input build folder missing. Run npm install. Expected:',
+        path.relative(root, build),
+    );
+    process.exit(1);
+}
+
 function readVersion() {
     const p = path.join(root, 'node_modules', 'intl-tel-input', 'package.json');
     try {
