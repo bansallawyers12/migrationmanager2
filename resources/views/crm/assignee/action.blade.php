@@ -1238,7 +1238,7 @@ $(function () {
         
         // Initialize client search select with AJAX after positioning
         setTimeout(function() {
-            initializeClientSelect2();
+            initializeClientMmSelect();
         }, 100);
     });
     
@@ -1248,7 +1248,7 @@ $(function () {
     });
     
     // Function to initialize client search (mmSelect) in Add My Task popover
-    function initializeClientSelect2() {
+    function initializeClientMmSelect() {
         var attempts = 0;
         var maxAttempts = 10;
         

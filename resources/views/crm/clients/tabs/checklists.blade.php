@@ -437,7 +437,7 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
-/* Checklist cost panel: dropdown attached to body (see initChecklistSelect2). Wide menu + z-index above transformed panel. */
+/* Checklist cost panel: dropdown attached to body (see initChecklistMmSelect). Wide menu + z-index above transformed panel. */
 .ts-dropdown.mm-checklist-create-dropdown {
     z-index: 100060 !important;
     width: min(520px, 92vw) !important;
@@ -777,7 +777,7 @@
         var $dropdown = $('#checklist-create-dropdown');
         var $matterSelect = $('#checklist_matter_select');
 
-        function destroyChecklistSelect2() {
+        function destroyChecklistMmSelect() {
             if (typeof $.fn.mmSelect === 'undefined') {
                 return;
             }
@@ -794,9 +794,9 @@
             e.stopPropagation();
             $dropdown.toggle();
             if ($dropdown.is(':visible')) {
-                initChecklistSelect2();
+                initChecklistMmSelect();
             } else {
-                destroyChecklistSelect2();
+                destroyChecklistMmSelect();
             }
         });
 
@@ -814,13 +814,13 @@
             if ($(e.target).closest('.ts-dropdown').length && $dropdown.find('.ts-wrapper.dropdown-active').length) {
                 return;
             }
-            destroyChecklistSelect2();
+            destroyChecklistMmSelect();
             $dropdown.hide();
         });
 
         // Cancel button
         $dropdown.on('click', '.btn-cancel-checklist', function() {
-            destroyChecklistSelect2();
+            destroyChecklistMmSelect();
             $dropdown.hide();
         });
 
@@ -868,15 +868,15 @@
             $('#sel_office_id_lead').val(officeId).trigger('change');
             $('#sel_migration_agent_id_lead,#sel_person_responsible_id_lead,#sel_person_assisting_id_lead,#sel_office_id_lead,#sel_matter_id_lead').mmSelect({ dropdownParent: $('#costAssignmentCreateFormModelLead') });
             $('#costAssignmentCreateFormModelLead').modal('show');
-            destroyChecklistSelect2();
+            destroyChecklistMmSelect();
             $dropdown.hide();
         });
 
-        function initChecklistSelect2() {
+        function initChecklistMmSelect() {
             if (typeof $.fn.mmSelect === 'undefined') {
                 return;
             }
-            destroyChecklistSelect2();
+            destroyChecklistMmSelect();
             var $fields = $('#checklist_matter_select,#checklist_migration_agent,#checklist_person_responsible,#checklist_person_assisting,#checklist_office');
             $fields.each(function() {
                 $(this).mmSelect({

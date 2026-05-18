@@ -1,6 +1,6 @@
 /**
  * jQuery bridge for Tom Select (window.TomSelect from tom-select.complete.min.js).
- * Use $('.mm-select').mmSelect({ ... }) with legacy Select2-shaped option objects.
+ * Use $('.mm-select').mmSelect({ ... }) with option objects shaped like the old jQuery dropdown plugin.
  */
 (function (factory) {
   if (typeof jQuery !== 'undefined' && typeof TomSelect !== 'undefined') {
@@ -57,6 +57,12 @@
       $(el).trigger($.Event('mmselect:select', { params: { data: data } }));
     });
 
+    ts.on('item_remove', function (value) {
+      var raw = ts.options[value];
+      var data = raw ? optionToLegacyData(raw, value) : { id: value, text: value };
+      $(el).trigger($.Event('mmselect:unselect', { params: { data: data } }));
+    });
+
     ts.on('clear', function () {
       $(el).trigger($.Event('mmselect:clear', { params: {} }));
     });
@@ -79,7 +85,7 @@
     }
   }
 
-  /** Build Tom Select settings from legacy Select2-shaped options */
+  /** Build Tom Select settings from legacy dropdown-style options */
   function buildSettings($el, legacyOpts) {
     var isMulti = !!(legacyOpts.multiple || $el.prop('multiple'));
     var plugins = [];

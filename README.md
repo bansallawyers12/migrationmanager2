@@ -38,7 +38,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 ## Technology Stack
 
 - **Backend**: Laravel 13.x (PHP 8.3+)
-- **Frontend**: Bootstrap 4/5, jQuery, DataTables, Select2, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
+- **Frontend**: Bootstrap 4/5, jQuery, DataTables, Tom Select (`mmSelect` bridge), Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
 - **Charts**: Chart.js **4.4.0** (jsDelivr CDN, `chart.umd.min.js`) for leads analytics, e-signature dashboards, client insights, staff login analytics, and financial analytics — one version across these pages
 - **Build**: Vite 7.x
 - **Database**: PostgreSQL (Primary), MySQL (optional for migration), SQLite (Development)

@@ -1061,7 +1061,7 @@ $(function () {
         });
 
         setTimeout(function() {
-            initializeClientSelect2();
+            initializeClientMmSelect();
         }, 100);
     });
 
@@ -1069,7 +1069,7 @@ $(function () {
         $('.popover-backdrop').removeClass('show');
     });
 
-    function initializeClientSelect2() {
+    function initializeClientMmSelect() {
         var attempts = 0;
         var maxAttempts = 10;
 

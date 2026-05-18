@@ -1824,7 +1824,7 @@ window.toggleEditMode = function(sectionType) {
             // Reinitialize mmSelect when opening related files edit mode
             console.log('🔗 Opening related files section - reinitializing mmSelect');
             setTimeout(function() {
-                window.reinitializeRelatedFilesSelect2();
+                window.reinitializeRelatedFilesMmSelect();
             }, 100);
         }
     }
@@ -6199,14 +6199,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Related Files dropdown (mmSelect + AJAX)
-    initializeRelatedFilesSelect2();
+    initializeRelatedFilesMmSelect();
     
     // Fallback if mmSelect did not attach
     setTimeout(function() {
         const relatedFilesSelect = $('#relatedFiles');
         if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('mm-select-initialized')) {
             console.log('mmSelect not initialized, retrying...');
-            initializeRelatedFilesSelect2();
+            initializeRelatedFilesMmSelect();
         }
     }, 1000);
     
@@ -6215,7 +6215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const relatedFilesSelect = $('#relatedFiles');
         if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('mm-select-initialized')) {
             console.log('mmSelect still not initialized, final retry...');
-            initializeRelatedFilesSelect2();
+            initializeRelatedFilesMmSelect();
         }
     }, 3000);
 });
@@ -6223,7 +6223,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Related Files dropdown: mmSelect with AJAX search
  */
-function initializeRelatedFilesSelect2() {
+function initializeRelatedFilesMmSelect() {
     const relatedFilesSelect = $('#relatedFiles');
 
     if (relatedFilesSelect.length === 0) return;
@@ -6338,7 +6338,7 @@ function initializeRelatedFilesSelect2() {
 }
 
 // Re-run Related Files mmSelect when edit mode is toggled
-window.reinitializeRelatedFilesSelect2 = function() {
+window.reinitializeRelatedFilesMmSelect = function() {
     console.log('Reinitializing Related Files mmSelect...');
     const relatedFilesSelect = $('#relatedFiles');
     if (relatedFilesSelect.length > 0) {
@@ -6348,7 +6348,7 @@ window.reinitializeRelatedFilesSelect2 = function() {
         }
         // Reinitialize
         setTimeout(function() {
-            initializeRelatedFilesSelect2();
+            initializeRelatedFilesMmSelect();
         }, 100);
     }
 };
