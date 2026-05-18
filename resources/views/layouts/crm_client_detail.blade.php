@@ -15,7 +15,8 @@
     <link rel="stylesheet" href="{{asset('css/iziToast.min.css')}}">
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     @include('components.flatpickr-assets')
-    <link rel="stylesheet" href="{{asset('css/select2.min.css')}}">
+    <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
+    <link rel="stylesheet" href="{{asset('css/tom-select-layout-compat.css')}}">
     <link rel="stylesheet" href="{{asset('vendor/intl-tel-input/css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
@@ -1730,11 +1731,13 @@
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
+    <script src="{{asset('js/datatables-pdfmake.min.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
     @include('components.flatpickr-scripts')
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
-    <script src="{{asset('js/select2.full.min.js')}}"></script>
+    <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
+    <script src="{{asset('js/jquery-select2-tomselect-shim.js')}}"></script>
     <script src="{{asset('vendor/intl-tel-input/js/intlTelInput.min.js')}}"></script>
     <script src="{{asset('js/intlTelInput.jquery-bridge.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>

@@ -333,6 +333,7 @@
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
 
     <script src="{{asset('js/datatables.min.js')}}"></script>
+    <script src="{{asset('js/datatables-pdfmake.min.js')}}"></script>
 
     <script>
     $(document).ready(function() {

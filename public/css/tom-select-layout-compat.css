@@ -1,0 +1,18 @@
+/* Layout hooks that previously targeted Select2; Tom Select uses .ts-wrapper */
+.card .card-body .form-group .ts-wrapper,
+.modal .modal-body .form-group .ts-wrapper {
+  display: block;
+}
+
+.listing-container .ts-wrapper {
+  width: 100%;
+}
+
+/* Popovers / sidebars: match former select2 full-width behavior */
+.popover-body .ts-wrapper {
+  width: 100%;
+}
+
+.sidebar-matter-selection .ts-wrapper {
+  width: 100%;
+}

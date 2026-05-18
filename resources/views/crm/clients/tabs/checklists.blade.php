@@ -445,6 +445,12 @@
     min-width: 260px !important;
     box-sizing: border-box;
 }
+.ts-dropdown.select2-checklist-create-dropdown {
+    z-index: 100060 !important;
+    width: min(520px, 92vw) !important;
+    min-width: 260px !important;
+    box-sizing: border-box;
+}
 .checklist-create-dropdown .dropdown-title { color: #334155; }
 
 /* Checklist Accordion Styles */
@@ -812,7 +818,7 @@
             if ($dropdown.is(e.target) || $dropdown.has(e.target).length) {
                 return;
             }
-            if ($(e.target).closest('.select2-dropdown').length && $dropdown.find('.select2-container--open').length) {
+            if ($(e.target).closest('.select2-dropdown, .ts-dropdown').length && $dropdown.find('.select2-container--open, .ts-wrapper.dropdown-active').length) {
                 return;
             }
             destroyChecklistSelect2();

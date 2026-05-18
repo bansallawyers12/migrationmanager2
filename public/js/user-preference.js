@@ -132,8 +132,14 @@ function showuser_pref_dateformat(heading,description,button,action)
 	if(!isMobile){
 		$('#pop_action #format').select2({
 			width:"320px"		//No I18N
-			}).on("select2:close", function (e) { 
-				$(e.target).siblings(".select2").find(".select2-selection--single").focus();
+			}).on("select2:close", function (e) {
+				var $t = $(e.target);
+				var $w = $t.next('.ts-wrapper');
+				if ($w.length) {
+					$w.find('.ts-control').focus();
+				} else {
+					$t.siblings(".select2").find(".select2-selection--single").focus();
+				}
 		});
 		$('#pop_action #hours_type').select2({
 			width:"320px",//No I18N

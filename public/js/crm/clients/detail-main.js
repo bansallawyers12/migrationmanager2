@@ -3491,7 +3491,7 @@ success: function(response) {
 
         $('#changeassignee').select2();
 
-        $('#changeassignee').next('.select2-container').first().css('width', '220px');
+        $('#changeassignee').next('.ts-wrapper').first().css('width', '220px');
 
 
 

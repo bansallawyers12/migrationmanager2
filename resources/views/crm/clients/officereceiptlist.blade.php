@@ -763,8 +763,7 @@ jQuery(document).ready(function($){
         width: '100%',
         dropdownParent: $('body') // Ensure dropdown appears above other elements
     }).on('select2:open', function() {
-        // Ensure dropdown is visible
-        $('.select2-dropdown').css('z-index', '9999');
+        $('.ts-dropdown').css('z-index', '9999');
     });
 
     // Enhanced Date Filter Scripts

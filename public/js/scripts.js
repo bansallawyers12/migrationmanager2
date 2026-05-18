@@ -324,8 +324,8 @@ $(function () {
     container: "body"
   });
 
-  // Select2
-  if (jQuery().select2) {
+  // Enhanced selects (Tom Select via jquery-select2-tomselect-shim.js)
+  if (jQuery.fn.select2) {
     $(".select2").select2();
   }
 
