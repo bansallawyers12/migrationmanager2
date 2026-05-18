@@ -1,6 +1,11 @@
 /**
  * jQuery bridge for Tom Select (window.TomSelect from tom-select.complete.min.js).
- * Use $('.mm-select').mmSelect({ ... }) with option objects shaped like the old jQuery dropdown plugin.
+ * Use $('.mm-select').mmSelect({ ... }); options mirror the legacy plugin shape (ajax, templateResult, etc.).
+ *
+ * Canonical Custom events on the original <select> (listen with .on(...) / off):
+ *   mmselect:select, mmselect:unselect, mmselect:clear, mmselect:open, mmselect:close
+ * Each carries `e.params`; select/unselect include `params.data`.
+ * Do not rely on Select2 class names (.select2-*) or select2:* jQuery events; runtime DOM is Tom Select (.ts-*).
  */
 (function (factory) {
   if (typeof jQuery !== 'undefined' && typeof TomSelect !== 'undefined') {

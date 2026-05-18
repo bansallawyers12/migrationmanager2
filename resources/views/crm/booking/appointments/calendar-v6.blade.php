@@ -187,8 +187,6 @@
     </div>
 </div>
 
-<script src="{{URL::asset('js/moment.min.js')}}"></script>
-
 @vite(['resources/js/app.js'])
 
 <script>
@@ -323,9 +321,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Transform appointments to FullCalendar v6 event format
                 const events = data.data.map(apt => {
-                    const endTime = moment(apt.appointment_datetime)
-                        .add(apt.duration_minutes || 15, 'minutes')
-                        .toISOString();
+                    const startMs = new Date(apt.appointment_datetime).getTime();
+                    const durationMs = (apt.duration_minutes || 15) * 60 * 1000;
+                    const endTime = new Date(startMs + durationMs).toISOString();
                     
                     // Format meeting_type for display (e.g., 'in_person' -> 'In Person')
                     const meetingTypeDisplay = apt.meeting_type 

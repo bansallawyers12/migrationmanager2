@@ -523,7 +523,7 @@
         <div class="form-group row">
             <div class="col-sm-12">
                 <input id="mlead_id" name="mlead_id" type="hidden" value="">
-                <select name="assignto" class="form-control mm-select " style="width: 100%;" data-mm-select-id="1" tabindex="-1" aria-hidden="true">
+                <select name="assignto" class="form-control mm-select " style="width: 100%;">
                     <option value="">Select</option>
                     @foreach(\App\Models\Staff::where('status', 1)->orderBy('first_name')->get() as $ulist)
                     <option value="{{@$ulist->id}}">{{@$ulist->first_name}} {{@$ulist->last_name}}</option>
