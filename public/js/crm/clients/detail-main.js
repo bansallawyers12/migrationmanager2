@@ -655,7 +655,7 @@ $(document).ready(function() {
 
 
 
-    // Change Matter Assignee: open modal and pre-populate with current assignee
+    // Change Matter Assignee: fetch current assignees, then open modal so Tom Select initializes with correct values
 
     $(document).delegate('.changeMatterAssignee', 'click', function(e){
 
@@ -679,6 +679,28 @@ $(document).ready(function() {
 
         var fetchUrl = (window.ClientDetailConfig && window.ClientDetailConfig.urls && window.ClientDetailConfig.urls.fetchClientMatterAssignee) || '/clients/fetchClientMatterAssignee';
 
+        var assigneeSelectors = '#change_sel_migration_agent_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id';
+
+        function destroyChangeMatterAssigneeMmSelect() {
+
+            if (typeof $.fn.mmSelect === 'undefined') {
+
+                return;
+
+            }
+
+            $(assigneeSelectors).each(function() {
+
+                if (this.tomselect) {
+
+                    $(this).mmSelect('destroy');
+
+                }
+
+            });
+
+        }
+
         $.ajax({
 
             type: 'post',
@@ -691,47 +713,87 @@ $(document).ready(function() {
 
                 var info = (typeof res === 'string' ? (function(){ try { return JSON.parse(res); } catch(e){ return {}; } })() : res) || {};
 
-                var m = info.matter_info || {};
+                if (info.status === false) {
 
-                if (m.sel_migration_agent) $('#change_sel_migration_agent_id').val(m.sel_migration_agent).trigger('change');
+                    var msg = info.message || 'Could not load this matter.';
 
-                else $('#change_sel_migration_agent_id').val('').trigger('change');
+                    if (typeof iziToast !== 'undefined' && iziToast.warning) {
 
-                if (m.sel_person_responsible) $('#change_sel_person_responsible_id').val(m.sel_person_responsible).trigger('change');
+                        iziToast.warning({ title: 'Matter', message: msg, position: 'topRight' });
 
-                else $('#change_sel_person_responsible_id').val('').trigger('change');
+                    } else {
 
-                if (m.sel_person_assisting) $('#change_sel_person_assisting_id').val(m.sel_person_assisting).trigger('change');
+                        alert(msg);
 
-                else $('#change_sel_person_assisting_id').val('').trigger('change');
+                    }
 
-                if (m.office_id) $('#change_office_id').val(m.office_id).trigger('change');
+                    return;
 
-                else $('#change_office_id').val('').trigger('change');
+                }
+
+                var raw = info.matter_info;
+
+                var m = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+
+                destroyChangeMatterAssigneeMmSelect();
+
+                $('#change_sel_migration_agent_id').val(m.sel_migration_agent ? String(m.sel_migration_agent) : '');
+
+                $('#change_sel_person_responsible_id').val(m.sel_person_responsible ? String(m.sel_person_responsible) : '');
+
+                $('#change_sel_person_assisting_id').val(m.sel_person_assisting ? String(m.sel_person_assisting) : '');
+
+                $('#change_office_id').val(m.office_id ? String(m.office_id) : '');
+
+                $('#changeMatterAssigneeModal').modal('show');
+
+            },
+
+            error: function() {
+
+                if (typeof iziToast !== 'undefined' && iziToast.error) {
+
+                    iziToast.error({ title: 'Error', message: 'Could not load assignees for this matter. Please try again.', position: 'topRight' });
+
+                } else {
+
+                    alert('Could not load assignees for this matter. Please try again.');
+
+                }
 
             }
 
         });
 
-        $('#changeMatterAssigneeModal').modal('show');
-
     });
 
 
 
-    // Change Matter Assignee modal: re-init mmSelect with dropdownParent so search works
+    // Change Matter Assignee modal: Tom Select only positions dropdown when dropdownParent is "body" (see mm-tomselect-jquery.js).
 
     $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function(){
-
-        var $modal = $(this);
 
         $('#change_sel_migration_agent_id, #change_sel_person_responsible_id, #change_sel_person_assisting_id, #change_office_id').each(function(){
 
             var $el = $(this);
 
-            if ($el.data('mmSelect')) $el.mmSelect('destroy');
+            if (this.tomselect) {
 
-            $el.mmSelect({ dropdownParent: $modal, minimumResultsForSearch: 0, width: '100%' });
+                $el.mmSelect('destroy');
+
+            }
+
+            $el.mmSelect({
+
+                dropdownParent: $('body'),
+
+                dropdownCssClass: 'mm-change-matter-assignee-dropdown',
+
+                minimumResultsForSearch: 0,
+
+                width: '100%'
+
+            });
 
         });
 
