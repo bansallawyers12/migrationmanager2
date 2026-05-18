@@ -428,6 +428,7 @@
 		</div>
 	</div>
 </div>
+@include('components.inputmask-scripts')
 <script src="{{URL::to('/')}}/public/js/popover.js"></script>  
 <script> 
 

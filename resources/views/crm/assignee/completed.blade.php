@@ -245,6 +245,7 @@
 </div>
 @endsection
 @push('scripts')
+@include('components.inputmask-scripts')
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 <script>
 	jQuery(document).ready(function($){

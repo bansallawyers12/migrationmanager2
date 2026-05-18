@@ -119,11 +119,17 @@ $(function () {
   sparkline2.draw([515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921]);
   sparkline3.draw([15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21]); */
 
-  // The Calender
-  $('#calendar').datetimepicker({
-    format: 'L',
-    inline: true
-  })
+  // Legacy AdminLTE demo used jQuery datetimepicker on #calendar. That id is used elsewhere
+  // (e.g. FullCalendar), and the plugin is not shipped. Optional inline Flatpickr only on a
+  // dedicated hook so we never attach to the wrong element.
+  if (typeof flatpickr !== 'undefined' && document.getElementById('dashboard-inline-calendar')) {
+    flatpickr('#dashboard-inline-calendar', {
+      inline: true,
+      dateFormat: 'Y-m-d',
+      allowInput: false,
+      locale: { firstDayOfWeek: 1 }
+    })
+  }
 
   // SLIMSCROLL FOR CHAT WIDGET
   $('#chat-box').overlayScrollbars({

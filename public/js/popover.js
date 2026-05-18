@@ -125,6 +125,71 @@ console.log(timestring);
         var strTime = hours + ':' + minutes + ' ' + ampm;
         return strTime;
     }
+
+    function padPopoverTimePart(n) {
+        n = parseInt(n, 10);
+        if (isNaN(n)) return '00';
+        return (n < 10 ? '0' : '') + n;
+    }
+
+    function parsePopoverReminderDate(val) {
+        if (!val || typeof val !== 'string') return null;
+        val = val.trim();
+        if (val.indexOf('-') !== -1) {
+            var partsYmd = val.split('-');
+            if (partsYmd.length === 3) {
+                var y = parseInt(partsYmd[0], 10), mo = parseInt(partsYmd[1], 10) - 1, day = parseInt(partsYmd[2], 10);
+                var dtYmd = new Date(y, mo, day);
+                return isNaN(dtYmd.getTime()) ? null : dtYmd;
+            }
+        }
+        if (val.indexOf('/') !== -1) {
+            var partsDmy = val.split('/');
+            if (partsDmy.length === 3) {
+                var dtDmy = new Date(parseInt(partsDmy[2], 10), parseInt(partsDmy[1], 10) - 1, parseInt(partsDmy[0], 10));
+                return isNaN(dtDmy.getTime()) ? null : dtDmy;
+            }
+        }
+        return null;
+    }
+
+    function reminderTimeTo24h(hoursStr, minutesStr, ampmRaw) {
+        var h = parseInt(hoursStr, 10);
+        var m = parseInt(minutesStr, 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        var ap = (ampmRaw || '').toString().toLowerCase();
+        if (ap.indexOf('p') >= 0) {
+            if (h !== 12) h += 12;
+        } else {
+            if (h === 12) h = 0;
+        }
+        return { h: h, m: m };
+    }
+
+    function initPopoverReminderInputmasks() {
+        if (typeof Inputmask === 'undefined') return;
+        var dateEl = document.getElementById('popoverdate');
+        var timeEl = document.getElementById('popovertime');
+        if (dateEl && dateEl.inputmask) dateEl.inputmask.remove();
+        if (timeEl && timeEl.inputmask) timeEl.inputmask.remove();
+        if (dateEl) {
+            Inputmask({
+                alias: 'datetime',
+                inputFormat: 'yyyy-mm-dd',
+                placeholder: 'yyyy-mm-dd',
+                clearIncomplete: true
+            }).mask(dateEl);
+        }
+        if (timeEl) {
+            Inputmask({
+                alias: 'datetime',
+                inputFormat: 'hh:MM tt',
+                placeholder: 'hh:mm am',
+                clearIncomplete: true
+            }).mask(timeEl);
+        }
+    }
+
     function changDatepickerDate(data){
 		 console.log(data.value);
         var id = data.id;
@@ -139,9 +204,11 @@ console.log(timestring);
                     console.log("Date can not be empty");
                     return false;
                 }
-                var valspilt = val.split("/");
-                var updatedate = new Date(valspilt[2],valspilt[1]-1,valspilt[0]);
-                if(checkvaliddate(updatedate))
+                var updatedate = parsePopoverReminderDate(val);
+                if(!updatedate || !checkvaliddate(updatedate))
+                {
+                    return false;
+                }
                 {
                     var d = new  Date();
 
@@ -150,50 +217,41 @@ console.log(timestring);
                          console.log("Date can not be less than today's date");
                         return false;
                     }
-                    // Update Flatpickr date programmatically
                     if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {
-                        $('#embeddingDatePicker').data('flatpickr').setDate(val, false);
+                        $('#embeddingDatePicker').data('flatpickr').setDate(convertDateFormat(updatedate, 'mm/dd/yyyy'), false);
                     }
-
 
                     var currentdateformt = convertDateFormat(updatedate , "yyyy-mm-dd");
                     var curenttimeinput =  $("#popovertime").val();
-                    var timesplit = curenttimeinput.split(" ");
-                    var timearray = timesplit[0].split(":");
+                    var timesplit = $.trim(curenttimeinput).split(/\s+/);
+                    var timearray = timesplit[0] ? timesplit[0].split(":") : [];
                     var hours = timearray[0];
                     var minutes = timearray[1];
                     var ampm = timesplit[1];
-                    if(ampm === "pm")
-                    {
-                        hours = 12+parseInt(hours%12,10);
-
-                        var datevalue = currentdateformt+" "+hours+":"+minutes+":00";
-                        $("#popoverrealdate").val(datevalue);
-                    }
-                    else
-                    {
-                        var datevalue = currentdateformt+" "+hours+":"+minutes+":00";
-                        $("#popoverrealdate").val(datevalue);
-                    }
+                    var tm = reminderTimeTo24h(hours, minutes, ampm);
+                    if (!tm) return false;
+                    var datevalue = currentdateformt+" "+padPopoverTimePart(tm.h)+":"+padPopoverTimePart(tm.m)+":00";
+                    $("#popoverrealdate").val(datevalue);
                 }
 
                 break;
             case "popovertime":
-                var timesplit = val.split(" ");
-                var timearray = timesplit[0].split(":");
+                var timesplit = $.trim(val).split(/\s+/);
+                var timearray = timesplit[0] ? timesplit[0].split(":") : [];
                 var hours = timearray[0];
                 var minutes = timearray[1];
                 var ampm = timesplit[1];
-                var datevalue = $("#popoverdate").val();
-                datevalue = datevalue.split("/")
-                if(ampm === "pm")
-                {
+                var dateRaw = $("#popoverdate").val();
+                var updatedate = parsePopoverReminderDate(dateRaw);
+                if (!updatedate || !checkvaliddate(updatedate)) break;
 
-                    hours = 12+parseInt(hours%12,10);
-                    var d = new Date(datevalue[2],datevalue[1]-1,datevalue[0]);
-                    datestring = convertDateFormat(d, 'yyyy-mm-dd');
-                    var datevalue = datestring+" "+hours+":"+minutes+":00";
-                    $("#popoverrealdate").val(datevalue);
+                var tm = reminderTimeTo24h(hours, minutes, ampm);
+                if (!tm) break;
+
+                if((ampm || '').toLowerCase().indexOf('p') >= 0)
+                {
+                    var datestring = convertDateFormat(updatedate, 'yyyy-mm-dd');
+                    $("#popoverrealdate").val(datestring+" "+padPopoverTimePart(tm.h)+":"+padPopoverTimePart(tm.m)+":00");
                 }
                 else
                 {
@@ -202,31 +260,27 @@ console.log(timestring);
                     var datecurrent = d.getDate();
                     datecurrent = datecurrent < 10 ? '0'+datecurrent : datecurrent;
                     var currentappm = hourscurrent >= 12 ? 'pm' : 'am';
-                    if(currentappm  !== "am" && datevalue[0] === datecurrent )
+                    var dayPart = updatedate.getDate() < 10 ? '0' + updatedate.getDate() : String(updatedate.getDate());
+                    if(currentappm  !== "am" && dayPart === String(datecurrent) )
                     {
-                        var updatedate = new Date(datevalue[2],datevalue[1]-1,datevalue[0]);
                         updatedate.setDate(updatedate.getDate()+1);
                         var realdatestring = convertDateFormat(updatedate , "yyyy-mm-dd");
-                        var inputdateString = convertDateFormat(updatedate,"ddyyyy-mm-dd");
-                        $("#popoverdate").val(inputdateString);
-                        // Update Flatpickr date programmatically
+                        var fpInput = convertDateFormat(updatedate, 'mm/dd/yyyy');
+                        $("#popoverdate").val(realdatestring);
                         if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {
-                            $('#embeddingDatePicker').data('flatpickr').setDate(inputdateString, false);
+                            $('#embeddingDatePicker').data('flatpickr').setDate(fpInput, false);
                         }
-                        var datevalue = realdatestring+" "+hours+":"+minutes+":00";
-                        $("#popoverrealdate").val(datevalue);
+                        $("#popoverrealdate").val(realdatestring+" "+padPopoverTimePart(tm.h)+":"+padPopoverTimePart(tm.m)+":00");
                     }
                     else
                     {
                         if(val === "" || val =="12:00 am")
                         {
-                            hours = "10";
-                            minutes = "00";
+                            tm.h = 10;
+                            tm.m = 0;
                         }
-                        var updatedate = new Date(datevalue[2],datevalue[1]-1,datevalue[0]);
                         var realdatestring = convertDateFormat(updatedate , "yyyy-mm-dd");
-                        var datevalue = realdatestring+" "+hours+":"+minutes+":00";
-                        $("#popoverrealdate").val(datevalue);
+                        $("#popoverrealdate").val(realdatestring+" "+padPopoverTimePart(tm.h)+":"+padPopoverTimePart(tm.m)+":00");
                     }
 
                 }
@@ -366,12 +420,6 @@ console.log(timestring);
             templateSelection: formatRepoSelectionmain_addmytask
         });
 
-        /* $("#popoverdate").inputmask("dd/mm/yyyy", {
-            "placeholder": "dd/mm/yyyy"
-        });
-        $("#popovertime").inputmask("h:s t", {
-            "placeholder": "hh:mm am"
-        });  */
         var today = new Date();
 
         var realdateinput = convertDateFormat(today , "yyyy-mm-dd");
@@ -388,6 +436,7 @@ console.log(timestring);
         $("#popoverdate").val(popoverdateinput);
         $("#popovertime").val(timeformat);
         $("#popoverrealdate").val(realdateinput+" "+hoursval+":"+minutesval+":00");
+        initPopoverReminderInputmasks();
 
         // Update Flatpickr date programmatically
         if (typeof flatpickr !== 'undefined' && $('#embeddingDatePicker').data('flatpickr')) {

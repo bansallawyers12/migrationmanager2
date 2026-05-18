@@ -320,6 +320,7 @@
 
 @push('scripts')
 <link rel="stylesheet" href="{{URL::to('/')}}/css/task-popover-modern.css">
+@include('components.inputmask-scripts')
 <script src="{{ URL::to('/') }}/js/popover.js"></script>
 <script>
     jQuery(document).ready(function($) {

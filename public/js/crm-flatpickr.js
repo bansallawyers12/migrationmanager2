@@ -4,7 +4,10 @@
  * Created: 2026-01-09
  * 
  * Migration from CRM_DatePicker (daterangepicker) to CRM_Flatpickr (flatpickr)
- * 
+ *
+ * Do not load legacy public/js/bootstrap-datepicker.js or public/js/global-datepicker.js;
+ * they are unused by Blade/layouts (grep the repo before reintroducing).
+ *
  * Usage Guide:
  * - For NEW code: Use CRM_Flatpickr methods
  * - API compatible with CRM_DatePicker for easy migration

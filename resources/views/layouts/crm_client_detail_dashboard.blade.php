@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
     <link rel="stylesheet" href="{{asset('css/dataTables.bootstrap5.min.css')}}">
+    <link rel="stylesheet" href="{{asset('css/buttons.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="{{asset('icons/font-awesome/css/all.min.css')}}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ asset('js/datetime-display.js') }}"></script>
@@ -723,7 +724,6 @@
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>
-    <script src="{{asset('js/dataTables.bootstrap5.min.js')}}"></script>
     <!-- TinyMCE is self-hosted and loaded per page as needed -->
     <script src="{{asset('js/tinymce/js/tinymce/tinymce.min.js')}}"></script>
     @include('components.flatpickr-scripts')

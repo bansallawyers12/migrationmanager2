@@ -332,7 +332,7 @@ function isNumberKey1(evt)
             return false;
         }
         var remiderinputtime = $("#popovertime").val();
-        var regex = /([01]\d|2[0-3]):([0-5]\d)\s(am|pm)/;
+        var regex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s*(am|pm)$/i;
         if(!regex.test(remiderinputtime))
         {
             toastr.error("Please enter a valid reminder time");
@@ -452,7 +452,7 @@ function isNumberKey1(evt)
             return false;
         }
         var remiderinputtime = $("#popovertime").val();
-        var regex = /([01]\d|2[0-3]):([0-5]\d)\s(am|pm)/;
+        var regex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s*(am|pm)$/i;
         if(!regex.test(remiderinputtime))
         {
             toastr.error("Please enter a valid reminder time");
@@ -488,12 +488,28 @@ function isNumberKey1(evt)
 
     });
     $("[data-role=popover]").on('shown.bs.popover', function(){
-        $("#popoverdate").inputmask("dd/mm/yyyy", {
-            "placeholder": "dd/mm/yyyy"
-        });
-        $("#popovertime").inputmask("h:s t", {
-            "placeholder": "hh:mm am"
-        });
+        var dateEl = document.getElementById('popoverdate');
+        var timeEl = document.getElementById('popovertime');
+        if (typeof Inputmask !== 'undefined') {
+            if (dateEl && dateEl.inputmask) dateEl.inputmask.remove();
+            if (timeEl && timeEl.inputmask) timeEl.inputmask.remove();
+            if (dateEl) {
+                Inputmask({
+                    alias: 'datetime',
+                    inputFormat: 'dd/mm/yyyy',
+                    placeholder: 'dd/mm/yyyy',
+                    clearIncomplete: true
+                }).mask(dateEl);
+            }
+            if (timeEl) {
+                Inputmask({
+                    alias: 'datetime',
+                    inputFormat: 'hh:MM tt',
+                    placeholder: 'hh:mm am',
+                    clearIncomplete: true
+                }).mask(timeEl);
+            }
+        }
         var today = new Date();
         var realdateinput = convertDateFormat(today , "yyyy-mm-dd");
         var popoverdateinput = convertDateFormat(today,'dd/mm/yyyy');

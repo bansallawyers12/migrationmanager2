@@ -1301,6 +1301,7 @@ $(document).ready(function() {
     });
 });
 </script>
+@include('components.inputmask-scripts')
 <script src="{{URL::to('/')}}/js/popover.js"></script>
 
 {{-- Activity Feed Functionality --}}

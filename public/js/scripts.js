@@ -670,8 +670,7 @@ $(function () {
 
   // Date pickers (Flatpickr - standardized)
   if (typeof flatpickr !== 'undefined') {
-    // Check if we're on client detail page (uses bootstrap-datepicker instead)
-    // Client detail pages have .report_date_fields or .client-navigation-sidebar
+    // Client detail layouts load Flatpickr via crm-flatpickr.js (detected below); skip duplicate init here.
     var isClientDetailPage = $('.report_date_fields').length > 0 || 
                              $('.client-navigation-sidebar').length > 0;
     
@@ -904,7 +903,7 @@ $(function () {
         }
       });
     }
-  } // End: if (isClientDetailPage) check
+  } // End: if (typeof flatpickr !== 'undefined')
 
   $("#mini_sidebar_setting").on("change", function () {
     var _val = $(this).is(":checked") ? "checked" : "unchecked";
