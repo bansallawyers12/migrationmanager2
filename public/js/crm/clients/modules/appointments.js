@@ -211,8 +211,7 @@
                 var slot_overwrite = $('#slot_overwrite_hidden').val() == 1 ? 1 : 0; // Get slot overwrite value
                 var schedExtra = getMmSchedulePayload();
 
-                // Initialize flatpickr when location is selected
-                // Destroy existing flatpickr instance if it exists
+                // #datetimepicker: legacy element id for inline Flatpickr (not the old jQuery datetimepicker plugin).
                 if ($('#datetimepicker')[0] && $('#datetimepicker')[0]._flatpickr) {
                     $('#datetimepicker')[0]._flatpickr.destroy();
                 }

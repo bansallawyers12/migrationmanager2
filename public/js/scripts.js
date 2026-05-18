@@ -668,18 +668,15 @@ $(function () {
     });
   }
 
-  // Date pickers (Flatpickr — class names like .datepicker / .datetimepicker are legacy hooks only)
+  // Date/time inputs: Flatpickr only. CSS classes (.datepicker, .datetimepicker, etc.) are legacy markup hooks — not jQuery plugins.
   if (typeof flatpickr !== 'undefined') {
-    // Client detail layout already loads crm-flatpickr.js before this file; skip duplicate .datepicker init.
-    var isClientDetailPage = $('.report_date_fields').length > 0 || 
+    // Client detail layout loads crm-flatpickr.js before this file — skip duplicate .datepicker init there.
+    var isClientDetailPage = $('.report_date_fields').length > 0 ||
                              $('.client-navigation-sidebar').length > 0;
-    
-    if (isClientDetailPage) {
-      console.log('✅ Client detail page detected - Flatpickr will handle dates');
-      // Other selectors below (dobdatepicker, filterdatepicker, etc.) still run when present.
-    } else {
+
+    if (!isClientDetailPage) {
       // Initialize Flatpickr for all other pages
-      if ($(".datepicker").length && typeof flatpickr !== 'undefined') {
+      if ($(".datepicker").length) {
         $(".datepicker").each(function() {
           var $this = $(this);
           if (!$this.data('flatpickr')) {
@@ -699,7 +696,7 @@ $(function () {
     }
     
     // Initialize Flatpickr for DOB datepickers
-    if ($(".dobdatepicker").length && typeof flatpickr !== 'undefined') {
+    if ($(".dobdatepicker").length) {
       $(".dobdatepicker").each(function() {
         var $this = $(this);
         if (!$this.data('flatpickr')) {
@@ -719,7 +716,7 @@ $(function () {
       });
     }
     // Initialize Flatpickr for DOB datepickers with age calculation
-    if ($(".dobdatepickers").length && typeof flatpickr !== 'undefined') {
+    if ($(".dobdatepickers").length) {
       $(".dobdatepickers").each(function() {
         var $this = $(this);
         if (!$this.data('flatpickr')) {
@@ -820,7 +817,7 @@ $(function () {
       }
     }
     // Initialize Flatpickr for filter datepickers
-    if ($(".filterdatepicker").length && typeof flatpickr !== 'undefined') {
+    if ($(".filterdatepicker").length) {
       $(".filterdatepicker").each(function() {
         var $this = $(this);
         if (!$this.data('flatpickr')) {
@@ -838,7 +835,7 @@ $(function () {
       });
     }
     // Initialize Flatpickr for contract expiry datepickers
-    if ($(".contract_expiry").length && typeof flatpickr !== 'undefined') {
+    if ($(".contract_expiry").length) {
       $(".contract_expiry").each(function() {
         var $this = $(this);
         if (!$this.data('flatpickr')) {
@@ -855,8 +852,8 @@ $(function () {
         }
       });
     }
-    // Inputs with class .datetimepicker (name predates Flatpickr); time picker via Flatpickr
-    if ($(".datetimepicker").length && typeof flatpickr !== 'undefined') {
+    // Class .datetimepicker is legacy HTML only; bound here with Flatpickr (date + time).
+    if ($(".datetimepicker").length) {
       $(".datetimepicker").each(function() {
         var $this = $(this);
         if (!$this.data('flatpickr')) {
@@ -876,7 +873,7 @@ $(function () {
       });
     }
     // Initialize Flatpickr for date range pickers
-    if ($(".daterange").length && typeof flatpickr !== 'undefined') {
+    if ($(".daterange").length) {
       $(".daterange").each(function() {
         var $this = $(this);
         if (!$this.data('flatpickr')) {

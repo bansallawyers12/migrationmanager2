@@ -1,8 +1,7 @@
 /*
- * Originally the AdminLTE v2 dashboard demo (Abdullah A Almsaeed, 4 Jan 2014).
- * This repo does not reference this file from Blade layouts; the CRM dashboard
- * loads js/dashboard-optimized.js. Date ranges and the inline calendar use Flatpickr.
- * Keep only if you wire it in manually; otherwise safe to delete.
+ * Legacy AdminLTE v2 dashboard demo script (Abdullah A Almsaeed, 2014).
+ * Not included by Laravel layouts — CRM uses public/js/dashboard-optimized.js.
+ * Any manual inclusion must load Flatpickr first; date UI here is Flatpickr-only (no jQuery datetime plugins).
  **/
 
 $(function () {
@@ -119,8 +118,8 @@ $(function () {
   sparkline2.draw([515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921]);
   sparkline3.draw([15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21]); */
 
-  // AdminLTE's old demo targeted #calendar with a jQuery datetime plugin; #calendar is used
-  // elsewhere (e.g. FullCalendar). Inline Flatpickr runs only on #dashboard-inline-calendar.
+  // Old demo used #calendar with a third-party picker; avoid that id here (#calendar may be FullCalendar).
+  // Inline month view: only #dashboard-inline-calendar (Flatpickr).
   if (typeof flatpickr !== 'undefined' && document.getElementById('dashboard-inline-calendar')) {
     flatpickr('#dashboard-inline-calendar', {
       inline: true,
@@ -130,10 +129,13 @@ $(function () {
     })
   }
 
-  // SLIMSCROLL FOR CHAT WIDGET
-  $('#chat-box').overlayScrollbars({
-    height: '250px'
-  })
+  // OverlayScrollbars for demo chat widget (only if markup + plugin exist)
+  var $chatBox = $('#chat-box')
+  if ($chatBox.length && $.fn && typeof $.fn.overlayScrollbars === 'function') {
+    $chatBox.overlayScrollbars({
+      height: '250px'
+    })
+  }
 
   /* Chart.js Charts */
   // Sales chart

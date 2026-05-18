@@ -721,7 +721,6 @@
     <script>
     var site_url = '{{URL::to('/')}}';
     var dataformat = '{{$dataformat}}';
-    window.intlTelInputUtilsUrl = {!! json_encode(asset('vendor/intl-tel-input/js/utils.js')) !!};
     </script>
     <script src="{{asset('js/app.min.js')}}"></script>
     <script src="{{asset('js/datatables.min.js')}}"></script>

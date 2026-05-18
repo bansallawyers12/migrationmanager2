@@ -39,6 +39,7 @@ A comprehensive Laravel-based Customer Relationship Management (CRM) system spec
 
 - **Backend**: Laravel 13.x (PHP 8.3+)
 - **Frontend**: Bootstrap 4/5, jQuery, DataTables, Select2, Flatpickr, FullCalendar, Alpine.js, Tailwind CSS
+- **Charts**: Chart.js **4.4.0** (jsDelivr CDN, `chart.umd.min.js`) for leads analytics, e-signature dashboards, client insights, staff login analytics, and financial analytics — one version across these pages
 - **Build**: Vite 7.x
 - **Database**: PostgreSQL (Primary), MySQL (optional for migration), SQLite (Development)
 - **PDF Generation**: DomPDF for invoices and reports
@@ -387,22 +388,27 @@ storage/app/public/
 
 public/
 ├── assets/              # UI assets and images
-├── css/                 # Custom stylesheets (includes flatpickr.min.css)
-├── js/                  # JavaScript files (flatpickr.min.js, crm-flatpickr.js, scripts.js)
+├── css/                 # Custom stylesheets (includes flatpickr.min.css, listing-datepicker.css for listing filters)
+├── js/                  # JavaScript (flatpickr.min.js, crm-flatpickr.js, scripts.js, dashboard-optimized.js for CRM dashboard)
 └── img/                 # Public images
 ```
 
 ### Date Picker (Flatpickr)
 
-The CRM uses **Flatpickr** for all date inputs (replacing Bootstrap Datepicker/daterangepicker). A global `CRM_Flatpickr` helper provides:
+All interactive date and datetime inputs use **Flatpickr**. The stack does **not** ship or load Bootstrap Datepicker, jQuery UI datetimepicker, or the legacy **daterangepicker** plugin—those were removed in favour of Flatpickr.
 
-- **initStandard** - Single date picker (DD/MM/YYYY)
-- **initPastDates** - Past-dates-only (max: today) for DOB, address dates, visa dates
-- **initDOB** - Date of birth with automatic age calculation
-- **initDateTime** - Date + time for appointments
-- **initRange** - Date range for report filters
+- **`CRM_Flatpickr`** (`public/js/crm-flatpickr.js`): shared helpers after `@include('components.flatpickr-scripts')` on CRM layouts:
+  - **initStandard** — single date (`d/m/Y` where used)
+  - **initPastDates** — past-only (max: today) for address, travel, employment, and similar historical dates
+  - **initDOB** — date of birth with optional age field
+  - **initDateTime** — date + time
+  - **initRange** — range selection for filters/reports
+- **Declarative**: use `data-flatpickr="standard"`, `"past-only"`, `"dob"`, `"datetime"`, or `"range"` on inputs for auto-init (see `crm-flatpickr.js`).
+- **Legacy CSS hooks**: classes such as `.datepicker`, `.datetimepicker`, `.daterange`, and DOB variants are **markup names only**; `public/js/scripts.js` (and some feature modules) attach Flatpickr to them. They are not separate jQuery plugins.
+- **Listing pages**: `css/listing-datepicker.css` styles filter inputs with class `.datepicker`; the calendar popup is Flatpickr’s `.flatpickr-calendar` (typically on `document.body`).
+- **Dashboard**: the CRM dashboard loads **`js/dashboard-optimized.js`**. The file **`js/dashboard.js`** is an unmaintained AdminLTE demo; it is not referenced by Laravel layouts—only include it deliberately (with Flatpickr loaded first) if you reuse that demo.
 
-Use `data-flatpickr="standard"`, `data-flatpickr="dob"`, `data-flatpickr="datetime"`, or `data-flatpickr="range"` for auto-initialization. Run `npm run copy:flatpickr` after `npm install` to copy Flatpickr assets to `public/`.
+After `npm install`, run `npm run copy:flatpickr` so Flatpickr assets exist under `public/js/` and `public/css/`.
 
 ### Background Jobs & Scheduling
 
@@ -587,7 +593,7 @@ This project is open-sourced software licensed under the [MIT license](https://o
 - **PostgreSQL**: Primary database is now PostgreSQL (default in config); MySQL supported for legacy migration.
 - **Laravel 13**: Upgraded from Laravel 12; requires PHP 8.3+.
 - **Matter-based tracking**: Legacy `applications` table removed; visa tracking is via `client_matters` (Matter model).
-- **Flatpickr migration**: All date pickers now use Flatpickr (DD/MM/YYYY format). Bootstrap Datepicker removed.
+- **Flatpickr**: All date/datetime pickers use Flatpickr; Bootstrap Datepicker and daterangepicker-style plugins are gone. Display formats vary by field (e.g. `Y-m-d` vs `d/m/Y` per screen). README documents class hooks, layouts, and troubleshooting.
 - **Company Employer Sponsorship**: Full implementation including Trust entities, trading names, directors (with client/lead linking), nominations, sponsorship tracking, and per-section AJAX save.
 - **EOI workflows**: Client confirmation sheets (`eoi-client-confirmation`, `eoi-confirmation-success`, `eoi-roi`) for Expression of Interest visa flows.
 - **Assignee action view**: Dedicated action page for assigned tasks.
@@ -633,7 +639,8 @@ For cross-access product rules, routes, and rollout status, see **`docs/CROSS_AC
 
 ### Date Picker (Flatpickr) Issues
 - **Date pickers not appearing**: Run `npm run copy:flatpickr` to copy Flatpickr assets to `public/js/` and `public/css/`
-- **"flatpickr is not defined"**: Ensure `flatpickr-assets` and `flatpickr-scripts` components are included in the layout (see `layouts/crm_client_detail.blade.php`)
+- **`flatpickr is not defined`**: Include `@include('components.flatpickr-assets')` / `@include('components.flatpickr-scripts')` (or equivalent) in the Blade layout before scripts that call `flatpickr`—see `resources/views/layouts/crm_client_detail.blade.php` and `crm_client_detail_dashboard.blade.php`
+- **Double calendars / odd behaviour**: Avoid initializing the same input twice; client-detail layouts load `crm-flatpickr.js` before `scripts.js`, which skips duplicate `.datepicker` init on those pages
 
 ### Performance Issues
 - **Slow page loads**: Run `php artisan optimize` and `npm run build`
@@ -710,3 +717,6 @@ robocopy storage\app\public "backup_storage_$date" /E
 **Q: How to export client data?**
 - Use Reports section to generate and export data
 - Available formats: PDF, Excel, CSV
+
+**Q: Which date picker library is used?**
+- **Flatpickr** only (`crm-flatpickr.js`, `scripts.js`, and feature-specific modules). There is no Bootstrap Datepicker bundle in `public/js/`. If a third-party snippet references `.datepicker()` as a jQuery plugin, replace it with Flatpickr or `CRM_Flatpickr` patterns from this README.

@@ -34,7 +34,7 @@
         "@fullcalendar/timegrid": "^6.1.19",
         "flatpickr": "^4.6.13",
         "inputmask": "^5.0.9",
-        "intl-tel-input": "^24.8.2",
+        "intl-tel-input": "^28.1.0",
         "laravel-echo": "^2.2.4",
         "pusher-js": "^8.4.0",
         "signature_pad": "^5.1.1"

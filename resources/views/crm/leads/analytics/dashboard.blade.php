@@ -359,7 +359,7 @@
 </div>
 
 <!-- Chart.js Library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
 // Conversion Funnel Chart
@@ -462,7 +462,7 @@ const qualityChart = new Chart(qualityCtx, {
                 callbacks: {
                     label: function(context) {
                         let label = context.label || '';
-                        let value = context.parsed || 0;
+                        let value = context.dataset.data[context.dataIndex] ?? 0;
                         let total = context.dataset.data.reduce((a, b) => a + b, 0);
                         let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                         return label + ': ' + value + ' (' + percentage + '%)';

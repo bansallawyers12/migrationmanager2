@@ -1,12 +1,12 @@
 /**
- * Maps intl-tel-input v24+ (window.intlTelInput) onto $(".telephone").intlTelInput()
+ * Maps intl-tel-input v28+ (window.intlTelInput) onto $(".telephone").intlTelInput()
  * used in CRM layouts.
  *
- * Utils URL: set window.intlTelInputUtilsUrl in the layout (via asset()); otherwise
- * derived from window.site_url. Empty loadUtilsOnInit skips async utils (no formatting).
+ * Layouts load vendor/intlTelInput.min.js — the WithUtils build from copy-intl-tel-input,
+ * so formatting/validation helpers are available without extra scripts or import().
  *
- * Defaults suit dial-code-only inputs (country_code[]) matched with a separate national
- * number field — see PhoneHelper::formatForStorage.
+ * Defaults suit dial-code-only inputs (country_code[]) beside national tel_input —
+ * see PhoneHelper::formatForStorage. separateDialCode stays false so +NN stays in the field.
  */
 (function ($) {
     'use strict';
@@ -14,34 +14,17 @@
         return;
     }
 
-    function utilsLoadUrl() {
-        if (
-            typeof window.intlTelInputUtilsUrl === 'string' &&
-            window.intlTelInputUtilsUrl.length > 0
-        ) {
-            return window.intlTelInputUtilsUrl;
-        }
-        var base =
-            typeof window.site_url === 'string' && window.site_url.length
-                ? window.site_url.replace(/\/$/, '')
-                : '';
-        return base + '/vendor/intl-tel-input/js/utils.js';
-    }
-
     /** Options tuned for CRM .telephone = dial code (+NN) beside .tel_input. */
     function defaultOptions() {
-        var utilsUrlResolved = utilsLoadUrl();
-        var opts = {
+        return {
             nationalMode: false,
             formatOnDisplay: false,
             formatAsYouType: false,
             autoPlaceholder: 'off',
             countrySearch: true,
+            separateDialCode: false,
+            strictMode: false,
         };
-        if (utilsUrlResolved) {
-            opts.loadUtilsOnInit = utilsUrlResolved;
-        }
-        return opts;
     }
 
     $.fn.intlTelInput = function (options) {

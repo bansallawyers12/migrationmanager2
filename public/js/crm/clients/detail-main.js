@@ -1021,7 +1021,7 @@ $(document).ready(function() {
                                             locale: { firstDayOfWeek: 1 },
                                             onChange: function(selectedDates, dateStr, instance) {
                                                 $this.val(dateStr);
-                                                // Trigger AJAX call when date changes (same as old daterangepicker)
+                                                // Persist intake date via AJAX on change
                                                 if (dateStr && clientMatterId) {
                                                     $('.popuploader').show();
                                                     $.ajax({
@@ -1043,190 +1043,21 @@ $(document).ready(function() {
                                     }
                                 });
                             }
-                            
-                            // Old daterangepicker code removed - using Flatpickr above
-                            /* $('.datepicker').daterangepicker({
-                                locale: { format: "YYYY-MM-DD",cancelLabel: 'Clear' },
-                                singleDatePicker: true,
-                                showDropdowns: true,
-                            }, function(start, end, label) {
-
-                                $('.popuploader').show();
-
-                                $.ajax({
-
-                                    url: window.ClientDetailConfig.urls.updateIntake,
-
-                                    method: "GET", // or POST
-
-                                    dataType: "json",
-
-                                    data: {from: start.format('YYYY-MM-DD'), appid: appliid},
-
-                                    success:function(result) {
-
-                                        $('.popuploader').hide();
-
-
-                                    }
-
-                                });
-
-                            }); */
-
-
 
                             // Initialize Flatpickr for expectdatepicker
                             initFlatpickrForClass('.expectdatepicker', {
                                 dateFormat: 'Y-m-d' // YYYY-MM-DD format
                             });
-                            
-                            // Old daterangepicker code removed
-                            /* $('.expectdatepicker').daterangepicker({
-                                locale: { format: "YYYY-MM-DD",cancelLabel: 'Clear' },
-                                singleDatePicker: true,
-
-
-
-                                            showDropdowns: true,
-
-                            }, function(start, end, label) {
-
-                                $('.popuploader').show();
-
-                                $.ajax({
-
-                                    url: window.ClientDetailConfig.urls.updateExpectWin,
-
-                                    method: "GET", // or POST
-
-                                    dataType: "json",
-
-                                    data: {from: start.format('YYYY-MM-DD'), appid: appliid},
-
-                                    success:function(result) {
-
-                                        $('.popuploader').hide();
-
-
-
-                                    }
-
-                                });
-
-                            }); */
-
-
 
                             // Initialize Flatpickr for startdatepicker
                             initFlatpickrForClass('.startdatepicker', {
                                 dateFormat: 'Y-m-d' // YYYY-MM-DD format
                             });
-                            
-                            // Old daterangepicker code removed
-                            /* $('.startdatepicker').daterangepicker({
-                                locale: { format: "YYYY-MM-DD",cancelLabel: 'Clear' },
-                                singleDatePicker: true,
-
-
-
-                                            showDropdowns: true,
-
-                            }, function(start, end, label) {
-
-                                $('.popuploader').show();
-
-                                $.ajax({
-
-                                    url: window.ClientDetailConfig.urls.updateDates,
-
-                                    method: "GET", // or POST
-
-                                    dataType: "json",
-
-                                    data: {from: start.format('YYYY-MM-DD'), appid: appliid, datetype: 'start'},
-
-                                    success:function(result) {
-
-                                        $('.popuploader').hide();
-
-                                        var obj = result;
-
-                                        if(obj.status){
-
-                                            $('.app_start_date .month').html(obj.dates.month);
-
-                                            $('.app_start_date .day').html(obj.dates.date);
-
-                                            $('.app_start_date .year').html(obj.dates.year);
-
-                                        }
-
-
-                                    }
-
-                                });
-
-                            }); */
-
-
 
                             // Initialize Flatpickr for enddatepicker
                             initFlatpickrForClass('.enddatepicker', {
                                 dateFormat: 'Y-m-d' // YYYY-MM-DD format
                             });
-                            
-                            // Old daterangepicker code removed
-                            /* $('.enddatepicker').daterangepicker({
-                                locale: { format: "YYYY-MM-DD",cancelLabel: 'Clear' },
-                                singleDatePicker: true,
-
-
-
-                                            showDropdowns: true,
-
-                            }, function(start, end, label) {
-
-                                $('.popuploader').show();
-
-                                $.ajax({
-
-                                    url: window.ClientDetailConfig.urls.updateDates,
-
-                                    method: "GET", // or POST
-
-                                    dataType: "json",
-
-                                    data: {from: start.format('YYYY-MM-DD'), appid: appliid, datetype: 'end'},
-
-                                    success:function(result) {
-
-                                        $('.popuploader').hide();
-
-                                        var obj = result;
-
-                                        if(obj.status){
-
-                                            $('.app_end_date .month').html(obj.dates.month);
-
-                                            $('.app_end_date .day').html(obj.dates.date);
-
-                                            $('.app_end_date .year').html(obj.dates.year);
-
-                                        }
-
-
-                                    }
-
-                                });
-
-                            }); */
-
-
-
-
-
-                          
 
                         },
 
