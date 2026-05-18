@@ -5,6 +5,9 @@
  *
  * v28+ ships under dist/ and publishes intlTelInputWithUtils.min.js (libphonenumber
  * bundled — no separate utils script or dynamic import).
+ *
+ * Canonical CRM load order: vendor/intl-tel-input/js/intlTelInput.min.js then
+ * public/js/intlTelInput.jquery-bridge.js — not public/js/intlTelInput.js (removed if stale).
  */
 'use strict';
 
@@ -72,4 +75,10 @@ const staleUtils = path.join(outBase, 'js', 'utils.js');
 if (fs.existsSync(staleUtils)) {
     fs.unlinkSync(staleUtils);
     console.log('Removed stale', path.relative(root, staleUtils));
+}
+
+const staleLegacyPublicJs = path.join(root, 'public', 'js', 'intlTelInput.js');
+if (fs.existsSync(staleLegacyPublicJs)) {
+    fs.unlinkSync(staleLegacyPublicJs);
+    console.log('Removed stale', path.relative(root, staleLegacyPublicJs));
 }

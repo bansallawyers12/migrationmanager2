@@ -77,7 +77,7 @@ class HomeController extends Controller
 	public function refresh_captcha() {
 		$vals = array(
 			'img_path' => public_path().'/captcha/',
-			'img_url' => asset('public/captcha'),
+			'img_url' => asset('captcha'),
 			'expiration' => 7200,
 			'word_lenght' => 6,
 			'font_size' => 15,
