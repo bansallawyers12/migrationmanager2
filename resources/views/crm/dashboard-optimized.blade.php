@@ -1116,7 +1116,7 @@ $(function () {
                     });
                     return true;
                 } catch (error) {
-                    console.error('Error initializing Select2:', error);
+                    console.error('Error initializing mmSelect:', error);
                     return false;
                 }
             } else if (attempts < maxAttempts) {

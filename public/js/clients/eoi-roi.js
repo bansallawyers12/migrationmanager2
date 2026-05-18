@@ -37,7 +37,7 @@
         }
 
         // Initialize components
-        initializeSelect2();
+        initializeEoiStatesMmSelect();
         initializeDatepickers();
         bindEventHandlers();
         
@@ -71,7 +71,7 @@
         console.log('[EOI-ROI] Initialized, waiting for tab activation');
     }
 
-    function initializeSelect2() {
+    function initializeEoiStatesMmSelect() {
         $('#eoi-states').mmSelect({
             placeholder: 'Select state(s)',
             allowClear: true,

@@ -45,7 +45,7 @@ function customValidate(formName, savetype = '')
 				{
 					var for_class = $(this).attr('class') || '';
 					var $element = $(this);
-					var isSelect2 = $element.hasClass('mm-select-initialized') || $element.data('mmSelect');
+					var isMmSelect = $element.hasClass('mm-select-initialized') || $element.data('mmSelect');
 					var isMultiple = $element.prop('multiple');
 					
 					if(for_class.indexOf('multiselect_subject') != -1)
@@ -58,7 +58,7 @@ function customValidate(formName, savetype = '')
 									$(this).parent().after(errorDisplay(requiredError));
 								}
 						}
-					else if(isSelect2 && isMultiple)
+					else if(isMmSelect && isMultiple)
 						{
 							// Tom Select / legacy enhanced multi-select
 							var selectedValues = $element.val();
@@ -609,7 +609,7 @@ function customValidate(formName, savetype = '')
                             $('.popuploader').hide();
                             return;
                         }
-                        // Sync Select2 dropdown values to underlying selects so FormData includes changed options
+                        // Ensure Tom Select / native select values are in sync for FormData
                         var selectIds = ['change_sel_migration_agent_id', 'change_sel_person_responsible_id', 'change_sel_person_assisting_id', 'change_office_id'];
                         for (var s = 0; s < selectIds.length; s++) {
                             var selEl = document.getElementById(selectIds[s]);

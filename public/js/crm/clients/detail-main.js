@@ -719,7 +719,7 @@ $(document).ready(function() {
 
 
 
-    // Change Matter Assignee modal: re-init Select2 with dropdownParent for search to work
+    // Change Matter Assignee modal: re-init mmSelect with dropdownParent so search works
 
     $(document).on('shown.bs.modal', '#changeMatterAssigneeModal', function(){
 
@@ -739,7 +739,7 @@ $(document).ready(function() {
 
 
 
-    // Convert Lead to Client modal: re-init Select2 with dropdownParent so dropdowns render inside modal
+    // Convert Lead to Client modal: re-init mmSelect with dropdownParent so menus render inside modal
     $(document).on('shown.bs.modal', '#convertLeadToClientModal', function(){
 
         var $modal = $(this);
@@ -1309,7 +1309,7 @@ $(document).ready(function() {
 
 
 
-        // Initialize Select2 for the matter dropdown (dropdownCssClass for wrapping long names)
+        // Matter dropdown (dropdownCssClass for wrapping long names)
         $('#sel_matter_id_client_detail').mmSelect({
             dropdownCssClass: 'matter-dropdown-wrap'
         });
@@ -1378,7 +1378,7 @@ $(document).ready(function() {
 
 
 
-        //Initialize both Select2 dropdowns
+        // Inbox reassign modals – client + matter selects
 
         $('#reassign_client_id').mmSelect();
 
@@ -1498,7 +1498,7 @@ success: function(response) {
 
 
 
-        //Initialize both Select2 dropdowns
+        // Inbox reassign modals – client + matter selects
 
         $('#reassign_sent_client_id').mmSelect();
 

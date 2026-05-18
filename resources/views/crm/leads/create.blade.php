@@ -961,18 +961,18 @@
         }
     }
     
-    // Initialize Select2 for contact person search
+    // Initialize mmSelect for contact person search
     function initContactPersonSearch() {
         const contactPersonSelect = $('#contactPersonEmail');
         
-        // Check if Select2 is already initialized
+        // Check if mmSelect is already active
         if (contactPersonSelect.hasClass('mm-select-initialized')) {
             return; // Already initialized
         }
         
-        // Check if Select2 library is available
+        // Ensure mmSelect plugin is available
         if (typeof $.fn.mmSelect === 'undefined') {
-            console.warn('Select2 library not loaded. Contact person search will not work.');
+            console.warn('mmSelect not loaded. Contact person search will not work.');
             return;
         }
         
@@ -1003,7 +1003,7 @@
                         return { results: [] };
                     }
                     
-                    // Map results to Select2 format
+                    // Map results for ajax template
                     try {
                         return {
                             results: data.results.map(function(item) {

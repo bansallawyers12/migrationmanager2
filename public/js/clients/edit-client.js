@@ -1821,8 +1821,8 @@ window.toggleEditMode = function(sectionType) {
                 }
             }, 100);
         } else if (sectionType === 'relatedFilesInfo') {
-            // Reinitialize Select2 when opening related files edit mode
-            console.log('🔗 Opening related files section - reinitializing Select2');
+            // Reinitialize mmSelect when opening related files edit mode
+            console.log('🔗 Opening related files section - reinitializing mmSelect');
             setTimeout(function() {
                 window.reinitializeRelatedFilesSelect2();
             }, 100);
@@ -6198,14 +6198,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize Select2 for Related Files dropdown
+    // Related Files dropdown (mmSelect + AJAX)
     initializeRelatedFilesSelect2();
     
-    // Fallback: If Select2 fails to initialize, try again after a delay
+    // Fallback if mmSelect did not attach
     setTimeout(function() {
         const relatedFilesSelect = $('#relatedFiles');
         if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('mm-select-initialized')) {
-            console.log('Select2 not initialized, retrying...');
+            console.log('mmSelect not initialized, retrying...');
             initializeRelatedFilesSelect2();
         }
     }, 1000);
@@ -6214,14 +6214,14 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         const relatedFilesSelect = $('#relatedFiles');
         if (relatedFilesSelect.length > 0 && !relatedFilesSelect.hasClass('mm-select-initialized')) {
-            console.log('Select2 still not initialized, final retry...');
+            console.log('mmSelect still not initialized, final retry...');
             initializeRelatedFilesSelect2();
         }
     }, 3000);
 });
 
 /**
- * Initialize Select2 for Related Files dropdown with AJAX search
+ * Related Files dropdown: mmSelect with AJAX search
  */
 function initializeRelatedFilesSelect2() {
     const relatedFilesSelect = $('#relatedFiles');
@@ -6229,7 +6229,7 @@ function initializeRelatedFilesSelect2() {
     if (relatedFilesSelect.length === 0) return;
     
     if (relatedFilesSelect.length > 0 && typeof $.fn.mmSelect !== 'undefined') {
-        console.log('Initializing Related Files Select2...');
+        console.log('Initializing Related Files mmSelect...');
         
         relatedFilesSelect.mmSelect({
             multiple: true,
@@ -6267,7 +6267,7 @@ function initializeRelatedFilesSelect2() {
                         console.error('Search error from server:', data.error);
                     }
                     
-                    // Transform the response data to Select2 format
+                    // Transform API rows for template
                     if (data.partners && Array.isArray(data.partners)) {
                         const results = data.partners.map(function(partner) {
                             return {
@@ -6298,9 +6298,9 @@ function initializeRelatedFilesSelect2() {
             templateSelection: formatRelatedFileSelection
         });
         
-        // Debug: Log when Select2 is initialized
+        // Debug: dropdown open
         relatedFilesSelect.on('mmselect:open', function() {
-            console.log('Select2 dropdown opened');
+            console.log('Related Files mmSelect dropdown opened');
         });
         
         relatedFilesSelect.on('mmselect:select', function(e) {
@@ -6330,19 +6330,19 @@ function initializeRelatedFilesSelect2() {
             });
         };
     } else {
-        console.error('Related Files Select2 initialization failed:', {
+        console.error('Related Files mmSelect initialization failed:', {
             elementExists: relatedFilesSelect.length > 0,
             mmSelectAvailable: typeof $.fn.mmSelect !== 'undefined'
         });
     }
 }
 
-// Function to reinitialize Select2 when edit mode is toggled
+// Re-run Related Files mmSelect when edit mode is toggled
 window.reinitializeRelatedFilesSelect2 = function() {
-    console.log('Reinitializing Related Files Select2...');
+    console.log('Reinitializing Related Files mmSelect...');
     const relatedFilesSelect = $('#relatedFiles');
     if (relatedFilesSelect.length > 0) {
-        // Destroy existing Select2 if it exists
+        // Destroy existing mmSelect if present
         if (relatedFilesSelect.hasClass('mm-select-initialized')) {
             relatedFilesSelect.mmSelect('destroy');
         }

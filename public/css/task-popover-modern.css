@@ -73,20 +73,7 @@
     outline: none;
 }
 
-/* Select2 inside popover */
-.popover-body .select2-container--default .select2-selection--single {
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    padding: 8px 14px;
-    height: auto;
-}
-
-.popover-body .select2-container--default.select2-container--focus .select2-selection--single {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Tom Select inside popover (alongside legacy Select2 rules) */
+/* Tom Select inside popover */
 .popover-body .ts-wrapper .ts-control {
     border-radius: 8px;
     border: 1px solid #e2e8f0;

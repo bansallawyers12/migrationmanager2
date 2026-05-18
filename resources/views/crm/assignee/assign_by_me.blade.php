@@ -76,10 +76,6 @@
         padding: 20px;
     }
     
-    .listing-container .select2-container {
-        z-index: 100000;
-        width: 100% !important;
-    }
     .listing-container .ts-wrapper {
         z-index: 100000;
         width: 100% !important;
@@ -328,7 +324,7 @@
 <script src="{{ URL::to('/') }}/js/popover.js"></script>
 <script>
     jQuery(document).ready(function($) {
-        // Initialize Select2 for assignee dropdowns
+        // Initialize enhanced selects (mmSelect) for assignee dropdowns
         $('.listing-container .assignee-mm-select').mmSelect({
             dropdownParent: $('#openassigneview'),
         });

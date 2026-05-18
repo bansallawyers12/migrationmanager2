@@ -354,14 +354,14 @@ function escapeHtml(text) {
 }
 
 $(document).ready(function() {
-    // Initialize Select2
+    // Initialize enhanced selects (mmSelect)
     $('.mm-select').mmSelect({
         placeholder: 'Select an option',
         allowClear: true,
         width: '100%'
     });
     
-    // Initialize Select2 for client search with AJAX
+    // Client search with AJAX (mmSelect)
     $('#client_id').mmSelect({
         placeholder: 'Search for a client...',
         allowClear: true,

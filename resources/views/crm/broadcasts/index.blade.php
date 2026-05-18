@@ -566,7 +566,7 @@
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-        // Setup CSRF token for all AJAX requests (including Select2)
+        // Setup CSRF for AJAX (including mmSelect remote search)
         if (typeof $ !== 'undefined' && $.ajaxSetup) {
             $.ajaxSetup({
                 headers: {
@@ -1612,14 +1612,14 @@
         scopeSelect.addEventListener('change', function() {
             toggleRecipientsVisibility();
             
-            // Re-initialize Select2 when dropdown becomes visible to fix width/position issues
+            // Re-initialize mmSelect when dropdown becomes visible (width/position)
             if (scopeSelect.value === 'specific' && !recipientSelect.data('mm-select-initialized')) {
                 initializeRecipientSelect();
             }
         });
 
         function initializeRecipientSelect() {
-            console.log('🔧 Initializing recipient Select2 dropdown...');
+            console.log('🔧 Initializing recipient mmSelect dropdown...');
             
             recipientSelect.mmSelect({
                 width: '100%',

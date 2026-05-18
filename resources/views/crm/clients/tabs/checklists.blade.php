@@ -415,7 +415,7 @@
 }
 
 .checklist-add-wrapper { position: relative; }
-/* Outer shell must not clip Select2: dropdown is appended here with dropdownParent. */
+/* Outer shell must not clip dropdown: menu is appended here (dropdownParent). */
 .checklist-create-dropdown {
     position: fixed;
     top: 50%;
@@ -437,14 +437,7 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
-/* Select2 menus for this panel use dropdownParent: body (see initChecklistSelect2).
-   Fixes invisible lists caused by transform on the panel + global custom.css width:200px on legacy dropdowns. */
-.ts-dropdown.mm-checklist-create-dropdown {
-    z-index: 100060 !important;
-    width: min(520px, 92vw) !important;
-    min-width: 260px !important;
-    box-sizing: border-box;
-}
+/* Checklist cost panel: dropdown attached to body (see initChecklistSelect2). Wide menu + z-index above transformed panel. */
 .ts-dropdown.mm-checklist-create-dropdown {
     z-index: 100060 !important;
     width: min(520px, 92vw) !important;
@@ -807,7 +800,7 @@
             }
         });
 
-        // Close panel when clicking outside (do not close while using this panel's Select2 menu)
+        // Close panel when clicking outside (do not close while the Tom Select menu is open)
         $(document).on('click', function(e) {
             if (!$dropdown.is(':visible')) {
                 return;

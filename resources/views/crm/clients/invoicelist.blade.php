@@ -313,17 +313,6 @@
         outline: none;
     }
 
-    .listing-container .select2-container--default .select2-selection--single {
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        height: 44px;
-        padding: 6px 16px;
-    }
-
-    .listing-container .select2-container--default .select2-selection--single:focus {
-        border-color: #667eea;
-    }
-
     .listing-container .ts-wrapper .ts-control {
         border: 2px solid #e2e8f0;
         border-radius: 10px;

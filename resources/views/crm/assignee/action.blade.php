@@ -786,16 +786,12 @@
     min-width: 100% !important;
 }
 
-.popover .select2-container {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-.popover .ts-wrapper {
+.popover .assignee-mm-select {
     width: 100% !important;
     max-width: 100% !important;
 }
 
-.popover .assignee-mm-select {
+.popover .ts-wrapper {
     width: 100% !important;
     max-width: 100% !important;
 }
@@ -1251,7 +1247,7 @@ $(function () {
         $('.popover-backdrop').removeClass('show');
     });
     
-    // Function to initialize client Select2 (scope to visible Add My Task popover only)
+    // Function to initialize client search (mmSelect) in Add My Task popover
     function initializeClientSelect2() {
         var attempts = 0;
         var maxAttempts = 10;
@@ -1302,7 +1298,7 @@ $(function () {
                     });
                     
                     // Handle change event for client selection
-                    /*$clientSelect.off('change.select2client').on('change.select2client', function () {
+                    /* $clientSelect.off('change.mmselectclient').on('change.mmselectclient', function () {
                         var v = $(this).val(); 
                         console.log('Client selected:', v);
                         var s = v.split('/');
@@ -1320,7 +1316,7 @@ $(function () {
                     
                     return true; // Success
                 } catch (error) {
-                    console.error('Error initializing Select2:', error);
+                    console.error('Error initializing mmSelect:', error);
                     return false;
                 }
             } else if (attempts < maxAttempts) {
@@ -1331,7 +1327,7 @@ $(function () {
         tryInitialize();
     }
     
-    // Helper functions for Select2 templates
+    // Helper templates for client search results
     function formatRepomainMYTask (repo) {
         if (repo.loading) {
             return repo.text;
@@ -1368,7 +1364,7 @@ $(function () {
     // Ensure Add My Task popover works correctly (backup initialization on click)
     // Initialize Update Task popover (placeholder for future enhancements)
     $(document).on('shown.bs.popover', '.update_task', function() {
-        // Reserved for future enhancements (e.g. Select2 inside update task popover)
+        // Reserved for future enhancements (e.g. mmSelect inside update task popover)
     });
 
     // Update badge counts

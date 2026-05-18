@@ -38,7 +38,7 @@ class OfficeVisitController extends Controller
 
 	public function checkin(Request $request){
 		try {
-			// Handle Select2 multiple select - get first value if array
+			// Handle enhanced multi-select values - get first value if array
 			$contactValue = $request->input('contact');
 			if (is_array($contactValue)) {
 				$contactValue = !empty($contactValue) ? $contactValue[0] : null;

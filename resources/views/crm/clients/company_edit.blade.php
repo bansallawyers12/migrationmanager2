@@ -1023,7 +1023,7 @@
     </div>
 
     @push('scripts')
-    {{-- Select2 JS for contact person search --}}
+    {{-- Tom Select (mmSelect) for contact person search --}}
     <script>
         window.countriesData = @json($countries ?? []);
         window.phonePopularIsoCodes = @json(config('phone.popular_countries'));
@@ -1036,7 +1036,7 @@
     
     <script>
     $(document).ready(function() {
-        // Initialize Select2 for contact person search
+        // Initialize mmSelect for contact person search
         $('#contactPersonSearch').mmSelect({
             ajax: {
                 url: window.editClientConfig.searchContactPersonRoute,
@@ -1112,7 +1112,7 @@
         $('#companyType').on('change', toggleTrusteeCompanyFields);
         toggleTrusteeCompanyFields();
 
-        // Init Select2 for nomination person search (existing rows)
+        // Init mmSelect for nomination person search (existing rows)
         $('.nomination-person-select').each(function() {
             if (!$(this).hasClass('mm-select-initialized')) {
                 $(this).mmSelect({
@@ -1121,7 +1121,7 @@
                 });
             }
         });
-        // Init Select2 for director person search (existing rows)
+        // Init mmSelect for director person search (existing rows)
         $('.director-person-select').each(function() {
             if (!$(this).hasClass('mm-select-initialized')) {
                 $(this).mmSelect({

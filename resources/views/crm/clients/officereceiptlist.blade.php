@@ -162,17 +162,6 @@
         outline: none;
     }
 
-    .listing-container .select2-container--default .select2-selection--single {
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        height: 44px;
-        padding: 6px 16px;
-    }
-
-    .listing-container .select2-container--default .select2-selection--single:focus {
-        border-color: #667eea;
-    }
-
     .listing-container .ts-wrapper .ts-control {
         border: 2px solid #e2e8f0;
         border-radius: 10px;
@@ -766,7 +755,7 @@ jQuery(document).ready(function($){
         window.location.href = currentUrl.toString();
     });
 
-    // Initialize Select2 for searchable dropdowns
+    // Searchable dropdowns (mmSelect / Tom Select)
     $('.listing-container .mm-select').mmSelect({
         placeholder: 'Select an option',
         allowClear: true,

@@ -1,5 +1,5 @@
 /**
- * Notes module - Create, edit, view notes; getallnotes; Select2 format helpers
+ * Notes module - Create, edit, view notes; getallnotes; mmSelect template helpers
  * Extracted from detail-main.js - Phase 3b refactoring.
  * Requires: jQuery, ClientDetailConfig, clearEditor, setEditorContent, adjustActivityFeedHeight
  */
