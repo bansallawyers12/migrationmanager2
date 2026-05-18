@@ -55,6 +55,64 @@
   display: block;
 }
 
+/*
+ * Compose Email (#emailmodal): To/CC are Tom Select multi-selects. tom-select.bootstrap5 relies on
+ * var(--bs-border-color) / .focus box-shadow resets; CRM theme often lacks those, so borders vanish.
+ * Match Subject `.form-control` (app.css): dimensions, contrast border, visible empty CC box.
+ */
+#emailmodal.modal .modal-body .form-group .ts-wrapper {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+#emailmodal.modal .modal-body .form-group .ts-wrapper.form-select .ts-control,
+#emailmodal.modal .modal-body .form-group .ts-wrapper .ts-control {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center;
+  width: 100% !important;
+  min-height: calc(1.6em + 0.75rem + 2px);
+  padding: 0.375rem 0.75rem !important;
+  box-sizing: border-box !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+  font-weight: 400 !important;
+  color: var(--bs-body-color, #212529) !important;
+  background-color: var(--bs-body-bg, #ffffff) !important;
+  background-clip: padding-box !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: var(--bs-border-radius, 0.375rem) !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+#emailmodal.modal .modal-body .form-group .ts-wrapper.focus .ts-control,
+#emailmodal.modal .modal-body .form-group .ts-wrapper.dropdown-active .ts-control {
+  border-color: #86b7fe !important;
+  outline: 0 !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.04),
+    0 0 0 0.25rem rgba(13, 110, 253, 0.2) !important;
+}
+
+/* Keep chip row readable inside bordered control */
+#emailmodal.modal .modal-body .form-group .ts-wrapper.multi.has-items .ts-control {
+  padding: calc(0.375rem - 2px) 0.6rem calc(0.375rem - 4px) !important;
+}
+
+#emailmodal.modal .modal-body .form-group .ts-wrapper.multi .ts-control > [data-ts-item] {
+  background: #e9ecef !important;
+  color: #212529 !important;
+  border-radius: 0.25rem;
+}
+
+/* Inner search input inherits layout; prevents collapsed empty CC row */
+#emailmodal.modal .modal-body .form-group .ts-wrapper .ts-control > input {
+  flex: 1 1 auto;
+  min-width: 4rem !important;
+  min-height: 1.4em !important;
+}
+
 .listing-container .ts-wrapper {
   width: 100%;
 }

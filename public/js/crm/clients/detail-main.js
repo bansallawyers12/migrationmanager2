@@ -7022,13 +7022,13 @@ success: function(response) {
 
 
 
-            $(".js-data-example-ajax").mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }))
+            $('#emailmodal .js-data-example-ajax').mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }))
 
 
 
-            $('.js-data-example-ajax').val(array);
+            $('#emailmodal .js-data-example-ajax').val(array);
 
-            $('.js-data-example-ajax').trigger('change');
+            $('#emailmodal .js-data-example-ajax').trigger('change');
 
         });
 
@@ -7110,11 +7110,11 @@ success: function(response) {
 
             });
 
-            $(".js-data-example-ajax").mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }));
+            $('#emailmodal .js-data-example-ajax').mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }));
 
-            $('.js-data-example-ajax').val(array);
+            $('#emailmodal .js-data-example-ajax').val(array);
 
-            $('.js-data-example-ajax').trigger('change');
+            $('#emailmodal .js-data-example-ajax').trigger('change');
 
             $('#emailmodal').one('shown.bs.modal', function(){
 
@@ -7390,11 +7390,11 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajax').mmSelect(emailModalRecipientsTomSelectBase());
+        $('#emailmodal .js-data-example-ajax').mmSelect(emailModalRecipientsTomSelectBase());
 
 
 
-        $('.js-data-example-ajaxccd').mmSelect({
+        $('#emailmodal .js-data-example-ajaxccd').mmSelect({
 
             multiple: true,
 
@@ -7492,7 +7492,32 @@ success: function(response) {
 
         function formatRepoSelection (repo) {
 
-            return repo.name || repo.text;
+            // Tom Select's remove_button hook calls appendChild on render.item output; a falsy/empty string
+            // makes render() return null and crashes (Cannot read properties of null reading appendChild).
+
+            if (!repo) {
+
+                return '(recipient)';
+
+            }
+
+            var label = (repo.name || repo.text || repo.email || '').toString().trim();
+
+            if (label) {
+
+                return label;
+
+            }
+
+            var id = repo.id != null ? repo.id : repo.value;
+
+            if (id !== undefined && id !== '') {
+
+                return '#' + String(id);
+
+            }
+
+            return '(recipient)';
 
         }
 

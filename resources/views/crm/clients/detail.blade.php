@@ -518,7 +518,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_to">To <span class="span_req">*</span></label>
-								<select data-valid="required" class="js-data-example-ajax" name="email_to[]"></select>
+								<select data-valid="required" class="form-select js-data-example-ajax" name="email_to[]"></select>
 
 								@if ($errors->has('email_to'))
 									<span class="custom-error" role="alert">
@@ -530,7 +530,7 @@ use App\Http\Controllers\Controller;
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
 								<label for="email_cc">CC </label>
-								<select data-valid="" class="js-data-example-ajaxccd" name="email_cc[]"></select>
+								<select data-valid="" class="form-select js-data-example-ajaxccd" name="email_cc[]"></select>
 
 								@if ($errors->has('email_cc'))
 									<span class="custom-error" role="alert">

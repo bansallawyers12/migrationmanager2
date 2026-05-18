@@ -35,8 +35,24 @@
   }
 
   /**
-   * Tom Select treats string render output without "<" as a CSS selector (document.querySelector).
-   * Plain display names like "Ravi Rai (Demo ID)" throw DOMException. Escape unless clearly HTML.
+   * Tom Select parses render strings: if there's no '<', K() uses document.querySelector(str),
+   * so plain labels like "Vipul Kumar" break (SyntaxError/null) and remove_button's appendChild crashes.
+   * Always expose labels as minimal HTML fragments (matches Tom Select's default '<div>...</div>' pattern).
+   */
+  function wrapTomSelectRenderOutput(content) {
+    if (content == null) content = '';
+    content = String(content);
+    if (content.trim() === '') {
+      return '<div class="mm-ts-render">\u200b</div>';
+    }
+    if (content.indexOf('<') !== -1) {
+      return content;
+    }
+    return '<div class="mm-ts-render">' + content + '</div>';
+  }
+
+  /**
+   * For plain-text values: optionally trust HTML fragments; otherwise run through TS escape().
    */
   function stringOutputForTomSelect(str, trustHtml, escape) {
     if (str == null || str === '') return '';
@@ -186,26 +202,42 @@
         opts.render.option = function (data, escape) {
           var d = optionToLegacyData(data, data.value);
           var out = legacyOpts.templateResult(d);
-          if (out == null) return '';
-          if (typeof out === 'string') {
-            return stringOutputForTomSelect(out, trustHtml, escape);
+          if (out == null) {
+            return wrapTomSelectRenderOutput('');
           }
-          if (trustHtml) return jqToHtml(out);
+          if (typeof out === 'string') {
+            return wrapTomSelectRenderOutput(stringOutputForTomSelect(out, trustHtml, escape));
+          }
+          if (trustHtml) {
+            return wrapTomSelectRenderOutput(jqToHtml(out));
+          }
           var html = jqToHtml(out);
-          return html || escape(String(d.text || ''));
+          return wrapTomSelectRenderOutput(html || escape(String(d.text || '')));
         };
       }
       opts.render.item = function (data, escape) {
         var d = optionToLegacyData(data, data.value);
+        function escapeItemFallback() {
+          var v = (d.name || d.text || d.email || '').toString().trim();
+          if (v) return wrapTomSelectRenderOutput(escape(v));
+          var key = d.value != null && d.value !== '' ? d.value : d.id;
+          if (key != null && key !== '') return wrapTomSelectRenderOutput(escape('#' + String(key)));
+          return wrapTomSelectRenderOutput(escape('(recipient)'));
+        }
         if (legacyOpts.templateSelection) {
           var sel = legacyOpts.templateSelection(d);
-          if (sel == null) return '';
+          if (sel == null || String(sel).trim() === '') return escapeItemFallback();
           if (typeof sel === 'string') {
-            return stringOutputForTomSelect(sel, trustHtml, escape);
+            var rendered = stringOutputForTomSelect(sel, trustHtml, escape);
+            if (rendered === '' || rendered == null) return escapeItemFallback();
+            return wrapTomSelectRenderOutput(rendered);
           }
-          return jqToHtml(sel);
+          var jqH = jqToHtml(sel);
+          if (!jqH) return escapeItemFallback();
+          return wrapTomSelectRenderOutput(jqH);
         }
-        return escape(String(d.text || ''));
+        var plain = String(d.text || d.email || d.value || '').trim();
+        return wrapTomSelectRenderOutput(escape(plain || '(recipient)'));
       };
     }
 
