@@ -1218,6 +1218,13 @@ $(document).ready(function() {
     // When compose modal opens with a matter: load templates/macros and filter checklist rows by matter.
     // Checklist attachment checkboxes stay unchecked until the user selects them.
     $('#emailmodal').on('shown.bs.modal', function() {
+        var $templateSelect = $('#emailmodal select.selecttemplate');
+        if (typeof window.initComposeEmailTemplateSelect === 'function') {
+            if (!$('#compose_client_matter_id').val() && typeof window.restoreComposeEmailTemplateCrmOptions === 'function') {
+                window.restoreComposeEmailTemplateCrmOptions($templateSelect);
+            }
+            window.initComposeEmailTemplateSelect($templateSelect);
+        }
         var clientMatterId = $('#compose_client_matter_id').val();
         if (!clientMatterId || !window.ClientDetailConfig || !window.ClientDetailConfig.urls || !window.ClientDetailConfig.urls.getComposeDefaults) {
             window.composeChecklistFilterIds = null;
@@ -1229,7 +1236,6 @@ $(document).ready(function() {
         }
         $.get(window.ClientDetailConfig.urls.getComposeDefaults, { client_matter_id: clientMatterId })
             .done(function(res) {
-                var $templateSelect = $('#emailmodal select.selecttemplate');
                 var $checklistCbs = $('#emailmodal .checklistfile-cb');
                 if (res.macro_values) {
                     var macroVals = res.macro_values;
@@ -1247,6 +1253,9 @@ $(document).ready(function() {
                     (res.matter_templates || []).forEach(function(t) {
                         $templateSelect.append($('<option></option>').attr('value', t.id).text(t.name || 'Template'));
                     });
+                    if (typeof window.syncComposeEmailTemplateSelectFromDom === 'function') {
+                        window.syncComposeEmailTemplateSelectFromDom($templateSelect);
+                    }
                     // Reply/Forward from client email tab sets preserveReplyForwardBody so quoted content is not replaced by a template
                     if (!$('#emailmodal').data('preserveReplyForwardBody')) {
                         var fromSignature = $('#emailmodal').data('fromSignatureSend');

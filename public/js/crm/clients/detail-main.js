@@ -14,6 +14,62 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
+    /** Snapshot of CRM template <option>s for #emailmodal (restored when compose opens without a matter). */
+    function ensureComposeTemplateCrmOptionsSnapshot($select) {
+        if (!$select || !$select.length || $select.data('composeCrmOptionsHtml')) {
+            return;
+        }
+        $select.data('composeCrmOptionsHtml', $select.html());
+    }
+
+    function restoreComposeEmailTemplateCrmOptions($select) {
+        if (!$select || !$select.length) {
+            return;
+        }
+        ensureComposeTemplateCrmOptionsSnapshot($select);
+        var html = $select.data('composeCrmOptionsHtml');
+        if (html) {
+            $select.html(html);
+        }
+    }
+
+    /**
+     * Compose Email template Tom Select: dropdown on body so positionDropdown() runs inside modals.
+     * Re-init on each #emailmodal show (see detail.blade.php shown.bs.modal handler).
+     */
+    window.restoreComposeEmailTemplateCrmOptions = restoreComposeEmailTemplateCrmOptions;
+
+    window.initComposeEmailTemplateSelect = function ($select) {
+        if (!$select || !$select.length || typeof $.fn.mmSelect === 'undefined') {
+            return;
+        }
+        ensureComposeTemplateCrmOptionsSnapshot($select);
+        if ($select[0].tomselect) {
+            $select.mmSelect('destroy');
+        }
+        $select.mmSelect({
+            dropdownParent: $('body'),
+            dropdownCssClass: 'mm-compose-email-template-dropdown',
+            width: '100%',
+        });
+    };
+
+    /** After <option>s are changed via jQuery, refresh Tom Select's option cache. */
+    window.syncComposeEmailTemplateSelectFromDom = function ($select) {
+        if (!$select || !$select.length) {
+            return;
+        }
+        var ts = $select[0].tomselect;
+        if (!ts) {
+            window.initComposeEmailTemplateSelect($select);
+            return;
+        }
+        ts.sync(true);
+        if (typeof ts.refreshOptions === 'function') {
+            ts.refreshOptions(false);
+        }
+    };
+
     function formatClientDocDateTime(iso) {
         if (typeof window.formatDisplayDateTime === 'function') {
             return window.formatDisplayDateTime(iso) || '';
@@ -1464,7 +1520,7 @@ $(document).ready(function() {
 
 
 
-        $('.selecttemplate').mmSelect({dropdownParent: $('#emailmodal')});
+        // Compose Email template select: init on #emailmodal shown (initComposeEmailTemplateSelect), not here.
 
 
 
