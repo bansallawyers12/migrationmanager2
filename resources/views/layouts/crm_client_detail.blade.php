@@ -1804,10 +1804,6 @@
                 this.value =  this.value;
             });
 
-            $('.assignee-mm-select').mmSelect({
-                dropdownParent: $('#checkinmodal'),
-            });
-
             $('.js-data-example-ajaxccsearch').mmSelect({
                 closeOnSelect: true,
                 minimumInputLength: 2,
@@ -2413,48 +2409,6 @@
                 $('.card .card-body .grid_data').show();
             });
 
-            $('.js-data-example-ajax-check').on("mmselect:select", function(e) {
-                var data = e.params.data;
-                console.log(data);
-                // Ensure status is set, default to 'Client' if not provided
-                var contactType = data.status || data.type || 'client';
-                // Normalize to lowercase first, then capitalize
-                contactType = contactType.toLowerCase();
-                if (contactType === 'lead') {
-                    contactType = 'Lead';
-                } else if (contactType === 'client') {
-                    contactType = 'Client';
-                } else {
-                    // If status is something else (like 'archived'), default to 'Client'
-                    contactType = 'Client';
-                }
-                $('#utype').val(contactType);
-            });
-
-            // Also handle when selection is cleared
-            $('.js-data-example-ajax-check').on("mmselect:clear", function(e) {
-                $('#utype').val('');
-            });
-
-            $('.js-data-example-ajax-check').mmSelect({
-                multiple: true,
-                closeOnSelect: false,
-                dropdownParent: $('#checkinmodal'),
-                ajax: {
-                    url: '{{route('clients.getrecipients')}}',
-                    dataType: 'json',
-                    processResults: function (data) {
-                        // Transforms the top-level key of the response object from 'items' to 'results'
-                        return {
-                            results: data.items
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatRepocheck,
-                templateSelection: formatRepoSelectioncheck
-            });
-
             function formatRepocheck (repo) {
                 if (repo.loading) {
                     return repo.text;
@@ -2491,6 +2445,83 @@
             function formatRepoSelectioncheck (repo) {
                 return repo.name || repo.text;
             }
+
+            function initCheckinModalTomSelects() {
+                if (typeof $.fn.mmSelect === 'undefined') {
+                    return;
+                }
+                var $modal = $('#checkinmodal');
+                if (!$modal.length) {
+                    return;
+                }
+
+                var $contact = $modal.find('.js-data-example-ajax-check');
+                if ($contact.length) {
+                    if ($contact.data('mmSelect')) {
+                        $contact.mmSelect('destroy');
+                    }
+                    $contact.mmSelect({
+                        closeOnSelect: true,
+                        placeholder: 'Search by phone, email, name, or client ID...',
+                        allowClear: true,
+                        width: '100%',
+                        minimumInputLength: 2,
+                        dropdownParent: 'body',
+                        dropdownCssClass: 'mm-checkin-modal-dropdown',
+                        ajax: {
+                            url: '{{route('clients.getrecipients')}}',
+                            dataType: 'json',
+                            delay: 350,
+                            data: function (params) {
+                                return { q: params.term || '' };
+                            },
+                            processResults: function (data) {
+                                return {
+                                    results: (data && data.items) ? data.items : []
+                                };
+                            },
+                            cache: true
+                        },
+                        templateResult: formatRepocheck,
+                        templateSelection: formatRepoSelectioncheck
+                    });
+                }
+
+                var $assignee = $modal.find('.assignee-mm-select');
+                if ($assignee.length) {
+                    if ($assignee.data('mmSelect')) {
+                        $assignee.mmSelect('destroy');
+                    }
+                    $assignee.mmSelect({
+                        dropdownParent: 'body',
+                        dropdownCssClass: 'mm-checkin-modal-dropdown',
+                        minimumResultsForSearch: 0,
+                        width: '100%'
+                    });
+                }
+            }
+
+            $('#checkinmodal').on('mmselect:select', '.js-data-example-ajax-check', function(e) {
+                var data = e.params.data;
+                var contactType = data.status || data.type || 'client';
+                contactType = contactType.toLowerCase();
+                if (contactType === 'lead') {
+                    contactType = 'Lead';
+                } else if (contactType === 'client') {
+                    contactType = 'Client';
+                } else {
+                    contactType = 'Client';
+                }
+                $('#utype').val(contactType);
+            });
+
+            $('#checkinmodal').on('mmselect:clear', '.js-data-example-ajax-check', function() {
+                $('#utype').val('');
+            });
+
+            $(document).on('shown.bs.modal', '#checkinmodal', function () {
+                initCheckinModalTomSelects();
+            });
 
             /* $('.timepicker').timepicker({
                 minuteStep: 1,
@@ -2855,7 +2886,7 @@
                             <div class="col-12 col-md-6 col-lg-6">
                                 <div class="form-group">
                                     <label for="email_from">Search Contact <span class="span_req">*</span></label>
-                                    <select data-valid="required" class="js-data-example-ajax-check" name="contact"></select>
+                                    <select data-valid="required" class="form-control js-data-example-ajax-check" name="contact" placeholder="Search by phone, email, name, or client ID..."></select>
                                     @if ($errors->has('email_from'))
                                         <span class="custom-error" role="alert">
                                             <strong>{{ @$errors->first('email_from') }}</strong>
