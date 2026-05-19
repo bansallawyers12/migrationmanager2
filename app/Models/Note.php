@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -122,6 +123,25 @@ class Note extends Model
         // Appointment model no longer exists - old appointment system removed
         // Returning null to prevent errors
         return null;
+    }
+
+    /**
+     * Whether the staff member may update or delete this client action.
+     * Allowed: super admin, assignee, or creator (Assigned by Me).
+     */
+    public function canBeModifiedBy(?Authenticatable $staff): bool
+    {
+        if (! $staff) {
+            return false;
+        }
+
+        if ((int) ($staff->role ?? 0) === 1) {
+            return true;
+        }
+
+        $staffId = (int) $staff->id;
+
+        return (int) $this->assigned_to === $staffId || (int) $this->user_id === $staffId;
     }
 
 }

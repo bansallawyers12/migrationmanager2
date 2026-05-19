@@ -443,69 +443,75 @@
             });
         });
 
-        // Update task
+        // Update task (scope fields to open popover — matches action.blade.php)
         $(document).on('click', '#updateTask', function() {
-            $(".popuploader").show();
-            var flag = true;
-            var error = "";
-            $(".custom-error").remove();
+            var $popover = $(this).closest('.popover');
+            if (!$popover.length) {
+                return;
+            }
 
-            if ($('#rem_cat').val() == '') {
-                $('.popuploader').hide();
-                error = "Assignee field is required.";
-                $('#rem_cat').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            $(".popuploader").show();
+            $popover.find('.custom-error').remove();
+
+            var assignee = $popover.find('#rem_cat').val();
+            var note = $popover.find('#assignnote').val();
+            var taskGroup = $popover.find('#task_group').val();
+            var flag = true;
+
+            if (!assignee) {
+                $popover.find('#rem_cat').after("<span class='custom-error' role='alert'>Assignee field is required.</span>");
                 flag = false;
             }
-            if ($('#assignnote').val() == '') {
-                $('.popuploader').hide();
-                error = "Note field is required.";
-                $('#assignnote').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            if (!note || !String(note).trim()) {
+                $popover.find('#assignnote').after("<span class='custom-error' role='alert'>Note field is required.</span>");
                 flag = false;
             }
-            if ($('#task_group').val() == '') {
-                $('.popuploader').hide();
-                error = "Group field is required.";
-                $('#task_group').after("<span class='custom-error' role='alert'>" + error + "</span>");
+            if (!taskGroup) {
+                $popover.find('#task_group').after("<span class='custom-error' role='alert'>Group field is required.</span>");
                 flag = false;
             }
-            if (flag) {
-                $.ajax({
-                    type: 'post',
-                    url: "{{ URL::to('/') }}/clients/action/update",
-                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                    data: {
-                        note_id: $('#assign_note_id').val(),
-                        note_type: 'follow_up',
-                        description: $('#assignnote').val(),
-                        client_id: $('#assign_client_id').val(),
-                        followup_datetime: $('#popoverdatetime').val(),
-                        assignee_name: $('#rem_cat :selected').text(),
-                        rem_cat: $('#rem_cat option:selected').val(),
-                        task_group: $('#task_group option:selected').val()
-                    },
-                    success: function(response) {
-                        $('.popuploader').hide();
-                        // Parse response if it's a string (fallback for older jQuery versions)
-                        var obj = (typeof response === 'string') ? $.parseJSON(response) : response;
-                        if (obj.success) {
-                            $("[data-role=popover]").each(function() {
-                                (($(this).popover('hide').data('bs.popover') || {}).inState || {}).click = false;
-                            });
-                            location.reload();
-                        } else {
-                            alert(obj.message);
-                            location.reload();
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        $('.popuploader').hide();
-                        console.error('Error updating task:', xhr.responseText);
-                        alert('An error occurred while updating the task. Please try again.');
+
+            if (!flag) {
+                $('.popuploader').hide();
+                return;
+            }
+
+            $.ajax({
+                type: 'post',
+                url: "{{ URL::to('/') }}/clients/action/update",
+                dataType: 'json',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: {
+                    note_id: $popover.find('#assign_note_id').val(),
+                    note_type: 'follow_up',
+                    description: note,
+                    client_id: $popover.find('#assign_client_id').val(),
+                    followup_datetime: $popover.find('#popoverdatetime').val(),
+                    assignee_name: $popover.find('#rem_cat option:selected').text(),
+                    rem_cat: assignee,
+                    task_group: taskGroup
+                },
+                success: function(obj) {
+                    $('.popuploader').hide();
+                    if (obj && obj.success) {
+                        $("[data-role=popover]").each(function() {
+                            (($(this).popover('hide').data('bs.popover') || {}).inState || {}).click = false;
+                        });
+                        location.reload();
+                    } else {
+                        alert((obj && obj.message) ? obj.message : 'Update failed.');
                     }
-                });
-            } else {
-                $("#loader").hide();
-            }
+                },
+                error: function(xhr) {
+                    $('.popuploader').hide();
+                    console.error('Error updating task:', xhr.responseText);
+                    var msg = 'An error occurred while updating the task. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    alert(msg);
+                }
+            });
         });
 
         // REMOVED: Deprecated appointment system functionality

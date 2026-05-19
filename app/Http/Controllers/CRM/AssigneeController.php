@@ -692,7 +692,17 @@ class AssigneeController extends Controller
     //incomplete activity remove
     public function destroy_activity($id,Note $Note)
     {
-        $appointment = Note::find($id);//dd($appointment);
+        $appointment = Note::find($id);
+        if (! $appointment) {
+            echo json_encode(['success' => false, 'message' => 'Activity not found']);
+            exit;
+        }
+
+        if ((int) $appointment->is_action === 1 && (string) $appointment->type === 'client' && ! $appointment->canBeModifiedBy(Auth::user())) {
+            echo json_encode(['success' => false, 'message' => config('constants.unauthorized')]);
+            exit;
+        }
+
         $appointment->is_action = 0;
         if( $appointment->save() ){
             $objs = new ActivitiesLog;

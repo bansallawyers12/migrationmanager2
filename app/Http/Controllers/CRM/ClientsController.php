@@ -7322,11 +7322,20 @@ class ClientsController extends Controller
      */
     public function updateAction(Request $request)
     {
-        $requestData = $request->all();
-        
+        $validated = $request->validate([
+            'note_id' => 'required|integer|exists:notes,id',
+            'description' => 'required|string',
+            'rem_cat' => 'required|integer|exists:staff,id',
+            'task_group' => 'required|string|in:Call,Checklist,Review,Query,Urgent,Personal Action,Client Portal,Follow Up',
+            'followup_datetime' => 'nullable|date',
+            'client_id' => 'nullable|string',
+        ]);
+
+        $requestData = array_merge($request->all(), $validated);
+
         try {
             // Find the existing action
-            $action = \App\Models\Note::findOrFail($requestData['note_id']);
+            $action = \App\Models\Note::findOrFail($validated['note_id']);
 
             if ((int) $action->is_action !== 1 || (string) $action->type !== 'client') {
                 return response()->json(['success' => false, 'message' => 'Invalid task'], 400);
@@ -7337,7 +7346,7 @@ class ClientsController extends Controller
             }
 
             $staff = Auth::user();
-            if ($staff && (int) $staff->role !== 1 && (int) $action->assigned_to !== (int) $staff->id) {
+            if (! $action->canBeModifiedBy($staff)) {
                 return response()->json(['success' => false, 'message' => config('constants.unauthorized')], 403);
             }
             
