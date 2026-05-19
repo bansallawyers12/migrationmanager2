@@ -60,6 +60,16 @@
     return escape(String(str));
   }
 
+  function legacyResultSearchText(opt) {
+    var parts = [];
+    if (opt.name) parts.push(String(opt.name));
+    if (opt.client_reference) parts.push(String(opt.client_reference));
+    if (opt.email) parts.push(String(opt.email));
+    if (opt.phones) parts.push(String(opt.phones));
+    if (opt.emails) parts.push(String(opt.emails));
+    return parts.join(' ').trim();
+  }
+
   function legacyResultToOpt(r) {
     if (!r || typeof r !== 'object') return { value: '', text: '' };
     var opt = {};
@@ -70,6 +80,8 @@
     if (opt.value === undefined) opt.value = '';
     if (opt.text === undefined && opt.label !== undefined) opt.text = opt.label;
     if (opt.text === undefined && opt.name !== undefined) opt.text = opt.name;
+    var searchText = legacyResultSearchText(opt);
+    if (searchText) opt.text = searchText;
     if (opt.text === undefined) opt.text = String(opt.value);
     return opt;
   }
@@ -169,6 +181,13 @@
     if (legacyOpts.ajax) {
       opts.persist = false;
       if (isMulti) opts.hideSelected = true;
+      // Remote search already filters on the server; do not re-filter by display name
+      // (e.g. query "VIPL2400001" vs result name "Vipul Kumar").
+      opts.score = function () {
+        return function () {
+          return 1;
+        };
+      };
 
       var minLen = legacyOpts.minimumInputLength;
       if (minLen === undefined) minLen = 0;

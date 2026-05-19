@@ -2692,6 +2692,7 @@ class ClientsController extends Controller
                     })
                     ->select(
                         'admins.id as client_id',
+                        'admins.client_id as client_reference',
                         'admins.first_name',
                         'admins.last_name',
                         'admins.is_company',
@@ -2715,6 +2716,7 @@ class ClientsController extends Controller
                         'email' => $result->email,
                         'status' => $result->is_archived ? 'Archived' : $result->type,
                         'cid' => $result->client_id,
+                        'client_reference' => $result->client_reference ?? '',
                         'is_company' => (bool) $result->is_company,
                         'record_type' => $result->type,
                     ];
@@ -2735,12 +2737,17 @@ class ClientsController extends Controller
             ->tap(function ($q) {
                 StaffClientVisibility::applyExcludeSuperAdminOnlyLockedClientsOnAdminJoin($q, 'admins');
             })
-            ->where(function ($query) use ($squery, $useMatterFt, $mysqlFtPhrase) {
+            ->where(function ($query) use ($squery, $squeryLower, $useMatterFt, $mysqlFtPhrase) {
                 if ($useMatterFt) {
-                    $query->whereRaw(
-                        'MATCH(client_matters.department_reference, client_matters.other_reference, client_matters.client_unique_matter_no) AGAINST (? IN BOOLEAN MODE)',
-                        [$mysqlFtPhrase]
-                    );
+                    $query->where(function ($matterFtQuery) use ($mysqlFtPhrase, $squery, $squeryLower) {
+                        $matterFtQuery->whereRaw(
+                            'MATCH(client_matters.department_reference, client_matters.other_reference, client_matters.client_unique_matter_no) AGAINST (? IN BOOLEAN MODE)',
+                            [$mysqlFtPhrase]
+                        )
+                            ->orWhere('client_matters.department_reference', 'LIKE', "%{$squery}%")
+                            ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
+                            ->orWhereRaw('LOWER(client_matters.client_unique_matter_no) LIKE ?', ["%{$squeryLower}%"]);
+                    });
                 } else {
                     $query->where('client_matters.department_reference', 'LIKE', "%{$squery}%")
                         ->orWhere('client_matters.other_reference', 'LIKE', "%{$squery}%")
@@ -2749,6 +2756,7 @@ class ClientsController extends Controller
             })
             ->select(
                 'admins.id as client_id',
+                'admins.client_id as client_reference',
                 'admins.first_name',
                 'admins.last_name',
                 'admins.is_company',
@@ -2772,6 +2780,7 @@ class ClientsController extends Controller
                 'email' => $matter->email,
                 'status' => $matter->is_archived ? 'Archived' : $matter->type,
                 'cid' => $matter->client_id,
+                'client_reference' => $matter->client_reference ?? '',
                 'is_company' => (bool) $matter->is_company,
                 'record_type' => $matter->type,
             ];
@@ -2822,10 +2831,14 @@ class ClientsController extends Controller
                             ->orWhereRaw('LOWER(admins.email) LIKE ?', ['demo_%@gmail.com']);
                     });
                 } elseif ($useAdminFt) {
-                    $query->whereRaw(
-                        'MATCH(admins.first_name, admins.last_name, admins.email, admins.client_id) AGAINST (? IN BOOLEAN MODE)',
-                        [$mysqlFtPhrase]
-                    );
+                    // FULLTEXT misses alphanumeric client refs (e.g. VIPL2400001); keep LIKE fallback.
+                    $query->where(function ($adminFtQuery) use ($mysqlFtPhrase, $squeryLower) {
+                        $adminFtQuery->whereRaw(
+                            'MATCH(admins.first_name, admins.last_name, admins.email, admins.client_id) AGAINST (? IN BOOLEAN MODE)',
+                            [$mysqlFtPhrase]
+                        )
+                            ->orWhereRaw('LOWER(admins.client_id) LIKE ?', ["%{$squeryLower}%"]);
+                    });
                 } else {
                     $query->whereRaw('LOWER(admins.email) LIKE ?', ["%{$squeryLower}%"]);
                 }
@@ -2956,6 +2969,7 @@ class ClientsController extends Controller
                     'email' => $client->email,
                     'status' => $client->is_archived ? 'Archived' : $client->type,
                     'cid' => $client->id,
+                    'client_reference' => $client->client_id ?? '',
                     'phones' => $allPhones,
                     'emails' => $allEmails,
                     'is_company' => (bool) $client->is_company,
