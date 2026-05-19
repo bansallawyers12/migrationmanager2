@@ -2661,10 +2661,13 @@ class ClientsController extends Controller
         $squeryLower = strtolower($squery);
         $isUniversalEmail = ($squery === 'demo@gmail.com');
         $isUniversalPhone = ($squery === '4444444444');
-        $mysqlFtPhrase = $this->mysqlGlobalSearchBooleanFulltext($squery);
-        $useMatterFt = $mysqlFtPhrase !== ''
+        $isClientReferenceSearch = $this->globalSearchQueryIsClientReference($squery);
+        $mysqlFtPhrase = $isClientReferenceSearch ? '' : $this->mysqlGlobalSearchBooleanFulltext($squery);
+        $useMatterFt = ! $isClientReferenceSearch
+            && $mysqlFtPhrase !== ''
             && $this->globalSearchMysqlFulltextIndexExists('client_matters', 'client_matters_global_search_ft');
         $useAdminFt = ! $isUniversalEmail
+            && ! $isClientReferenceSearch
             && $mysqlFtPhrase !== ''
             && $this->globalSearchMysqlFulltextIndexExists('admins', 'admins_global_search_ft');
 
@@ -2727,6 +2730,8 @@ class ClientsController extends Controller
         /**
          * 2. Matter references (department / other / unique matter no)
          */
+        $matterMatches = collect();
+        if (! $isClientReferenceSearch) {
         $matterMatches = DB::table('client_matters')
             ->join('admins', 'client_matters.client_id', '=', 'admins.id')
             ->leftJoin('companies', 'companies.admin_id', '=', 'admins.id')
@@ -2769,6 +2774,7 @@ class ClientsController extends Controller
             ->orderByDesc('client_matters.id')
             ->limit($lim)
             ->get();
+        }
 
         foreach ($matterMatches as $matter) {
             $displayName = ($matter->is_company && $matter->company_name)
@@ -2801,7 +2807,15 @@ class ClientsController extends Controller
             ->with(['company.contactPerson'])
             ->whereIn('admins.type', ['client', 'lead'])
             ->whereNull('admins.is_deleted')
-            ->where('admins.is_archived', 0)
+            ->where('admins.is_archived', 0);
+
+        if ($isClientReferenceSearch) {
+            $clientsQuery->where(function ($query) use ($squeryLower) {
+                $query->whereRaw('LOWER(admins.client_id) = ?', [$squeryLower])
+                    ->orWhereRaw('LOWER(admins.client_id) LIKE ?', [$squeryLower.'%']);
+            });
+        } else {
+            $clientsQuery
             ->leftJoin('client_contacts', function ($join) use ($squery, $squeryLower, $isUniversalPhone) {
                 $join->on('client_contacts.client_id', '=', 'admins.id');
                 if ($isUniversalPhone) {
@@ -2874,15 +2888,28 @@ class ClientsController extends Controller
                     $query->orWhere('admins.dob', '=', $d);
                 }
             });
+        }
+
         $clientsQuery->tap(function ($q) {
             StaffClientVisibility::excludeSuperAdminOnlyLockedClientsFromAdminQuery($q);
         });
-        $clientsQuery = $clientsQuery
-            ->select('admins.*')
-            ->distinct()
-            ->orderBy('admins.created_at', 'desc')
-            ->limit($lim)
-            ->get();
+        if ($isClientReferenceSearch) {
+            $clientsQuery
+                ->select('admins.*')
+                ->orderByRaw('CASE WHEN LOWER(admins.client_id) = ? THEN 0 ELSE 1 END', [$squeryLower])
+                ->orderBy('admins.client_id')
+                ->limit($lim);
+        } else {
+            $clientsQuery = $clientsQuery
+                ->select('admins.*')
+                ->distinct();
+        }
+        $clientsQuery = $isClientReferenceSearch
+            ? $clientsQuery->get()
+            : $clientsQuery
+                ->orderBy('admins.created_at', 'desc')
+                ->limit($lim)
+                ->get();
 
         $clientIds = $clientsQuery->pluck('id')->toArray();
 
@@ -3036,6 +3063,20 @@ class ClientsController extends Controller
         } catch (\Throwable) {
             return $cache[$key] = false;
         }
+    }
+
+    /**
+     * Client file references (e.g. VIPL2400001, john2608773): letters + digits, no spaces.
+     * These must not use FULLTEXT/name search or "john" will match unrelated clients.
+     */
+    protected function globalSearchQueryIsClientReference(string $squery): bool
+    {
+        $squery = trim($squery);
+        if ($squery === '' || str_contains($squery, ' ') || str_contains($squery, '@')) {
+            return false;
+        }
+
+        return (bool) preg_match('/^[A-Za-z][A-Za-z0-9]*\d[A-Za-z0-9]*$/', $squery);
     }
 
     /**

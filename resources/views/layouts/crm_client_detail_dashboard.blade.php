@@ -852,10 +852,10 @@
                     processResults: function (data) {
                         // Transforms the top-level key of the response object from 'items' to 'results'
                         return {
-                            results: data.items
+                            results: data.items || []
                         };
                     },
-                    cache: true
+                    cache: false
                 },
                 templateResult: formatRepomain,
                 templateSelection: formatRepoSelectionmain
@@ -1477,10 +1477,10 @@
                     processResults: function (data) {
                         // Transforms the top-level key of the response object from 'items' to 'results'
                         return {
-                            results: data.items
+                            results: data.items || []
                         };
                     },
-                    cache: true
+                    cache: false
                 },
                 templateResult: formatRepocheck,
                 templateSelection: formatRepoSelectioncheck

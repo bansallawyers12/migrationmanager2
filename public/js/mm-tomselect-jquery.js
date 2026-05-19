@@ -196,19 +196,31 @@
       };
 
       var ajax = legacyOpts.ajax;
+      var clearOnSearch = ajax.clearOnSearch !== false;
       opts.load = function (query, callback) {
         if (query.length < minLen) {
           callback();
           return;
         }
+        var ts = this;
+        if (clearOnSearch) {
+          callback();
+          if (ts && typeof ts.clearOptions === 'function') {
+            ts.clearOptions();
+          }
+        }
         var payload =
           typeof ajax.data === 'function'
             ? ajax.data({ term: query, page: 1 })
             : ajax.data || {};
+        if (ajax.cache !== true && payload && typeof payload === 'object' && !Array.isArray(payload)) {
+          payload._ = Date.now();
+        }
         $.ajax({
           url: ajax.url,
           type: ajax.type || 'GET',
           dataType: ajax.dataType || 'json',
+          cache: ajax.cache === true,
           data: payload,
           success: function (resp) {
             var processed = ajax.processResults
