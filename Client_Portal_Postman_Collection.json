@@ -2144,66 +2144,75 @@
 			"name": "Workflow Management",
 			"item": [
 				{
-					"name": "21. Workflow Management - Get Workflow Stages",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"description": "Use token from login response"
-							}
+			"name": "21. Workflow Management - Get Workflow Stages",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{auth_token}}",
+							"description": "Use token from login response"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/workflow/stages?client_matter_id=9&type=all",
+						"host": [
+							"{{base_url}}"
 						],
-						"url": {
-							"raw": "{{base_url}}/workflow/stages?client_matter_id=9",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"workflow",
-								"stages"
-							],
-							"query": [
-								{
-									"key": "client_matter_id",
-									"value": "9",
-									"description": "Optional: Get active stage for specific matter"
-								}
-							]
-						},
-						"description": "Get all workflow stages with the current active stage for the client. Optional client_matter_id parameter to get active stage for specific matter."
+						"path": [
+							"workflow",
+							"stages"
+						],
+						"query": [
+							{
+								"key": "client_matter_id",
+								"value": "9",
+								"description": "Optional: Get active stage for specific matter"
+							},
+							{
+								"key": "type",
+								"value": "all",
+								"description": "Filter stages by type: all (default) | pending (stages with 0 checklists or 0 uploaded docs) | completed (stages with at least 1 uploaded document)"
+							}
+						]
 					},
+					"description": "Get all workflow stages with the current active stage for the client. Optional client_matter_id parameter to get active stage for specific matter.\n\n**type filter (optional, default: all):**\n- `all` – returns all stages (no filter)\n- `pending` – returns only stages that have 0 checklists OR where all checklists have 0 uploaded documents\n- `completed` – returns only stages that have at least one checklist with uploaded documents (>0); within those stages only the checklists with uploads are shown"
+				},
 					"response": [
 						{
 							"name": "Success Response",
-							"originalRequest": {
-								"method": "GET",
-								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer {{auth_token}}"
-									}
-								],
-								"url": {
-									"raw": "{{base_url}}/workflow/stages?client_matter_id=9",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"workflow",
-										"stages"
-									],
-									"query": [
-										{
-											"key": "client_matter_id",
-											"value": "123"
-										}
-									]
+					"originalRequest": {
+							"method": "GET",
+							"header": [
+								{
+									"key": "Authorization",
+									"value": "Bearer {{auth_token}}"
 								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
+							],
+							"url": {
+								"raw": "{{base_url}}/workflow/stages?client_matter_id=9&type=all",
+								"host": [
+									"{{base_url}}"
+								],
+								"path": [
+									"workflow",
+									"stages"
+								],
+								"query": [
+									{
+										"key": "client_matter_id",
+										"value": "123"
+									},
+									{
+										"key": "type",
+										"value": "all"
+									}
+								]
+							}
+						},
+						"status": "OK",
+						"code": 200,
+						"_postman_previewlanguage": "json",
 							"header": [
 								{
 									"key": "Content-Type",

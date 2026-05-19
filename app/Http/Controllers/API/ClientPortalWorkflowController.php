@@ -34,6 +34,13 @@ class ClientPortalWorkflowController extends Controller
             
             // Get client_matter_id parameter (optional)
             $clientMatterId = $request->get('client_matter_id');
+
+            // type filter: all | pending | completed (default: all)
+            $type = $request->get('type', 'all');
+            if (!in_array($type, ['all', 'pending', 'completed'])) {
+                $type = 'all';
+            }
+
             $workflowId = null;
 
             // Resolve workflow_id from client_matters using client_id + client_matter_id
@@ -103,6 +110,36 @@ class ClientPortalWorkflowController extends Controller
                     ];
                 });
 
+            // Apply type filter
+            if ($type === 'pending') {
+                // Pending: stages with 0 checklists OR stages where total uploaded documents = 0
+                $workflowStages = $workflowStages->filter(function ($stage) {
+                    if ($stage['allowed_checklist_count'] === 0) {
+                        return true;
+                    }
+                    $totalUploaded = array_sum(array_column($stage['allowed_checklist'], 'no_of_document_uploaded'));
+                    return $totalUploaded === 0;
+                })->values();
+            } elseif ($type === 'completed') {
+                // Completed: stages where at least one checklist has uploaded documents > 0
+                // Only show checklists within those stages that have uploads > 0
+                $workflowStages = $workflowStages->filter(function ($stage) {
+                    if ($stage['allowed_checklist_count'] === 0) {
+                        return false;
+                    }
+                    $totalUploaded = array_sum(array_column($stage['allowed_checklist'], 'no_of_document_uploaded'));
+                    return $totalUploaded > 0;
+                })->map(function ($stage) {
+                    $filteredChecklist = array_values(array_filter(
+                        $stage['allowed_checklist'],
+                        fn($item) => $item['no_of_document_uploaded'] > 0
+                    ));
+                    $stage['allowed_checklist'] = $filteredChecklist;
+                    $stage['allowed_checklist_count'] = count($filteredChecklist);
+                    return $stage;
+                })->values();
+            }
+
             // Get active stage for the client
             $activeStage = null;
             $activeStageInfo = null;
@@ -170,7 +207,8 @@ class ClientPortalWorkflowController extends Controller
                 'active_stage' => $activeStage,
                 'has_active_stage' => !is_null($activeStage),
                 'client_id' => $clientId,
-                'client_matter_id' => $clientMatterId
+                'client_matter_id' => $clientMatterId,
+                'type' => $type,
             ];
 
             if (!is_null($caseSummary)) {
