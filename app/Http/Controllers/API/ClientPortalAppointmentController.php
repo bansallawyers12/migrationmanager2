@@ -12,12 +12,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Client\RequestException;
 use Carbon\Carbon;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\Payment\StripePaymentService;
 use App\Support\BansalSchedulingServiceType;
+use App\Mail\AppointmentDetailedConfirmation;
 
 class ClientPortalAppointmentController extends BaseController
 {
@@ -798,6 +800,36 @@ class ClientPortalAppointmentController extends BaseController
             // Format and return the created appointment
             $result = $this->formatAppointmentData($appointment);
 
+            // Send confirmation email for free appointments (service_id input = 1)
+            if ($serviceId == 2 && !empty($clientEmail)) {
+                try {
+                    $emailDetails = [
+                        'client_name'          => $clientName,
+                        'appointment_datetime' => $appointment->appointment_datetime,
+                        'timeslot_full'        => $appointment->timeslot_full,
+                        'location'             => $appointment->location,
+                        'service_type'         => $appointment->service_type,
+                        'meeting_type'         => $appointment->meeting_type,
+                        'admin_notes'          => $appointment->admin_notes ?? null,
+                    ];
+                    Mail::mailer('sendgrid')->to($clientEmail)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    $appointment->update([
+                        'confirmation_email_sent'    => true,
+                        'confirmation_email_sent_at' => now(),
+                    ]);
+                    Log::info('Appointment confirmation email sent', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $clientEmail,
+                    ]);
+                } catch (\Exception $mailEx) {
+                    Log::error('Failed to send appointment confirmation email', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $clientEmail,
+                        'error'          => $mailEx->getMessage(),
+                    ]);
+                }
+            }
+
             // Prepare response message
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
@@ -1138,6 +1170,36 @@ class ClientPortalAppointmentController extends BaseController
             ]);
 
             $result = $this->formatAppointmentData($appointment);
+
+            // Send confirmation email for free appointments (service_id input = 1)
+            if ($serviceId == 2 && !empty($clientEmail)) {
+                try {
+                    $emailDetails = [
+                        'client_name'          => $clientName,
+                        'appointment_datetime' => $appointment->appointment_datetime,
+                        'timeslot_full'        => $appointment->timeslot_full,
+                        'location'             => $appointment->location,
+                        'service_type'         => $appointment->service_type,
+                        'meeting_type'         => $appointment->meeting_type,
+                        'admin_notes'          => $appointment->admin_notes ?? null,
+                    ];
+                    Mail::mailer('sendgrid')->to($clientEmail)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    $appointment->update([
+                        'confirmation_email_sent'    => true,
+                        'confirmation_email_sent_at' => now(),
+                    ]);
+                    Log::info('Appointment confirmation email sent (without login)', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $clientEmail,
+                    ]);
+                } catch (\Exception $mailEx) {
+                    Log::error('Failed to send appointment confirmation email (without login)', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $clientEmail,
+                        'error'          => $mailEx->getMessage(),
+                    ]);
+                }
+            }
 
             $successMessage = 'Appointment created successfully';
             if ($bansalApiError) {
