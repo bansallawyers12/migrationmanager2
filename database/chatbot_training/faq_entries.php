@@ -77,7 +77,7 @@ return [
         'category' => '3.1 General Enquiries',
         'sort_order' => 107,
         'question' => 'Do you help with Punjabi or Hindi speaking clients?',
-        'answer' => 'Yes, we offer services in Punjabi and Hindi — would you like to book a free consultation with our team?',
+        'answer' => 'ਹਾਂ, ਅਸੀਂ ਪੰਜਾਬੀ ਅਤੇ ਹਿੰਦੀ ਵਿੱਚ ਸੇਵਾਵਾਂ ਪ੍ਰਦਾਨ ਕਰਦੇ ਹਾਂ। ਕੀ ਤੁਸੀਂ ਸਾਡੀ ਟੀਮ ਨਾਲ ਮੁਫ਼ਤ ਸਲਾਹ ਬੁੱਕ ਕਰਨਾ ਚਾਹੋਗੇ? (Yes, we offer services in Punjabi and Hindi — would you like to book a free consultation with our team?)',
         'match_signals' => 'punjabi|\bhindi\b|speak punjabi|speak hindi|language punjabi',
     ],
     [
@@ -417,5 +417,141 @@ return [
         'question' => 'Legal advice pattern',
         'answer' => 'Our registered MARA consultants can assist you properly during a consultation — I\'m not able to provide legal advice here. Would you like to book a free consultation?',
         'match_signals' => '\blegal advice\b|migration act.*advice|tell me legally|breaking the immigration law\b',
+    ],
+
+    // ── Section 5 — Services Reference: visa types not covered above ─────────────
+
+    // Bridging Visas
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1101,
+        'question' => 'What is a Bridging Visa A (010)?',
+        'answer' => 'We assist with Bridging Visa A (010) matters, which allow you to remain lawfully in Australia while a substantive visa is being processed. Our consultants can guide you — would you like a free consultation?',
+        'match_signals' => '\bbridging visa\b|\bbva\b|\b010\b|bridging visa a\b',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1102,
+        'question' => 'What is a Bridging Visa B (020) — can I travel while waiting for my visa?',
+        'answer' => 'The Bridging Visa B (020) allows you to travel outside Australia while your substantive visa application is pending. Our consultants can advise on eligibility and conditions — would you like to book a consultation?',
+        'match_signals' => '\bbvb\b|\b020\b|bridging visa b\b|travel.*bridging|bridging.*travel',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1103,
+        'question' => 'What is a Bridging Visa C (030)?',
+        'answer' => 'The Bridging Visa C (030) allows certain applicants to stay in Australia while their visa application is being processed. Our consultants can clarify your situation — would you like a free consultation?',
+        'match_signals' => '\bbvc\b|\b030\b|bridging visa c\b',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1104,
+        'question' => 'What is a Bridging Visa E (050 / 051)?',
+        'answer' => 'The Bridging Visa E (050/051) is for people who are unlawfully present in Australia or whose visa has ceased. This is an urgent matter — please share your name and phone number so our consultants can contact you right away.',
+        'match_signals' => '\bbve\b|\b050\b|\b051\b|bridging visa e\b|unlawful.*bridging',
+    ],
+
+    // Resident Return Visa
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1105,
+        'question' => 'I need a Resident Return Visa (155 / 157) — my PR travel facility has expired',
+        'answer' => 'We assist with Resident Return Visas (155/157) for permanent residents who need to return to Australia. Our consultants can review your situation — would you like a free consultation?',
+        'match_signals' => '\b155\b|\b157\b|resident return|\brrv\b|permanent resident.*travel|pr.*travel.*expired',
+    ],
+
+    // 191 Permanent Residence Skilled Regional
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1106,
+        'question' => 'What is the 191 Permanent Residence (Skilled Regional) visa?',
+        'answer' => 'The 191 is a permanent visa for holders of the 491 or 494 regional visas who have met the required regional living and working conditions. Our consultants can walk you through this pathway — would you like a free consultation?',
+        'match_signals' => '\b191\b|permanent.*skilled regional|191 permanent|491.*permanent|494.*permanent',
+    ],
+
+    // Temporary work visas
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1107,
+        'question' => 'What is a 407 Training Visa?',
+        'answer' => 'The 407 is a temporary visa for people who want to undertake occupational training or professional development in Australia. Our consultants can explain eligibility and the process — would you like to book a consultation?',
+        'match_signals' => '\b407\b|training visa|occupational training visa',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1108,
+        'question' => 'What is a 408 Temporary Activity visa?',
+        'answer' => 'The 408 covers a range of temporary activities including entertainment, religious work, and special programs in Australia. Our consultants can advise on the right category for your situation — would you like to connect with our team?',
+        'match_signals' => '\b408\b|temporary activity visa',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1109,
+        'question' => 'What is a 400 Short Stay Specialist visa?',
+        'answer' => 'The 400 is a short-term visa for people with highly specialised skills required in Australia for a specific purpose. Our consultants can explain the eligibility requirements — would you like a free consultation?',
+        'match_signals' => '\b400\b|short stay specialist|specialist short stay',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1110,
+        'question' => 'What is Global Talent Employer Sponsored (GTES)?',
+        'answer' => 'The GTES program allows approved employers to sponsor highly skilled global talent outside the standard occupation lists. Our consultants can assess whether this pathway suits your situation — would you like to connect with our team?',
+        'match_signals' => '\bgtes\b|global talent employer sponsored|employer.*global talent',
+    ],
+
+    // Family — remaining relative & carer
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1111,
+        'question' => 'What is a Remaining Relative visa (115 / 835)?',
+        'answer' => 'We assist with Remaining Relative visas (115 offshore / 835 onshore) for those whose only close family members are Australian citizens or permanent residents. Our consultants can guide you — would you like a free consultation?',
+        'match_signals' => '\b115\b|\b835\b|remaining relative|only relative.*australia',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1112,
+        'question' => 'What is a Carer visa (116 / 836)?',
+        'answer' => 'We assist with Carer visas (116 offshore / 836 onshore) for people who want to care for an Australian citizen or permanent resident with a medical condition. Our consultants can explain the process — would you like to book a consultation?',
+        'match_signals' => '\b116\b|\b836\b|\bcarer visa\b|visa.*carer|carer.*visa',
+    ],
+
+    // eVisitor & Pacific
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1113,
+        'question' => 'What is a 651 eVisitor visa?',
+        'answer' => 'The 651 eVisitor allows eligible passport holders from certain European and other countries to visit Australia for tourism or business. Our consultants can confirm your eligibility and assist — would you like to connect with our team?',
+        'match_signals' => '\b651\b|\bevisitor\b|e-visitor visa',
+    ],
+    [
+        'category' => '5 Services Reference',
+        'sort_order' => 1114,
+        'question' => 'What is the 192 Pacific Engagement visa?',
+        'answer' => 'The 192 Pacific Engagement visa is for eligible nationals from Pacific island countries and Timor-Leste to live and work in Australia permanently. Our consultants can advise on eligibility — would you like a free consultation?',
+        'match_signals' => '\b192\b|pacific engagement|pacific.*visa',
+    ],
+
+    // ── Section 6 — Standalone Quick-Reference Templates ───────────────────────
+
+    [
+        'category' => '6 Quick templates',
+        'sort_order' => 4,
+        'question' => 'General PR or skilled migration enquiry',
+        'answer' => 'We assist with skilled migration and PR pathways including the 189, 190, and 491 visas. Please speak with our team for detailed assistance — would you like to book a free consultation?',
+        'match_signals' => '^pr$|^permanent residency$|i want pr\b|i want permanent residency|skilled migration.*pr\b|pr.*skilled migration|\bget my pr\b',
+    ],
+    [
+        'category' => '6 Quick templates',
+        'sort_order' => 5,
+        'question' => 'Request a callback',
+        'answer' => 'Please share your full name, phone number, visa type, and the best time for a callback — our team will reach out to you personally.',
+        'match_signals' => 'call me back|callback|call back|reach me personally|contact me back|get back to me|my number is\b|please call me',
+    ],
+    [
+        'category' => '6 Quick templates',
+        'sort_order' => 6,
+        'question' => 'How do I book a consultation or appointment?',
+        'answer' => 'You can book a free 10-minute consultation with our team at www.bansalimmigration.com.au/book-an-appointment. Would you like us to arrange a callback instead?',
+        'match_signals' => 'how.*book.*consult|how.*book.*appointment|book.*online|schedule.*appointment|arrange.*consult|make.*appointment',
     ],
 ];
