@@ -167,7 +167,12 @@
 
         var urlSegments = currentUrl.split('/');
 
-        var matterIdInUrl = urlSegments.length > 7 ? urlSegments[urlSegments.length - 1] : null;
+        // Use the matter reference already resolved by PHP so we never accidentally
+        // pick the tab-name segment (e.g. "visadocuments") from a URL like
+        // /clients/detail/{encodeId}/191PR_1/visadocuments.
+        var matterIdInUrl = (window.ClientDetailConfig && window.ClientDetailConfig.matterRefNo)
+            ? window.ClientDetailConfig.matterRefNo
+            : null;
 
 
 
@@ -2083,52 +2088,16 @@ success: function(response) {
 
                 else if( activeTab == 'visadocuments') {
 
-                    if(selectedMatter != "" ) {
-
-                        $('#visadocuments-tab .migdocumnetlist1').find('.drow').each(function() {
-
-                            if ($(this).data('matterid') == selectedMatter) {
-
-                                $(this).show();
-
-                            } else {
-
-                                $(this).hide();
-
-                            }
-
-                        });
-
-                    }  else {
-
-                        $(this).hide();
-
+                    if (typeof SidebarTabs !== 'undefined' && SidebarTabs.filterVisaDocumentsByMatter) {
+                        SidebarTabs.filterVisaDocumentsByMatter(selectedMatter);
                     }
 
                 }
 
                 else if( activeTab == 'nominationdocuments') {
 
-                    if(selectedMatter != "" ) {
-
-                        $('#nominationdocuments-tab .migdocumnetlist1').find('.drow').each(function() {
-
-                            if ($(this).data('matterid') == selectedMatter) {
-
-                                $(this).show();
-
-                            } else {
-
-                                $(this).hide();
-
-                            }
-
-                        });
-
-                    }  else {
-
-                        $(this).hide();
-
+                    if (typeof SidebarTabs !== 'undefined' && SidebarTabs.filterNominationDocumentsByMatter) {
+                        SidebarTabs.filterNominationDocumentsByMatter(selectedMatter);
                     }
 
                 }
@@ -2320,7 +2289,21 @@ success: function(response) {
 
             }
 
+            else if (activeTab == 'visadocuments') {
 
+                if (typeof SidebarTabs !== 'undefined' && SidebarTabs.filterVisaDocumentsByMatter) {
+                    SidebarTabs.filterVisaDocumentsByMatter(selectedMatter);
+                }
+
+            }
+
+            else if (activeTab == 'nominationdocuments') {
+
+                if (typeof SidebarTabs !== 'undefined' && SidebarTabs.filterNominationDocumentsByMatter) {
+                    SidebarTabs.filterNominationDocumentsByMatter(selectedMatter);
+                }
+
+            }
 
 
 
