@@ -7,14 +7,27 @@ Provides comprehensive email data extraction including metadata, content, and at
 
 import sys
 import os
+import re
 import base64
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Tuple, Iterator
 
 try:
     import extract_msg
+    from extract_msg.enums import ErrorBehavior
 except ImportError as e:
     print(f"Warning: extract_msg not installed: {e}")
+    ErrorBehavior = None
+
+try:
+    import olefile
+except ImportError:
+    olefile = None
+
+try:
+    import compressed_rtf
+except ImportError:
+    compressed_rtf = None
 
 from utils.logger import setup_logger
 
@@ -39,41 +52,218 @@ class EmailParserService:
             or "unexpected end of data" in msg
         )
 
+    @staticmethod
+    def _skip_rtf_deencapsulation(_rtf_body: bytes, _body_type: Any) -> None:
+        """Bypass RTFDE de-encapsulation (avoids cp950 / chardet mis-detection on some servers)."""
+        return None
+
+    def _base_message_kwargs(self) -> Dict[str, Any]:
+        """Shared safe open options — delay attachment init and tolerate broken parts."""
+        kwargs: Dict[str, Any] = {
+            'delayAttachments': True,
+            'ignoreRtfDeErrors': True,
+        }
+        if ErrorBehavior is not None:
+            kwargs['errorBehavior'] = ErrorBehavior.ATTACH_SUPPRESS_ALL
+        return kwargs
+
     def _message_open_strategies(self) -> Iterator[Tuple[str, Dict[str, Any]]]:
         """
-        Try the default parse first (unchanged behaviour), then fallbacks only if decoding fails.
+        Try progressively safer parse options when charset/decode fails (e.g. cp950 on Linux).
 
-        extract_msg supports overrideEncoding / ignoreRtfDeErrors / delayAttachments — see
-        extract_msg.Message.__init__ docstring.
+        delayAttachments is always set so Message() does not load attachments during __init__
+        (a common source of codec errors before body/html are read).
         """
-        yield ("default", {})
-        yield ("ignore_rtf_de_errors", {"ignoreRtfDeErrors": True})
-        yield ("override_utf8", {"overrideEncoding": "utf-8", "ignoreRtfDeErrors": True})
-        yield ("override_utf16_le", {"overrideEncoding": "utf-16-le", "ignoreRtfDeErrors": True})
-        yield ("override_cp1252", {"overrideEncoding": "cp1252", "ignoreRtfDeErrors": True})
-        yield ("delay_attach_utf8", {
-            "delayAttachments": True,
-            "overrideEncoding": "utf-8",
-            "ignoreRtfDeErrors": True,
+        base = self._base_message_kwargs()
+
+        yield ("default", dict(base))
+        yield ("override_utf8", {**base, "overrideEncoding": "utf-8"})
+        yield ("override_utf16_le", {**base, "overrideEncoding": "utf-16-le"})
+        yield ("override_cp1252", {**base, "overrideEncoding": "cp1252"})
+        yield ("override_latin1", {**base, "overrideEncoding": "latin-1"})
+        yield ("skip_rtf_deencap", {
+            **base,
+            "overrideEncoding": "latin-1",
+            "deencapsulationFunc": self._skip_rtf_deencapsulation,
         })
-        # Byte-preserving: never raises on decode (may show mojibake for wrong charset)
-        yield ("override_latin1", {"overrideEncoding": "latin-1", "ignoreRtfDeErrors": True})
+
+    def _read_msg_property(self, msg: Any, attr: str, default: Any = None) -> Any:
+        """Read a message attribute; return default on codec/decode failures."""
+        try:
+            if not hasattr(msg, attr):
+                return default
+            return getattr(msg, attr)
+        except Exception as exc:
+            if self._is_recoverable_codec_failure(exc):
+                logger.warning("Could not read msg.%s: %s", attr, exc)
+                return default
+            raise
+
+    def _decode_stream_text(self, raw: Optional[bytes]) -> str:
+        if not raw:
+            return ''
+        if raw.startswith(b'\xff\xfe') or raw.startswith(b'\xfe\xff'):
+            return raw.decode('utf-16-le', errors='replace').strip('\x00')
+        for encoding in ('utf-16-le', 'utf-8', 'cp1252', 'latin-1'):
+            try:
+                return raw.decode(encoding).strip('\x00')
+            except UnicodeDecodeError:
+                continue
+        return raw.decode('latin-1', errors='replace').strip('\x00')
+
+    def _read_stream_from_msg(self, msg: Any, stream_base: str) -> Optional[bytes]:
+        try:
+            getter = getattr(msg, '_getStream', None)
+            if getter is None:
+                return None
+            for suffix in ('001F', '001E', '0102', '101F'):
+                data = getter(f'{stream_base}{suffix}')
+                if data:
+                    return data
+        except Exception as exc:
+            logger.warning("Direct stream read failed for %s: %s", stream_base, exc)
+        return None
+
+    def _fill_body_from_streams(self, msg: Any, email_data: Dict[str, Any]) -> None:
+        """Fallback when extract_msg body/html properties fail (RTFDE / cp950 issues)."""
+        if not email_data.get('text_content'):
+            plain = self._read_stream_from_msg(msg, '__substg1.0_1000')
+            if plain:
+                email_data['text_content'] = self._decode_stream_text(plain)
+
+        if not email_data.get('html_content'):
+            html_bin = self._read_stream_from_msg(msg, '__substg1.0_1013')
+            if html_bin:
+                email_data['html_content'] = self._decode_stream_text(html_bin)
+
+        if not email_data.get('text_content') and not email_data.get('html_content') and compressed_rtf is not None:
+            compressed = self._read_stream_from_msg(msg, '__substg1.0_1009')
+            if compressed:
+                try:
+                    rtf_bytes = compressed_rtf.decompress(compressed)
+                    plain = self._plain_text_from_rtf_bytes(rtf_bytes)
+                    if plain:
+                        email_data['text_content'] = plain
+                except Exception as exc:
+                    logger.warning("Compressed RTF fallback failed: %s", exc)
+
+    @staticmethod
+    def _plain_text_from_rtf_bytes(rtf_bytes: bytes) -> str:
+        """Best-effort plain text from raw RTF bytes without RTFDE."""
+        text = rtf_bytes.decode('latin-1', errors='replace')
+        text = re.sub(r'\\par[d]?', '\n', text)
+        text = re.sub(r'\\[a-z]+-?\d* ?', '', text)
+        text = re.sub(r'[{}]', '', text)
+        return re.sub(r'\n{3,}', '\n\n', text).strip()
+
+    def _parse_msg_direct_ole(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Last-resort parser using olefile when extract_msg cannot open the message."""
+        if olefile is None:
+            return None
+
+        ole = None
+        try:
+            ole = olefile.OleFileIO(file_path)
+            stream_map: Dict[str, bytes] = {}
+            for parts in ole.listdir():
+                name = '/'.join(parts)
+                try:
+                    stream_map[name] = ole.openstream(name).read()
+                except Exception:
+                    continue
+
+            def find_stream(*suffixes: str) -> Optional[bytes]:
+                for suffix in suffixes:
+                    for name, data in stream_map.items():
+                        if name.endswith(suffix):
+                            return data
+                return None
+
+            subject_raw = find_stream('0037001F', '0037001E')
+            body_raw = find_stream('1000001F', '1000001E')
+            html_raw = find_stream('10130102')
+            sender_raw = find_stream('0C1F001F', '0C1F001E', '5D01001F', '5D01001E')
+            to_raw = find_stream('0E04001F', '0E04001E')
+
+            text_content = self._decode_stream_text(body_raw)
+            html_content = ''
+            if html_raw:
+                html_content = self._decode_stream_text(html_raw)
+
+            if not text_content and not html_content and compressed_rtf is not None:
+                compressed = find_stream('10090102')
+                if compressed:
+                    try:
+                        text_content = self._plain_text_from_rtf_bytes(compressed_rtf.decompress(compressed))
+                    except Exception:
+                        pass
+
+            sender_text = self._decode_stream_text(sender_raw)
+            sender_name, sender_email = self._extract_email_from_string(sender_text)
+
+            recipients: list = []
+            to_text = self._decode_stream_text(to_raw)
+            if to_text:
+                for part in to_text.split(';'):
+                    part = part.strip()
+                    if part:
+                        _, email = self._extract_email_from_string(part)
+                        recipients.append(email or part)
+
+            subject = self._decode_stream_text(subject_raw)
+
+            if not any([subject, text_content, html_content, sender_email, recipients]):
+                return None
+
+            logger.info("Parsed .msg using direct OLE stream fallback")
+
+            return {
+                'success': True,
+                'subject': subject,
+                'sender_name': sender_name or '',
+                'sender_email': sender_email or '',
+                'sent_date': None,
+                'received_date': None,
+                'html_content': html_content,
+                'text_content': text_content,
+                'recipients': recipients,
+                'attachments': [],
+                'headers': {},
+                'message_id': '',
+                'file_path': file_path,
+                'file_size': os.path.getsize(file_path),
+            }
+        except Exception as exc:
+            logger.error("Direct OLE parse failed for %s: %s", file_path, exc)
+            return None
+        finally:
+            if ole is not None:
+                try:
+                    ole.close()
+                except Exception:
+                    pass
 
     def _extract_email_payload(self, msg: Any, file_path: str) -> Dict[str, Any]:
         """Build the parsed email dict from an open extract_msg.Message (does not close msg)."""
+        body_fields = {
+            'text_content': self._safe_get(self._read_msg_property(msg, 'body', ''), ''),
+            'html_content': self._safe_get(self._read_msg_property(msg, 'htmlBody', ''), ''),
+        }
+        self._fill_body_from_streams(msg, body_fields)
+
         email_data = {
             'success': True,
-            'subject': self._safe_get(msg.subject, ''),
+            'subject': self._safe_get(self._read_msg_property(msg, 'subject', ''), ''),
             'sender_name': '',
             'sender_email': '',
-            'sent_date': self._safe_get(msg.date),
+            'sent_date': self._safe_get(self._read_msg_property(msg, 'date'), None),
             'received_date': None,
-            'html_content': self._safe_get(msg.htmlBody, ''),
-            'text_content': self._safe_get(msg.body, ''),
+            'html_content': body_fields['html_content'],
+            'text_content': body_fields['text_content'],
             'recipients': [],
             'attachments': [],
             'headers': {},
-            'message_id': self._safe_get(getattr(msg, 'messageId', ''), ''),
+            'message_id': self._safe_get(self._read_msg_property(msg, 'messageId', ''), ''),
             'file_path': file_path,
             'file_size': os.path.getsize(file_path),
         }
@@ -87,11 +277,18 @@ class EmailParserService:
         if email_data['sent_date']:
             email_data['received_date'] = email_data['sent_date']
 
-        email_data['attachments'] = self._extract_attachments(
-            msg,
-            body_text=email_data['text_content'],
-            html_body=email_data['html_content'],
-        )
+        try:
+            email_data['attachments'] = self._extract_attachments(
+                msg,
+                body_text=email_data['text_content'],
+                html_body=email_data['html_content'],
+            )
+        except Exception as exc:
+            if self._is_recoverable_codec_failure(exc):
+                logger.warning("Skipping attachments after codec error: %s", exc)
+                email_data['attachments'] = []
+            else:
+                raise
 
         email_data['headers'] = self._extract_headers(msg)
 
@@ -172,10 +369,13 @@ class EmailParserService:
 
             if last_codec_error is not None:
                 logger.error(
-                    "All decode fallbacks failed for %s: %s",
+                    "All extract_msg strategies failed for %s: %s",
                     file_path,
                     last_codec_error,
                 )
+                direct_result = self._parse_msg_direct_ole(file_path)
+                if direct_result:
+                    return direct_result
                 return {
                     'success': False,
                     'error': str(last_codec_error),
@@ -259,14 +459,10 @@ class EmailParserService:
         
         sender_info = None
         for field in sender_fields:
-            try:
-                if hasattr(msg, field):
-                    value = getattr(msg, field)
-                    if value:
-                        sender_info = value
-                        break
-            except Exception:
-                continue
+            value = self._read_msg_property(msg, field)
+            if value:
+                sender_info = value
+                break
         
         if not sender_info:
             return {'name': '', 'email': ''}
@@ -288,16 +484,16 @@ class EmailParserService:
         
         recipients = []
         for field in recipient_fields:
+            value = self._read_msg_property(msg, field)
+            if not value:
+                continue
             try:
-                if hasattr(msg, field):
-                    value = getattr(msg, field)
-                    if value:
-                        if isinstance(value, str):
-                            recipients.extend([r.strip() for r in value.split(',')])
-                        elif isinstance(value, list):
-                            recipients.extend([str(r).strip() for r in value])
-                        elif hasattr(value, '__iter__') and not isinstance(value, (str, bytes)):
-                            recipients.extend([str(r).strip() for r in value])
+                if isinstance(value, str):
+                    recipients.extend([r.strip() for r in value.split(',')])
+                elif isinstance(value, list):
+                    recipients.extend([str(r).strip() for r in value])
+                elif hasattr(value, '__iter__') and not isinstance(value, (str, bytes)):
+                    recipients.extend([str(r).strip() for r in value])
             except Exception:
                 continue
         
