@@ -19,6 +19,12 @@ class VisaPricingEstimatorController extends BaseController
     private const VISA_LIST_MAX_LIMIT = 500;
 
     /**
+     * Visitor visa (subclass 600) Tourist stream rows where additional applicant
+     * charges do not apply per Home Affairs pricing data.
+     */
+    private const VISAS_WITHOUT_ADDITIONAL_APPLICANTS = ['147', '148'];
+
+    /**
      * Visa List with Search
      * GET /api/visa-estimate/visa-list
      *
@@ -82,6 +88,7 @@ class VisaPricingEstimatorController extends BaseController
                 'label' => $label,
                 'subclass' => $subclass,
                 'stream' => null,
+                'supports_additional_applicants' => $this->supportsAdditionalApplicants($visa),
             ];
         }, $pageItems);
 
@@ -127,8 +134,6 @@ class VisaPricingEstimatorController extends BaseController
         ]);
 
         $visaId = (string) $validated['visa_id'];
-        $additional18Plus = (int) ($validated['additional_applicants_18_plus'] ?? 0);
-        $additionalU18 = (int) ($validated['additional_applicants_u18'] ?? 0);
 
         $visas = config('visa_pricing_estimator.visas', []);
         $visa = collect($visas)->firstWhere('id', $visaId);
@@ -140,8 +145,19 @@ class VisaPricingEstimatorController extends BaseController
         $default18Plus = config('visa_pricing_estimator.additional_applicant_charge_18_plus', 4685);
         $defaultU18 = config('visa_pricing_estimator.additional_applicant_charge_u18', 2345);
 
-        $charge18Plus = $visa['additional_18_plus'] ?? $default18Plus;
-        $chargeU18 = $visa['additional_u18'] ?? $defaultU18;
+        $charge18Plus = $this->resolveAdditionalCharge($visa, 'additional_18_plus', $default18Plus);
+        $chargeU18 = $this->resolveAdditionalCharge($visa, 'additional_u18', $defaultU18);
+
+        $additional18Plus = (int) ($validated['additional_applicants_18_plus'] ?? 0);
+        $additionalU18 = (int) ($validated['additional_applicants_u18'] ?? 0);
+
+        if ($charge18Plus === null) {
+            $additional18Plus = 0;
+        }
+
+        if ($chargeU18 === null) {
+            $additionalU18 = 0;
+        }
 
         $lineItems = [];
         $total = 0.0;
@@ -193,5 +209,42 @@ class VisaPricingEstimatorController extends BaseController
         ];
 
         return $this->sendResponse($result, 'Estimate calculated successfully');
+    }
+
+    /**
+     * Resolve per-visa additional applicant charge.
+     *
+     * For VISAS_WITHOUT_ADDITIONAL_APPLICANTS, explicit null in config means not applicable.
+     * All other visas keep legacy fallback to global defaults when config value is null.
+     */
+    private function resolveAdditionalCharge(array $visa, string $key, int $default): ?int
+    {
+        $visaId = (string) ($visa['id'] ?? '');
+
+        if (in_array($visaId, self::VISAS_WITHOUT_ADDITIONAL_APPLICANTS, true)) {
+            return array_key_exists($key, $visa) ? $visa[$key] : $default;
+        }
+
+        return $visa[$key] ?? $default;
+    }
+
+    /**
+     * Whether the visa supports additional applicant input fields in the client UI.
+     */
+    private function supportsAdditionalApplicants(array $visa): bool
+    {
+        $visaId = (string) ($visa['id'] ?? '');
+
+        if (! in_array($visaId, self::VISAS_WITHOUT_ADDITIONAL_APPLICANTS, true)) {
+            return true;
+        }
+
+        $default18Plus = config('visa_pricing_estimator.additional_applicant_charge_18_plus', 4685);
+        $defaultU18 = config('visa_pricing_estimator.additional_applicant_charge_u18', 2345);
+
+        $charge18Plus = $this->resolveAdditionalCharge($visa, 'additional_18_plus', $default18Plus);
+        $chargeU18 = $this->resolveAdditionalCharge($visa, 'additional_u18', $defaultU18);
+
+        return $charge18Plus !== null || $chargeU18 !== null;
     }
 }
