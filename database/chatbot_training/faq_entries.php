@@ -551,7 +551,7 @@ return [
         'category' => '6 Quick templates',
         'sort_order' => 6,
         'question' => 'How do I book a consultation or appointment?',
-        'answer' => 'You can book a free 10-minute consultation with our team at www.bansalimmigration.com.au/book-an-appointment. Would you like us to arrange a callback instead?',
+        'answer' => 'You can book a free 10-minute consultation with our team at https://www.bansalimmigration.com.au/book-an-appointment. Would you like us to arrange a callback instead?',
         'match_signals' => 'how.*book.*consult|how.*book.*appointment|book.*online|schedule.*appointment|arrange.*consult|make.*appointment',
     ],
 ];
