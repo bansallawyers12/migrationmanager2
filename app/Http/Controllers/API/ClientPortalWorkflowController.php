@@ -112,13 +112,29 @@ class ClientPortalWorkflowController extends Controller
 
             // Apply type filter
             if ($type === 'pending') {
-                // Pending: stages with 0 checklists OR stages where total uploaded documents = 0
+                // Pending: stages with 0 checklists, OR stages with at least one checklist that has 0 uploads
+                // (only those zero-upload checklists are listed, mirroring the completed filter)
                 $workflowStages = $workflowStages->filter(function ($stage) {
                     if ($stage['allowed_checklist_count'] === 0) {
                         return true;
                     }
-                    $totalUploaded = array_sum(array_column($stage['allowed_checklist'], 'no_of_document_uploaded'));
-                    return $totalUploaded === 0;
+                    foreach ($stage['allowed_checklist'] as $item) {
+                        if (($item['no_of_document_uploaded'] ?? 0) === 0) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })->map(function ($stage) {
+                    if ($stage['allowed_checklist_count'] === 0) {
+                        return $stage;
+                    }
+                    $filteredChecklist = array_values(array_filter(
+                        $stage['allowed_checklist'],
+                        fn ($item) => ($item['no_of_document_uploaded'] ?? 0) === 0
+                    ));
+                    $stage['allowed_checklist'] = $filteredChecklist;
+                    $stage['allowed_checklist_count'] = count($filteredChecklist);
+                    return $stage;
                 })->values();
             } elseif ($type === 'completed') {
                 // Completed: stages where at least one checklist has uploaded documents > 0

@@ -2172,11 +2172,11 @@
 							{
 								"key": "type",
 								"value": "all",
-								"description": "Filter stages by type: all (default) | pending (stages with 0 checklists or 0 uploaded docs) | completed (stages with at least 1 uploaded document)"
+								"description": "Filter stages by type: all (default) | pending (stages with 0 checklists, or stages listing only checklists with 0 uploads) | completed (stages with at least 1 uploaded document)"
 							}
 						]
 					},
-					"description": "Get all workflow stages with the current active stage for the client. Optional client_matter_id parameter to get active stage for specific matter.\n\n**type filter (optional, default: all):**\n- `all` – returns all stages (no filter)\n- `pending` – returns only stages that have 0 checklists OR where all checklists have 0 uploaded documents\n- `completed` – returns only stages that have at least one checklist with uploaded documents (>0); within those stages only the checklists with uploads are shown"
+					"description": "Get all workflow stages with the current active stage for the client. Optional client_matter_id parameter to get active stage for specific matter.\n\n**type filter (optional, default: all):**\n- `all` – returns all stages (no filter)\n- `pending` – returns stages with 0 checklists, plus stages that have at least one checklist with 0 uploaded documents (only those zero-upload checklists are listed)\n- `completed` – returns only stages that have at least one checklist with uploaded documents (>0); within those stages only the checklists with uploads are shown"
 				},
 					"response": [
 						{
