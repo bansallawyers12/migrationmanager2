@@ -2487,6 +2487,36 @@ class ClientPortalAppointmentController extends BaseController
 
             $appointment->refresh();
 
+            // Send confirmation email on successful payment
+            if (!empty($appointment->client_email)) {
+                try {
+                    $emailDetails = [
+                        'client_name'          => $appointment->client_name,
+                        'appointment_datetime' => $appointment->appointment_datetime,
+                        'timeslot_full'        => $appointment->timeslot_full,
+                        'location'             => $appointment->location,
+                        'service_type'         => $appointment->service_type,
+                        'meeting_type'         => $appointment->meeting_type,
+                        'admin_notes'          => $appointment->admin_notes ?? null,
+                    ];
+                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    $appointment->update([
+                        'confirmation_email_sent'    => true,
+                        'confirmation_email_sent_at' => now(),
+                    ]);
+                    Log::info('Appointment confirmation email sent after payment', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                    ]);
+                } catch (\Exception $mailEx) {
+                    Log::error('Failed to send appointment confirmation email after payment', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                        'error'          => $mailEx->getMessage(),
+                    ]);
+                }
+            }
+
             $message = $result['message'];
             if ($syncError) {
                 $message .= ' Note: Payment completed but sync with website failed.';
@@ -2636,6 +2666,37 @@ class ClientPortalAppointmentController extends BaseController
 
             $appointment->refresh();
 
+            // Send confirmation email on successful payment
+            if (!empty($appointment->client_email)) {
+                try {
+                    $emailDetails = [
+                        'client_name'          => $appointment->client_name,
+                        'appointment_datetime' => $appointment->appointment_datetime,
+                        'timeslot_full'        => $appointment->timeslot_full,
+                        'location'             => $appointment->location,
+                        'service_type'         => $appointment->service_type,
+                        'meeting_type'         => $appointment->meeting_type,
+                        'admin_notes'          => $appointment->admin_notes ?? null,
+                    ];
+                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    $appointment->update([
+                        'confirmation_email_sent'    => true,
+                        'confirmation_email_sent_at' => now(),
+                    ]);
+                    Log::info('Appointment confirmation email sent after wallet payment', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                        'payment_type'   => $paymentType,
+                    ]);
+                } catch (\Exception $mailEx) {
+                    Log::error('Failed to send appointment confirmation email after wallet payment', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                        'error'          => $mailEx->getMessage(),
+                    ]);
+                }
+            }
+
             $message = 'Payment recorded successfully';
             if ($syncError) {
                 $message .= ' Note: Payment completed but sync with website failed.';
@@ -2748,6 +2809,36 @@ class ClientPortalAppointmentController extends BaseController
             }
 
             $appointment->refresh();
+
+            // Send confirmation email on successful payment
+            if (!empty($appointment->client_email)) {
+                try {
+                    $emailDetails = [
+                        'client_name'          => $appointment->client_name,
+                        'appointment_datetime' => $appointment->appointment_datetime,
+                        'timeslot_full'        => $appointment->timeslot_full,
+                        'location'             => $appointment->location,
+                        'service_type'         => $appointment->service_type,
+                        'meeting_type'         => $appointment->meeting_type,
+                        'admin_notes'          => $appointment->admin_notes ?? null,
+                    ];
+                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    $appointment->update([
+                        'confirmation_email_sent'    => true,
+                        'confirmation_email_sent_at' => now(),
+                    ]);
+                    Log::info('Appointment confirmation email sent after payment (without login)', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                    ]);
+                } catch (\Exception $mailEx) {
+                    Log::error('Failed to send appointment confirmation email after payment (without login)', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                        'error'          => $mailEx->getMessage(),
+                    ]);
+                }
+            }
 
             $message = $result['message'];
             if ($syncError) {
@@ -2888,6 +2979,37 @@ class ClientPortalAppointmentController extends BaseController
             }
 
             $appointment->refresh();
+
+            // Send confirmation email on successful payment
+            if (!empty($appointment->client_email)) {
+                try {
+                    $emailDetails = [
+                        'client_name'          => $appointment->client_name,
+                        'appointment_datetime' => $appointment->appointment_datetime,
+                        'timeslot_full'        => $appointment->timeslot_full,
+                        'location'             => $appointment->location,
+                        'service_type'         => $appointment->service_type,
+                        'meeting_type'         => $appointment->meeting_type,
+                        'admin_notes'          => $appointment->admin_notes ?? null,
+                    ];
+                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    $appointment->update([
+                        'confirmation_email_sent'    => true,
+                        'confirmation_email_sent_at' => now(),
+                    ]);
+                    Log::info('Appointment confirmation email sent after wallet payment (without login)', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                        'payment_type'   => $paymentType,
+                    ]);
+                } catch (\Exception $mailEx) {
+                    Log::error('Failed to send appointment confirmation email after wallet payment (without login)', [
+                        'appointment_id' => $appointment->id,
+                        'email'          => $appointment->client_email,
+                        'error'          => $mailEx->getMessage(),
+                    ]);
+                }
+            }
 
             $message = 'Payment recorded successfully';
             if ($syncError) {
