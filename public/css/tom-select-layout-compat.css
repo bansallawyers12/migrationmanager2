@@ -185,6 +185,14 @@
   z-index: 100060 !important;
   box-sizing: border-box;
 }
+
+/* Client Portal → Add New Checklist modal (dropdownParent: body) */
+.ts-dropdown.mm-cp-create-checklist-dropdown {
+  z-index: 100060 !important;
+  width: min(520px, 92vw) !important;
+  min-width: 260px !important;
+  box-sizing: border-box;
+}
 .new_fee_option .modal-body .ts-control {
   min-height: 35px;
   line-height: 35px;

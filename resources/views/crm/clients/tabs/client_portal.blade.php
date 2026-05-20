@@ -3438,8 +3438,12 @@
     display: block !important;
     min-height: 38px !important;
 }
-#create_checklist .ts-dropdown {
-    z-index: 1062 !important;
+/* Tom Select menu is appended to body (dropdownParent); stack above modal + backdrop */
+.ts-dropdown.mm-cp-create-checklist-dropdown {
+    z-index: 100060 !important;
+    width: min(520px, 92vw) !important;
+    min-width: 260px !important;
+    box-sizing: border-box;
 }
 
 #create_checklist_submit_btn {
@@ -3458,8 +3462,8 @@
     cursor: not-allowed !important;
 }
 
-/* Ensure backdrop doesn't block modal interactions */
-.modal-backdrop {
+/* Ensure backdrop doesn't block create_checklist modal interactions */
+body:has(#create_checklist.modal.show) .modal-backdrop {
     z-index: 1059 !important;
 }
 
@@ -5099,7 +5103,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Create Checklist Modal -->
-<div class="modal fade custom_modal" id="create_checklist" tabindex="-1" role="dialog" aria-labelledby="createChecklistModalLabel" aria-hidden="true">
+<div class="modal fade custom_modal" id="create_checklist" tabindex="-1" role="dialog" aria-labelledby="createChecklistModalLabel" aria-hidden="true" data-bs-focus="false">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -5142,26 +5146,51 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 $(document).ready(function () {
 
-    // mmSelect (Tom Select) on the checklist multi-select inside the modal
-    $('#cp_checklist_names').mmSelect({
-        dropdownParent: $('#create_checklist'),
-        placeholder: 'Search and select checklists...',
-        allowClear: true,
-        multiple: true,
-        minimumInputLength: 0,
-        ajax: {
-            url: '{{ URL::to('/crm/document-checklists-options') }}',
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return { q: params.term || '' };
-            },
-            processResults: function (data) {
-                return { results: data.results };
-            },
-            cache: true
+    // Tom Select only positions the dropdown when dropdownParent is the string "body" (see mm-tomselect-jquery.js).
+    function destroyCpChecklistNamesSelect() {
+        var $select = $('#cp_checklist_names');
+        if ($select.length && ($select[0].tomselect || $select.data('mmSelect'))) {
+            $select.off('.cpChecklistSelect');
+            $select.mmSelect('destroy');
         }
-    });
+    }
+
+    function initCpChecklistNamesSelect() {
+        var $select = $('#cp_checklist_names');
+        if (!$select.length || typeof $.fn.mmSelect !== 'function') {
+            return;
+        }
+        destroyCpChecklistNamesSelect();
+        $select.mmSelect({
+            dropdownParent: 'body',
+            dropdownCssClass: 'mm-cp-create-checklist-dropdown',
+            placeholder: 'Search and select checklists...',
+            allowClear: true,
+            multiple: true,
+            create: true,
+            minimumInputLength: 0,
+            width: '100%',
+            ajax: {
+                url: '{{ URL::to('/crm/document-checklists-options') }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term || '' };
+                },
+                processResults: function (data) {
+                    return { results: data.results || [] };
+                },
+                cache: true
+            }
+        });
+        // Reposition after modal layout settles; Bootstrap focus trap disabled via data-bs-focus="false".
+        $select.on('mmselect:open.cpChecklistSelect', function () {
+            var ts = this.tomselect;
+            if (ts && typeof ts.positionDropdown === 'function') {
+                setTimeout(function () { ts.positionDropdown(); }, 0);
+            }
+        });
+    }
 
     // Open "Add New Checklist" modal when clicking any .openchecklist link
     $(document).on('click', '.openchecklist', function (e) {
@@ -5181,8 +5210,18 @@ $(document).ready(function () {
         $('#create_checklist').modal('show');
     });
 
+    // Init only after modal is visible so Tom Select can measure the control and position the menu
+    $('#create_checklist').on('shown.bs.modal', function () {
+        initCpChecklistNamesSelect();
+        var ts = document.getElementById('cp_checklist_names');
+        if (ts && ts.tomselect) {
+            ts.tomselect.focus();
+        }
+    });
+
     // Close modal cleanup
     $('#create_checklist').on('hidden.bs.modal', function () {
+        destroyCpChecklistNamesSelect();
         $('#cp_checklist_names').val(null).trigger('change');
         $('#cp_checklist_names').closest('.form-group').find('.custom-error').remove();
         $('#cp_checklist_description').val('');

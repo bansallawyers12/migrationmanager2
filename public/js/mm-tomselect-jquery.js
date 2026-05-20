@@ -178,6 +178,19 @@
       opts.dropdownClass = ('ts-dropdown ' + String(legacyOpts.dropdownCssClass).trim()).trim();
     }
 
+    // Select2 tags:true → Tom Select create (e.g. custom checklist names in modals)
+    if (legacyOpts.create != null) {
+      opts.create = legacyOpts.create;
+    } else if (legacyOpts.tags === true) {
+      opts.create = true;
+    }
+    if (legacyOpts.createOnBlur != null) {
+      opts.createOnBlur = legacyOpts.createOnBlur;
+    }
+    if (legacyOpts.createFilter != null) {
+      opts.createFilter = legacyOpts.createFilter;
+    }
+
     if (legacyOpts.ajax) {
       opts.persist = false;
       if (isMulti) opts.hideSelected = true;
