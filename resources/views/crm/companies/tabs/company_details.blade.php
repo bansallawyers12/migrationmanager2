@@ -317,6 +317,8 @@
                 </div>
             </div>
         </div>
+
+        @include('crm.clients.partials.matter_assignee_card')
         
         {{-- Primary Contact Person Card --}}
         @if($fetchedData->company->contactPerson)
