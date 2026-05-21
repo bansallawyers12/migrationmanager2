@@ -9,6 +9,16 @@
         #companydetails-tab .sponsorship-details-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px 12px; }
         #companydetails-tab .sponsorship-details-card--single .sponsorship-details-fields { margin-top: 10px; }
         #companydetails-tab .sponsorship-details-fields .field-group { padding: 4px 0; }
+        #companydetails-tab .nomination-details-card { align-self: start; display: block; }
+        #companydetails-tab .nomination-details-card h3 { margin-bottom: 8px; }
+        #companydetails-tab .nomination-details-block { border-bottom: 1px solid #e9ecef; padding-bottom: 4px; margin-bottom: 4px; }
+        #companydetails-tab .nomination-details-block:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+        #companydetails-tab .nomination-details-subheading { margin: 6px 0 2px 0; font-weight: 600; color: #495057; font-size: 0.9em; line-height: 1.2; }
+        #companydetails-tab .nomination-details-fields { display: flex; flex-direction: column; gap: 0; }
+        #companydetails-tab .nomination-details-card--single .nomination-details-fields { margin-top: 8px; }
+        #companydetails-tab .nomination-details-fields .field-group { padding: 2px 0; min-height: 0; }
+        #companydetails-tab .nomination-details-fields .field-label { white-space: nowrap; flex-shrink: 0; padding-right: 8px; }
+        #companydetails-tab .nomination-details-fields .field-value { text-align: right; word-break: break-word; }
     </style>
     <div class="content-grid">
         {{-- Company Information Card --}}
@@ -201,35 +211,49 @@
 
         {{-- Nominations Card --}}
         @if($comp && $comp->nominations->isNotEmpty())
-        <div class="card" style="margin-bottom: 20px;">
-            <h3><i class="fas fa-user-check"></i> Nominations</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;">
-                @foreach($comp->nominations as $nom)
-                <div class="field-group">
-                    <span class="field-label">{{ $nom->position_title ?? 'Position' }}:</span>
-                    <span class="field-value">
-                        @php
-                            $nomineeLabel = $nom->nominatedClient
-                                ? trim($nom->nominatedClient->first_name.' '.$nom->nominatedClient->last_name)
-                                : ($nom->nominated_person_name ?? 'N/A');
-                            $mayOpenNominee = $nom->nominatedClient
-                                && \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $nom->nominatedClient->id, auth()->user());
-                        @endphp
-                        @if($mayOpenNominee)
-                            <a href="{{ route('clients.detail', base64_encode(convert_uuencode($nom->nominatedClient->id))) }}"
-                               style="color: #007bff; text-decoration: none;"
-                               title="Open client profile">
-                                {{ $nomineeLabel }}
-                            </a>
-                        @else
-                            {{ $nomineeLabel }}
-                        @endif
-                        @if($nom->trn) (TRN: {{ $nom->trn }})@endif
-                    </span>
+            @php $nominationCount = $comp->nominations->count(); @endphp
+            <div class="card nomination-details-card{{ $nominationCount === 1 ? ' nomination-details-card--single' : '' }}" style="margin-bottom: 20px;">
+                <h3><i class="fas fa-user-check"></i> {{ $nominationCount > 1 ? 'Nominations' : 'Nomination' }}</h3>
+                @foreach($comp->nominations as $idx => $nom)
+                @php
+                    $nomineeLabel = $nom->nominatedClient
+                        ? trim($nom->nominatedClient->first_name.' '.$nom->nominatedClient->last_name)
+                        : ($nom->nominated_person_name ?? null);
+                    $mayOpenNominee = $nom->nominatedClient
+                        && \App\Support\StaffClientVisibility::canAccessClientOrLead((int) $nom->nominatedClient->id, auth()->user());
+                @endphp
+                <div class="{{ $nominationCount > 1 ? 'nomination-details-block' : '' }}">
+                    @if($nominationCount > 1)
+                    <p class="nomination-details-subheading">Nomination {{ $idx + 1 }}</p>
+                    @endif
+                    <div class="nomination-details-fields">
+                        <div class="field-group">
+                            <span class="field-label">Position:</span>
+                            <span class="field-value">{{ $nom->position_title ?: 'N/A' }}</span>
+                        </div>
+                        <div class="field-group">
+                            <span class="field-label">{{ $nom->trn ? 'Nominate Person:' : 'Person:' }}</span>
+                            <span class="field-value">
+                                @if($nomineeLabel)
+                                    @if($mayOpenNominee)
+                                        <a href="{{ route('clients.detail', base64_encode(convert_uuencode($nom->nominatedClient->id))) }}"
+                                           style="color: #007bff; text-decoration: none;"
+                                           title="Open client profile">
+                                            {{ $nomineeLabel }}
+                                        </a>
+                                    @else
+                                        {{ $nomineeLabel }}
+                                    @endif
+                                    @if($nom->trn) (TRN: {{ $nom->trn }})@endif
+                                @else
+                                    {{ $nom->trn ? '(TRN: '.$nom->trn.')' : 'N/A' }}
+                                @endif
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 @endforeach
             </div>
-        </div>
         @endif
 
         {{-- Company Phone & Email Card --}}
