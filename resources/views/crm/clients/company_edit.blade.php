@@ -523,7 +523,7 @@
                                     <div class="content-grid">
                                         <div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_types[]" value="{{ $s->sponsorship_type ?? '' }}" placeholder="e.g. 482, 494"></div>
                                         <div class="form-group"><label>Status</label><input type="text" name="sponsorship_statuses[]" value="{{ $s->sponsorship_status ?? '' }}" placeholder="Status"></div>
-                                        <div class="form-group"><label>TRN</label><input type="text" name="sponsorship_trns[]" value="{{ $s->trn ?? '' }}" placeholder="Training Reference Number"></div>
+                                        <div class="form-group"><label>TRN</label><input type="text" name="sponsorship_trns[]" value="{{ $s->trn ?? '' }}" placeholder="Transaction Reference Number"></div>
                                         <div class="form-group"><label>Start Date</label><input type="date" name="sponsorship_start_dates[]" value="{{ ($s->sponsorship_start_date ?? null) ? \Carbon\Carbon::parse($s->sponsorship_start_date)->format('Y-m-d') : '' }}"></div>
                                         <div class="form-group"><label>End Date</label><input type="date" name="sponsorship_end_dates[]" value="{{ ($s->sponsorship_end_date ?? null) ? \Carbon\Carbon::parse($s->sponsorship_end_date)->format('Y-m-d') : '' }}"></div>
                                         <div class="form-group"><label><input type="checkbox" class="sponsorship-regional-cb" name="sponsorship_regional[{{ $idx }}]" value="1" {{ !empty($s->regional_sponsorship) ? 'checked' : '' }}> Regional Sponsorship</label></div>
@@ -1263,7 +1263,7 @@
             '<div class="content-grid">' +
             '<div class="form-group"><label>Sponsorship Type</label><input type="text" name="sponsorship_types[]" value="" placeholder="e.g. 482, 494"></div>' +
             '<div class="form-group"><label>Status</label><input type="text" name="sponsorship_statuses[]" value="" placeholder="Status"></div>' +
-            '<div class="form-group"><label>TRN</label><input type="text" name="sponsorship_trns[]" value="" placeholder="Training Reference Number"></div>' +
+            '<div class="form-group"><label>TRN</label><input type="text" name="sponsorship_trns[]" value="" placeholder="Transaction Reference Number"></div>' +
             '<div class="form-group"><label>Start Date</label><input type="date" name="sponsorship_start_dates[]" value=""></div>' +
             '<div class="form-group"><label>End Date</label><input type="date" name="sponsorship_end_dates[]" value=""></div>' +
             '<div class="form-group"><label><input type="checkbox" class="sponsorship-regional-cb" name="sponsorship_regional[' + idx + ']" value="1"> Regional Sponsorship</label></div>' +
