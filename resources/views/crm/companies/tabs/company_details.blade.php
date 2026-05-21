@@ -1,5 +1,15 @@
 <div class="tab-pane active" id="companydetails-tab">
     @php $comp = $fetchedData->company ?? null; @endphp
+    <style>
+        #companydetails-tab .sponsorship-details-card { align-self: start; display: block; }
+        #companydetails-tab .sponsorship-details-card h3 { margin-bottom: 10px; }
+        #companydetails-tab .sponsorship-details-block { border-bottom: 1px solid #e9ecef; padding-bottom: 6px; margin-bottom: 6px; }
+        #companydetails-tab .sponsorship-details-block:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+        #companydetails-tab .sponsorship-details-subheading { margin: 10px 0 4px 0; font-weight: 600; color: #495057; font-size: 0.95em; }
+        #companydetails-tab .sponsorship-details-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px 12px; }
+        #companydetails-tab .sponsorship-details-card--single .sponsorship-details-fields { margin-top: 10px; }
+        #companydetails-tab .sponsorship-details-fields .field-group { padding: 4px 0; }
+    </style>
     <div class="content-grid">
         {{-- Company Information Card --}}
         <div class="card" style="margin-bottom: 20px;">
@@ -72,14 +82,14 @@
         {{-- Sponsorship Card(s) --}}
         @if($comp && $comp->sponsorships->isNotEmpty())
             @php $sponsorshipCount = $comp->sponsorships->count(); @endphp
-            <div class="card" style="margin-bottom: 20px;">
+            <div class="card sponsorship-details-card{{ $sponsorshipCount === 1 ? ' sponsorship-details-card--single' : '' }}" style="margin-bottom: 20px;">
                 <h3><i class="fas fa-file-contract"></i> {{ $sponsorshipCount > 1 ? 'Sponsorships' : 'Sponsorship' }}</h3>
                 @foreach($comp->sponsorships as $idx => $s)
-                <div @if($sponsorshipCount > 1) style="border-bottom:1px solid #e9ecef;padding-bottom:12px;margin-bottom:12px;{{ $loop->last ? 'border-bottom:none;padding-bottom:0;margin-bottom:0;' : '' }}" @endif>
+                <div class="{{ $sponsorshipCount > 1 ? 'sponsorship-details-block' : '' }}">
                     @if($sponsorshipCount > 1)
-                    <p style="margin:{{ $idx === 0 ? '15px' : '0' }} 0 8px 0;font-weight:600;color:#495057;">Sponsorship {{ $idx + 1 }}</p>
+                    <p class="sponsorship-details-subheading">Sponsorship {{ $idx + 1 }}</p>
                     @endif
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;{{ $sponsorshipCount === 1 ? ' margin-top: 15px;' : '' }}">
+                    <div class="sponsorship-details-fields">
                         @if($s->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $s->sponsorship_type }}</span></div>@endif
                         @if($s->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $s->sponsorship_status }}</span></div>@endif
                         @if($s->trn)<div class="field-group"><span class="field-label">TRN:</span><span class="field-value">{{ $s->trn }}</span></div>@endif
@@ -93,9 +103,9 @@
                 @endforeach
             </div>
         @elseif($comp && ($comp->sponsorship_type || $comp->sponsorship_status || $comp->trn))
-        <div class="card" style="margin-bottom: 20px;">
+        <div class="card sponsorship-details-card sponsorship-details-card--single" style="margin-bottom: 20px;">
             <h3><i class="fas fa-file-contract"></i> Sponsorship</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div class="sponsorship-details-fields">
                 @if($comp->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $comp->sponsorship_type }}</span></div>@endif
                 @if($comp->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $comp->sponsorship_status }}</span></div>@endif
                 @if($comp->trn)<div class="field-group"><span class="field-label">TRN:</span><span class="field-value">{{ $comp->trn }}</span></div>@endif
