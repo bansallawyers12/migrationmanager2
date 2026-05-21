@@ -71,21 +71,27 @@
 
         {{-- Sponsorship Card(s) --}}
         @if($comp && $comp->sponsorships->isNotEmpty())
-            @foreach($comp->sponsorships as $idx => $s)
+            @php $sponsorshipCount = $comp->sponsorships->count(); @endphp
             <div class="card" style="margin-bottom: 20px;">
-                <h3><i class="fas fa-file-contract"></i> Sponsorship @if($comp->sponsorships->count() > 1) ({{ $idx + 1 }}) @endif</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-                    @if($s->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $s->sponsorship_type }}</span></div>@endif
-                    @if($s->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $s->sponsorship_status }}</span></div>@endif
-                    @if($s->trn)<div class="field-group"><span class="field-label">TRN:</span><span class="field-value">{{ $s->trn }}</span></div>@endif
-                    @if($s->sponsorship_start_date)<div class="field-group"><span class="field-label">Start:</span><span class="field-value">{{ $s->sponsorship_start_date->format('d/m/Y') }}</span></div>@endif
-                    @if($s->sponsorship_end_date)<div class="field-group"><span class="field-label">End:</span><span class="field-value">{{ $s->sponsorship_end_date->format('d/m/Y') }}</span></div>@endif
-                    @if($s->regional_sponsorship)<div class="field-group"><span class="field-label">Regional:</span><span class="field-value">Yes</span></div>@endif
-                    @if($s->adverse_information)<div class="field-group"><span class="field-label">Adverse information:</span><span class="field-value">Yes</span></div>@endif
-                    @if($s->previous_sponsorship_notes)<div class="field-group" style="grid-column: 1 / -1;"><span class="field-label">Notes:</span><span class="field-value">{{ $s->previous_sponsorship_notes }}</span></div>@endif
+                <h3><i class="fas fa-file-contract"></i> {{ $sponsorshipCount > 1 ? 'Sponsorships' : 'Sponsorship' }}</h3>
+                @foreach($comp->sponsorships as $idx => $s)
+                <div @if($sponsorshipCount > 1) style="border-bottom:1px solid #e9ecef;padding-bottom:12px;margin-bottom:12px;{{ $loop->last ? 'border-bottom:none;padding-bottom:0;margin-bottom:0;' : '' }}" @endif>
+                    @if($sponsorshipCount > 1)
+                    <p style="margin:{{ $idx === 0 ? '15px' : '0' }} 0 8px 0;font-weight:600;color:#495057;">Sponsorship {{ $idx + 1 }}</p>
+                    @endif
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;{{ $sponsorshipCount === 1 ? ' margin-top: 15px;' : '' }}">
+                        @if($s->sponsorship_type)<div class="field-group"><span class="field-label">Type:</span><span class="field-value">{{ $s->sponsorship_type }}</span></div>@endif
+                        @if($s->sponsorship_status)<div class="field-group"><span class="field-label">Status:</span><span class="field-value">{{ $s->sponsorship_status }}</span></div>@endif
+                        @if($s->trn)<div class="field-group"><span class="field-label">TRN:</span><span class="field-value">{{ $s->trn }}</span></div>@endif
+                        @if($s->sponsorship_start_date)<div class="field-group"><span class="field-label">Start:</span><span class="field-value">{{ $s->sponsorship_start_date->format('d/m/Y') }}</span></div>@endif
+                        @if($s->sponsorship_end_date)<div class="field-group"><span class="field-label">End:</span><span class="field-value">{{ $s->sponsorship_end_date->format('d/m/Y') }}</span></div>@endif
+                        @if($s->regional_sponsorship)<div class="field-group"><span class="field-label">Regional:</span><span class="field-value">Yes</span></div>@endif
+                        @if($s->adverse_information)<div class="field-group"><span class="field-label">Adverse information:</span><span class="field-value">Yes</span></div>@endif
+                        @if($s->previous_sponsorship_notes)<div class="field-group" style="grid-column: 1 / -1;"><span class="field-label">Notes:</span><span class="field-value">{{ $s->previous_sponsorship_notes }}</span></div>@endif
+                    </div>
                 </div>
+                @endforeach
             </div>
-            @endforeach
         @elseif($comp && ($comp->sponsorship_type || $comp->sponsorship_status || $comp->trn))
         <div class="card" style="margin-bottom: 20px;">
             <h3><i class="fas fa-file-contract"></i> Sponsorship</h3>
