@@ -53,6 +53,7 @@ class ClientMatter extends Model
         'lmt_start_date',
         'lmt_end_date',
         'lmt_notes',
+        'lmt_password',
     ];
 
     /**

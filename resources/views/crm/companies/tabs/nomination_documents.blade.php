@@ -85,7 +85,8 @@
                             $nominationMatterHasLmt = $nominationMatterLmtRow->lmt_required !== null
                                 || ! empty($nominationMatterLmtRow->lmt_start_date)
                                 || ! empty($nominationMatterLmtRow->lmt_end_date)
-                                || (trim((string) ($nominationMatterLmtRow->lmt_notes ?? '')) !== '');
+                                || (trim((string) ($nominationMatterLmtRow->lmt_notes ?? '')) !== '')
+                                || (trim((string) ($nominationMatterLmtRow->lmt_password ?? '')) !== '');
                         }
                     }
                     $nominationLmtReqAttr = '';
@@ -106,6 +107,9 @@
                         }
                         if (trim((string) ($nominationMatterLmtRow->lmt_notes ?? '')) !== '') {
                             $parts[] = '<strong>Notes:</strong><br>' . nl2br(e($nominationMatterLmtRow->lmt_notes));
+                        }
+                        if (trim((string) ($nominationMatterLmtRow->lmt_password ?? '')) !== '') {
+                            $parts[] = '<strong>Password:</strong> ' . e($nominationMatterLmtRow->lmt_password);
                         }
                         $nominationLmtPopoverHtml = '<div class="text-start small nomination-lmt-popover-body">' . implode('<br>', $parts) . '</div>';
                     }
@@ -166,6 +170,7 @@
 
                         @if(($fetchedData->is_company ?? false) && $client_selected_matter_id1)
                         <script type="application/json" id="nomination-lmt-initial-notes">{!! json_encode(($nominationMatterLmtRow ? $nominationMatterLmtRow->lmt_notes : null) ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+                        <script type="application/json" id="nomination-lmt-initial-password">{!! json_encode(($nominationMatterLmtRow ? $nominationMatterLmtRow->lmt_password : null) ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
                         <div id="nomination-lmt-popover-template" style="display:none" aria-hidden="true">{!! $nominationLmtPopoverHtml !!}</div>
 
                         <div class="modal fade" id="nominationLmtModal" tabindex="-1" role="dialog" aria-labelledby="nominationLmtModalLabel" aria-hidden="true">
@@ -196,6 +201,10 @@
                                             <label for="nomination_lmt_notes">Notes</label>
                                             <textarea id="nomination_lmt_notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
                                         </div>
+                                        <div class="form-group">
+                                            <label for="nomination_lmt_password">Password</label>
+                                            <input type="text" id="nomination_lmt_password" class="form-control" placeholder="LMT password" autocomplete="off">
+                                        </div>
                                         <p class="text-muted small mb-0" id="nominationLmtModalError" style="display:none;color:#dc3545!important;"></p>
                                     </div>
                                     <div class="modal-footer d-flex justify-content-between flex-wrap gap-2">
@@ -212,12 +221,58 @@
                                 </div>
                             </div>
                         </div>
+                        <style>
+                            /* Override theme rule textarea.form-control{height:64px!important} so drag-resize works */
+                            #nominationLmtModal textarea#nomination_lmt_notes.form-control {
+                                resize: vertical !important;
+                                overflow-y: auto !important;
+                                min-height: 64px !important;
+                                height: 64px;
+                                max-height: 60vh;
+                                box-sizing: border-box;
+                            }
+                        </style>
                         <script>
                         (function () {
+                            window._nominationLmtInitialPassword = '';
+
                             function nominationLmtMatterId() {
                                 var b = document.getElementById('nominationLmtOpenBtn');
                                 return b ? String(b.getAttribute('data-lmt-matter-id') || '') : '';
                             }
+
+                            function nominationLmtReadJsonScript(id) {
+                                var el = document.getElementById(id);
+                                if (!el || !el.textContent) return '';
+                                try {
+                                    var v = JSON.parse(el.textContent);
+                                    return v === null || v === undefined ? '' : String(v);
+                                } catch (e) {
+                                    return '';
+                                }
+                            }
+
+                            window.nominationLmtSyncEndDateFromStart = function () {
+                                var sd = document.getElementById('nomination_lmt_start_date');
+                                var ed = document.getElementById('nomination_lmt_end_date');
+                                if (!sd || !ed || !sd.value) return;
+                                var parts = sd.value.split('-');
+                                if (parts.length !== 3) return;
+                                var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                                if (isNaN(d.getTime())) return;
+                                d.setDate(d.getDate() + 28);
+                                var y = d.getFullYear();
+                                var m = String(d.getMonth() + 1).padStart(2, '0');
+                                var day = String(d.getDate()).padStart(2, '0');
+                                ed.value = y + '-' + m + '-' + day;
+                            };
+
+                            function nominationLmtPasswordChanged() {
+                                var pw = document.getElementById('nomination_lmt_password');
+                                if (!pw) return false;
+                                return pw.value !== (window._nominationLmtInitialPassword || '');
+                            }
+
                             window.setupNominationLmtModal = function (btnEl) {
                                 var err = document.getElementById('nominationLmtModalError');
                                 if (err) { err.style.display = 'none'; err.textContent = ''; }
@@ -226,24 +281,25 @@
                                 var sd = document.getElementById('nomination_lmt_start_date');
                                 var ed = document.getElementById('nomination_lmt_end_date');
                                 var nt = document.getElementById('nomination_lmt_notes');
+                                var pw = document.getElementById('nomination_lmt_password');
                                 var del = document.getElementById('nominationLmtDeleteBtn');
-                                if (!req || !sd || !ed || !nt) return;
+                                if (!req || !sd || !ed || !nt || !pw) return;
                                 var has = btn && btn.getAttribute('data-lmt-has-data') === '1';
                                 if (del) del.style.display = has ? 'inline-block' : 'none';
                                 if (has && btn) {
                                     req.value = btn.getAttribute('data-lmt-required') || '';
                                     sd.value = btn.getAttribute('data-lmt-start') || '';
                                     ed.value = btn.getAttribute('data-lmt-end') || '';
-                                    var nj = document.getElementById('nomination-lmt-initial-notes');
-                                    try {
-                                        nt.value = nj && nj.textContent ? JSON.parse(nj.textContent) : '';
-                                    } catch (e) { nt.value = ''; }
+                                    nt.value = nominationLmtReadJsonScript('nomination-lmt-initial-notes');
+                                    pw.value = nominationLmtReadJsonScript('nomination-lmt-initial-password');
                                 } else {
                                     req.value = '';
                                     sd.value = '';
                                     ed.value = '';
                                     nt.value = '';
+                                    pw.value = '';
                                 }
+                                window._nominationLmtInitialPassword = pw.value;
                             };
                             window.deleteNominationLmtDetail = function () {
                                 if (!window.confirm('Remove all Labour Market Testing details for this matter?')) return;
@@ -291,6 +347,11 @@
                                 });
                             };
                             window.submitNominationLmtDetail = function () {
+                                if (nominationLmtPasswordChanged()) {
+                                    if (!window.confirm('Do you want to save/update the password?')) {
+                                        return;
+                                    }
+                                }
                                 var err = document.getElementById('nominationLmtModalError');
                                 var btn = document.getElementById('nominationLmtSaveBtn');
                                 var token = document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -305,6 +366,7 @@
                                 fd.append('lmt_start_date', document.getElementById('nomination_lmt_start_date').value || '');
                                 fd.append('lmt_end_date', document.getElementById('nomination_lmt_end_date').value || '');
                                 fd.append('lmt_notes', document.getElementById('nomination_lmt_notes').value || '');
+                                fd.append('lmt_password', document.getElementById('nomination_lmt_password').value || '');
                                 if (btn) btn.disabled = true;
                                 fetch('{{ url('/clients/save-section') }}', {
                                     method: 'POST',
@@ -385,10 +447,20 @@
                                     });
                                 });
                             }
+                            function bindNominationLmtStartDateAutoEnd() {
+                                var sd = document.getElementById('nomination_lmt_start_date');
+                                if (!sd || sd.getAttribute('data-lmt-end-bound') === '1') return;
+                                sd.setAttribute('data-lmt-end-bound', '1');
+                                sd.addEventListener('change', window.nominationLmtSyncEndDateFromStart);
+                            }
                             if (document.readyState === 'loading') {
-                                document.addEventListener('DOMContentLoaded', initNominationLmtPopover);
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    initNominationLmtPopover();
+                                    bindNominationLmtStartDateAutoEnd();
+                                });
                             } else {
                                 initNominationLmtPopover();
+                                bindNominationLmtStartDateAutoEnd();
                             }
                         })();
                         </script>

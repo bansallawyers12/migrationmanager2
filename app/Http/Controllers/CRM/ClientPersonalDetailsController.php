@@ -2309,6 +2309,7 @@ class ClientPersonalDetailsController extends Controller
             $matter->lmt_start_date = null;
             $matter->lmt_end_date = null;
             $matter->lmt_notes = null;
+            $matter->lmt_password = null;
             $matter->save();
 
             return response()->json(['success' => true, 'message' => 'Labour Market Testing details removed for this matter. You can add a new record anytime.']);
@@ -2323,6 +2324,7 @@ class ClientPersonalDetailsController extends Controller
             'lmt_start_date' => 'nullable|date',
             'lmt_end_date' => 'nullable|date',
             'lmt_notes' => 'nullable|string',
+            'lmt_password' => 'nullable|string|max:255',
         ]);
 
         $reqRaw = $request->input('lmt_required');
@@ -2353,11 +2355,14 @@ class ClientPersonalDetailsController extends Controller
 
         $notes = isset($validated['lmt_notes']) ? trim((string) $validated['lmt_notes']) : '';
         $notes = $notes !== '' ? $notes : null;
+        $password = isset($validated['lmt_password']) ? trim((string) $validated['lmt_password']) : '';
+        $password = $password !== '' ? $password : null;
 
         $matter->lmt_required = $lmtRequired;
         $matter->lmt_start_date = $start;
         $matter->lmt_end_date = $end;
         $matter->lmt_notes = $notes;
+        $matter->lmt_password = $password;
         $matter->save();
 
         return response()->json(['success' => true, 'message' => 'LMT details updated successfully']);
