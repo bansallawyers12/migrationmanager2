@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\UploadChecklist;
 use App\Models\Email;
 use App\Models\EmailLog;
+use App\Helpers\TempFileHelper;
 use App\Services\PythonService;
 
 class DocumentController extends Controller
@@ -577,13 +578,14 @@ class DocumentController extends Controller
             return redirect()->route('signatures.index')->with('error', 'Invalid document ID.');
         }
 
+        $tmpPdfPath = null;
+        $isLocalFile = false;
+
         try {
             $document = \App\Models\Document::findOrFail($documentId);
             $this->authorizeDocumentAssociatedAccess($document);
             $url = $document->myfile;
             $pdfPath = null;
-            $tmpPdfPath = null;
-            $isLocalFile = false;
             
             // Initialize default values
             $pdfPages = 1;
@@ -702,24 +704,7 @@ class DocumentController extends Controller
             }
 
             // Clean up temp file (only if it was created from S3, not local file)
-            if ($tmpPdfPath && !$isLocalFile) {
-                @unlink($tmpPdfPath);
-            }
-            // Count PDF pages using multiple methods for better compatibility
-            /*$pdfPages = $this->countPdfPages($pdfPath);
-            if (!$pdfPages || $pdfPages < 1) {
-                Log::error('Failed to count PDF pages for document: ' . $documentId);
-                return redirect()->route('signatures.index')->with('error', 'Failed to read PDF file.');
-            }*/
-
-            // Get page dimensions
-            /*$pagesDimensions = $this->getPdfPageDimensions($pdfPath, $pdfPages);
-
-            // Set default dimensions from first page or use A4 defaults
-            $pdfWidthMM = $pagesDimensions[1]['width'] ?? 210;
-            $pdfHeightMM = $pagesDimensions[1]['height'] ?? 297;*/
-
-            
+            // Use finally block below instead of inline cleanup here.
 
             // Use the correct view path for admin documents edit
             return view('crm.documents.edit', compact('document', 'pdfPages', 'pdfWidthMM', 'pdfHeightMM', 'pagesDimensions'));
@@ -736,6 +721,10 @@ class DocumentController extends Controller
                 'signatures.index',
                 ['document_id' => $documentId]
             );
+        } finally {
+            if (!$isLocalFile) {
+                TempFileHelper::delete($tmpPdfPath);
+            }
         }
     }
 
@@ -749,12 +738,13 @@ class DocumentController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid document ID.'], 400);
         }
 
+        $tmpPdfPath = null;
+        $isLocalFile = false;
+
         try {
             $document = Document::findOrFail($documentId);
             $this->authorizeDocumentAssociatedAccess($document);
             $url = $document->myfile;
-            $tmpPdfPath = null;
-            $isLocalFile = false;
 
             if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
                 $parsed = parse_url($url);
@@ -799,10 +789,6 @@ class DocumentController extends Controller
                 }
             }
 
-            if ($tmpPdfPath && !$isLocalFile) {
-                @unlink($tmpPdfPath);
-            }
-
             $existingFields = $document->signatureFields->map(function ($f) {
                 return [
                     'page_number' => $f->page_number,
@@ -825,6 +811,8 @@ class DocumentController extends Controller
         } catch (\Exception $e) {
             Log::error('getSignaturePlacementData failed', ['id' => $id, 'error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Failed to load document.'], 500);
+        } finally {
+            TempFileHelper::delete($tmpPdfPath ?? null);
         }
     }
 
@@ -1014,12 +1002,12 @@ class DocumentController extends Controller
             'signatures.*.h_percent' => 'required|numeric|min:0|max:100',
         ]);
 
+        $pdfPath = null;
         try {
             // Remove old fields for this document
             $document->signatureFields()->delete();
 
             // Get PDF path and page count for calculating positions
-            $pdfPath = null;
             $pdfPages = 1;
             $pagesDimensions = [];
             
@@ -1362,6 +1350,8 @@ class DocumentController extends Controller
                 'back',
                 ['document_id' => $documentId, 'fields_count' => count($validatedSignatures ?? [])]
             );
+        } finally {
+            TempFileHelper::delete($pdfPath);
         }
     }
 
@@ -1720,6 +1710,7 @@ class DocumentController extends Controller
 
     public function showSignForm($id)
     {
+        $pdfPath = null;
         try {
             $document = Document::findOrFail($id);
             $this->authorizeDocumentAssociatedAccess($document);
@@ -1737,7 +1728,6 @@ class DocumentController extends Controller
             
             // Check if URL is a full S3 URL or local path
             $url = $document->myfile;
-            $pdfPath = null;
             
             if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
                 // This is an S3 URL - extract the key
@@ -1784,10 +1774,6 @@ class DocumentController extends Controller
 
             return view('crm.documents.sign', compact('document', 'signer', 'signatureFields', 'pdfPages'));
         } catch (\Exception $e) {
-            // Clean up temp file if it was downloaded from S3
-            if (isset($pdfPath) && strpos($pdfPath, 'tmp_') !== false) {
-                @unlink($pdfPath);
-            }
             return $this->handleError(
                 $e,
                 'show_sign_form',
@@ -1795,6 +1781,8 @@ class DocumentController extends Controller
                 'dashboard',
                 ['document_id' => $id]
             );
+        } finally {
+            TempFileHelper::delete($pdfPath);
         }
     }
 
@@ -1810,14 +1798,14 @@ class DocumentController extends Controller
         
         // Use unified Python Service
         $pythonService = app(\App\Services\PythonService::class);
+        $tmpPdfPath = null;
+        $isLocalFile = false;
         
         try {
             $document = Document::findOrFail($id);
             $this->authorizeDocumentAssociatedAccess($document);
             $url = $document->myfile;
             $pdfPath = null;
-            $tmpPdfPath = null;
-            $isLocalFile = false;
 
             // Check if URL is a full S3 URL or local path
             if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
@@ -1904,11 +1892,6 @@ class DocumentController extends Controller
                     'page' => $page
                 ]);
                 
-                // Clean up temp file
-                if ($tmpPdfPath && !$isLocalFile) {
-                    @unlink($tmpPdfPath);
-                }
-                
                 return response()->json([
                     'error' => 'PDF processing service unavailable',
                     'message' => 'Unable to generate page preview. Please try again later.',
@@ -1920,11 +1903,6 @@ class DocumentController extends Controller
             $result = $pythonService->convertPageToImage($tmpPdfPath, $page, 150);
             
             if ($result && ($result['success'] ?? false)) {
-                // Clean up temp file (only if it was created from S3, not local file)
-                if ($tmpPdfPath && !$isLocalFile) {
-                    @unlink($tmpPdfPath);
-                }
-                
                 // Clear any output buffers to prevent image corruption
                 if (ob_get_level()) {
                     ob_end_clean();
@@ -1938,31 +1916,21 @@ class DocumentController extends Controller
                     'Content-Length' => strlen($imageData),
                     'Cache-Control' => 'public, max-age=3600',
                 ]);
-            } else {
-                // Clean up temp file
-                if ($tmpPdfPath && !$isLocalFile) {
-                    @unlink($tmpPdfPath);
-                }
-                
-                Log::error('Python PDF service failed to convert page', [
-                    'document_id' => $id,
-                    'page' => $page,
-                    'result' => $result
-                ]);
-                
-                return response()->json([
-                    'error' => 'Failed to generate page preview',
-                    'message' => 'PDF processing failed. Please try again later.',
-                    'document_id' => $id,
-                    'page' => $page
-                ], 503);
-            }
-        } catch (\Exception $e) {
-            // Clean up temp file if it was created from S3 (not a local file)
-            if (isset($tmpPdfPath) && $tmpPdfPath && !($isLocalFile ?? false)) {
-                @unlink($tmpPdfPath);
             }
             
+            Log::error('Python PDF service failed to convert page', [
+                'document_id' => $id,
+                'page' => $page,
+                'result' => $result
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to generate page preview',
+                'message' => 'PDF processing failed. Please try again later.',
+                'document_id' => $id,
+                'page' => $page
+            ], 503);
+        } catch (\Exception $e) {
             Log::error('Error in getPage', [
                 'context' => 'get_page',
                 'document_id' => $id,
@@ -1971,6 +1939,8 @@ class DocumentController extends Controller
                 'user_id' => auth('admin')->id()
             ]);
             abort(500, 'An error occurred while retrieving the page');
+        } finally {
+            TempFileHelper::delete($tmpPdfPath);
         }
     }
 

@@ -7,6 +7,7 @@ use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\Signer;
 use App\Models\WorkflowStage;
+use App\Helpers\TempFileHelper;
 use App\Services\PythonService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +54,8 @@ class PublicDocumentController extends Controller
             // ✅ FIX #4: Don't redirect public users to admin login
             abort(403, 'Invalid or expired signing link.');
         }
+
+        $tmpPdfPath = null;
 
         try {
             $document = Document::findOrFail($documentId);
@@ -106,7 +109,6 @@ class PublicDocumentController extends Controller
             // Get PDF path - handle both S3 and local files
             $url = $document->myfile;
             $pdfPath = null;
-            $tmpPdfPath = null;
             $isLocalFile = false;
             
             // Check if URL is a full S3 URL or local path
@@ -149,10 +151,6 @@ class PublicDocumentController extends Controller
             $pdfPages = 1;
             if ($tmpPdfPath && file_exists($tmpPdfPath)) {
                 $pdfPages = $this->countPdfPages($tmpPdfPath) ?: 1;
-                // Only delete temp files, not local files
-                if (!$isLocalFile && strpos($tmpPdfPath, 'tmp_') !== false) {
-                    @unlink($tmpPdfPath);
-                }
             }
 
             return view('documents.sign', compact('document', 'signer', 'signatureFields', 'pdfPages'));
@@ -163,6 +161,8 @@ class PublicDocumentController extends Controller
                 'token_present' => !empty($token)
             ]);
             return redirect('/')->with('error', 'An error occurred while loading the signing page.');
+        } finally {
+            TempFileHelper::delete($tmpPdfPath);
         }
     }
 
@@ -249,10 +249,13 @@ class PublicDocumentController extends Controller
             }
             
             if ($signer->token !== null && $signer->status === 'pending') {
+                $tmpPdfPath = null;
+                $outputTmpPath = null;
+                $isLocalFile = false;
+
+                try {
                 // Get PDF file using multiple fallback methods (like CRM)
                 $url = $document->myfile;
-                $tmpPdfPath = null;
-                $isLocalFile = false;
                 $pdfPath = null;
                 
                 // Fallback 1: Check if URL is a full S3 URL
@@ -559,12 +562,6 @@ class PublicDocumentController extends Controller
                     Log::info('Signed PDF saved locally', ['path' => $signedPdfPath]);
                 }
 
-                // Clean up temp files (only if they were temp files)
-                if (!$isLocalFile || strpos($tmpPdfPath, 'tmp_') !== false) {
-                    @unlink($tmpPdfPath);
-                }
-                @unlink($outputTmpPath);
-
                 // Update statuses
                 $signer->update(['status' => 'signed', 'signed_at' => now()]);
                 $document->status = 'signed';
@@ -767,6 +764,9 @@ class PublicDocumentController extends Controller
                 // Redirect to thank you page with success message
                 return redirect()->route('public.documents.thankyou', ['id' => $document->id])
                     ->with('success', 'Document signed successfully! You can now download your signed document.');
+                } finally {
+                    TempFileHelper::deleteMany([$tmpPdfPath, $outputTmpPath]);
+                }
             }
 
             // If we reach here, something unexpected happened
@@ -805,6 +805,8 @@ class PublicDocumentController extends Controller
             ob_end_clean();
         }
         
+        $tmpPdfPath = null;
+
         try {
             $document = Document::findOrFail($id);
             
@@ -824,7 +826,6 @@ class PublicDocumentController extends Controller
             
             $url = $document->myfile;
             $pdfPath = null;
-            $tmpPdfPath = null;
             $isLocalFile = false;
 
             // Check if URL is a full S3 URL or local path
@@ -938,11 +939,6 @@ class PublicDocumentController extends Controller
                         $imagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
                         file_put_contents($imagePath, $imageBytes);
                         
-                        // Only delete temp PDF files, not local files
-                        if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
-                            @unlink($tmpPdfPath);
-                        }
-                        
                         // Verify image was saved successfully
                         if (file_exists($imagePath)) {
                             Log::info('Page image generated using Python service', [
@@ -953,13 +949,13 @@ class PublicDocumentController extends Controller
                             
                             // Use response()->file() instead of response($imageBytes)
                             return response()->file($imagePath);
-                        } else {
-                            Log::error('Failed to save image file', [
-                                'document_id' => $id,
-                                'page' => $page,
-                                'image_path' => $imagePath
-                            ]);
                         }
+
+                        Log::error('Failed to save image file', [
+                            'document_id' => $id,
+                            'page' => $page,
+                            'image_path' => $imagePath
+                        ]);
                     }
                 }
 
@@ -968,18 +964,9 @@ class PublicDocumentController extends Controller
                     'document_id' => $id,
                     'page' => $page
                 ]);
-                
-                // Only delete temp files, not local files
-                if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
-                    @unlink($tmpPdfPath);
-                }
 
                 abort(503, 'PDF processing service unavailable. Please try again later.');
             } catch (\Exception $e) {
-                // Only delete temp files, not local files
-                if (!$isLocalFile && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
-                    @unlink($tmpPdfPath);
-                }
                 Log::error('Error generating PDF page image', [
                     'document_id' => $id,
                     'page' => $page,
@@ -988,16 +975,14 @@ class PublicDocumentController extends Controller
                 abort(500, 'Error generating page image');
             }
         } catch (\Exception $e) {
-            // Only delete temp files, not local files
-            if (isset($isLocalFile) && !$isLocalFile && isset($tmpPdfPath) && $tmpPdfPath && strpos($tmpPdfPath, 'tmp_') !== false) {
-                @unlink($tmpPdfPath);
-            }
             Log::error('Error in getPage', [
                 'document_id' => $id,
                 'page' => $page,
                 'error' => $e->getMessage()
             ]);
             abort(500, 'An error occurred while retrieving the page');
+        } finally {
+            TempFileHelper::delete($tmpPdfPath);
         }
     }
 

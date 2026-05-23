@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\TempFileHelper;
 use App\Http\Controllers\CRM\DocumentController as AdminDocumentController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\CRM\SignatureDashboardController;
@@ -87,11 +88,12 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
         ob_end_clean();
     }
     
+    $tmpPdfPath = null;
+    $isLocalFile = false;
+
     try {
         $document = \App\Models\Document::findOrFail($id);
         $url = $document->myfile;
-        $tmpPdfPath = null;
-        $isLocalFile = false;
         
         // Check if URL is a full S3 URL or local path
         if ($url && filter_var($url, FILTER_VALIDATE_URL) && strpos($url, 's3') !== false) {
@@ -123,11 +125,6 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
             if ($pdfService->isHealthy()) {
                 $result = $pdfService->convertPageToImage($tmpPdfPath, $page, 150);
                 
-                // Clean up temp file (only if it was created from S3, not local file)
-                if (!$isLocalFile) {
-                    @unlink($tmpPdfPath);
-                }
-                
                 if ($result && ($result['success'] ?? false)) {
                     $imageData = base64_decode(explode(',', $result['image_data'])[1]);
                     
@@ -139,17 +136,16 @@ Route::get('/debug-pdf-page/{id}/{page}', function($id, $page) {
                     ]);
                 }
             }
-            
-            // Clean up on failure
-            if (!$isLocalFile && file_exists($tmpPdfPath)) {
-                @unlink($tmpPdfPath);
-            }
         }
         
         return response()->json(['error' => 'Failed to generate image', 'document_id' => $id, 'page' => $page], 500);
     } catch (\Exception $e) {
         Log::error('Debug route error', ['error' => $e->getMessage(), 'document_id' => $id, 'page' => $page]);
         return response()->json(['error' => $e->getMessage()], 500);
+    } finally {
+        if (!$isLocalFile) {
+            TempFileHelper::delete($tmpPdfPath);
+        }
     }
 })->name('debug.pdf.page');
 
