@@ -31,7 +31,7 @@ class InPersonCompleteTaskRemoval extends Command
         $query 	= CheckinLog::select('id')
             ->where('status', '1')
             ->where('updated_at', '<=', Carbon::now()->subDays(30)->toDateTimeString() ) ;
-        $totalLogs = $query->count();dd($totalLogs);
+        $totalLogs = $query->count();
 		$logs = $query->get(); //dd($logs);
         if($totalLogs >0){
 			foreach($logs as $key=>$val){ //dd($val->id);

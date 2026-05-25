@@ -78,7 +78,7 @@ class Kernel extends ConsoleKernel
         //$schedule->command('CompleteTaskRemoval:daily')->daily();
 
         //InPerson Complete Task Removal daily 1 time
-        $schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
+        //$schedule->command('InPersonCompleteTaskRemoval:daily')->daily();
         //visa expire Reminder email before 15 days daily at 1 time
         //$schedule->command('VisaExpireReminderEmail:daily')->daily();
         
