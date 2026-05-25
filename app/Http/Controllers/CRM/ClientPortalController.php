@@ -4744,7 +4744,7 @@ class ClientPortalController extends Controller
 					$ccarray[] = $clientcc;
 				}
 			}
-				$sent = $this->send_compose_template($to, $subject, 'support@digitrex.live', $message, 'digitrex', $array, $ccarray ?? []);
+				$sent = $this->send_compose_template($message, 'digitrex', $to, $subject, 'support@digitrex.live', $array, $ccarray ?? []);
 			if($sent){
 				$clientMatter = ClientMatter::find($request->noteid);
 				$objs = new ActivitiesLog;

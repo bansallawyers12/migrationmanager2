@@ -145,7 +145,7 @@ class Controller extends BaseController
 
 	}
 
-	protected function send_compose_template($to = null, $subject = null, $sender = null,$content, $sendername, $array = array(), $cc = array())
+	protected function send_compose_template($content, $sendername, $to = null, $subject = null, $sender = null, $array = array(), $cc = array())
 	{
 
 		try {
@@ -163,7 +163,7 @@ class Controller extends BaseController
 		}
 
 	}
-	protected function send_attachment_email_template($replace = array(), $replace_with = array(), $alias = null, $to = null, $subject = null, $sender = null,$invoicearray)
+	protected function send_attachment_email_template($invoicearray, $replace = array(), $replace_with = array(), $alias = null, $to = null, $subject = null, $sender = null)
 	{
 		// email_templates table has been deleted - using fallback content
 		$email_template	= 	DB::table('email_templates')->where('alias', $alias)->first();
@@ -194,7 +194,7 @@ class Controller extends BaseController
 
 	}
 
-	protected function send_multipleattachment_email_template($replace = array(), $replace_with = array(), $alias = null, $to = null, $subject = null, $sender = null,$invoicearray)
+	protected function send_multipleattachment_email_template($invoicearray, $replace = array(), $replace_with = array(), $alias = null, $to = null, $subject = null, $sender = null)
 	{
 		// email_templates table has been deleted - using fallback content
 		$email_template	= 	DB::table('email_templates')->where('alias', $alias)->first();
@@ -225,7 +225,7 @@ class Controller extends BaseController
 
 	}
 
-	protected function send_multiple_attach_compose($to = null, $subject = null,$sender,$invoicearray)
+	protected function send_multiple_attach_compose($sender, $invoicearray, $to = null, $subject = null)
 	{
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
@@ -265,7 +265,7 @@ class Controller extends BaseController
 		}
 	}
 
-	public function curlRequest($url,$type="PUT",$data){
+	public function curlRequest($url, $data, $type = "PUT"){
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
 
