@@ -25,7 +25,7 @@ class CrmSentEmailS3Service
      * @param EmailLog $emailLog
      * @param string $subject
      * @param string $messageHtml
-     * @param array $attachmentPaths Array of local file paths (or [path =>, name =>] tuples)
+     * @param array $attachmentPaths Array of local file paths, or tuples with path/content and name
      * @return bool Success (true if S3 full archive succeeded, or if local-only archive succeeded; false on total failure)
      */
     public function storeToS3(EmailLog $emailLog, string $subject, string $messageHtml, array $attachmentPaths = []): bool
@@ -111,10 +111,24 @@ class CrmSentEmailS3Service
         $emailLog->save();
 
         foreach ($attachmentPaths as $pathOrTuple) {
-            $filePath = is_array($pathOrTuple) ? ($pathOrTuple['path'] ?? null) : $pathOrTuple;
-            $displayName = is_array($pathOrTuple) ? ($pathOrTuple['name'] ?? basename((string) $filePath)) : basename((string) $filePath);
-            if ($filePath && file_exists($filePath)) {
-                $this->uploadSingleAttachmentToS3($emailLog->id, $filePath, $displayName, $clientUniqueId);
+            $normalized = $this->normalizeAttachmentTuple($pathOrTuple);
+            if ($normalized === null) {
+                continue;
+            }
+            if ($normalized['content'] !== null) {
+                $this->persistAttachmentToS3(
+                    $emailLog->id,
+                    $normalized['content'],
+                    $normalized['name'],
+                    $clientUniqueId
+                );
+            } elseif ($normalized['path'] !== null && file_exists($normalized['path'])) {
+                $this->uploadSingleAttachmentToS3(
+                    $emailLog->id,
+                    $normalized['path'],
+                    $normalized['name'],
+                    $clientUniqueId
+                );
             }
         }
 
@@ -130,10 +144,25 @@ class CrmSentEmailS3Service
         try {
             $any = false;
             foreach ($attachmentPaths as $pathOrTuple) {
-                $filePath = is_array($pathOrTuple) ? ($pathOrTuple['path'] ?? null) : $pathOrTuple;
-                $displayName = is_array($pathOrTuple) ? ($pathOrTuple['name'] ?? basename((string) $filePath)) : basename((string) $filePath);
-                if ($filePath && is_readable($filePath)) {
-                    if ($this->createLocalEmailLogAttachment($emailLog->id, (string) $filePath, (string) $displayName)) {
+                $normalized = $this->normalizeAttachmentTuple($pathOrTuple);
+                if ($normalized === null) {
+                    continue;
+                }
+                if ($normalized['content'] !== null) {
+                    if ($this->createLocalEmailLogAttachment(
+                        $emailLog->id,
+                        $normalized['name'],
+                        null,
+                        $normalized['content']
+                    )) {
+                        $any = true;
+                    }
+                } elseif ($normalized['path'] !== null && is_readable($normalized['path'])) {
+                    if ($this->createLocalEmailLogAttachment(
+                        $emailLog->id,
+                        $normalized['name'],
+                        $normalized['path']
+                    )) {
                         $any = true;
                     }
                 }
@@ -154,13 +183,19 @@ class CrmSentEmailS3Service
     }
 
     /**
-     * Copy a file into storage/app and create an email_log_attachments row (no s3_key).
+     * Copy attachment bytes into storage/app and create an email_log_attachments row (no s3_key).
      */
-    protected function createLocalEmailLogAttachment(int $emailLogId, string $sourcePath, string $displayName): bool
-    {
+    protected function createLocalEmailLogAttachment(
+        int $emailLogId,
+        string $displayName,
+        ?string $sourcePath = null,
+        ?string $content = null
+    ): bool {
         try {
-            $content = @file_get_contents($sourcePath);
-            if ($content === false) {
+            if ($content === null) {
+                $content = @file_get_contents((string) $sourcePath);
+            }
+            if ($content === false || $content === '') {
                 Log::warning('CrmSentEmailS3Service: could not read source for local copy', ['path' => $sourcePath]);
                 return false;
             }
@@ -230,33 +265,71 @@ class CrmSentEmailS3Service
                 return;
             }
 
-            $sanitized = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $displayName);
-            $sanitized = preg_replace('/_+/', '_', trim($sanitized, '_')) ?: 'attachment';
-            $ext = pathinfo($displayName, PATHINFO_EXTENSION);
-            $s3Key = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId) . '/attachments/' . time() . '_' . substr(uniqid(), -6) . '_' . $sanitized . ($ext ? '.' . $ext : '');
-
-            $uploaded = Storage::disk('s3')->put($s3Key, $content);
-            $s3Path = $uploaded ? $this->s3PublicUrl($s3Key) : null;
-
-            $contentType = $this->guessContentType($displayName);
-
-            EmailLogAttachment::create([
-                'email_log_id' => $emailLogId,
-                'filename' => $displayName,
-                'display_name' => $displayName,
-                'content_type' => $contentType,
-                'file_path' => $s3Path,
-                's3_key' => $s3Key,
-                'file_size' => strlen($content),
-                'is_inline' => false,
-                'extension' => pathinfo($displayName, PATHINFO_EXTENSION),
-            ]);
+            $this->persistAttachmentToS3($emailLogId, $content, $displayName, $clientUniqueId);
         } catch (\Exception $e) {
             Log::warning('CrmSentEmailS3Service: Attachment upload failed', [
                 'path' => $localPath,
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    protected function persistAttachmentToS3(int $emailLogId, string $content, string $displayName, string $clientUniqueId): void
+    {
+        $sanitized = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $displayName);
+        $sanitized = preg_replace('/_+/', '_', trim($sanitized, '_')) ?: 'attachment';
+        $ext = pathinfo($displayName, PATHINFO_EXTENSION);
+        $s3Key = preg_replace('/[^a-zA-Z0-9\-_\.]/', '_', $clientUniqueId) . '/attachments/' . time() . '_' . substr(uniqid(), -6) . '_' . $sanitized . ($ext ? '.' . $ext : '');
+
+        $uploaded = Storage::disk('s3')->put($s3Key, $content);
+        $s3Path = $uploaded ? $this->s3PublicUrl($s3Key) : null;
+
+        $contentType = $this->guessContentType($displayName);
+
+        EmailLogAttachment::create([
+            'email_log_id' => $emailLogId,
+            'filename' => $displayName,
+            'display_name' => $displayName,
+            'content_type' => $contentType,
+            'file_path' => $s3Path,
+            's3_key' => $s3Key,
+            'file_size' => strlen($content),
+            'is_inline' => false,
+            'extension' => pathinfo($displayName, PATHINFO_EXTENSION),
+        ]);
+    }
+
+    /**
+     * @param mixed $pathOrTuple
+     * @return array{path: ?string, content: ?string, name: string}|null
+     */
+    protected function normalizeAttachmentTuple($pathOrTuple): ?array
+    {
+        if (is_string($pathOrTuple)) {
+            return [
+                'path' => $pathOrTuple,
+                'content' => null,
+                'name' => basename($pathOrTuple),
+            ];
+        }
+
+        if (!is_array($pathOrTuple)) {
+            return null;
+        }
+
+        $name = $pathOrTuple['name'] ?? basename((string) ($pathOrTuple['path'] ?? 'attachment'));
+        $content = isset($pathOrTuple['content']) && $pathOrTuple['content'] !== '' ? $pathOrTuple['content'] : null;
+        $path = $pathOrTuple['path'] ?? null;
+
+        if ($content === null && (!$path || !is_readable($path))) {
+            return null;
+        }
+
+        return [
+            'path' => $path,
+            'content' => $content,
+            'name' => (string) $name,
+        ];
     }
 
     protected function guessContentType(string $filename): string

@@ -1378,22 +1378,29 @@ public function getChapters(Request $request)
 			}
 		}
 		if ($request->hasFile('attach')) {
-			$uploadBase = storage_path('app' . DIRECTORY_SEPARATOR . 'uploads');
-			if (!is_dir($uploadBase)) {
-				@mkdir($uploadBase, 0755, true);
-			}
 			foreach ($request->file('attach') as $file1) {
 				if ($file1->isValid()) {
-					$filename = time() . '_' . substr(uniqid('', true), -8) . '_' . preg_replace('/[^a-zA-Z0-9._\-\s]/', '_', $file1->getClientOriginalName());
-					$file1->move($uploadBase, $filename);
-					$preparedSendPaths[] = $uploadBase . DIRECTORY_SEPARATOR . $filename;
+					$displayName = preg_replace('/[^a-zA-Z0-9._\-\s]/', '_', $file1->getClientOriginalName());
+					$content = file_get_contents($file1->getRealPath());
+					if ($content === false || $content === '') {
+						continue;
+					}
+					$preparedSendPaths[] = [
+						'content' => $content,
+						'name' => $displayName !== '' ? $displayName : 'attachment',
+					];
 				}
 			}
 		}
 
 		$attachmentTuplesForArchive = [];
 		foreach ($preparedSendPaths as $p) {
-			if (is_string($p) && is_readable($p)) {
+			if (is_array($p) && !empty($p['content'])) {
+				$attachmentTuplesForArchive[] = [
+					'content' => $p['content'],
+					'name' => $p['name'] ?? 'attachment',
+				];
+			} elseif (is_string($p) && is_readable($p)) {
 				$attachmentTuplesForArchive[] = ['path' => $p, 'name' => basename($p)];
 			}
 		}

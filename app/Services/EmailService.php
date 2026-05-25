@@ -50,7 +50,14 @@ class EmailService
 
                 if (!empty($attachments)) {
                     foreach ($attachments as $attachment) {
-                        if (file_exists($attachment)) {
+                        if (is_array($attachment) && !empty($attachment['content'])) {
+                            $name = $attachment['name'] ?? 'attachment';
+                            $message->attachData(
+                                $attachment['content'],
+                                $name,
+                                ['mime' => $attachment['mime'] ?? $this->guessAttachmentMimeType($name)]
+                            );
+                        } elseif (is_string($attachment) && file_exists($attachment)) {
                             $message->attach($attachment);
                         }
                     }
@@ -61,5 +68,23 @@ class EmailService
         } catch (\Exception $e) {
             throw new \Exception('Email could not be sent: ' . $e->getMessage());
         }
+    }
+
+    protected function guessAttachmentMimeType(string $filename): string
+    {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $map = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+
+        return $map[$ext] ?? 'application/octet-stream';
     }
 }
