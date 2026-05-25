@@ -5911,18 +5911,21 @@ public function getInvoiceAmount(Request $request)
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
                 "Best regards,<br>Bansal Immigration";
 
-            // Download PDF from S3 to temporary file
             $pdfContent = file_get_contents($pdfUrl);
-            $tempFilePath = storage_path('app/temp_invoice_' . $id . '.pdf');
-            file_put_contents($tempFilePath, $pdfContent);
+            if ($pdfContent === false || $pdfContent === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to download invoice PDF'
+                ], 500);
+            }
 
-            // Send email using InvoiceEmailManager
+            // Send email using InvoiceEmailManager (in-memory attachment — no temp file)
             $invoiceArray = [
                 'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
                 'name' => 'Bansal Immigration',
                 'subject' => $subject,
-                'file' => $tempFilePath,
+                'file_content' => $pdfContent,
                 'file_name' => 'Invoice-' . $invoiceNo . '.pdf',
                 'content' => $emailContent
             ];
@@ -5939,9 +5942,6 @@ public function getInvoiceAmount(Request $request)
             $objs->task_status = 0;
             $objs->pin = 0;
             $objs->save();
-
-            // Clean up temp file after a delay (queued job will handle sending)
-            // The file will be cleaned up by Laravel's temp file cleanup
 
             return response()->json([
                 'status' => true,
@@ -6042,18 +6042,21 @@ public function getInvoiceAmount(Request $request)
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
                 "Best regards,<br>Bansal Immigration";
 
-            // Download PDF from S3 to temporary file
             $pdfContent = file_get_contents($pdfUrl);
-            $tempFilePath = storage_path('app/temp_client_receipt_' . $id . '.pdf');
-            file_put_contents($tempFilePath, $pdfContent);
+            if ($pdfContent === false || $pdfContent === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to download receipt PDF'
+                ], 500);
+            }
 
-            // Send email using InvoiceEmailManager
+            // Send email using InvoiceEmailManager (in-memory attachment — no temp file)
             $invoiceArray = [
                 'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
                 'name' => 'Bansal Immigration',
                 'subject' => $subject,
-                'file' => $tempFilePath,
+                'file_content' => $pdfContent,
                 'file_name' => 'Receipt-' . $receiptNo . '.pdf',
                 'content' => $emailContent
             ];
@@ -6170,18 +6173,21 @@ public function getInvoiceAmount(Request $request)
                 "If you have any questions, please don't hesitate to contact us.<br><br>" .
                 "Best regards,<br>Bansal Immigration";
 
-            // Download PDF from S3 to temporary file
             $pdfContent = file_get_contents($pdfUrl);
-            $tempFilePath = storage_path('app/temp_office_receipt_' . $id . '.pdf');
-            file_put_contents($tempFilePath, $pdfContent);
+            if ($pdfContent === false || $pdfContent === '') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to download receipt PDF'
+                ], 500);
+            }
 
-            // Send email using InvoiceEmailManager
+            // Send email using InvoiceEmailManager (in-memory attachment — no temp file)
             $invoiceArray = [
                 'view' => 'emails.template',
                 'from' => 'invoice@bansalimmigration.com.au',
                 'name' => 'Bansal Immigration',
                 'subject' => $subject,
-                'file' => $tempFilePath,
+                'file_content' => $pdfContent,
                 'file_name' => 'Office-Receipt-' . $receiptNo . '.pdf',
                 'content' => $emailContent
             ];

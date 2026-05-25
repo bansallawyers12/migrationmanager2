@@ -28,12 +28,26 @@ class InvoiceEmailManager extends Mailable
      */
      public function build()
      {
-         return $this->view($this->array['view'])
-                     ->from($this->array['from'], $this->array['name'])
-                     ->subject($this->array['subject'])
-                     ->attach($this->array['file'],[
-                         'as' => $this->array['file_name'],
-                         'mime' => 'application/pdf'
-                     ]);
+         $message = $this->view($this->array['view'])
+             ->from($this->array['from'], $this->array['name'])
+             ->subject($this->array['subject']);
+
+         $attachOptions = [
+             'mime' => 'application/pdf',
+         ];
+
+         if (!empty($this->array['file_content'])) {
+             $message->attachData(
+                 $this->array['file_content'],
+                 $this->array['file_name'],
+                 $attachOptions
+             );
+         } elseif (!empty($this->array['file']) && is_file($this->array['file'])) {
+             $message->attach($this->array['file'], array_merge($attachOptions, [
+                 'as' => $this->array['file_name'],
+             ]));
+         }
+
+         return $message;
      }
  }
