@@ -794,21 +794,7 @@ class PublicDocumentController extends Controller
 
         try {
             $document = Document::findOrFail($id);
-            
-            // Check if cached image already exists
-            $cachedImagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
-            if (file_exists($cachedImagePath) && filesize($cachedImagePath) > 0) {
-                Log::info('Serving cached page image', [
-                    'document_id' => $id,
-                    'page' => $page,
-                    'cached_path' => $cachedImagePath
-                ]);
-                return response()->file($cachedImagePath, [
-                    'Content-Type' => 'image/png',
-                    'Cache-Control' => 'public, max-age=86400', // Cache for 24 hours
-                ]);
-            }
-            
+
             $url = $document->myfile;
             $pdfPath = null;
             $isLocalFile = false;
@@ -911,36 +897,26 @@ class PublicDocumentController extends Controller
                             $imageData = substr($imageData, strlen('data:image/png;base64,'));
                         }
                         
-                        // Decode base64 to image bytes
+                        // Decode base64 to image bytes and stream directly (no disk cache)
                         $imageBytes = base64_decode($imageData);
-                        
-                        // Ensure cache directory exists
-                        $cacheDir = storage_path('app/public/pdf_pages');
-                        if (!file_exists($cacheDir)) {
-                            mkdir($cacheDir, 0755, true);
-                        }
-                        
-                        // Save to cache directory for reuse
-                        $imagePath = storage_path('app/public/pdf_pages/doc_' . $id . '_page_' . $page . '.png');
-                        file_put_contents($imagePath, $imageBytes);
-                        
-                        // Verify image was saved successfully
-                        if (file_exists($imagePath)) {
+
+                        if ($imageBytes === false || $imageBytes === '') {
+                            Log::error('Failed to decode page image', [
+                                'document_id' => $id,
+                                'page' => $page,
+                            ]);
+                        } else {
                             Log::info('Page image generated using Python service', [
                                 'document_id' => $id,
                                 'page' => $page,
-                                'image_path' => $imagePath
                             ]);
-                            
-                            // Use response()->file() instead of response($imageBytes)
-                            return response()->file($imagePath);
-                        }
 
-                        Log::error('Failed to save image file', [
-                            'document_id' => $id,
-                            'page' => $page,
-                            'image_path' => $imagePath
-                        ]);
+                            return response($imageBytes, 200, [
+                                'Content-Type' => 'image/png',
+                                'Content-Length' => strlen($imageBytes),
+                                'Cache-Control' => 'public, max-age=86400',
+                            ]);
+                        }
                     }
                 }
 
