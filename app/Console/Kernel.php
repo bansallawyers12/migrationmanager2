@@ -111,9 +111,9 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(60)
             ->appendOutputTo(storage_path('logs/retry-signed-s3.log'));
 
-        // Signature PNGs - retry failed local uploads to S3 daily at 6 PM (new docs that fell back to public/signatures)
+        // Signature PNGs - retry failed local uploads to S3 daily at 6:15 PM (new docs that fell back to public/signatures)
         $schedule->command('signatures:retry-local-png-to-s3')
-            ->dailyAt('18:00')
+            ->dailyAt('18:15')
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(60)
             ->appendOutputTo(storage_path('logs/retry-signature-png-s3.log'));
