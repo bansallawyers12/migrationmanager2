@@ -660,7 +660,7 @@ class ClientPortalMessageController extends Controller
      * Get Messages
      * GET /api/messages
      * 
-     * Retrieves messages for the authenticated user with recipients info
+     * Retrieves messages for the authenticated user with recipients info (newest first)
      */
     public function getMessages(Request $request)
     {
@@ -702,8 +702,9 @@ class ClientPortalMessageController extends Controller
             // Get total count
             $totalMessages = $query->count();
 
-            // Get messages with pagination
-            $messageIds = $query->orderBy('messages.created_at', 'asc')
+            // Get messages with pagination (newest first)
+            $messageIds = $query->orderBy('messages.created_at', 'desc')
+                ->orderBy('messages.id', 'desc')
                 ->offset(($page - 1) * $limit)
                 ->limit($limit)
                 ->pluck('messages.id');
@@ -711,7 +712,8 @@ class ClientPortalMessageController extends Controller
             // Get full message details with recipients
             $messages = DB::table('messages')
                 ->whereIn('messages.id', $messageIds)
-                ->orderBy('messages.created_at', 'asc')
+                ->orderBy('messages.created_at', 'desc')
+                ->orderBy('messages.id', 'desc')
                 ->get()
                 ->map(function ($msg) use ($clientId) {
                     // Get all recipients for this message
