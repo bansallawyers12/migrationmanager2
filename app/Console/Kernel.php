@@ -102,6 +102,13 @@ class Kernel extends ConsoleKernel
             ->at('02:00')
             ->timezone('Australia/Melbourne')
             ->appendOutputTo(storage_path('logs/signature-archive.log'));
+
+        // Signed documents - retry local signed PDF uploads to S3 daily at 6 PM
+        $schedule->command('documents:retry-local-signed-to-s3')
+            ->dailyAt('18:00')
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(60)
+            ->appendOutputTo(storage_path('logs/retry-signed-s3.log'));
         
         // Signature Management - Send auto-reminders daily at 10 AM
         /*$schedule->command('signatures:send-auto-reminders --days=7')
