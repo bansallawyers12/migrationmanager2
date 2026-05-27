@@ -74,6 +74,8 @@
                         ", [$SelectedClientId, $client_selected_matter_id1, $SelectedClientId])
                         ->get();
 
+                    $firstNominationDocCatId = optional($nominationDocCatList->first())->id;
+
                     $nominationMatterLmtRow = null;
                     $nominationMatterHasLmt = false;
                     if (($fetchedData->is_company ?? false) && $client_selected_matter_id1) {
@@ -123,7 +125,7 @@
                                 <?php foreach ($nominationDocCatList as $catVal): ?>
                                     <?php
                                     $id = $catVal->id;
-                                    $isActive = $id == 1 ? 'active' : '';
+                                    $isActive = ($firstNominationDocCatId && $id == $firstNominationDocCatId) ? 'active' : '';
                                     $folderName = $id;
                                     $isClientGenerated = $catVal->client_matter_id !== null;
                                     ?>
@@ -470,7 +472,7 @@
                         <div class="subtab6-content">
                             <?php foreach ($nominationDocCatList as $catVal):
                                 $id = $catVal->id;
-                                $isActive = $id == 1 ? 'active' : '';
+                                $isActive = ($firstNominationDocCatId && $id == $firstNominationDocCatId) ? 'active' : '';
                                 $folderName = $id;
                                 ?>
                                 <div class="subtab6-pane <?= $isActive ?>" id="<?= $id ?>-subtab6">
