@@ -66,6 +66,18 @@ class SignedDocumentS3PathResolver
         return $prefix . '/' . self::resolveDocType($document) . '/signed/' . $document->id . '_signed.pdf';
     }
 
+    public static function resolveSignaturePngS3Key(Document $document, string $filename): ?string
+    {
+        $prefix = self::resolvePrefix($document);
+        if ($prefix === null || $prefix === '') {
+            return null;
+        }
+
+        $basename = basename(ltrim($filename, '/'));
+
+        return $prefix . '/' . self::resolveDocType($document) . '/signatures/' . $basename;
+    }
+
     /**
      * Parse {prefix}/{doc_type}/... from an S3 URL or key stored in myfile.
      *

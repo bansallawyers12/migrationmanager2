@@ -34,6 +34,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\SendSignatureReminders',
         '\App\Console\Commands\BackfillVisaSignedDocumentRows',
         '\App\Console\Commands\RetryLocalSignedDocumentsToS3',
+        '\App\Console\Commands\RetryLocalSignaturePngsToS3',
         
         // SQL Migration Tools
         //'\App\Console\Commands\FixMySqlDumpForPostgres', // Command file does not exist
@@ -109,6 +110,13 @@ class Kernel extends ConsoleKernel
             ->timezone('Australia/Melbourne')
             ->withoutOverlapping(60)
             ->appendOutputTo(storage_path('logs/retry-signed-s3.log'));
+
+        // Signature PNGs - retry local public-folder uploads to S3 daily at 6:15 PM
+        $schedule->command('signatures:retry-local-png-to-s3')
+            ->dailyAt('18:15')
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(60)
+            ->appendOutputTo(storage_path('logs/retry-signature-png-s3.log'));
         
         // Signature Management - Send auto-reminders daily at 10 AM
         /*$schedule->command('signatures:send-auto-reminders --days=7')
