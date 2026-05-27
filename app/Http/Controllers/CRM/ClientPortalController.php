@@ -27,6 +27,7 @@ use App\Models\ClientTestScore;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientVisaCountry;
 use App\Services\ClientPortalActionNoteService;
+use App\Services\MessageAttachmentStorageService;
 use App\Models\WorkflowStage;
 use App\Models\Message;
 use App\Models\MessageRecipient;
@@ -6051,6 +6052,7 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 					$allowedImages = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 					$allowedDocs = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain', 'text/csv'];
 					$allowedMimes = array_merge($allowedImages, $allowedDocs);
+					$attachmentStorage = app(MessageAttachmentStorageService::class);
 
 					foreach ($files as $file) {
 						if (!$file->isValid()) continue;
@@ -6060,7 +6062,8 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 						$type = in_array($mime, $allowedImages) ? 'image' : 'document';
 						$ext = $file->getClientOriginalExtension() ?: pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
 						$safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . uniqid() . '.' . ($ext ?: 'bin');
-						$path = $file->storeAs('message-attachments/' . date('Y/m'), $safeName, 'public');
+						$path = $attachmentStorage->storeUploadedFile($file, $safeName);
+						if (!$path) continue;
 
 						$attInsertId = DB::table('message_attachments')->insertGetId([
 							'message_id' => $messageId,
@@ -6290,7 +6293,8 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 			abort(404, 'Message not found');
 		}
 
-		if (!Storage::disk('public')->exists($att->path)) {
+		$storage = app(MessageAttachmentStorageService::class);
+		if (!$storage->exists($att->path)) {
 			Log::warning('Message attachment file not found', ['path' => $att->path, 'id' => $id]);
 			abort(404, 'File not found');
 		}
@@ -6298,8 +6302,11 @@ $docType = $docList ? $docList->cp_checklist_name : ($doc->file_name ?? 'Documen
 		$mime = $att->mime_type ?? 'application/octet-stream';
 		$filename = $att->original_filename ?? $att->filename ?? 'download';
 
-		return response()->streamDownload(function () use ($att) {
-			echo Storage::disk('public')->get($att->path);
+		return response()->streamDownload(function () use ($att, $storage) {
+			$content = $storage->get($att->path);
+			if ($content !== null) {
+				echo $content;
+			}
 		}, $filename, [
 			'Content-Type' => $mime,
 			'Content-Disposition' => 'attachment; filename="' . addslashes($filename) . '"',

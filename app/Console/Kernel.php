@@ -35,6 +35,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\BackfillVisaSignedDocumentRows',
         '\App\Console\Commands\RetryLocalSignedDocumentsToS3',
         '\App\Console\Commands\RetryLocalSignaturePngsToS3',
+        '\App\Console\Commands\MigrateMessageAttachmentsToS3',
         
         // SQL Migration Tools
         //'\App\Console\Commands\FixMySqlDumpForPostgres', // Command file does not exist
