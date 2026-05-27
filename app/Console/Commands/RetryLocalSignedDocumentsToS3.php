@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Document;
+use App\Services\SignedDocumentS3PathResolver;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -67,16 +67,13 @@ class RetryLocalSignedDocumentsToS3 extends Command
                 continue;
             }
 
-            $clientId = $this->resolveClientId($document);
-            $docType = $this->resolveDocType($document);
+            $s3Key = SignedDocumentS3PathResolver::resolveSignedPdfS3Key($document);
 
-            if ($clientId === null) {
-                $this->warn("Skipping {$basename}: document {$documentId} has no resolvable client id.");
+            if ($s3Key === null) {
+                $this->warn("Skipping {$basename}: document {$documentId} has no resolvable S3 path.");
                 $stats['skipped']++;
                 continue;
             }
-
-            $s3Key = $clientId . '/' . $docType . '/signed/' . $documentId . '_signed.pdf';
             $localFullPath = storage_path('app/public/' . $relativePath);
 
             if (!is_file($localFullPath) || !is_readable($localFullPath)) {
@@ -232,31 +229,6 @@ class RetryLocalSignedDocumentsToS3 extends Command
         $id = (int) $matches[1];
 
         return $id > 0 ? $id : null;
-    }
-
-    private function resolveClientId(Document $document): int|string|null
-    {
-        if (!$document->client_id) {
-            return null;
-        }
-
-        $admin = DB::table('admins')
-            ->select('client_id')
-            ->where('id', '=', $document->client_id)
-            ->first();
-
-        if ($admin && $admin->client_id) {
-            return $admin->client_id;
-        }
-
-        return $document->client_id;
-    }
-
-    private function resolveDocType(Document $document): string
-    {
-        $docType = trim((string) ($document->doc_type ?? ''));
-
-        return $docType !== '' ? $docType : 'ad_hoc_documents';
     }
 
     private function linkPointsToLocalSignedFile(?string $link, int $documentId): bool
