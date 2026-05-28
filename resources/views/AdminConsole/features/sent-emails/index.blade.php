@@ -188,7 +188,7 @@
                                             </td>
                                             <td>
                                                 @if($row['client_id'])
-                                                    <a href="/crm/clients/{{ $row['client_id'] }}" target="_blank"
+                                                    <a href="{{ route('clients.detail', $row['client_id']) }}" target="_blank"
                                                        title="{{ $row['client_name'] }}">
                                                         {{ \Illuminate\Support\Str::limit($row['client_name'], 22) }}
                                                     </a>

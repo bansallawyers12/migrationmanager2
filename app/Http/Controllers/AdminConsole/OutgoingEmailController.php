@@ -24,7 +24,7 @@ class OutgoingEmailController extends Controller
         $stats = $this->searchService->getDashboardStats();
 
         $recent = $this->searchService->baseQuery()
-            ->with(['uploader:id,first_name,last_name', 'client:id,first_name,last_name,client_id,type'])
+            ->with(['uploader:id,first_name,last_name', 'client:id,first_name,last_name,client_id,type', 'attachments'])
             ->orderByDesc('created_at')
             ->limit(10)
             ->get()
@@ -48,7 +48,7 @@ class OutgoingEmailController extends Controller
         if ($request->hasAny(['search', 'date_from', 'date_to', 'sender_id', 'from_address', 'client_id', 'type', 'has_attachments', 'filter'])) {
             $query = $this->searchService->baseQuery();
             $query = $this->searchService->applyFilters($query, $request);
-            $query->with(['uploader:id,first_name,last_name', 'client:id,first_name,last_name,client_id,type'])
+            $query->with(['uploader:id,first_name,last_name', 'client:id,first_name,last_name,client_id,type', 'attachments'])
                   ->orderByDesc('created_at');
 
             $paginator = $query->paginate(50)->withQueryString();
@@ -112,7 +112,7 @@ class OutgoingEmailController extends Controller
             'client_id'    => $email->client_id,
             'client_ref'   => $email->client->client_id ?? null,
             'type'         => $email->type,
-            'attach_count' => $email->attachments ? $email->attachments->count() : 0,
+            'attach_count' => $email->getFileAttachmentCollection()->count(),
         ];
     }
 }

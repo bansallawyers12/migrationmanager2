@@ -53,7 +53,7 @@
                                     {{ ucfirst($email->type ?? 'client') }}
                                 </span>
                                 <small class="text-muted ml-2">
-                                    <i class="fas fa-info-circle" title="Status note"
+                                    <i class="fas fa-info-circle"
                                        data-toggle="tooltip"
                                        title="Email was logged by the CRM. Delivery confirmation requires SendGrid webhook integration."></i>
                                     Logged
@@ -108,7 +108,7 @@
                                     @if($email->client->client_id)
                                         <small class="text-muted">({{ $email->client->client_id }})</small>
                                     @endif
-                                    <a href="/crm/clients/{{ $email->client_id }}" target="_blank"
+                                    <a href="{{ route('clients.detail', $email->client_id) }}" target="_blank"
                                        class="btn btn-xs btn-outline-primary ml-2" style="font-size:0.75rem;padding:1px 6px;">
                                         <i class="fas fa-external-link-alt"></i> Open CRM
                                     </a>
