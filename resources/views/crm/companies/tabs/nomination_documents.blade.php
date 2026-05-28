@@ -201,7 +201,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="nomination_lmt_notes">Notes</label>
-                                            <textarea id="nomination_lmt_notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                                            <textarea id="nomination_lmt_notes" class="nomination-lmt-notes-input" rows="3" placeholder="Optional notes"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="nomination_lmt_password">Password</label>
@@ -224,14 +224,30 @@
                             </div>
                         </div>
                         <style>
-                            /* Override theme rule textarea.form-control{height:64px!important} so drag-resize works */
-                            #nominationLmtModal textarea#nomination_lmt_notes.form-control {
-                                resize: vertical !important;
-                                overflow-y: auto !important;
-                                min-height: 64px !important;
-                                height: 64px;
+                            /* Avoid global textarea.form-control{height:64px!important} so drag-resize works */
+                            #nominationLmtModal textarea.nomination-lmt-notes-input {
+                                display: block;
+                                width: 100%;
+                                padding: 0.375rem 0.75rem;
+                                font-size: 1rem;
+                                font-weight: 400;
+                                line-height: 1.5;
+                                color: #495057;
+                                background-color: #fff;
+                                border: 1px solid #ced4da;
+                                border-radius: 0.25rem;
+                                min-height: 64px;
+                                resize: vertical;
+                                overflow-y: auto;
                                 max-height: 60vh;
                                 box-sizing: border-box;
+                            }
+                            #nominationLmtModal textarea.nomination-lmt-notes-input:focus {
+                                color: #495057;
+                                background-color: #fff;
+                                border-color: #80bdff;
+                                outline: 0;
+                                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
                             }
                         </style>
                         <script>
