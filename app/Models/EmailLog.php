@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\ClientMatter;
 
 class EmailLog extends Authenticatable
 {
@@ -110,6 +111,14 @@ class EmailLog extends Authenticatable
     public function client(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'client_id');
+    }
+
+    /**
+     * Get the client matter this email belongs to.
+     */
+    public function clientMatter(): BelongsTo
+    {
+        return $this->belongsTo(ClientMatter::class, 'client_matter_id');
     }
 
     /**

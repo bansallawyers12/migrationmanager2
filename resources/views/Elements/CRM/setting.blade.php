@@ -91,6 +91,15 @@
 			<li class="{{$smstemplatesclasstype}}"><a class="nav-link" href="{{route('adminconsole.features.sms.templates.index')}}">SMS Templates</a></li>
 
 			<?php
+			// Sent Emails — outgoing email log
+			$sentEmailsClasstype = '';
+			if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.sent-emails.')){
+				$sentEmailsClasstype = 'active';
+			}
+			?>
+			<li class="{{$sentEmailsClasstype}}"><a class="nav-link" href="{{route('adminconsole.features.sent-emails.dashboard')}}">Sent Emails</a></li>
+
+			<?php
 			// E-Signature Management menu - Available for all admin users
 			$esignatureclasstype = '';
 			if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.esignature.')){

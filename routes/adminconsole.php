@@ -23,6 +23,7 @@ use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
 use App\Http\Controllers\AdminConsole\ESignatureController;
 use App\Http\Controllers\AdminConsole\EmailLabelController;
 use App\Http\Controllers\AdminConsole\ActivitySearchController;
+use App\Http\Controllers\AdminConsole\OutgoingEmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -146,6 +147,13 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
             Route::get('/templates-active', [SmsTemplateController::class, 'active'])->name('templates.active');
         });
         
+        // Sent Emails — outgoing email log & search
+        Route::prefix('sent-emails')->name('sent-emails.')->group(function () {
+            Route::get('/dashboard', [OutgoingEmailController::class, 'dashboard'])->name('dashboard');
+            Route::get('/',          [OutgoingEmailController::class, 'index'])->name('index');
+            Route::get('/{id}',      [OutgoingEmailController::class, 'show'])->name('show');
+        });
+
         // E-Signature Management routes
         Route::prefix('esignature')->name('esignature.')->group(function() {
             Route::get('/', [ESignatureController::class, 'index'])->name('index');

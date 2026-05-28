@@ -1,0 +1,258 @@
+@extends('layouts.crm_client_detail')
+@section('title', 'Sent Emails')
+
+@section('styles')
+<style>
+    .filter-card { margin-bottom: 1.5rem; }
+    .filter-card .card-header { cursor: pointer; user-select: none; }
+    .sent-emails-table th { white-space: nowrap; }
+    .badge-client  { background-color: #3498db; color: #fff; }
+    .badge-lead    { background-color: #f39c12; color: #fff; }
+    .badge-agent   { background-color: #8e44ad; color: #fff; }
+    .truncate-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .attach-badge  { font-size: 0.75rem; }
+    .coverage-notice { border-left: 4px solid #f39c12; }
+</style>
+@endsection
+
+@section('content')
+<div class="main-content">
+    <section class="section">
+        <div class="section-body">
+            <div class="server-error">@include('../Elements/flash-message')</div>
+
+            <div class="row">
+                <div class="col-3 col-md-3 col-lg-3">
+                    @include('../Elements/CRM/setting')
+                </div>
+
+                <div class="col-9 col-md-9 col-lg-9">
+
+                    {{-- Page header --}}
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4 class="mb-0"><i class="fas fa-paper-plane"></i> Sent Emails</h4>
+                        <a href="{{ route('adminconsole.features.sent-emails.dashboard') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-chart-bar"></i> Dashboard
+                        </a>
+                    </div>
+
+                    {{-- Coverage notice --}}
+                    <div class="alert alert-warning coverage-notice" role="alert" style="font-size:0.875rem;">
+                        <i class="fas fa-info-circle"></i>
+                        Showing CRM-logged outgoing emails only. System-generated emails (invoices, appointment reminders, visa expiry notices, etc.) are not included here.
+                    </div>
+
+                    {{-- Filters --}}
+                    <div class="card filter-card">
+                        <div class="card-header" data-toggle="collapse" data-target="#filterBody" aria-expanded="true">
+                            <h4 class="mb-0"><i class="fas fa-filter"></i> Search &amp; Filters</h4>
+                        </div>
+                        <div class="collapse show" id="filterBody">
+                            <div class="card-body">
+                                <form action="{{ route('adminconsole.features.sent-emails.index') }}" method="GET" id="filterForm">
+                                    <input type="hidden" name="filter" value="1">
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label"><i class="fas fa-search"></i> Subject / From / To</label>
+                                            <input type="text" name="search" class="form-control"
+                                                   placeholder="Search subject, from address or recipient…"
+                                                   value="{{ request('search') }}">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label"><i class="fas fa-calendar"></i> Date From</label>
+                                            <input type="date" name="date_from" class="form-control"
+                                                   value="{{ request('date_from') }}">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label"><i class="fas fa-calendar"></i> Date To</label>
+                                            <input type="date" name="date_to" class="form-control"
+                                                   value="{{ request('date_to') }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label"><i class="fas fa-user-tie"></i> Sent By</label>
+                                            <select name="sender_id" class="form-control mm-select">
+                                                <option value="">All Staff</option>
+                                                @foreach($staffList as $staff)
+                                                    <option value="{{ $staff->id }}"
+                                                        {{ request('sender_id') == $staff->id ? 'selected' : '' }}>
+                                                        {{ $staff->first_name }} {{ $staff->last_name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label"><i class="fas fa-at"></i> From Address</label>
+                                            <input type="text" name="from_address" class="form-control"
+                                                   placeholder="e.g. admin@domain.com.au"
+                                                   value="{{ request('from_address') }}">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label"><i class="fas fa-user"></i> Client / Lead</label>
+                                            <select name="client_id" id="se_client_id" class="form-control mm-select-ajax">
+                                                <option value="">All Clients &amp; Leads</option>
+                                                @if($selectedClient)
+                                                    <option value="{{ $selectedClient->id }}" selected>
+                                                        {{ $selectedClient->first_name }} {{ $selectedClient->last_name }}
+                                                    </option>
+                                                @elseif(request('client_id'))
+                                                    <option value="{{ request('client_id') }}" selected>
+                                                        {{ request('client_name', 'Selected') }}
+                                                    </option>
+                                                @endif
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label"><i class="fas fa-tag"></i> Recipient Type</label>
+                                            <select name="type" class="form-control mm-select">
+                                                <option value="">All Types</option>
+                                                <option value="client"  {{ request('type') === 'client'  ? 'selected' : '' }}>Client</option>
+                                                <option value="lead"    {{ request('type') === 'lead'    ? 'selected' : '' }}>Lead</option>
+                                                <option value="agent"   {{ request('type') === 'agent'   ? 'selected' : '' }}>Agent</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label"><i class="fas fa-paperclip"></i> Has Attachments</label>
+                                            <select name="has_attachments" class="form-control mm-select">
+                                                <option value="">Any</option>
+                                                <option value="1" {{ request('has_attachments') === '1' ? 'selected' : '' }}>Yes</option>
+                                                <option value="0" {{ request('has_attachments') === '0' ? 'selected' : '' }}>No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                                            <button type="submit" class="btn btn-primary mr-2">
+                                                <i class="fas fa-search"></i> Search
+                                            </button>
+                                            <a href="{{ route('adminconsole.features.sent-emails.index') }}" class="btn btn-secondary">
+                                                <i class="fas fa-redo"></i> Reset
+                                            </a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Results --}}
+                    @if($paginator !== null)
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0">
+                                <i class="fas fa-list"></i> Results
+                                <span class="badge badge-primary ml-2">{{ number_format($total) }}</span>
+                            </h4>
+                        </div>
+                        <div class="card-body p-0">
+                            @if($emails->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 sent-emails-table">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Date / Time</th>
+                                            <th>Sent By</th>
+                                            <th>From</th>
+                                            <th>To</th>
+                                            <th>Subject</th>
+                                            <th>Client</th>
+                                            <th>Type</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($emails as $row)
+                                        <tr>
+                                            <td style="white-space:nowrap;">
+                                                <small>{{ \Carbon\Carbon::parse($row['created_at'])->format('d M Y') }}</small><br>
+                                                <small class="text-muted">{{ \Carbon\Carbon::parse($row['created_at'])->format('H:i') }}</small>
+                                            </td>
+                                            <td>{{ $row['sent_by'] }}</td>
+                                            <td class="truncate-cell" title="{{ $row['from_mail'] }}">
+                                                {{ $row['from_mail'] }}
+                                            </td>
+                                            <td class="truncate-cell" title="{{ $row['to_mail'] }}">
+                                                {{ $row['to_mail'] }}
+                                            </td>
+                                            <td class="truncate-cell" title="{{ $row['subject'] }}">
+                                                {{ $row['subject'] }}
+                                                @if($row['attach_count'] > 0)
+                                                    <span class="badge badge-secondary attach-badge ml-1">
+                                                        <i class="fas fa-paperclip"></i> {{ $row['attach_count'] }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($row['client_id'])
+                                                    <a href="/crm/clients/{{ $row['client_id'] }}" target="_blank"
+                                                       title="{{ $row['client_name'] }}">
+                                                        {{ \Illuminate\Support\Str::limit($row['client_name'], 22) }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-{{ $row['type'] === 'client' ? 'primary' : ($row['type'] === 'lead' ? 'warning' : 'info') }}">
+                                                    {{ ucfirst($row['type'] ?? '—') }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('adminconsole.features.sent-emails.show', $row['id']) }}"
+                                                   class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if($paginator && $paginator->hasPages())
+                            <div class="card-footer d-flex justify-content-center">
+                                {{ $paginator->links() }}
+                            </div>
+                            @endif
+
+                            @else
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No sent emails found matching your criteria.</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @else
+                    <div class="card">
+                        <div class="card-body text-center text-muted py-5">
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <p class="lead">Use the filters above to search sent emails.</p>
+                        </div>
+                    </div>
+                    @endif
+
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+// Collapse filters after a search has been run
+@if($paginator !== null && request()->hasAny(['search','date_from','date_to','sender_id','from_address','client_id','type','has_attachments']))
+document.addEventListener('DOMContentLoaded', function () {
+    var filterBody = document.getElementById('filterBody');
+    if (filterBody) {
+        $(filterBody).collapse('show');
+    }
+});
+@endif
+</script>
+@endsection
