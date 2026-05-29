@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EmailLog;
+use App\Models\EmailLogEvent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -20,13 +21,31 @@ class SendGridWebhookService
         'send_failed' => 50,
     ];
 
+    private const DELIVERY_EVENT_TYPES = [
+        'processed',
+        'delivered',
+        'deferred',
+        'blocked',
+        'bounced',
+        'dropped',
+    ];
+
+    private const ENGAGEMENT_EVENT_TYPES = [
+        'open',
+        'click',
+        'spamreport',
+        'unsubscribe',
+        'group_unsubscribe',
+        'group_resubscribe',
+    ];
+
     /**
      * @param  array<int, array<string, mixed>>  $events
-     * @return array{processed: int, updated: int, skipped: int}
+     * @return array{processed: int, updated: int, skipped: int, events_recorded: int}
      */
     public function processEvents(array $events): array
     {
-        $stats = ['processed' => 0, 'updated' => 0, 'skipped' => 0];
+        $stats = ['processed' => 0, 'updated' => 0, 'skipped' => 0, 'events_recorded' => 0];
 
         foreach ($events as $event) {
             if (! is_array($event)) {
@@ -40,13 +59,11 @@ class SendGridWebhookService
                 continue;
             }
 
-            $mapped = $this->mapEventToStatus($event);
-            if ($mapped === null) {
+            $eventType = $this->normalizeEventType($event);
+            if ($eventType === null) {
                 $stats['skipped']++;
                 continue;
             }
-
-            $stats['processed']++;
 
             $emailLog = EmailLog::find($emailLogId);
             if (! $emailLog) {
@@ -61,14 +78,51 @@ class SendGridWebhookService
                 continue;
             }
 
-            if ($this->applyStatusUpdate($emailLog, $mapped, $event)) {
+            $stats['processed']++;
+
+            $eventRecorded = $this->recordEvent($emailLog, $eventType, $event);
+            if ($eventRecorded) {
+                $stats['events_recorded']++;
+            }
+
+            $parentUpdated = false;
+            if (in_array($eventType, self::DELIVERY_EVENT_TYPES, true)) {
+                $mapped = $this->mapDeliveryEventToStatus($eventType, $event);
+                $parentUpdated = $this->applyStatusUpdate($emailLog, $mapped, $event);
+            } elseif (in_array($eventType, self::ENGAGEMENT_EVENT_TYPES, true)) {
+                $parentUpdated = $this->applyEngagementUpdate($emailLog, $eventType, $event);
+            }
+
+            if ($parentUpdated) {
                 $stats['updated']++;
-            } else {
+            } elseif (! $eventRecorded && ! $parentUpdated) {
                 $stats['skipped']++;
             }
         }
 
         return $stats;
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     */
+    private function normalizeEventType(array $event): ?string
+    {
+        $raw = strtolower((string) ($event['event'] ?? ''));
+
+        if ($raw === 'bounce') {
+            $bounceType = strtolower((string) ($event['type'] ?? 'bounce'));
+
+            return $bounceType === 'blocked' ? 'blocked' : 'bounced';
+        }
+
+        if ($raw === 'spam report' || $raw === 'spamreport') {
+            return 'spamreport';
+        }
+
+        $supported = array_merge(self::DELIVERY_EVENT_TYPES, self::ENGAGEMENT_EVENT_TYPES);
+
+        return in_array($raw, $supported, true) ? $raw : null;
     }
 
     /**
@@ -96,36 +150,19 @@ class SendGridWebhookService
     }
 
     /**
-     * @param  array<string, mixed>  $event
-     * @return array{status: string, reason: ?string}|null
+     * @return array{status: string, reason: ?string}
      */
-    private function mapEventToStatus(array $event): ?array
+    private function mapDeliveryEventToStatus(string $eventType, array $event): array
     {
-        $eventType = strtolower((string) ($event['event'] ?? ''));
-
         return match ($eventType) {
             'processed' => ['status' => 'processed', 'reason' => null],
             'delivered' => ['status' => 'delivered', 'reason' => null],
             'deferred'  => ['status' => 'deferred', 'reason' => $this->extractReason($event)],
+            'blocked'   => ['status' => 'blocked', 'reason' => $this->extractReason($event)],
+            'bounced'   => ['status' => 'bounced', 'reason' => $this->extractReason($event)],
             'dropped'   => ['status' => 'dropped', 'reason' => $this->extractReason($event)],
-            'bounce'    => $this->mapBounceEvent($event),
-            default     => null,
+            default     => ['status' => 'pending', 'reason' => null],
         };
-    }
-
-    /**
-     * @param  array<string, mixed>  $event
-     * @return array{status: string, reason: ?string}
-     */
-    private function mapBounceEvent(array $event): array
-    {
-        $bounceType = strtolower((string) ($event['type'] ?? 'bounce'));
-
-        if ($bounceType === 'blocked') {
-            return ['status' => 'blocked', 'reason' => $this->extractReason($event)];
-        }
-
-        return ['status' => 'bounced', 'reason' => $this->extractReason($event)];
     }
 
     /**
@@ -143,11 +180,64 @@ class SendGridWebhookService
     }
 
     /**
+     * @param  array<string, mixed>  $event
+     */
+    private function recordEvent(EmailLog $emailLog, string $eventType, array $event): bool
+    {
+        $sendgridEventId = ! empty($event['sg_event_id']) && is_string($event['sg_event_id'])
+            ? mb_substr($event['sg_event_id'], 0, 64)
+            : null;
+
+        if ($sendgridEventId !== null && EmailLogEvent::where('sendgrid_event_id', $sendgridEventId)->exists()) {
+            return false;
+        }
+
+        EmailLogEvent::create([
+            'email_log_id'       => $emailLog->id,
+            'event_type'         => $eventType,
+            'occurred_at'        => $this->eventTimestamp($event) ?? now(),
+            'metadata'           => $this->buildEventMetadata($eventType, $event),
+            'sendgrid_event_id'  => $sendgridEventId,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     * @return array<string, mixed>
+     */
+    private function buildEventMetadata(string $eventType, array $event): array
+    {
+        $metadata = array_filter([
+            'email'          => $event['email'] ?? null,
+            'sg_message_id'  => $event['sg_message_id'] ?? null,
+            'reason'         => $this->extractReason($event),
+        ], static fn ($value) => $value !== null && $value !== '');
+
+        if ($eventType === 'click' && ! empty($event['url']) && is_string($event['url'])) {
+            $metadata['url'] = mb_substr($event['url'], 0, 2048);
+        }
+
+        if (in_array($eventType, ['open', 'click'], true)) {
+            foreach (['useragent', 'ip'] as $key) {
+                if (! empty($event[$key]) && is_string($event[$key])) {
+                    $metadata[$key] = mb_substr($event[$key], 0, 512);
+                }
+            }
+        }
+
+        return $metadata;
+    }
+
+    /**
      * @param  array{status: string, reason: ?string}  $mapped
      * @param  array<string, mixed>  $event
      */
     private function applyStatusUpdate(EmailLog $emailLog, array $mapped, array $event): bool
     {
+        $emailLog->refresh();
+
         $newStatus = $mapped['status'];
         $currentStatus = $emailLog->delivery_status ?: 'pending';
 
@@ -183,9 +273,44 @@ class SendGridWebhookService
         return true;
     }
 
+    /**
+     * @param  array<string, mixed>  $event
+     */
+    private function applyEngagementUpdate(EmailLog $emailLog, string $eventType, array $event): bool
+    {
+        $emailLog->refresh();
+
+        $occurredAt = $this->eventTimestamp($event) ?? now();
+        $updates = [];
+
+        if ($eventType === 'open' && $emailLog->opened_at === null) {
+            $updates['opened_at'] = $occurredAt;
+        }
+
+        if ($eventType === 'click' && $emailLog->clicked_at === null) {
+            $updates['clicked_at'] = $occurredAt;
+        }
+
+        if ($eventType === 'spamreport' && $emailLog->spam_reported_at === null) {
+            $updates['spam_reported_at'] = $occurredAt;
+        }
+
+        if ($updates === []) {
+            return false;
+        }
+
+        $emailLog->update($updates);
+
+        Log::info('SendGrid engagement updated', [
+            'email_log_id' => $emailLog->id,
+            'event'        => $eventType,
+        ]);
+
+        return true;
+    }
+
     private function shouldUpdateStatus(string $current, string $incoming): bool
     {
-        // Webhook events can override a CRM-side send_failed when SendGrid actually processed the mail.
         if ($current === 'send_failed' && $incoming !== 'send_failed') {
             return in_array($incoming, ['processed', 'delivered', 'deferred', 'blocked', 'bounced', 'dropped'], true);
         }
@@ -233,5 +358,32 @@ class SendGridWebhookService
             'bounced', 'dropped', 'send_failed' => 'badge-danger',
             default       => 'badge-secondary',
         };
+    }
+
+    public static function summarizeUserAgent(?string $userAgent): ?string
+    {
+        if ($userAgent === null || $userAgent === '') {
+            return null;
+        }
+
+        $ua = strtolower($userAgent);
+
+        if (str_contains($ua, 'iphone') || str_contains($ua, 'ipad')) {
+            return 'Apple device';
+        }
+        if (str_contains($ua, 'android')) {
+            return 'Android device';
+        }
+        if (str_contains($ua, 'outlook')) {
+            return 'Outlook';
+        }
+        if (str_contains($ua, 'gmail')) {
+            return 'Gmail';
+        }
+        if (str_contains($ua, 'applemail') || str_contains($ua, 'mac os x mail')) {
+            return 'Apple Mail';
+        }
+
+        return 'Email client';
     }
 }

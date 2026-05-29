@@ -80,6 +80,7 @@ class OutgoingEmailController extends Controller
                 'client:id,first_name,last_name,client_id,type',
                 'clientMatter.matter:id,title,nick_name',
                 'attachments',
+                'sendgridEvents',
             ])
             ->findOrFail($id);
 
@@ -118,6 +119,9 @@ class OutgoingEmailController extends Controller
             'delivery_status_badge' => \App\Services\SendGridWebhookService::statusBadgeClass($email->delivery_status),
             'status_reason' => $email->status_reason,
             'delivered_at' => $email->delivered_at,
+            'opened_at' => $email->opened_at,
+            'clicked_at' => $email->clicked_at,
+            'spam_reported_at' => $email->spam_reported_at,
         ];
     }
 }

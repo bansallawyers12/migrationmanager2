@@ -20,6 +20,25 @@
                           margin-bottom: 1rem; }
     .email-delivery-badge { font-size: 0.78rem; font-weight: 600; }
     .delivery-reason { color: #6b4423; font-size: 0.875rem; margin-top: 0.25rem; }
+    .email-event-timeline { position: relative; padding-left: 0.25rem; }
+    .email-event-item { display: flex; gap: 0.85rem; padding-bottom: 1.1rem; position: relative; }
+    .email-event-item:not(:last-child)::before {
+        content: ''; position: absolute; left: 0.95rem; top: 1.75rem; bottom: 0;
+        width: 2px; background: #e9ecef;
+    }
+    .email-event-icon {
+        width: 2rem; height: 2rem; border-radius: 50%; background: #f8f9fa;
+        border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; z-index: 1;
+    }
+    .email-event-icon--sent { background: #e8f4fd; border-color: #b6d9f2; color: #1565c0; }
+    .email-event-body { min-width: 0; flex: 1; }
+    .email-event-label { font-weight: 600; color: #333; }
+    .email-event-time { font-size: 0.82rem; color: #6c757d; }
+    .email-event-detail { font-size: 0.82rem; margin-top: 0.2rem; word-break: break-all; }
+    .email-event-detail--reason { color: #842029; }
+    .email-event-empty { padding: 0.5rem 0 0.25rem 2.85rem; }
+    .email-engagement-icons { font-size: 0.78rem; white-space: nowrap; }
 </style>
 @endsection
 
@@ -57,6 +76,11 @@
                                 @include('partials.email-delivery-status-badge', [
                                     'status' => $email->delivery_status ?? 'pending',
                                     'reason' => $email->status_reason,
+                                ])
+                                @include('partials.email-engagement-icons', [
+                                    'opened_at' => $email->opened_at,
+                                    'clicked_at' => $email->clicked_at,
+                                    'spam_reported_at' => $email->spam_reported_at,
                                 ])
                             </div>
                         </div>
@@ -139,6 +163,31 @@
                                 @endif
                             </dl>
                             @endif
+                        </div>
+                    </div>
+
+                    {{-- Event timeline --}}
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0"><i class="fas fa-stream"></i> Activity Timeline</h4>
+                        </div>
+                        <div class="card-body">
+                            @if($email->spam_reported_at)
+                                <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:0.875rem;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Recipient marked this email as spam on {{ $email->spam_reported_at->format('d M Y, H:i') }}.
+                                </div>
+                            @endif
+                            @include('partials.email-event-timeline', [
+                                'sentAt' => $email->created_at,
+                                'events' => $email->sendgridEvents,
+                                'deliveryStatus' => $email->delivery_status,
+                            ])
+                            <p class="text-muted mb-0 mt-2" style="font-size:0.78rem;">
+                                <i class="fas fa-info-circle"></i>
+                                Delivery events (sent, delivered, bounced, etc.) are tracked via SendGrid.
+                                Open and click tracking are disabled to maximise deliverability and preserve link integrity.
+                            </p>
                         </div>
                     </div>
 

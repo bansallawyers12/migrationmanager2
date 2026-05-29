@@ -53,6 +53,9 @@ class EmailLog extends Authenticatable
         'sendgrid_message_id',
         'delivery_status',
         'delivered_at',
+        'opened_at',
+        'clicked_at',
+        'spam_reported_at',
         'status_reason',
         'thread_id',
         'received_date',
@@ -71,6 +74,9 @@ class EmailLog extends Authenticatable
         'thread_info' => 'array',
         'processed_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'opened_at' => 'datetime',
+        'clicked_at' => 'datetime',
+        'spam_reported_at' => 'datetime',
         'received_date' => 'datetime',
         'last_accessed_at' => 'datetime',
         'mail_is_read' => 'boolean',
@@ -132,6 +138,16 @@ class EmailLog extends Authenticatable
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'user_id');
+    }
+
+    /**
+     * SendGrid webhook events (delivery + engagement timeline).
+     */
+    public function sendgridEvents(): HasMany
+    {
+        return $this->hasMany(EmailLogEvent::class, 'email_log_id')
+            ->orderBy('occurred_at')
+            ->orderBy('id');
     }
 
     /**

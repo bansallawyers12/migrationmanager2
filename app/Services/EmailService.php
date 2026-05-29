@@ -49,6 +49,17 @@ class EmailService
                         'unique_args' => [
                             'email_log_id' => (string) $emailLogId,
                         ],
+                        'filters' => [
+                            'clicktrack' => ['settings' => ['enable' => 0]],
+                            'opentrack'  => ['settings' => ['enable' => 0]],
+                        ],
+                    ], JSON_UNESCAPED_UNICODE));
+                } else {
+                    $message->getSymfonyMessage()->getHeaders()->addTextHeader('X-SMTPAPI', json_encode([
+                        'filters' => [
+                            'clicktrack' => ['settings' => ['enable' => 0]],
+                            'opentrack'  => ['settings' => ['enable' => 0]],
+                        ],
                     ], JSON_UNESCAPED_UNICODE));
                 }
 

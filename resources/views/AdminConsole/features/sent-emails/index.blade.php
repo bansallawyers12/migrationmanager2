@@ -13,6 +13,7 @@
     .attach-badge  { font-size: 0.75rem; }
     .coverage-notice { border-left: 4px solid #f39c12; }
     .email-delivery-badge { font-size: 0.72rem; font-weight: 600; }
+    .email-engagement-icons { font-size: 0.78rem; white-space: nowrap; }
 </style>
 @endsection
 
@@ -192,6 +193,11 @@
                                                 @include('partials.email-delivery-status-badge', [
                                                     'status' => $row['delivery_status'] ?? 'pending',
                                                     'reason' => $row['status_reason'] ?? null,
+                                                ])
+                                                @include('partials.email-engagement-icons', [
+                                                    'opened_at' => $row['opened_at'] ?? null,
+                                                    'clicked_at' => $row['clicked_at'] ?? null,
+                                                    'spam_reported_at' => $row['spam_reported_at'] ?? null,
                                                 ])
                                             </td>
                                             <td>
