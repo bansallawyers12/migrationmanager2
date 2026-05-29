@@ -621,16 +621,19 @@ class ClientsController extends Controller
 
     public function archived(Request $request)
 	{
-		$query 		= Admin::where('is_archived', '=', '1')->whereIn('type', ['client', 'lead']);
+		$query 		= Admin::where('is_archived', '=', '1')
+            ->whereIn('type', ['client', 'lead'])
+            ->with('archivedByStaff');
         StaffClientVisibility::restrictAdminEloquentQuery($query);
-        $totalData 	= $query->count();	//for all data
-        $lists		= $query->sortable(['id' => 'desc'])->paginate(20);
+        $query = $this->applyArchivedListFilters($query, $request);
+        $totalData 	= $query->count();
+        $lists		= $query->sortable(['id' => 'desc'])->paginate(20)->appends($request->except('page'));
         return view('crm.archived.index', compact(['lists', 'totalData']));
     }
 
     /**
      * Archive a client
-     * Sets is_archived = 1, archived_by = current user, archived_on = now
+     * Sets is_archived = 1, archived_by = current staff user, archived_on = now
      *
      * @param Request $request
      * @param string $id Encoded client ID
@@ -668,9 +671,9 @@ class ClientsController extends Controller
                     ->with('info', 'Client is already archived.');
             }
             
-            // Archive the client
+            // Archive the client (archived_by stores staff.id — admin guard uses staff provider)
             $client->is_archived = 1;
-            $client->archived_by = Auth::id();
+            $client->archived_by = Auth::guard('admin')->id();
             $client->archived_on = now();
             $client->save();
             
@@ -728,8 +731,10 @@ class ClientsController extends Controller
                     ->with('info', $message);
             }
             
-            // Unarchive the client
+            // Unarchive the client and clear archive metadata
             $client->is_archived = 0;
+            $client->archived_by = null;
+            $client->archived_on = null;
             $client->save();
             
             $message = 'Client has been unarchived successfully.';

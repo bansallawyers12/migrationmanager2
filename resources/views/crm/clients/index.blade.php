@@ -517,7 +517,7 @@
                                                         </a>
                                                         <form action="{{ route('clients.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-client-form" style="display: inline-block;">
                                                             @csrf
-                                                            <a class="dropdown-item has-icon" href="javascript:;" onclick="archiveClientAction(event, '{{ @$list->first_name }} {{ @$list->last_name }}')">
+                                                            <a class="dropdown-item has-icon" href="javascript:;" onclick='archiveClientAction(event, @json(trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''))))'>
                                                                 <i class="fas fa-archive"></i> Archive
                                                             </a>
                                                         </form>
@@ -975,35 +975,38 @@ jQuery(document).ready(function($){
     function formatRepoSelection (repo) {
         return repo.name || repo.text;
     }
-
+});
+</script>
+<script>
     // Archive client confirmation function - Global scope
     function archiveClientAction(event, clientName) {
-        event.preventDefault();
-        
-        // Get the form element - traverse up from the clicked link
-        var form;
-        if (event.target.tagName.toLowerCase() === 'a') {
-            // Clicked on the link itself
-            form = jQuery(event.target).closest('.archive-client-form')[0];
-        } else if (event.target.tagName.toLowerCase() === 'i') {
-            // Clicked on the icon inside the link
-            form = jQuery(event.target).closest('.archive-client-form')[0];
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
-        
+
+        var form = null;
+        if (event && event.target) {
+            form = event.target.closest('.archive-client-form');
+            if (!form && typeof jQuery !== 'undefined') {
+                form = jQuery(event.target).closest('.archive-client-form')[0];
+            }
+        }
+
         if (!form) {
+            alert('Error: Could not find the form to submit. Please try again.');
             console.error('Archive form not found');
             return false;
         }
-        
+
         var confirmMessage = 'Are you sure you want to archive the client "' + (clientName || 'this client') + '"?\n\nThis will move the client to the archived list.';
-        
+
         if (confirm(confirmMessage)) {
             form.submit();
         }
-        
+
         return false;
     }
-});
 </script>
 @endpush
 

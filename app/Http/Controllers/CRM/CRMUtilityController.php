@@ -383,7 +383,13 @@ class CRMUtilityController extends Controller
 						if($recordExist)
 						{
 
-							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update([$requestData['col'] => 0]);
+							$update = [$requestData['col'] => 0];
+							if ($requestData['col'] === 'is_archived') {
+								$update['archived_by'] = null;
+								$update['archived_on'] = null;
+							}
+
+							$response 	= 	DB::table($requestData['table'])->where('id', $requestData['id'])->update($update);
 							if($response)
 							{
 								$status = 1;

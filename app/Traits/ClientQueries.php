@@ -132,6 +132,52 @@ trait ClientQueries
     }
 
     /**
+     * Apply search filters to archived clients/leads list.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected function applyArchivedListFilters($query, $request)
+    {
+        if ($request->has('name')) {
+            $name = trim($request->input('name'));
+            if ($name !== '') {
+                $nameLower = strtolower($name);
+                $query->where(function ($q) use ($nameLower) {
+                    $q->whereRaw('LOWER(first_name) LIKE ?', ['%' . $nameLower . '%'])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $nameLower . '%'])
+                        ->orWhereRaw("LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?", ['%' . $nameLower . '%'])
+                        ->orWhereRaw('LOWER(email) LIKE ?', ['%' . $nameLower . '%']);
+                });
+            }
+        }
+
+        $clientId = trim((string) $request->input('client_id', ''));
+        $leadId = trim((string) $request->input('lead_id', ''));
+
+        if ($clientId !== '' || $leadId !== '') {
+            $query->where(function ($q) use ($clientId, $leadId) {
+                if ($clientId !== '') {
+                    $q->where(function ($sub) use ($clientId) {
+                        $sub->where('type', 'client')
+                            ->where('client_id', 'LIKE', '%' . $clientId . '%');
+                    });
+                }
+                if ($leadId !== '') {
+                    $method = $clientId !== '' ? 'orWhere' : 'where';
+                    $q->{$method}(function ($sub) use ($leadId) {
+                        $sub->where('type', 'lead')
+                            ->where('client_id', 'LIKE', '%' . $leadId . '%');
+                    });
+                }
+            });
+        }
+
+        return $query;
+    }
+
+    /**
      * Ensure only allowed date columns are used for filtering.
      */
     protected function resolveClientDateColumn(?string $field): string

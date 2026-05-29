@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Admin extends Authenticatable
@@ -84,6 +85,7 @@ class Admin extends Authenticatable
     protected $casts = [
         'followup_date' => 'datetime',
         'google_review_reminder_snooze_until' => 'datetime',
+        'archived_on' => 'datetime',
     ];
 
 	public $sortable = [
@@ -164,6 +166,14 @@ class Admin extends Authenticatable
     // ============================================================
     // STAFF RELATIONSHIPS (agent_id, created_by, verified_by reference admins or staff)
     // ============================================================
+
+    /**
+     * Staff member who archived this client/lead.
+     */
+    public function archivedByStaff(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'archived_by');
+    }
 
     /**
      * Get the clients assigned to this staff member (as agent)

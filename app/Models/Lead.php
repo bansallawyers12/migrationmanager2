@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Staff;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Kyslik\ColumnSortable\Sortable;
 
 class Lead extends Admin
@@ -137,6 +138,9 @@ class Lead extends Admin
     public function archive()
     {
         $this->is_archived = 1;
+        $this->archived_by = Auth::guard('admin')->id();
+        $this->archived_on = now();
+
         return $this->save();
     }
     
@@ -146,6 +150,9 @@ class Lead extends Admin
     public function unarchive()
     {
         $this->is_archived = 0;
+        $this->archived_by = null;
+        $this->archived_on = null;
+
         return $this->save();
     }
     
