@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use ZipArchive;
 
 class EmailLogAttachmentController extends Controller
@@ -206,6 +207,8 @@ class EmailLogAttachmentController extends Controller
                 'Content-Type' => $attachment->content_type,
                 'Content-Disposition' => 'inline; filename="' . $attachment->filename . '"',
             ]);
+        } catch (HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Attachment preview failed', ['id' => $id, 'error' => $e->getMessage()]);
             abort(404, 'Attachment file not found');

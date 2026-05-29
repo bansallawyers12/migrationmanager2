@@ -108,7 +108,13 @@ class EmailLogAttachment extends Model
      */
     public function canPreview(): bool
     {
-        return $this->isImage() || $this->isPdf();
+        if ($this->isImage() || $this->isPdf()) {
+            return true;
+        }
+
+        // Fallback for imported inline images stored with a generic content_type
+        $ext = strtolower((string) ($this->extension ?: pathinfo($this->filename ?? '', PATHINFO_EXTENSION)));
+        return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'], true);
     }
 
     /**

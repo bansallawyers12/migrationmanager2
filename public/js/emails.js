@@ -264,13 +264,41 @@
     }
 
     /**
-     * Check if attachment can be previewed
+     * Check if attachment can be previewed (images/PDFs only).
+     * Filename extension is used as fallback when content_type is missing or generic.
      */
-    function canPreviewAttachment(contentType) {
-        if (!contentType) return false;
-        
-        const type = contentType.toLowerCase();
-        return type.includes('image/') || type.includes('pdf');
+    function canPreviewAttachment(contentType, filename) {
+        if (contentType) {
+            const type = contentType.toLowerCase();
+            if (type.includes('image/') || type.includes('pdf')) {
+                return true;
+            }
+        }
+
+        if (filename) {
+            const ext = filename.split('.').pop()?.toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf'].includes(ext)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolve inline cid: attachment to a preview URL, or null if not previewable/stored.
+     */
+    function getInlineAttachmentPreviewUrl(attachment) {
+        if (!attachment || !attachment.id || !attachment.s3_key) {
+            return null;
+        }
+
+        const filename = attachment.filename || attachment.display_name || '';
+        if (!canPreviewAttachment(attachment.content_type, filename)) {
+            return null;
+        }
+
+        return `/mail-attachments/${attachment.id}/preview`;
     }
 
     /**
@@ -1132,7 +1160,7 @@
                                 title="Download ${escapeHtml(att.filename || 'file')}">
                             <i class="fas fa-download"></i> Download
                         </button>
-                        ${canPreviewAttachment(att.content_type) ? `
+                        ${canPreviewAttachment(att.content_type, att.filename || att.display_name) ? `
                         <button class="preview-btn preview-attachment-btn" 
                                 data-attachment-id="${att.id}" 
                                 data-filename="${escapeHtml(att.filename || att.display_name || 'file')}"
@@ -1244,13 +1272,12 @@
                 attachment = cidMap[cidValue.toLowerCase()];
             }
             
-            // Only rewrite when file exists in storage (avoids console 404 spam)
-            if (attachment && attachment.id && attachment.s3_key) {
-                const previewUrl = `/mail-attachments/${attachment.id}/preview`;
+            const previewUrl = getInlineAttachmentPreviewUrl(attachment);
+            if (previewUrl) {
                 return `src="${previewUrl}"`;
             }
-            
-            // If not found, return original (broken image will show)
+
+            // If not found or not previewable, return original (broken image will show)
             return match;
         });
         
@@ -1258,12 +1285,12 @@
         htmlContent = htmlContent.replace(/background-image:\s*url\(["']?cid:([^"')]+)["']?\)/gi, (match, cidValue) => {
             const normalizedCid = cidValue.replace(/^<|>$/g, '').trim().toLowerCase();
             let attachment = cidMap[normalizedCid] || cidMap[cidValue.toLowerCase()];
-            
-            if (attachment && attachment.id && attachment.s3_key) {
-                const previewUrl = `/mail-attachments/${attachment.id}/preview`;
+
+            const previewUrl = getInlineAttachmentPreviewUrl(attachment);
+            if (previewUrl) {
                 return `background-image: url("${previewUrl}")`;
             }
-            
+
             return match;
         });
         
