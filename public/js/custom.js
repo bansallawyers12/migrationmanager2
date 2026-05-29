@@ -377,3 +377,22 @@
 		
 		return html;	
 	}
+
+// Listing table action dropdowns: fixed Popper strategy escapes overflow containers (e.g. filtered single-row results)
+jQuery(function () {
+	if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
+		return;
+	}
+	document.querySelectorAll('.listing-container .table [data-bs-toggle="dropdown"]').forEach(function (el) {
+		var instance = bootstrap.Dropdown.getInstance(el);
+		if (instance) {
+			instance.dispose();
+		}
+		new bootstrap.Dropdown(el, {
+			popperConfig: function (defaultBsPopperConfig) {
+				defaultBsPopperConfig.strategy = 'fixed';
+				return defaultBsPopperConfig;
+			}
+		});
+	});
+});

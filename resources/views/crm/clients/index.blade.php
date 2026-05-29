@@ -7,35 +7,7 @@
 <link rel="stylesheet" href="{{ asset('css/listing-datepicker.css') }}">
 <style>
     /* Page-specific styles for clients index page */
-    /* Fix dropdown menu display for action buttons */
-    .listing-container .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 180px;
-        padding: 8px 0;
-        margin: 4px 0 0;
-        font-size: 14px;
-        text-align: left;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 8px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        background-clip: padding-box;
-        z-index: 9999 !important;
-        transform: none !important;
-        max-height: none !important;
-        overflow: visible !important;
-        backdrop-filter: blur(10px);
-    }
-    
-    .listing-container .dropdown-menu.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
+    /* Action dropdown positioning handled by Popper (custom.js); see listing-container.css for menu styling */
     
     .listing-container .table td .dropdown {
         position: relative;
@@ -123,30 +95,6 @@
     .listing-container .dropdown-item.has-icon i {
         width: 16px;
         text-align: center;
-    }
-    
-    /* Ensure all dropdown items are visible */
-    .listing-container .dropdown-menu .dropdown-item {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        height: auto !important;
-        min-height: 32px !important;
-        line-height: 1.5 !important;
-    }
-    
-    /* Remove any potential overflow restrictions */
-    .listing-container .table td {
-        overflow: visible !important;
-    }
-    
-    .listing-container .table td .dropdown {
-        overflow: visible !important;
-    }
-    
-    /* Ensure dropdown container doesn't clip content */
-    .listing-container .dropdown {
-        overflow: visible !important;
     }
 
     .listing-container .card-header {

@@ -68,6 +68,56 @@
     max-width: 100%;
 }
 
+/* Action dropdowns: prevent menu clipping when table has few rows (e.g. filtered search) */
+.listing-container .table tbody td:has(.dropdown) {
+    overflow: visible !important;
+}
+
+.listing-container:has(.table .dropdown.show),
+.listing-container:has(.table .dropdown.show) .listing-section,
+.listing-container:has(.table .dropdown.show) .listing-section-body,
+.listing-container:has(.table .dropdown.show) .card,
+.listing-container:has(.table .dropdown.show) .card-body,
+.listing-container:has(.table .dropdown.show) .table-responsive {
+    overflow: visible !important;
+}
+
+.listing-container .table-responsive .dropdown-menu {
+    z-index: 1050;
+}
+
+/* Table action dropdown — visual styling only; position handled by Bootstrap Popper (custom.js) */
+.listing-container .table .dropdown-menu {
+    min-width: 180px;
+    padding: 8px 0;
+    margin: 4px 0 0;
+    font-size: 14px;
+    text-align: left;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    background-clip: padding-box;
+    max-height: none !important;
+    overflow: visible !important;
+    backdrop-filter: blur(10px);
+}
+
+.listing-container .table .dropdown-menu.show {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.listing-container .table .dropdown-menu .dropdown-item {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 32px !important;
+    line-height: 1.5 !important;
+}
+
 .listing-container .table {
     width: 100%;
     border-collapse: separate;

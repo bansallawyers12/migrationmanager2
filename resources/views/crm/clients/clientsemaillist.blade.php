@@ -66,35 +66,7 @@
         transform: rotate(180deg);
     }
     
-    /* Enhanced Dropdown Menu */
-    .listing-container .dropdown-menu {
-        position: absolute !important;
-        top: 100% !important;
-        right: 0 !important;
-        left: auto !important;
-        float: none !important;
-        min-width: 180px;
-        padding: 8px 0;
-        margin: 4px 0 0;
-        font-size: 14px;
-        text-align: left;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 8px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        background-clip: padding-box;
-        z-index: 9999 !important;
-        transform: none !important;
-        max-height: none !important;
-        overflow: visible !important;
-        backdrop-filter: blur(10px);
-    }
-    
-    .listing-container .dropdown-menu.show {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
+    /* Enhanced Dropdown Menu — visual/position split: listing-container.css + custom.js Popper */
     
     /* Dropdown Items Styling */
     .listing-container .dropdown-item {
