@@ -13,6 +13,7 @@
     .recent-table th { white-space: nowrap; font-size: 0.82rem; }
     .truncate-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .coverage-notice { border-left: 4px solid #f39c12; }
+    .email-delivery-badge { font-size: 0.72rem; font-weight: 600; }
 
     /* Quick Searches — WCAG AA contrast on light card background */
     .sent-emails-quick-searches .btn {
@@ -265,6 +266,7 @@
                                             <th>From</th>
                                             <th>To</th>
                                             <th>Subject</th>
+                                            <th>Status</th>
                                             <th>Client</th>
                                             <th></th>
                                         </tr>
@@ -286,6 +288,12 @@
                                                         <i class="fas fa-paperclip"></i> {{ $row['attach_count'] }}
                                                     </span>
                                                 @endif
+                                            </td>
+                                            <td>
+                                                @include('partials.email-delivery-status-badge', [
+                                                    'status' => $row['delivery_status'] ?? 'pending',
+                                                    'reason' => $row['status_reason'] ?? null,
+                                                ])
                                             </td>
                                             <td>
                                                 @if($row['client_id'])
@@ -321,4 +329,12 @@
         </div>
     </section>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
 @endsection

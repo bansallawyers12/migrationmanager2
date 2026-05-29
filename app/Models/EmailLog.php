@@ -50,6 +50,10 @@ class EmailLog extends Authenticatable
         'processed_at',
         // Additional metadata
         'message_id',
+        'sendgrid_message_id',
+        'delivery_status',
+        'delivered_at',
+        'status_reason',
         'thread_id',
         'received_date',
         'last_accessed_at',
@@ -66,6 +70,7 @@ class EmailLog extends Authenticatable
         'security_issues' => 'array',
         'thread_info' => 'array',
         'processed_at' => 'datetime',
+        'delivered_at' => 'datetime',
         'received_date' => 'datetime',
         'last_accessed_at' => 'datetime',
         'mail_is_read' => 'boolean',

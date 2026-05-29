@@ -18,6 +18,8 @@
     .section-heading    { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em;
                           color: #888; border-bottom: 1px solid #eee; padding-bottom: 0.4rem;
                           margin-bottom: 1rem; }
+    .email-delivery-badge { font-size: 0.78rem; font-weight: 600; }
+    .delivery-reason { color: #6b4423; font-size: 0.875rem; margin-top: 0.25rem; }
 </style>
 @endsection
 
@@ -52,12 +54,10 @@
                                 <span class="badge type-badge-{{ $email->type ?? 'client' }} text-white">
                                     {{ ucfirst($email->type ?? 'client') }}
                                 </span>
-                                <small class="text-muted ml-2">
-                                    <i class="fas fa-info-circle"
-                                       data-toggle="tooltip"
-                                       title="Email was logged by the CRM. Delivery confirmation requires SendGrid webhook integration."></i>
-                                    Logged
-                                </small>
+                                @include('partials.email-delivery-status-badge', [
+                                    'status' => $email->delivery_status ?? 'pending',
+                                    'reason' => $email->status_reason,
+                                ])
                             </div>
                         </div>
 
@@ -90,6 +90,22 @@
 
                                 <dt class="col-sm-3">Subject</dt>
                                 <dd class="col-sm-9">{{ $email->subject ?: '—' }}</dd>
+
+                                <dt class="col-sm-3">Delivery Status</dt>
+                                <dd class="col-sm-9">
+                                    @include('partials.email-delivery-status-badge', [
+                                        'status' => $email->delivery_status ?? 'pending',
+                                        'reason' => $email->status_reason,
+                                    ])
+                                    @if($email->delivered_at)
+                                        <div class="text-muted mt-1" style="font-size:0.875rem;">
+                                            Delivered at {{ $email->delivered_at->format('d M Y, H:i:s') }}
+                                        </div>
+                                    @endif
+                                    @if($email->status_reason && in_array($email->delivery_status, ['bounced', 'dropped', 'deferred', 'blocked', 'send_failed'], true))
+                                        <div class="delivery-reason">{{ e($email->status_reason) }}</div>
+                                    @endif
+                                </dd>
 
                                 @if($email->template_id)
                                 <dt class="col-sm-3">Template ID</dt>

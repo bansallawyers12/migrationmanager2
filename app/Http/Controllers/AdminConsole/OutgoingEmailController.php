@@ -113,6 +113,11 @@ class OutgoingEmailController extends Controller
             'client_ref'   => $email->client->client_id ?? null,
             'type'         => $email->type,
             'attach_count' => $email->getFileAttachmentCollection()->count(),
+            'delivery_status' => $email->delivery_status ?? 'pending',
+            'delivery_status_label' => \App\Services\SendGridWebhookService::statusLabel($email->delivery_status),
+            'delivery_status_badge' => \App\Services\SendGridWebhookService::statusBadgeClass($email->delivery_status),
+            'status_reason' => $email->status_reason,
+            'delivered_at' => $email->delivered_at,
         ];
     }
 }

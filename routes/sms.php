@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminConsole\SendGridWebhookController;
 use App\Http\Controllers\AdminConsole\Sms\SmsWebhookController;
 
 /*
@@ -26,4 +27,10 @@ Route::prefix('webhooks/sms')->name('webhooks.sms.')->group(function () {
     Route::post('/cellcast/status', [SmsWebhookController::class, 'cellcastStatus'])->name('cellcast.status');
     Route::post('/cellcast/incoming', [SmsWebhookController::class, 'cellcastIncoming'])->name('cellcast.incoming');
 });
+
+// ============================================================================
+// SENDGRID EVENT WEBHOOK (Public - No Authentication)
+// ============================================================================
+Route::post('/webhooks/sendgrid/events', [SendGridWebhookController::class, 'events'])
+    ->name('webhooks.sendgrid.events');
 

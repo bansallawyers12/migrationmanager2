@@ -20,6 +20,8 @@ class VerifyCsrfToken extends PreventRequestForgery
      */ 
     protected $except = [
         //
+		'webhooks/sendgrid/*',
+		'webhooks/sms/*',
 		'api/*',
 		'broadcasting/auth', // Pusher broadcasting auth endpoint
 		'admin/update_visit_purpose',

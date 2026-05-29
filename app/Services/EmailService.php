@@ -31,7 +31,7 @@ class EmailService
      * @return bool
      * @throws \Exception
      */
-    public function sendEmail($view, $data, $to, $subject, $fromEmailId, $attachments = [], $cc = [])
+    public function sendEmail($view, $data, $to, $subject, $fromEmailId, $attachments = [], $cc = [], ?int $emailLogId = null)
     {
         try {
             $emailConfig = Email::where('email', $fromEmailId)->first();
@@ -39,10 +39,18 @@ class EmailService
             $fromName = $emailConfig?->display_name ?? config('mail.from.name');
 
             // Send the email
-            Mail::mailer('sendgrid')->send($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc) {
+            Mail::mailer('sendgrid')->send($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc, $emailLogId) {
                 $message->to($to)
                     ->subject($subject)
                     ->from($fromAddress, $fromName);
+
+                if ($emailLogId !== null) {
+                    $message->getSymfonyMessage()->getHeaders()->addTextHeader('X-SMTPAPI', json_encode([
+                        'unique_args' => [
+                            'email_log_id' => (string) $emailLogId,
+                        ],
+                    ], JSON_UNESCAPED_UNICODE));
+                }
 
                 if (!empty($cc)) {
                     $message->cc($cc);

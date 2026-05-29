@@ -1235,6 +1235,7 @@ public function getChapters(Request $request)
         $obj->mail_type		 =  $requestData['mail_type'] ?? 1;
         $obj->client_id		 =  $requestData['client_id'] ?? $requestData['lead_id'] ?? null;
         $obj->client_matter_id	=  $requestData['compose_client_matter_id'] ?? null;
+        $obj->delivery_status  =  'pending';
 
 		$attachments = array();
 		if(isset($requestData['checklistfile'])){
@@ -1420,6 +1421,7 @@ public function getChapters(Request $request)
 		$lastSendSubject = $baseSubject;
 		$lastSendMessage = $baseMessage;
 
+		if ($saved && $obj->id) {
 		foreach ($emailToRecipients as $l) {
 			$subject = $baseSubject;
 			$message = $baseMessage;
@@ -1460,7 +1462,8 @@ public function getChapters(Request $request)
 					$subject,
 					$requestData['email_from'],
 					$preparedSendPaths,
-					$ccarray
+					$ccarray,
+					$obj->id
 				);
 				$anySendSuccess = true;
 				$lastSendSubject = $subject;
@@ -1475,6 +1478,13 @@ public function getChapters(Request $request)
 					'mail_type' => $requestData['type'] ?? 'client',
 				]);
 			} catch (\Exception $e) {
+				if (! $anySendSuccess) {
+					$obj->update([
+						'delivery_status' => 'send_failed',
+						'status_reason'   => \Illuminate\Support\Str::limit($e->getMessage(), 500),
+					]);
+				}
+
 				Log::error('Compose email send failed', [
 					'staff_id' => Auth::guard('admin')->id(),
 					'crm_admin_id' => $requestData['client_id'] ?? $requestData['lead_id'] ?? null,
@@ -1489,6 +1499,7 @@ public function getChapters(Request $request)
 				}
 				return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage())->withInput();
 			}
+		}
 		}
 
 		if ($anySendSuccess) {

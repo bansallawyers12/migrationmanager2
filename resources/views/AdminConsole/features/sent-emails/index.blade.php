@@ -12,6 +12,7 @@
     .truncate-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .attach-badge  { font-size: 0.75rem; }
     .coverage-notice { border-left: 4px solid #f39c12; }
+    .email-delivery-badge { font-size: 0.72rem; font-weight: 600; }
 </style>
 @endsection
 
@@ -159,6 +160,7 @@
                                             <th>From</th>
                                             <th>To</th>
                                             <th>Subject</th>
+                                            <th>Status</th>
                                             <th>Client</th>
                                             <th>Type</th>
                                             <th></th>
@@ -185,6 +187,12 @@
                                                         <i class="fas fa-paperclip"></i> {{ $row['attach_count'] }}
                                                     </span>
                                                 @endif
+                                            </td>
+                                            <td>
+                                                @include('partials.email-delivery-status-badge', [
+                                                    'status' => $row['delivery_status'] ?? 'pending',
+                                                    'reason' => $row['status_reason'] ?? null,
+                                                ])
                                             </td>
                                             <td>
                                                 @if($row['client_id'])
@@ -252,6 +260,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (filterBody) {
         $(filterBody).collapse('show');
     }
+    $('[data-toggle="tooltip"]').tooltip();
+});
+@else
+document.addEventListener('DOMContentLoaded', function () {
+    $('[data-toggle="tooltip"]').tooltip();
 });
 @endif
 </script>
