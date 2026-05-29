@@ -13,6 +13,78 @@
     .recent-table th { white-space: nowrap; font-size: 0.82rem; }
     .truncate-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .coverage-notice { border-left: 4px solid #f39c12; }
+
+    /* Quick Searches — WCAG AA contrast on light card background */
+    .sent-emails-quick-searches .btn {
+        font-weight: 600;
+        border-width: 2px;
+    }
+    .sent-emails-quick-searches .btn-outline-primary {
+        color: #1e40af;
+        border-color: #2563eb;
+        background-color: #eff6ff;
+    }
+    .sent-emails-quick-searches .btn-outline-primary:hover,
+    .sent-emails-quick-searches .btn-outline-primary:focus {
+        color: #fff;
+        background-color: #2563eb;
+        border-color: #1d4ed8;
+    }
+    .sent-emails-quick-searches .btn-outline-secondary {
+        color: #374151;
+        border-color: #6b7280;
+        background-color: #f3f4f6;
+    }
+    .sent-emails-quick-searches .btn-outline-secondary:hover,
+    .sent-emails-quick-searches .btn-outline-secondary:focus {
+        color: #fff;
+        background-color: #6b7280;
+        border-color: #4b5563;
+    }
+    .sent-emails-quick-searches .btn-outline-info {
+        color: #0e7490;
+        border-color: #0891b2;
+        background-color: #ecfeff;
+    }
+    .sent-emails-quick-searches .btn-outline-info:hover,
+    .sent-emails-quick-searches .btn-outline-info:focus {
+        color: #fff;
+        background-color: #0891b2;
+        border-color: #0e7490;
+    }
+    .sent-emails-quick-searches .btn-outline-warning {
+        color: #92400e;
+        border-color: #b45309;
+        background-color: #fffbeb;
+    }
+    .sent-emails-quick-searches .btn-outline-warning:hover,
+    .sent-emails-quick-searches .btn-outline-warning:focus {
+        color: #fff;
+        background-color: #b45309;
+        border-color: #92400e;
+    }
+    .sent-emails-quick-searches .btn-outline-success {
+        color: #166534;
+        border-color: #15803d;
+        background-color: #f0fdf4;
+    }
+    .sent-emails-quick-searches .btn-outline-success:hover,
+    .sent-emails-quick-searches .btn-outline-success:focus {
+        color: #fff;
+        background-color: #15803d;
+        border-color: #166534;
+    }
+    .sent-emails-quick-searches .btn-outline-dark {
+        color: #1f2937;
+        border-color: #374151;
+        background-color: #f9fafb;
+    }
+    .sent-emails-quick-searches .btn-outline-dark:hover,
+    .sent-emails-quick-searches .btn-outline-dark:focus {
+        color: #fff;
+        background-color: #374151;
+        border-color: #1f2937;
+    }
 </style>
 @endsection
 
@@ -124,7 +196,7 @@
 
                         {{-- Quick links / shortcuts --}}
                         <div class="col-lg-7 col-md-12 mb-3">
-                            <div class="card h-100">
+                            <div class="card h-100 sent-emails-quick-searches">
                                 <div class="card-header">
                                     <h4><i class="fas fa-bolt"></i> Quick Searches</h4>
                                 </div>
