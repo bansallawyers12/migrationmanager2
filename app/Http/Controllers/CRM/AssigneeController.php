@@ -504,11 +504,11 @@ class AssigneeController extends Controller
                                 $sanitized_description = Utf8Helper::safeSanitize($data->description);
                                 
                                 if (mb_strlen($sanitized_description, 'UTF-8') > 190) {
-                                    // For data attribute: use HTML encoding to prevent XSS
-                                    $encoded_for_attr = htmlspecialchars($sanitized_description, ENT_QUOTES, 'UTF-8');
+                                    // Base64 in attribute avoids broken markup from newlines/quotes in notes
+                                    $encoded_for_attr = htmlspecialchars(base64_encode($sanitized_description), ENT_QUOTES, 'UTF-8');
                                     // For display: use safe truncation without encoding (DataTables rawColumns handles this)
                                     $truncated_desc = Utf8Helper::safeTruncate($sanitized_description, 190, '');
-                                    $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-placement="top">Read more</button>';
+                                    $final_desc = $truncated_desc . '<button type="button" class="btn btn-link btn_readmore" data-toggle="popover" data-trigger="click" data-html="true" data-full-content="'.$encoded_for_attr.'" data-full-content-b64="1" data-placement="top">Read more</button>';
                                 } else {
                                     $final_desc = $sanitized_description;
                                 }
@@ -526,14 +526,15 @@ class AssigneeController extends Controller
                             $current_date1 = $list->action_date ?: date('Y-m-d');
 
                             // Update Action button - available for all actions including Personal Actions
-                            // Use direct htmlspecialchars instead of Utf8Helper wrapper to avoid redundant sanitization
-                            $safe_description = htmlspecialchars(Utf8Helper::safeSanitize($list->description ?? ''), ENT_QUOTES, 'UTF-8');
+                            $note_raw = Utf8Helper::safeSanitize($list->description ?? '');
+                            $safe_note_b64 = htmlspecialchars(base64_encode($note_raw), ENT_QUOTES, 'UTF-8');
                             $safe_task_group = htmlspecialchars(Utf8Helper::safeSanitize($list->task_group ?? ''), ENT_QUOTES, 'UTF-8');
                             
                             // For personal actions, client_id will be null, so use empty string for encoded value
                             $encoded_client_id = $list->client_id ? base64_encode(convert_uuencode($list->client_id)) : '';
                             
-                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_description.'" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" data-role="popover" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
+                            // No data-role="popover": action page uses Bootstrap 5 native popover (see action.blade.php)
+                            $actionBtn .= '<button type="button" data-assignedto="'.$list->assigned_to.'" data-noteid="'.$safe_note_b64.'" data-note-b64="1" data-taskid="'.$list->id.'" data-taskgroupid="'.$safe_task_group.'" data-actiondate="'.$current_date1.'" data-clientid="'.$encoded_client_id.'" class="btn btn-primary btn-block update_task" style="width: 40px;display: inline;margin-top:0px;"><i class="fa fa-edit" aria-hidden="true"></i></button>';
 
                             // Delete button removed from action tab
 

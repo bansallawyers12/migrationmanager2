@@ -1139,72 +1139,111 @@ $(function () {
         return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
+    function decodeBase64Utf8(b64) {
+        if (!b64) return '';
+        try {
+            var binary = atob(b64);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            if (typeof TextDecoder !== 'undefined') {
+                return new TextDecoder('utf-8').decode(bytes);
+            }
+            return decodeURIComponent(escape(binary));
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function getTaskNoteFromButton($button) {
+        var raw = $button.attr('data-noteid') || '';
+        if ($button.attr('data-note-b64') === '1') {
+            return decodeBase64Utf8(raw);
+        }
+        return raw || $button.data('noteid') || '';
+    }
+
+    function disposeBsPopover(el) {
+        var inst = bootstrap.Popover.getInstance(el);
+        if (inst) {
+            inst.dispose();
+        }
+    }
+
+    function buildTaskGroupOptions(selectedGroup) {
+        var groups = [
+            { value: 'Call', label: '📞 Call' },
+            { value: 'Checklist', label: '✓ Checklist' },
+            { value: 'Review', label: '📋 Review' },
+            { value: 'Query', label: '❓ Query' },
+            { value: 'Urgent', label: '🔥 Urgent' },
+            { value: 'Personal Action', label: '👤 Personal Action' },
+            { value: 'Client Portal', label: '🌐 Client Portal' },
+            { value: 'Follow Up', label: '📅 Follow Up' }
+        ];
+        var selected = String(selectedGroup || '');
+        var html = '<option value="">Select Group...</option>';
+        groups.forEach(function(g) {
+            var isSelected = selected === g.value ? ' selected' : '';
+            html += '<option value="' + escapeHtml(g.value) + '"' + isSelected + '>' + g.label + '</option>';
+        });
+        return html;
+    }
+
     // Function to generate Update Task popover content
     function getUpdateTaskContent(assignedTo, noteId, taskId, taskGroup, followupDate, clientId) {
-        // Sanitize all inputs to prevent XSS
         assignedTo = String(assignedTo || '');
-        noteId = escapeHtml(noteId || '');
-        taskId = escapeHtml(taskId || '');
-        taskGroup = String(taskGroup || '');
-        clientId = escapeHtml(clientId || '');
+        var safeNote = escapeHtml(noteId || '');
+        var safeTaskId = escapeHtml(taskId || '');
+        var safeClientId = escapeHtml(clientId || '');
         var followupDateVal = '';
         if (followupDate) {
             followupDateVal = escapeHtml(String(followupDate).trim().split(/\s+/)[0] || '');
         }
-        
-        return `
-            <div id="popover-content" class="modern-popover-content update-task-layout">
-                <div class="form-group">
-                    <label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>
-                    <select class="assignee-mm-select form-control" id="rem_cat" name="rem_cat">
-                        <option value="">Select Assignee...</option>
+        var taskGroupOptions = buildTaskGroupOptions(taskGroup);
+
+        return (
+            '<div id="popover-content" class="modern-popover-content update-task-layout">' +
+                '<div class="form-group">' +
+                    '<label class="control-label"><i class="fa fa-user"></i> Select Assignee</label>' +
+                    '<select class="assignee-mm-select form-control" id="rem_cat" name="rem_cat">' +
+                        '<option value="">Select Assignee...</option>' +
                         @foreach(\App\Models\Staff::where('status',1)->orderby('first_name','ASC')->get() as $admin)
                             <?php $branchname = \App\Models\Branch::where('id',$admin->office_id)->first(); ?>
-                            <option value="{{ $admin->id }}" ${assignedTo == '{{ $admin->id }}' ? 'selected' : ''}>
-                                {{ $admin->first_name }} {{ $admin->last_name }} ({{ @$branchname->office_name }})
-                            </option>
+                            '<option value="{{ $admin->id }}"' + (assignedTo === '{{ $admin->id }}' ? ' selected' : '') + '>' +
+                                {!! json_encode(trim($admin->first_name . ' ' . $admin->last_name . ' (' . (@$branchname->office_name ?? '') . ')')) !!} +
+                            '</option>' +
                         @endforeach
-                    </select>
-                    <div id="assignee-error" class="error-message"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="control-label"><i class="fa fa-tag"></i> Task Group</label>
-                    <select class="assignee-mm-select form-control" id="task_group" name="task_group">
-                        <option value="">Select Group...</option>
-                        <option value="Call" ${taskGroup == 'Call' ? 'selected' : ''}>📞 Call</option>
-                        <option value="Checklist" ${taskGroup == 'Checklist' ? 'selected' : ''}>✓ Checklist</option>
-                        <option value="Review" ${taskGroup == 'Review' ? 'selected' : ''}>📋 Review</option>
-                        <option value="Query" ${taskGroup == 'Query' ? 'selected' : ''}>❓ Query</option>
-                        <option value="Urgent" ${taskGroup == 'Urgent' ? 'selected' : ''}>🔥 Urgent</option>
-                        <option value="Personal Action" ${taskGroup == 'Personal Action' ? 'selected' : ''}>👤 Personal Action</option>
-                        <option value="Client Portal" ${taskGroup == 'Client Portal' ? 'selected' : ''}>🌐 Client Portal</option>
-                        <option value="Follow Up" ${taskGroup == 'Follow Up' ? 'selected' : ''}>📅 Follow Up</option>
-                    </select>
-                    <div id="task-group-error" class="error-message"></div>
-                </div>
-                
-                <div class="form-group form-group-full-width">
-                    <label class="control-label"><i class="fa fa-comment"></i> Task Description</label>
-                    <textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description...">${noteId}</textarea>
-                    <div id="note-error" class="error-message"></div>
-                </div>
-
-                <div class="form-group form-group-full-width">
-                    <label class="control-label"><i class="fa fa-calendar"></i> Follow-up date</label>
-                    <input type="date" class="form-control" id="popoverdatetime" name="popoverdate" value="${followupDateVal}">
-                    <div id="date-error" class="error-message"></div>
-                </div>
-                
-                <input id="assign_note_id" type="hidden" value="${taskId}">
-                <input id="assign_client_id" type="hidden" value="${clientId}">
-                
-                <div class="text-center">
-                    <button class="btn btn-primary" id="updateTask">
-                        <i class="fa fa-save"></i> Update Task
-                    </button>
-                </div>
-            </div>`;
+                    '</select>' +
+                    '<div id="assignee-error" class="error-message"></div>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label class="control-label"><i class="fa fa-tag"></i> Task Group</label>' +
+                    '<select class="assignee-mm-select form-control" id="task_group" name="task_group">' +
+                        taskGroupOptions +
+                    '</select>' +
+                    '<div id="task-group-error" class="error-message"></div>' +
+                '</div>' +
+                '<div class="form-group form-group-full-width">' +
+                    '<label class="control-label"><i class="fa fa-comment"></i> Task Description</label>' +
+                    '<textarea id="assignnote" class="form-control" rows="3" placeholder="Enter task description...">' + safeNote + '</textarea>' +
+                    '<div id="note-error" class="error-message"></div>' +
+                '</div>' +
+                '<div class="form-group form-group-full-width">' +
+                    '<label class="control-label"><i class="fa fa-calendar"></i> Follow-up date</label>' +
+                    '<input type="date" class="form-control" id="popoverdatetime" name="popoverdate" value="' + followupDateVal + '">' +
+                    '<div id="date-error" class="error-message"></div>' +
+                '</div>' +
+                '<input id="assign_note_id" type="hidden" value="' + safeTaskId + '">' +
+                '<input id="assign_client_id" type="hidden" value="' + safeClientId + '">' +
+                '<div class="text-center">' +
+                    '<button class="btn btn-primary" id="updateTask">' +
+                        '<i class="fa fa-save"></i> Update Task' +
+                    '</button>' +
+                '</div>' +
+            '</div>'
+        );
     }
 
     // Initialize client select for Add My Task popover (combined handler)
@@ -1401,30 +1440,28 @@ $(function () {
     });
 
     // Handle Update Task button click — Bootstrap 5 native Popover (no $.fn.popover)
-    $('.yajra-datatable').on('click', '.update_task', function() {
+    $('.yajra-datatable').on('click', '.update_task', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
         var btn = this;
         var $button = $(btn);
-        var assignedTo = $button.data('assignedto') || '';
-        var noteId     = $button.data('noteid') || '';
-        var taskId     = $button.data('taskid') || '';
-        var taskGroup  = $button.data('taskgroupid') || '';
-        var followupDate = $button.data('actiondate') || '';
-        var clientId   = $button.data('clientid') || '';
+        var assignedTo = $button.attr('data-assignedto') || $button.data('assignedto') || '';
+        var noteId     = getTaskNoteFromButton($button);
+        var taskId     = $button.attr('data-taskid') || $button.data('taskid') || '';
+        var taskGroup  = $button.attr('data-taskgroupid') || $button.data('taskgroupid') || '';
+        var followupDate = $button.attr('data-actiondate') || $button.data('actiondate') || '';
+        var clientId   = $button.attr('data-clientid') || $button.data('clientid') || '';
 
-        // Hide all other open update/readmore popovers first
+        // Close other open popovers
         document.querySelectorAll('.update_task, .btn_readmore').forEach(function(el) {
             if (el !== btn) {
-                var inst = bootstrap.Popover.getInstance(el);
-                if (inst) { inst.hide(); }
+                disposeBsPopover(el);
             }
         });
 
-        var existing = bootstrap.Popover.getInstance(btn);
-        if (existing) {
-            // Toggle: if already visible, hide it
-            existing.toggle();
-            return;
-        }
+        // Always recreate so each click opens a fresh popup with current row data
+        disposeBsPopover(btn);
 
         var pop = new bootstrap.Popover(btn, {
             html: true,
@@ -1444,8 +1481,7 @@ $(function () {
             !$(e.target).closest('.update_task').length &&
             !$(e.target).closest('.btn_readmore').length) {
             document.querySelectorAll('.update_task, .btn_readmore').forEach(function(el) {
-                var inst = bootstrap.Popover.getInstance(el);
-                if (inst) { inst.hide(); }
+                disposeBsPopover(el);
             });
         }
     });
@@ -1456,22 +1492,21 @@ $(function () {
         e.stopPropagation();
 
         var btn = this;
-        var fullContent = $(btn).data('full-content');
+        var $btn = $(btn);
+        var fullContent = $btn.attr('data-full-content') || '';
+        if ($btn.attr('data-full-content-b64') === '1') {
+            fullContent = decodeBase64Utf8(fullContent);
+        }
         if (!fullContent) { return; }
+        fullContent = '<div class="readmore-popover-body">' + escapeHtml(fullContent) + '</div>';
 
-        // Hide all other open popovers
         document.querySelectorAll('.update_task, .btn_readmore').forEach(function(el) {
             if (el !== btn) {
-                var inst = bootstrap.Popover.getInstance(el);
-                if (inst) { inst.hide(); }
+                disposeBsPopover(el);
             }
         });
 
-        var existing = bootstrap.Popover.getInstance(btn);
-        if (existing) {
-            existing.toggle();
-            return;
-        }
+        disposeBsPopover(btn);
 
         var pop = new bootstrap.Popover(btn, {
             html: true,
@@ -1487,8 +1522,7 @@ $(function () {
     // Dispose update/readmore popovers after DataTable redraw so stale instances don't accumulate
     $(document).on('draw.dt', '.yajra-datatable', function() {
         document.querySelectorAll('.btn_readmore, .update_task').forEach(function(el) {
-            var inst = bootstrap.Popover.getInstance(el);
-            if (inst) { inst.dispose(); }
+            disposeBsPopover(el);
         });
     });
 
@@ -1555,8 +1589,7 @@ $(function () {
                     return;
                 }
                 document.querySelectorAll('.update_task').forEach(function(el) {
-                    var inst = bootstrap.Popover.getInstance(el);
-                    if (inst) { inst.hide(); }
+                    disposeBsPopover(el);
                 });
                 table.draw(false);
             },
