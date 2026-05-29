@@ -477,7 +477,7 @@
                                                 </a>
                                                 <form action="{{ route('leads.archive', base64_encode(convert_uuencode(@$list->id))) }}" method="POST" class="archive-lead-form" style="display: inline-block;">
                                                     @csrf
-                                                    <button type="button" class="btn-archive-icon" title="Archive Lead" onclick="confirmArchive(event, '{{ @$list->first_name }} {{ @$list->last_name }}');">
+                                                    <button type="button" class="btn-archive-icon" title="Archive Lead" onclick='confirmArchive(event, @json(trim(($list->first_name ?? '') . ' ' . ($list->last_name ?? ''))))'>
                                                         <i class="fa fa-archive"></i>
                                                     </button>
                                                 </form>
