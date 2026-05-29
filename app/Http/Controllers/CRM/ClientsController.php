@@ -7388,11 +7388,18 @@ class ClientsController extends Controller
                 $clientLabel = $this->actionClientDisplayName($targetForAction);
             }
             
+            $originalAssigneeId = (int) $action->assigned_to;
+
             // Update action fields
             $action->description = @$requestData['description'];
             $action->client_id = $clientId;
             $action->task_group = @$requestData['task_group'];
             $action->assigned_to = @$requestData['rem_cat'];
+
+            // Assigner Name uses notes.user_id — reflect the staff member who last reassigned the task.
+            if ((int) $action->assigned_to !== $originalAssigneeId) {
+                $action->user_id = Auth::user()->id;
+            }
             
             if (isset($requestData['followup_datetime']) && $requestData['followup_datetime'] != '') {
                 $action->action_date = @$requestData['followup_datetime'];
@@ -7401,7 +7408,7 @@ class ClientsController extends Controller
             $action->save();
 
             // Create notification for the assignee if changed
-            if ($action->assigned_to != $action->getOriginal('assigned_to')) {
+            if ((int) $action->assigned_to !== $originalAssigneeId) {
                 $notification = new \App\Models\Notification;
                 $notification->sender_id = Auth::user()->id;
                 $notification->receiver_id = $action->assigned_to;
