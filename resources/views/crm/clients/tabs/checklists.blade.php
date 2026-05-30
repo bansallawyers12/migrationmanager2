@@ -147,6 +147,8 @@
                                                     
                                                 $totalSurcharge = $form->TotalDoHASurcharges ?? 0;
                                                 $totalOurCost = $form->TotalBLOCKFEE ?? 0;
+                                                $totalAdditionalFee1 = floatval($form->additional_fee_1 ?? 0);
+                                                $totalCost = $totalOurCost + $totalDeptCost + $totalSurcharge + $totalAdditionalFee1;
                                                 
                                                 // Check if agreement document exists
                                                 $agreementDoc = \App\Models\Document::where('client_matter_id', $form->client_matter_id)
@@ -174,7 +176,7 @@
                                                                 <i class="fas fa-users"></i> {{ $office ? $office->office_name : 'No Office' }}
                                                             </span>
                                                             <span class="badge badge-success">
-                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}
+                                                                <i class="fas fa-dollar-sign"></i> ${{ number_format($totalCost, 2) }}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -235,11 +237,19 @@
                                                                     </div>
                                                                 </div>
                                                                 @endif
+                                                                @if($totalAdditionalFee1 > 0)
+                                                                <div class="cost-item cost-breakdown-item">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span>Additional Fee1:</span>
+                                                                        <strong class="text-warning" style="font-size: 1.05rem;">${{ number_format($totalAdditionalFee1, 2) }}</strong>
+                                                                    </div>
+                                                                </div>
+                                                                @endif
                                                                 <hr class="cost-breakdown-hr">
                                                                 <div class="cost-item cost-breakdown-total">
                                                                     <div class="d-flex justify-content-between align-items-center">
                                                                         <span class="font-weight-bold" style="color: #1b5e20; font-size: 1rem;">Total Cost:</span>
-                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalOurCost + $totalDeptCost + $totalSurcharge, 2) }}</strong>
+                                                                        <strong class="text-success" style="font-size: 1.1rem; font-weight: 700;">${{ number_format($totalCost, 2) }}</strong>
                                                                     </div>
                                                                 </div>
                                                                 <div class="cost-breakdown-edit mt-2">
