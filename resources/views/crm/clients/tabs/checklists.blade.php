@@ -1117,18 +1117,14 @@
         });
 
         // Amend checklist - opens the cost assignment modal to make changes
-        $(document).on('click', '.btn-amend-checklist', function() {
+        $(document).on('click', '.btn-amend-checklist', function(e) {
+            e.stopPropagation();
             var clientId = $(this).data('client-id');
             var clientMatterId = $(this).data('client-matter-id');
             
             if (!clientId || !clientMatterId) {
                 alert('Unable to open cost assignment: missing client or matter information.');
                 return;
-            }
-            
-            // Set the matter in sidebar first
-            if ($('#sel_matter_id_client_detail').length) {
-                $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
             }
             
             // Set client/matter IDs in the modal form (scope to modal to avoid subtab form)
