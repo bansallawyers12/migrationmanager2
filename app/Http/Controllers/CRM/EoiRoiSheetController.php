@@ -212,6 +212,9 @@ class EoiRoiSheetController extends Controller
         if ($hasIsPinned) {
             array_unshift($selects, 'eoi.is_pinned');
         }
+        if (Schema::hasColumn('client_eoi_references', 'sheet_comments')) {
+            $selects[] = 'eoi.sheet_comments';
+        }
 
         $query = DB::table('client_eoi_references as eoi')
             ->join('admins', 'eoi.client_id', '=', 'admins.id')
@@ -975,6 +978,66 @@ class EoiRoiSheetController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating pin status: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Save staff sheet comment for an EOI record (separate from auto-generated warnings).
+     */
+    public function updateComment(Request $request, $eoiId)
+    {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('eoi-roi')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if (! Schema::hasColumn('client_eoi_references', 'sheet_comments')) {
+            return response()->json(['success' => false, 'message' => 'Sheet comments are not available. Run migrations.'], 500);
+        }
+
+        $eoiId = (int) $eoiId;
+        if ($eoiId <= 0) {
+            return response()->json(['success' => false, 'message' => 'Missing EOI ID'], 400);
+        }
+
+        $comment = $request->input('comment');
+        if (is_string($comment)) {
+            $comment = trim($comment);
+            if ($comment === '') {
+                $comment = null;
+            }
+        } else {
+            $comment = null;
+        }
+
+        if ($comment !== null && mb_strlen($comment) > 5000) {
+            return response()->json(['success' => false, 'message' => 'Comment must be 5000 characters or fewer'], 422);
+        }
+
+        try {
+            $eoi = DB::table('client_eoi_references')->where('id', $eoiId)->first();
+            if (! $eoi) {
+                return response()->json(['success' => false, 'message' => 'EOI record not found'], 404);
+            }
+
+            if (! StaffClientVisibility::canAccessClientOrLead((int) $eoi->client_id, auth()->guard('admin')->user())) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            DB::table('client_eoi_references')
+                ->where('id', $eoiId)
+                ->update([
+                    'sheet_comments' => $comment,
+                    'updated_by' => auth()->guard('admin')->id(),
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comment saved',
+                'comment' => $comment ?? '',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Could not save comment'], 500);
         }
     }
 }

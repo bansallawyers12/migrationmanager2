@@ -105,6 +105,58 @@
 .eoi-comments-cell .warning-text {
     color: #dc3545;
     font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.eoi-comments-cell.comment-cell-editable {
+    cursor: text;
+    vertical-align: top;
+}
+
+.eoi-comments-cell.comment-cell-editable:hover .sheet-comment-text:not(.is-editing) {
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 1px #cbd5e1;
+    border-radius: 4px;
+}
+
+.eoi-comments-cell .sheet-comment-text {
+    display: block;
+    max-height: 3.6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.eoi-comments-cell .sheet-comment-text.is-placeholder {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.eoi-comments-cell .sheet-comment-edit {
+    width: 100%;
+    min-width: 180px;
+    min-height: 72px;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 8px;
+    border: 1px solid #3b82f6;
+    border-radius: 4px;
+    resize: vertical;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.eoi-comments-cell .sheet-comment-edit:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.eoi-comments-cell .sheet-comment-hint {
+    display: block;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
 }
 
 /* Highlight rows with warnings */
@@ -577,12 +629,18 @@
                                                 @endif
                                             </td>
                                             <td>{{ $row->deadline ? \Carbon\Carbon::parse($row->deadline)->format('d/m/Y') : '—' }}</td>
-                                            <td class="eoi-comments-cell" title="{{ $row->warnings_text ?? '' }}">
+                                            @php
+                                                $sheetComment = trim((string) ($row->sheet_comments ?? ''));
+                                            @endphp
+                                            <td class="eoi-comments-cell comment-cell-editable"
+                                                data-eoi-id="{{ $row->eoi_id }}"
+                                                title="Click to add or edit comment">
                                                 @if(!empty($row->warnings_text))
                                                     <span class="warning-text">{{ $row->warnings_text }}</span>
-                                                @else
-                                                    <span class="text-muted">—</span>
                                                 @endif
+                                                <span class="sheet-comment-text {{ $sheetComment === '' ? 'is-placeholder' : '' }}"
+                                                      data-full-comment="{{ e($sheetComment) }}">{{ $sheetComment !== '' ? Str::limit($sheetComment, 80) : '—' }}</span>
+                                                <span class="sheet-comment-hint">Click to edit</span>
                                             </td>
                                             <td>
                                                 @if($eoiRecord && $eoiRecord->confirmation_email_sent_at)
@@ -792,10 +850,119 @@ jQuery(document).ready(function($) {
         $('#officeFilterForm').submit();
     });
 
-    // Handle star/pin clicks
+    // Handle star/pin clicks and inline comment editing (capture phase)
     var eoiTable = document.getElementById('eoi-roi-sheet-table');
+    var activeCommentEditor = null;
+
+    function truncateCommentText(text, maxLen) {
+        text = text || '';
+        return text.length <= maxLen ? text : text.substring(0, maxLen) + '…';
+    }
+
+    function renderCommentDisplay($cell, comment) {
+        $cell.find('.sheet-comment-edit').remove();
+        var $text = $cell.find('.sheet-comment-text');
+        comment = comment || '';
+        $text.show().removeClass('is-editing').attr('data-full-comment', comment);
+        if (comment === '') {
+            $text.addClass('is-placeholder').text('—');
+        } else {
+            $text.removeClass('is-placeholder').text(truncateCommentText(comment, 80));
+        }
+        $cell.find('.sheet-comment-hint').show();
+        $cell.removeClass('is-editing-comment');
+    }
+
+    function closeCommentEditor(save) {
+        if (!activeCommentEditor) return;
+        var state = activeCommentEditor;
+        activeCommentEditor = null;
+        if (save && state.$textarea && state.$textarea.length) {
+            saveCommentFromEditor(state);
+            return;
+        }
+        renderCommentDisplay(state.$cell, state.originalComment);
+    }
+
+    function saveCommentFromEditor(state) {
+        var $cell = state.$cell;
+        var $textarea = state.$textarea;
+        var newComment = $.trim($textarea.val());
+        var originalComment = state.originalComment || '';
+        if (newComment === originalComment) {
+            renderCommentDisplay($cell, originalComment);
+            return;
+        }
+        $textarea.prop('disabled', true);
+        $.ajax({
+            url: '{{ url('/clients/sheets/eoi-roi') }}/' + encodeURIComponent(String($cell.data('eoi-id'))) + '/comment',
+            method: 'POST',
+            data: { comment: newComment, _token: '{{ csrf_token() }}' },
+            success: function(response) {
+                if (response.success) {
+                    renderCommentDisplay($cell, response.comment || '');
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Saved', message: response.message || 'Comment saved', position: 'topRight', timeout: 2000 });
+                    }
+                } else {
+                    $textarea.prop('disabled', false).focus();
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Could not save comment', position: 'topRight' });
+                    }
+                }
+            },
+            error: function(xhr) {
+                $textarea.prop('disabled', false).focus();
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Could not save comment.';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            }
+        });
+    }
+
+    function openCommentEditor($cell) {
+        if ($cell.hasClass('is-editing-comment')) return;
+        if (activeCommentEditor && !activeCommentEditor.$cell.is($cell)) {
+            closeCommentEditor(true);
+        }
+        var $text = $cell.find('.sheet-comment-text');
+        var originalComment = $text.attr('data-full-comment') || '';
+        $cell.addClass('is-editing-comment');
+        $cell.find('.sheet-comment-hint').hide();
+        $text.hide();
+        var $textarea = $('<textarea class="sheet-comment-edit" rows="3"></textarea>');
+        $textarea.val(originalComment);
+        $cell.append($textarea);
+        activeCommentEditor = { $cell: $cell, $textarea: $textarea, originalComment: originalComment };
+        $textarea.focus();
+        $textarea.on('keydown', function(e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeCommentEditor(false); }
+            else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); closeCommentEditor(true); }
+        });
+        $textarea.on('blur', function() {
+            var editorState = activeCommentEditor;
+            setTimeout(function() {
+                if (editorState && activeCommentEditor === editorState && editorState.$cell.is($cell)) {
+                    closeCommentEditor(true);
+                }
+            }, 150);
+        });
+        $textarea.on('mousedown click', function(e) { e.stopPropagation(); });
+    }
+
     if (eoiTable) {
         eoiTable.addEventListener('click', function(e) {
+            if (!e.target.closest('.sheet-comment-edit')) {
+                var commentCell = e.target.closest('.comment-cell-editable');
+                if (commentCell) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openCommentEditor($(commentCell));
+                    return;
+                }
+            }
+
             var star = e.target.closest('.pin-star');
             if (!star) return;
 

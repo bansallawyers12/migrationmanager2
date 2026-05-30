@@ -32,6 +32,7 @@ class ClientEoiReference extends Model
         'eoi_status',
         'created_by',
         'updated_by',
+        'sheet_comments',
         // Confirmation workflow fields
         'staff_verified',
         'confirmation_date',

@@ -491,4 +491,93 @@ class ArtSheetController extends Controller
             return response()->json(['success' => false, 'message' => 'Error updating pin status: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Create or update the sheet comment for an ART client matter reference row.
+     */
+    public function updateComment(Request $request)
+    {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet('art')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $clientId = (int) $request->input('client_id', 0);
+        $matterInternalId = (int) $request->input('matter_internal_id', 0);
+        $comment = $request->input('comment');
+        if (is_string($comment)) {
+            $comment = trim($comment);
+            if ($comment === '') {
+                $comment = null;
+            }
+        } else {
+            $comment = null;
+        }
+
+        if ($clientId <= 0 || $matterInternalId <= 0) {
+            return response()->json(['success' => false, 'message' => 'Missing required parameters'], 400);
+        }
+
+        if ($comment !== null && mb_strlen($comment) > 5000) {
+            return response()->json(['success' => false, 'message' => 'Comment must be 5000 characters or fewer'], 422);
+        }
+
+        $matterRow = DB::table('client_matters as cm')
+            ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
+            ->where('cm.id', $matterInternalId)
+            ->where('cm.client_id', $clientId)
+            ->whereRaw('cm.matter_status = 1')
+            ->where(function ($q) {
+                $q->whereRaw("LOWER(COALESCE(m.nick_name, '')) = 'art'")
+                    ->orWhereRaw("LOWER(COALESCE(m.title, '')) LIKE '%art%'")
+                    ->orWhereRaw("LOWER(COALESCE(m.title, '')) LIKE '%administrative appeals%'")
+                    ->orWhereRaw("LOWER(COALESCE(m.title, '')) LIKE '%tribunal%'");
+            })
+            ->select('cm.id', 'cm.client_id')
+            ->first();
+
+        if (! $matterRow) {
+            return response()->json(['success' => false, 'message' => 'Matter not found or not on this sheet'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $matterRow->client_id, Auth::user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $reference = DB::table('client_art_references')
+                ->where('client_id', $clientId)
+                ->where('client_matter_id', $matterInternalId)
+                ->first();
+
+            if ($reference) {
+                DB::table('client_art_references')
+                    ->where('client_id', $clientId)
+                    ->where('client_matter_id', $matterInternalId)
+                    ->update([
+                        'comments' => $comment,
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                DB::table('client_art_references')->insert([
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterInternalId,
+                    'status_of_file' => 'submission_pending',
+                    'comments' => $comment,
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comment saved',
+                'comment' => $comment ?? '',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Could not save comment'], 500);
+        }
+    }
 }
