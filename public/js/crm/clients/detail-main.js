@@ -5414,7 +5414,17 @@ success: function(response) {
 
         $(document).delegate('.finalizeAgreementConvertToPdf', 'click', function() {
 
-            var hidden_client_matter_id_assignment = $('#sel_matter_id_client_detail').val();
+            var $btn = $(this);
+
+            // Prefer checklist row matter (avoids sidebar matter sync, which reloads the page when URL matter differs).
+            var hidden_client_matter_id_assignment = $btn.data('client-matter-id');
+            if (!hidden_client_matter_id_assignment) {
+                if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+                    hidden_client_matter_id_assignment = $('.general_matter_checkbox_client_detail').val();
+                } else {
+                    hidden_client_matter_id_assignment = $('#sel_matter_id_client_detail').val();
+                }
+            }
 
             $('#agreemnt_clientmatterid').val(hidden_client_matter_id_assignment);
 

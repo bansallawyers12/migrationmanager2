@@ -1153,14 +1153,6 @@
             }
         });
 
-        // When clicking Finalize from checklist list, set sidebar matter first (Create Visa Agreement uses data-client-matter-id on click instead — syncing here reloads the page).
-        $('#checklists-tab').on('mousedown', '.finalizeAgreementConvertToPdf', function() {
-            var cmId = $(this).data('client-matter-id');
-            if (cmId && $('#sel_matter_id_client_detail').length) {
-                $('#sel_matter_id_client_detail').val(cmId).trigger('change');
-            }
-        });
-
         // When finalize button is clicked and agreement is uploaded, handle signature flow
         $(document).on('agreementUploaded', function(e, data) {
             if (data.signatureLink) {
