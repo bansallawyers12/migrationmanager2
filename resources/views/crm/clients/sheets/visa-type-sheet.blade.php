@@ -143,6 +143,44 @@
         text-overflow: ellipsis; 
         white-space: pre-wrap; 
         word-break: break-word; 
+        display: block;
+    }
+    .visa-sheet-page .comment-cell-editable {
+        cursor: text;
+        min-width: 140px;
+        max-width: 240px;
+        vertical-align: top;
+    }
+    .visa-sheet-page .comment-cell-editable:hover .sheet-comment-text:not(.is-editing) {
+        background: #f8fafc;
+        box-shadow: inset 0 0 0 1px #cbd5e1;
+        border-radius: 4px;
+    }
+    .visa-sheet-page .comment-cell-editable .sheet-comment-text.is-placeholder {
+        color: #94a3b8;
+        font-style: italic;
+    }
+    .visa-sheet-page .comment-cell-editable .sheet-comment-edit {
+        width: 100%;
+        min-width: 130px;
+        min-height: 72px;
+        font-size: 12px;
+        line-height: 1.4;
+        padding: 6px 8px;
+        border: 1px solid #3b82f6;
+        border-radius: 4px;
+        resize: vertical;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+    .visa-sheet-page .comment-cell-editable .sheet-comment-edit:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+    .visa-sheet-page .comment-cell-editable .sheet-comment-hint {
+        display: block;
+        font-size: 10px;
+        color: #64748b;
+        margin-top: 2px;
     }
     .visa-sheet-page .checklist-status-cell .checklist-status-select { 
         min-width: 140px; 
@@ -447,8 +485,24 @@
                                                 <td>{{ $row->decision_outcome ?? '—' }}</td>
                                                 <td class="comment-cell" title="{{ $row->decision_note ?? '' }}">{{ Str::limit($row->decision_note ?? '—', 50) }}</td>
                                                 @endif
-                                                <td class="art-comments-cell comment-cell" onclick="event.stopPropagation();" title="{{ $row->sheet_comment_text ?? '' }}">
-                                                    <span class="sheet-comment-text">{{ Str::limit($row->sheet_comment_text ?? '—', 60) }}</span>
+                                                @php
+                                                    $commentText = trim((string) ($row->sheet_comment_text ?? ''));
+                                                    $canEditComment = ! $isLead && ! empty($matterId);
+                                                @endphp
+                                                <td class="art-comments-cell comment-cell {{ $canEditComment ? 'comment-cell-editable' : '' }}"
+                                                    @if($canEditComment)
+                                                        data-client-id="{{ $row->client_id }}"
+                                                        data-matter-id="{{ $matterId }}"
+                                                        title="Click to add or edit comment"
+                                                    @else
+                                                        title="{{ $commentText }}"
+                                                    @endif
+                                                >
+                                                    <span class="sheet-comment-text {{ $commentText === '' ? 'is-placeholder' : '' }}"
+                                                          data-full-comment="{{ $commentText }}">{{ $commentText !== '' ? Str::limit($commentText, 60) : '—' }}</span>
+                                                    @if($canEditComment)
+                                                        <span class="sheet-comment-hint">Click to edit</span>
+                                                    @endif
                                                 </td>
                                                 @if($tab === 'checklist')
                                                 <td onclick="event.stopPropagation();" class="checklist-status-cell">
@@ -705,6 +759,165 @@ jQuery(document).ready(function($) {
             }
         });
     });
+
+    var visaTypeForComments = @json($visaType);
+    var activeCommentEditor = null;
+
+    function truncateCommentText(text, maxLen) {
+        text = text || '';
+        if (text.length <= maxLen) {
+            return text;
+        }
+        return text.substring(0, maxLen) + '…';
+    }
+
+    function renderCommentDisplay($cell, comment) {
+        $cell.find('.sheet-comment-edit').remove();
+        var $text = $cell.find('.sheet-comment-text');
+        comment = comment || '';
+        $text.show().removeClass('is-editing').attr('data-full-comment', comment);
+        if (comment === '') {
+            $text.addClass('is-placeholder').text('—');
+        } else {
+            $text.removeClass('is-placeholder').text(truncateCommentText(comment, 60));
+        }
+        $cell.find('.sheet-comment-hint').show();
+        $cell.removeClass('is-editing-comment');
+    }
+
+    function closeCommentEditor(save) {
+        if (!activeCommentEditor) {
+            return;
+        }
+        var state = activeCommentEditor;
+        activeCommentEditor = null;
+
+        if (save && state.$textarea && state.$textarea.length) {
+            saveCommentFromEditor(state);
+            return;
+        }
+
+        renderCommentDisplay(state.$cell, state.originalComment);
+    }
+
+    function saveCommentFromEditor(state) {
+        var $cell = state.$cell;
+        var $textarea = state.$textarea;
+        var newComment = $.trim($textarea.val());
+        var originalComment = state.originalComment || '';
+
+        if (newComment === originalComment) {
+            renderCommentDisplay($cell, originalComment);
+            return;
+        }
+
+        $textarea.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ url('/clients/sheets') }}/' + encodeURIComponent(String(visaTypeForComments)) + '/comment',
+            method: 'POST',
+            data: {
+                client_id: $cell.data('client-id'),
+                matter_internal_id: $cell.data('matter-id'),
+                comment: newComment,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    var saved = response.comment || '';
+                    renderCommentDisplay($cell, saved);
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Saved', message: response.message || 'Comment saved', position: 'topRight', timeout: 2000 });
+                    }
+                } else {
+                    $textarea.prop('disabled', false).focus();
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Could not save comment', position: 'topRight' });
+                    }
+                }
+            },
+            error: function(xhr) {
+                $textarea.prop('disabled', false).focus();
+                var msg = 'Could not save comment.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            }
+        });
+    }
+
+    function openCommentEditor($cell) {
+        if ($cell.hasClass('is-editing-comment')) {
+            return;
+        }
+
+        if (activeCommentEditor && !activeCommentEditor.$cell.is($cell)) {
+            closeCommentEditor(true);
+        }
+
+        var $text = $cell.find('.sheet-comment-text');
+        var originalComment = $text.attr('data-full-comment') || '';
+
+        $cell.addClass('is-editing-comment');
+        $cell.find('.sheet-comment-hint').hide();
+        $text.hide();
+
+        var $textarea = $('<textarea class="sheet-comment-edit" rows="3"></textarea>');
+        $textarea.val(originalComment);
+        $cell.append($textarea);
+
+        activeCommentEditor = {
+            $cell: $cell,
+            $textarea: $textarea,
+            originalComment: originalComment
+        };
+
+        $textarea.focus();
+
+        $textarea.on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeCommentEditor(false);
+            } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeCommentEditor(true);
+            }
+        });
+
+        $textarea.on('blur', function() {
+            var editorState = activeCommentEditor;
+            setTimeout(function() {
+                if (editorState && activeCommentEditor === editorState && editorState.$cell.is($cell)) {
+                    closeCommentEditor(true);
+                }
+            }, 150);
+        });
+
+        $textarea.on('mousedown click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
+    // Capture phase (same as pin) so row navigation does not run before the editor opens
+    if (visaTable) {
+        visaTable.addEventListener('click', function(e) {
+            if (e.target.closest('.sheet-comment-edit')) {
+                return;
+            }
+            var commentCell = e.target.closest('.comment-cell-editable');
+            if (!commentCell) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            openCommentEditor($(commentCell));
+        }, true);
+    }
 });
 </script>
 @endpush
