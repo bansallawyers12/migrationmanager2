@@ -177,6 +177,51 @@
     .art-link { color: #475569; font-weight: 600; text-decoration: none; }
     .art-link:hover { color: #334155; text-decoration: underline; }
     .art-comments-cell { max-width: 280px; font-size: 12px; line-height: 1.4; word-wrap: break-word; white-space: normal; }
+    .art-comments-cell.comment-cell-editable {
+        cursor: text;
+        min-width: 140px;
+        max-width: 240px;
+        vertical-align: top;
+    }
+    .art-comments-cell.comment-cell-editable:hover .sheet-comment-text:not(.is-editing) {
+        background: #f8fafc;
+        box-shadow: inset 0 0 0 1px #cbd5e1;
+        border-radius: 4px;
+    }
+    .art-comments-cell .sheet-comment-text {
+        display: block;
+        max-height: 3.6em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .art-comments-cell .sheet-comment-text.is-placeholder {
+        color: #94a3b8;
+        font-style: italic;
+    }
+    .art-comments-cell .sheet-comment-edit {
+        width: 100%;
+        min-width: 130px;
+        min-height: 72px;
+        font-size: 12px;
+        line-height: 1.4;
+        padding: 6px 8px;
+        border: 1px solid #3b82f6;
+        border-radius: 4px;
+        resize: vertical;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+    .art-comments-cell .sheet-comment-edit:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+    .art-comments-cell .sheet-comment-hint {
+        display: block;
+        font-size: 10px;
+        color: #64748b;
+        margin-top: 2px;
+    }
     .filter_panel { display: none; background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
     .filter_panel.show { display: block; }
     .active-filters-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 10px; }
@@ -440,7 +485,25 @@
                                                 <td onclick="event.stopPropagation();">{{ $row->hearing_time ?? '—' }}</td>
                                                 <td onclick="event.stopPropagation();">{{ $row->member_name ?? '—' }}</td>
                                                 <td onclick="event.stopPropagation();">{{ $row->outcome ?? '—' }}</td>
-                                                <td class="art-comments-cell" onclick="event.stopPropagation();" title="{{ $row->comments ?? '' }}">{{ Str::limit($row->comments ?? '—', 80) }}</td>
+                                                @php
+                                                    $artComment = trim((string) ($row->comments ?? ''));
+                                                    $canEditArtComment = ! empty($matterInternalId);
+                                                @endphp
+                                                <td class="art-comments-cell {{ $canEditArtComment ? 'comment-cell-editable' : '' }}"
+                                                    @if($canEditArtComment)
+                                                        data-client-id="{{ $row->client_id }}"
+                                                        data-matter-id="{{ $matterInternalId }}"
+                                                        title="Click to add or edit comment"
+                                                    @else
+                                                        title="{{ $artComment }}"
+                                                    @endif
+                                                >
+                                                    <span class="sheet-comment-text {{ $artComment === '' ? 'is-placeholder' : '' }}"
+                                                          data-full-comment="{{ e($artComment) }}">{{ $artComment !== '' ? Str::limit($artComment, 80) : '—' }}</span>
+                                                    @if($canEditArtComment)
+                                                        <span class="sheet-comment-hint">Click to edit</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @endforeach
                                     @endif
@@ -524,10 +587,124 @@ jQuery(document).ready(function($) {
         'z-index': 'auto'
     });
 
-    // Handle star/pin clicks
+    // Handle star/pin clicks and inline comment editing (capture phase)
     var artTable = document.getElementById('art-sheet-table');
+    var activeCommentEditor = null;
+
+    function truncateCommentText(text, maxLen) {
+        text = text || '';
+        return text.length <= maxLen ? text : text.substring(0, maxLen) + '…';
+    }
+
+    function renderCommentDisplay($cell, comment) {
+        $cell.find('.sheet-comment-edit').remove();
+        var $text = $cell.find('.sheet-comment-text');
+        comment = comment || '';
+        $text.show().removeClass('is-editing').attr('data-full-comment', comment);
+        if (comment === '') {
+            $text.addClass('is-placeholder').text('—');
+        } else {
+            $text.removeClass('is-placeholder').text(truncateCommentText(comment, 80));
+        }
+        $cell.find('.sheet-comment-hint').show();
+        $cell.removeClass('is-editing-comment');
+    }
+
+    function closeCommentEditor(save) {
+        if (!activeCommentEditor) return;
+        var state = activeCommentEditor;
+        activeCommentEditor = null;
+        if (save && state.$textarea && state.$textarea.length) {
+            saveCommentFromEditor(state);
+            return;
+        }
+        renderCommentDisplay(state.$cell, state.originalComment);
+    }
+
+    function saveCommentFromEditor(state) {
+        var $cell = state.$cell;
+        var $textarea = state.$textarea;
+        var newComment = $.trim($textarea.val());
+        var originalComment = state.originalComment || '';
+        if (newComment === originalComment) {
+            renderCommentDisplay($cell, originalComment);
+            return;
+        }
+        $textarea.prop('disabled', true);
+        $.ajax({
+            url: '{{ route('clients.sheets.art.comment') }}',
+            method: 'POST',
+            data: {
+                client_id: $cell.data('client-id'),
+                matter_internal_id: $cell.data('matter-id'),
+                comment: newComment,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    renderCommentDisplay($cell, response.comment || '');
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Saved', message: response.message || 'Comment saved', position: 'topRight', timeout: 2000 });
+                    }
+                } else {
+                    $textarea.prop('disabled', false).focus();
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Could not save comment', position: 'topRight' });
+                    }
+                }
+            },
+            error: function(xhr) {
+                $textarea.prop('disabled', false).focus();
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Could not save comment.';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            }
+        });
+    }
+
+    function openCommentEditor($cell) {
+        if ($cell.hasClass('is-editing-comment')) return;
+        if (activeCommentEditor && !activeCommentEditor.$cell.is($cell)) {
+            closeCommentEditor(true);
+        }
+        var $text = $cell.find('.sheet-comment-text');
+        var originalComment = $text.attr('data-full-comment') || '';
+        $cell.addClass('is-editing-comment');
+        $cell.find('.sheet-comment-hint').hide();
+        $text.hide();
+        var $textarea = $('<textarea class="sheet-comment-edit" rows="3"></textarea>');
+        $textarea.val(originalComment);
+        $cell.append($textarea);
+        activeCommentEditor = { $cell: $cell, $textarea: $textarea, originalComment: originalComment };
+        $textarea.focus();
+        $textarea.on('keydown', function(e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeCommentEditor(false); }
+            else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); closeCommentEditor(true); }
+        });
+        $textarea.on('blur', function() {
+            var editorState = activeCommentEditor;
+            setTimeout(function() {
+                if (editorState && activeCommentEditor === editorState && editorState.$cell.is($cell)) {
+                    closeCommentEditor(true);
+                }
+            }, 150);
+        });
+        $textarea.on('mousedown click', function(e) { e.stopPropagation(); });
+    }
+
     if (artTable) {
         artTable.addEventListener('click', function(e) {
+            if (!e.target.closest('.sheet-comment-edit')) {
+                var commentCell = e.target.closest('.comment-cell-editable');
+                if (commentCell) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openCommentEditor($(commentCell));
+                    return;
+                }
+            }
+
             var star = e.target.closest('.pin-star');
             if (!star) return;
 
