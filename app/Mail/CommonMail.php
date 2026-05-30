@@ -58,5 +58,5 @@ class CommonMail extends Mailable
 			    }
 			  }	
 			return $email;
-	}
+     }
 }

@@ -22,6 +22,7 @@ use App\Services\ClientPortalActionNoteService;
 use App\Services\FinancialStatsService;
 use App\Services\InvoicePaymentSyncService;
 use App\Services\FCMService;
+use App\Services\SystemEmailLogService;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
@@ -5592,8 +5593,13 @@ public function getInvoiceAmount(Request $request)
              'file_name' => $pdfFileName
          ];
 
-        // Send email to Hubdoc
-        Mail::mailer('sendgrid')->to(env('HUBDOC_EMAIL'))->send(new HubdocInvoiceMail($invoiceData));
+        $hubdocEmail = env('HUBDOC_EMAIL', 'bansalcrm11@gmail.com');
+        app(SystemEmailLogService::class)->logAndSendMailable([
+            'category'  => 'hubdoc',
+            'from_mail' => config('mail.from.address'),
+            'to_mail'   => $hubdocEmail,
+            'subject'   => 'Invoice for Hubdoc Processing',
+        ], new HubdocInvoiceMail($invoiceData), $hubdocEmail);
 
          // Mark invoice as sent to Hubdoc
          $updateResult = DB::table('account_client_receipts')
@@ -5930,6 +5936,18 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
+            $systemEmailLog = app(SystemEmailLogService::class);
+            $log = $systemEmailLog->createPending([
+                'category'  => 'invoice',
+                'from_mail' => 'invoice@bansalimmigration.com.au',
+                'to_mail'   => $clientEmail,
+                'subject'   => $subject,
+                'message'   => $emailContent,
+                'client_id' => $record_get->client_id,
+                'user_id'   => Auth::user()->id,
+            ]);
+            $invoiceArray['email_log_id'] = $log->id;
+
             Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
@@ -6061,6 +6079,18 @@ public function getInvoiceAmount(Request $request)
                 'content' => $emailContent
             ];
 
+            $systemEmailLog = app(SystemEmailLogService::class);
+            $log = $systemEmailLog->createPending([
+                'category'  => 'receipt',
+                'from_mail' => 'invoice@bansalimmigration.com.au',
+                'to_mail'   => $clientEmail,
+                'subject'   => $subject,
+                'message'   => $emailContent,
+                'client_id' => $record_get->client_id,
+                'user_id'   => Auth::user()->id,
+            ]);
+            $invoiceArray['email_log_id'] = $log->id;
+
             Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
@@ -6191,6 +6221,18 @@ public function getInvoiceAmount(Request $request)
                 'file_name' => 'Office-Receipt-' . $receiptNo . '.pdf',
                 'content' => $emailContent
             ];
+
+            $systemEmailLog = app(SystemEmailLogService::class);
+            $log = $systemEmailLog->createPending([
+                'category'  => 'receipt',
+                'from_mail' => 'invoice@bansalimmigration.com.au',
+                'to_mail'   => $clientEmail,
+                'subject'   => $subject,
+                'message'   => $emailContent,
+                'client_id' => $record_get->client_id,
+                'user_id'   => Auth::user()->id,
+            ]);
+            $invoiceArray['email_log_id'] = $log->id;
 
             Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 

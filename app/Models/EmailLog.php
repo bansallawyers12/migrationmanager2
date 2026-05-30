@@ -33,6 +33,7 @@ class EmailLog extends Authenticatable
         'client_id',
         'client_matter_id',
         'conversion_type',
+        'system_email_category',
         'mail_body_type',
         'fetch_mail_sent_time',
         'uploaded_doc_id',

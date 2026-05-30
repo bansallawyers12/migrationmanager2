@@ -1,92 +1,36 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Sent Emails — Dashboard')
+@section('title', 'System Emails — Dashboard')
 
 @section('styles')
 <style>
     .stat-card { transition: box-shadow 0.2s; }
     .stat-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.10); }
-    .top-senders-list { list-style: none; padding: 0; margin: 0; }
-    .top-senders-list li { display: flex; align-items: center; justify-content: space-between;
+    .top-categories-list { list-style: none; padding: 0; margin: 0; }
+    .top-categories-list li { display: flex; align-items: center; justify-content: space-between;
                            padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
-    .top-senders-list li:last-child { border-bottom: none; }
-    .sender-bar { height: 6px; border-radius: 3px; background: #3498db; display: inline-block; min-width: 4px; }
+    .top-categories-list li:last-child { border-bottom: none; }
+    .category-bar { height: 6px; border-radius: 3px; background: #8e44ad; display: inline-block; min-width: 4px; }
     .recent-table th { white-space: nowrap; font-size: 0.82rem; }
     .truncate-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .coverage-notice { border-left: 4px solid #f39c12; }
+    .coverage-notice { border-left: 4px solid #3498db; }
     .email-delivery-badge { font-size: 0.72rem; font-weight: 600; }
     .email-engagement-icons { font-size: 0.78rem; white-space: nowrap; }
-
-    /* Quick Searches — WCAG AA contrast on light card background */
-    .sent-emails-quick-searches .btn {
-        font-weight: 600;
-        border-width: 2px;
-    }
-    .sent-emails-quick-searches .btn-outline-primary {
-        color: #1e40af;
-        border-color: #2563eb;
-        background-color: #eff6ff;
-    }
+    .sent-emails-quick-searches .btn { font-weight: 600; border-width: 2px; }
+    .sent-emails-quick-searches .btn-outline-primary { color: #1e40af; border-color: #2563eb; background-color: #eff6ff; }
     .sent-emails-quick-searches .btn-outline-primary:hover,
-    .sent-emails-quick-searches .btn-outline-primary:focus {
-        color: #fff;
-        background-color: #2563eb;
-        border-color: #1d4ed8;
-    }
-    .sent-emails-quick-searches .btn-outline-secondary {
-        color: #374151;
-        border-color: #6b7280;
-        background-color: #f3f4f6;
-    }
+    .sent-emails-quick-searches .btn-outline-primary:focus { color: #fff; background-color: #2563eb; border-color: #1d4ed8; }
+    .sent-emails-quick-searches .btn-outline-secondary { color: #374151; border-color: #6b7280; background-color: #f3f4f6; }
     .sent-emails-quick-searches .btn-outline-secondary:hover,
-    .sent-emails-quick-searches .btn-outline-secondary:focus {
-        color: #fff;
-        background-color: #6b7280;
-        border-color: #4b5563;
-    }
-    .sent-emails-quick-searches .btn-outline-info {
-        color: #0e7490;
-        border-color: #0891b2;
-        background-color: #ecfeff;
-    }
-    .sent-emails-quick-searches .btn-outline-info:hover,
-    .sent-emails-quick-searches .btn-outline-info:focus {
-        color: #fff;
-        background-color: #0891b2;
-        border-color: #0e7490;
-    }
-    .sent-emails-quick-searches .btn-outline-warning {
-        color: #92400e;
-        border-color: #b45309;
-        background-color: #fffbeb;
-    }
-    .sent-emails-quick-searches .btn-outline-warning:hover,
-    .sent-emails-quick-searches .btn-outline-warning:focus {
-        color: #fff;
-        background-color: #b45309;
-        border-color: #92400e;
-    }
-    .sent-emails-quick-searches .btn-outline-success {
-        color: #166534;
-        border-color: #15803d;
-        background-color: #f0fdf4;
-    }
+    .sent-emails-quick-searches .btn-outline-secondary:focus { color: #fff; background-color: #6b7280; border-color: #4b5563; }
+    .sent-emails-quick-searches .btn-outline-danger { color: #991b1b; border-color: #dc2626; background-color: #fef2f2; }
+    .sent-emails-quick-searches .btn-outline-danger:hover,
+    .sent-emails-quick-searches .btn-outline-danger:focus { color: #fff; background-color: #dc2626; border-color: #991b1b; }
+    .sent-emails-quick-searches .btn-outline-success { color: #166534; border-color: #15803d; background-color: #f0fdf4; }
     .sent-emails-quick-searches .btn-outline-success:hover,
-    .sent-emails-quick-searches .btn-outline-success:focus {
-        color: #fff;
-        background-color: #15803d;
-        border-color: #166534;
-    }
-    .sent-emails-quick-searches .btn-outline-dark {
-        color: #1f2937;
-        border-color: #374151;
-        background-color: #f9fafb;
-    }
+    .sent-emails-quick-searches .btn-outline-success:focus { color: #fff; background-color: #15803d; border-color: #166534; }
+    .sent-emails-quick-searches .btn-outline-dark { color: #1f2937; border-color: #374151; background-color: #f9fafb; }
     .sent-emails-quick-searches .btn-outline-dark:hover,
-    .sent-emails-quick-searches .btn-outline-dark:focus {
-        color: #fff;
-        background-color: #374151;
-        border-color: #1f2937;
-    }
+    .sent-emails-quick-searches .btn-outline-dark:focus { color: #fff; background-color: #374151; border-color: #1f2937; }
 </style>
 @endsection
 
@@ -103,33 +47,28 @@
 
                 <div class="col-9 col-md-9 col-lg-9">
 
-                    {{-- Page header --}}
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h4 class="mb-0"><i class="fas fa-chart-bar"></i> Sent Emails — Dashboard</h4>
+                        <h4 class="mb-0"><i class="fas fa-robot"></i> System Emails — Dashboard</h4>
                         <div>
-                            <a href="{{ route('adminconsole.features.system-emails.dashboard') }}" class="btn btn-outline-secondary btn-sm mr-1">
-                                <i class="fas fa-robot"></i> System Emails
+                            <a href="{{ route('adminconsole.features.sent-emails.dashboard') }}" class="btn btn-outline-secondary btn-sm mr-1">
+                                <i class="fas fa-paper-plane"></i> CRM Sent Emails
                             </a>
-                            <a href="{{ route('adminconsole.features.sent-emails.index') }}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-list"></i> Search All Emails
+                            <a href="{{ route('adminconsole.features.system-emails.index') }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-list"></i> Search All
                             </a>
                         </div>
                     </div>
 
-                    {{-- Coverage notice --}}
-                    <div class="alert alert-warning coverage-notice mb-4" role="alert" style="font-size:0.875rem;">
+                    <div class="alert alert-info coverage-notice mb-4" role="alert" style="font-size:0.875rem;">
                         <i class="fas fa-info-circle"></i>
-                        Analytics cover CRM-logged outgoing emails only (staff compose). System-generated emails (invoices, reminders, appointments, etc.) are tracked separately on the
-                        <a href="{{ route('adminconsole.features.system-emails.dashboard') }}">System Emails</a> dashboard.
+                        Analytics for automated system emails — invoices, receipts, appointment confirmations &amp; reminders, visa expiry notices, e-signatures, and similar. Staff-composed CRM emails are on the
+                        <a href="{{ route('adminconsole.features.sent-emails.dashboard') }}">Sent Emails</a> dashboard.
                     </div>
 
-                    {{-- Stat cards --}}
                     <div class="row">
                         <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                             <div class="card card-statistic-1 stat-card">
-                                <div class="card-icon bg-primary">
-                                    <i class="fas fa-paper-plane"></i>
-                                </div>
+                                <div class="card-icon bg-primary"><i class="fas fa-paper-plane"></i></div>
                                 <div class="card-wrap">
                                     <div class="card-header"><h4>Sent Today</h4></div>
                                     <div class="card-body">{{ number_format($stats['totalToday']) }}</div>
@@ -138,9 +77,7 @@
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                             <div class="card card-statistic-1 stat-card">
-                                <div class="card-icon bg-success">
-                                    <i class="fas fa-calendar-week"></i>
-                                </div>
+                                <div class="card-icon bg-success"><i class="fas fa-calendar-week"></i></div>
                                 <div class="card-wrap">
                                     <div class="card-header"><h4>This Week</h4></div>
                                     <div class="card-body">{{ number_format($stats['totalWeek']) }}</div>
@@ -149,9 +86,7 @@
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                             <div class="card card-statistic-1 stat-card">
-                                <div class="card-icon bg-info">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </div>
+                                <div class="card-icon bg-info"><i class="fas fa-calendar-alt"></i></div>
                                 <div class="card-wrap">
                                     <div class="card-header"><h4>This Month</h4></div>
                                     <div class="card-body">{{ number_format($stats['totalMonth']) }}</div>
@@ -160,49 +95,43 @@
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-6 col-12 mb-3">
                             <div class="card card-statistic-1 stat-card">
-                                <div class="card-icon bg-warning">
-                                    <i class="fas fa-paperclip"></i>
-                                </div>
+                                <div class="card-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></div>
                                 <div class="card-wrap">
-                                    <div class="card-header"><h4>With Attachments</h4></div>
-                                    <div class="card-body">{{ number_format($stats['withAttachments']) }}</div>
+                                    <div class="card-header"><h4>Failed This Month</h4></div>
+                                    <div class="card-body">{{ number_format($stats['failedCount']) }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="row">
-                        {{-- Top senders --}}
                         <div class="col-lg-5 col-md-12 mb-3">
                             <div class="card h-100">
                                 <div class="card-header">
-                                    <h4><i class="fas fa-users"></i> Top Senders This Month</h4>
+                                    <h4><i class="fas fa-tags"></i> Top Categories This Month</h4>
                                 </div>
                                 <div class="card-body">
-                                    @if($stats['topSenders']->isNotEmpty())
-                                        @php
-                                            $maxCount = $stats['topSenders']->max('send_count');
-                                        @endphp
-                                        <ul class="top-senders-list">
-                                            @foreach($stats['topSenders'] as $sender)
+                                    @if($stats['topCategories']->isNotEmpty())
+                                        @php $maxCount = $stats['topCategories']->max('send_count'); @endphp
+                                        <ul class="top-categories-list">
+                                            @foreach($stats['topCategories'] as $item)
                                             <li>
                                                 <div class="d-flex flex-column" style="min-width:0;flex:1;">
-                                                    <span style="font-weight:500;">{{ $sender['name'] }}</span>
-                                                    <span class="sender-bar mt-1"
-                                                          style="width:{{ $maxCount > 0 ? round(($sender['send_count'] / $maxCount) * 100) : 0 }}%;"></span>
+                                                    <span style="font-weight:500;">{{ $item['category_label'] }}</span>
+                                                    <span class="category-bar mt-1"
+                                                          style="width:{{ $maxCount > 0 ? round(($item['send_count'] / $maxCount) * 100) : 0 }}%;"></span>
                                                 </div>
-                                                <span class="badge badge-primary ml-3">{{ number_format($sender['send_count']) }}</span>
+                                                <span class="badge badge-primary ml-3">{{ number_format($item['send_count']) }}</span>
                                             </li>
                                             @endforeach
                                         </ul>
                                     @else
-                                        <p class="text-muted text-center mt-3">No emails sent this month yet.</p>
+                                        <p class="text-muted text-center mt-3">No system emails logged this month yet.</p>
                                     @endif
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Quick links / shortcuts --}}
                         <div class="col-lg-7 col-md-12 mb-3">
                             <div class="card h-100 sent-emails-quick-searches">
                                 <div class="card-header">
@@ -211,37 +140,37 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-6 mb-2">
-                                            <a href="{{ route('adminconsole.features.sent-emails.index', ['filter'=>1,'date_from'=>now()->toDateString(),'date_to'=>now()->toDateString()]) }}"
+                                            <a href="{{ route('adminconsole.features.system-emails.index', ['filter'=>1,'date_from'=>now()->toDateString(),'date_to'=>now()->toDateString()]) }}"
                                                class="btn btn-outline-primary btn-block">
                                                 <i class="fas fa-sun"></i> Today's Emails
                                             </a>
                                         </div>
                                         <div class="col-6 mb-2">
-                                            <a href="{{ route('adminconsole.features.sent-emails.index', ['filter'=>1,'has_attachments'=>'1']) }}"
+                                            <a href="{{ route('adminconsole.features.system-emails.index', ['filter'=>1,'category'=>'invoice']) }}"
                                                class="btn btn-outline-secondary btn-block">
-                                                <i class="fas fa-paperclip"></i> With Attachments
+                                                <i class="fas fa-file-invoice"></i> Invoices
                                             </a>
                                         </div>
                                         <div class="col-6 mb-2">
-                                            <a href="{{ route('adminconsole.features.sent-emails.index', ['filter'=>1,'type'=>'client']) }}"
-                                               class="btn btn-outline-info btn-block">
-                                                <i class="fas fa-user"></i> To Clients
-                                            </a>
-                                        </div>
-                                        <div class="col-6 mb-2">
-                                            <a href="{{ route('adminconsole.features.sent-emails.index', ['filter'=>1,'type'=>'lead']) }}"
-                                               class="btn btn-outline-warning btn-block">
-                                                <i class="fas fa-user-plus"></i> To Leads
-                                            </a>
-                                        </div>
-                                        <div class="col-6 mb-2">
-                                            <a href="{{ route('adminconsole.features.sent-emails.index', ['filter'=>1,'date_from'=>now()->startOfMonth()->toDateString(),'date_to'=>now()->toDateString()]) }}"
+                                            <a href="{{ route('adminconsole.features.system-emails.index', ['filter'=>1,'category'=>'appointment']) }}"
                                                class="btn btn-outline-success btn-block">
-                                                <i class="fas fa-calendar-alt"></i> This Month
+                                                <i class="fas fa-calendar-check"></i> Appointments
                                             </a>
                                         </div>
                                         <div class="col-6 mb-2">
-                                            <a href="{{ route('adminconsole.features.sent-emails.index') }}"
+                                            <a href="{{ route('adminconsole.features.system-emails.index', ['filter'=>1,'category'=>'signature']) }}"
+                                               class="btn btn-outline-primary btn-block">
+                                                <i class="fas fa-signature"></i> E-Signatures
+                                            </a>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <a href="{{ route('adminconsole.features.system-emails.index', ['filter'=>1,'failed'=>1]) }}"
+                                               class="btn btn-outline-danger btn-block">
+                                                <i class="fas fa-times-circle"></i> Failed / Undelivered
+                                            </a>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <a href="{{ route('adminconsole.features.system-emails.index') }}"
                                                class="btn btn-outline-dark btn-block">
                                                 <i class="fas fa-search"></i> Full Search
                                             </a>
@@ -252,14 +181,11 @@
                         </div>
                     </div>
 
-                    {{-- Recent 10 --}}
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-history"></i> Recent Sent Emails</h4>
+                            <h4><i class="fas fa-history"></i> Recent System Emails</h4>
                             <div class="card-header-action">
-                                <a href="{{ route('adminconsole.features.sent-emails.index', ['filter'=>1]) }}" class="btn btn-sm btn-primary">
-                                    View All
-                                </a>
+                                <a href="{{ route('adminconsole.features.system-emails.index', ['filter'=>1]) }}" class="btn btn-sm btn-primary">View All</a>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -269,7 +195,7 @@
                                     <thead class="thead-light">
                                         <tr>
                                             <th>Date</th>
-                                            <th>Sent By</th>
+                                            <th>Category</th>
                                             <th>From</th>
                                             <th>To</th>
                                             <th>Subject</th>
@@ -285,17 +211,10 @@
                                                 <small>{{ \Carbon\Carbon::parse($row['created_at'])->format('d M Y') }}</small><br>
                                                 <small class="text-muted">{{ \Carbon\Carbon::parse($row['created_at'])->format('H:i') }}</small>
                                             </td>
-                                            <td>{{ $row['sent_by'] }}</td>
+                                            <td><span class="badge badge-light">{{ $row['category_label'] }}</span></td>
                                             <td class="truncate-cell" title="{{ $row['from_mail'] }}">{{ $row['from_mail'] }}</td>
                                             <td class="truncate-cell" title="{{ $row['to_mail'] }}">{{ $row['to_mail'] }}</td>
-                                            <td class="truncate-cell" title="{{ $row['subject'] }}">
-                                                {{ $row['subject'] }}
-                                                @if($row['attach_count'] > 0)
-                                                    <span class="badge badge-secondary ml-1" style="font-size:0.7rem;">
-                                                        <i class="fas fa-paperclip"></i> {{ $row['attach_count'] }}
-                                                    </span>
-                                                @endif
-                                            </td>
+                                            <td class="truncate-cell" title="{{ $row['subject'] }}">{{ $row['subject'] }}</td>
                                             <td>
                                                 @include('partials.email-delivery-status-badge', [
                                                     'status' => $row['delivery_status'] ?? 'pending',
@@ -317,8 +236,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <a href="{{ route('adminconsole.features.sent-emails.show', $row['id']) }}"
-                                                   class="btn btn-sm btn-info">
+                                                <a href="{{ route('adminconsole.features.system-emails.show', $row['id']) }}" class="btn btn-sm btn-info">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
@@ -330,7 +248,7 @@
                             @else
                             <div class="p-4 text-center text-muted">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                No sent emails recorded yet.
+                                No system emails logged yet. New automated sends will appear here.
                             </div>
                             @endif
                         </div>

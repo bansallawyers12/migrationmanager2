@@ -502,7 +502,15 @@ class ClientEoiRoiController extends Controller
                 );
             }
 
-            Mail::mailer('sendgrid')->to($client->email)->send($mail);
+            app(\App\Services\SystemEmailLogService::class)->logAndSendMailable([
+                'category'  => 'eoi',
+                'from_mail' => is_array($eoiFromConfig) ? ($eoiFromConfig['from_address'] ?? config('mail.from.address')) : config('mail.from.address'),
+                'to_mail'   => $client->email,
+                'subject'   => $subject,
+                'message'   => $body,
+                'client_id' => $client->id,
+                'user_id'   => auth('admin')->id(),
+            ], $mail, $client->email);
 
             // Log activity
             $action = $isResend ? 'Resent' : 'Sent';

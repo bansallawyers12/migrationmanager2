@@ -35,19 +35,37 @@ class VisaExpireReminderEmail extends Command
     protected $description = 'Visa Expire Reminder Email before 15 days';
 
 
-    protected function send_compose_template($content, $sendername, $to = null, $subject = null, $sender = null, $array = array(), $cc = array())
+    protected function send_compose_template($content, $sendername, $to = null, $subject = null, $sender = null, $array = array(), $cc = array(), ?int $clientId = null)
 	{
+        $systemEmailLog = app(\App\Services\SystemEmailLogService::class);
+        $log = null;
 
 	try {
 		$explodeTo = explode(';', $to);//for multiple and single to
+        $log = $systemEmailLog->createPending([
+            'category'  => 'visa_reminder',
+            'from_mail' => $sender,
+            'to_mail'   => $to,
+            'subject'   => $subject,
+            'message'   => $content,
+            'client_id' => $clientId,
+        ]);
+        $array['email_log_id'] = $log->id;
+
 		$q = Mail::mailer('sendgrid')->to($explodeTo);
 		if(!empty($cc)){
 			$q->cc($cc);
 		}
-		$q->send(new CommonMail($content, $subject, $sender, $sendername, $array));
+		$q->send($systemEmailLog->applyTrackingToMailable(
+            new CommonMail($content, $subject, $sender, $sendername, $array),
+            $log->id
+        ));
 		
 		return true;
 	} catch (\Exception $e) {
+        if ($log !== null) {
+            $systemEmailLog->markSendFailed($log, $e->getMessage());
+        }
 		\Log::error('Email sending failed in VisaExpireReminderEmail: ' . $e->getMessage());
 		return false;
 	}
@@ -103,7 +121,7 @@ class VisaExpireReminderEmail extends Command
                     $ccarray = array();
                     $array = array();
 
-                    $mail_sent = $this->send_compose_template($message, '', $to_email, $subject, $from_email, $array, @$ccarray);
+                    $mail_sent = $this->send_compose_template($message, '', $to_email, $subject, $from_email, $array, @$ccarray, (int) $val->id);
                     if($mail_sent){
                         $this->info('Mail is sent.');
                         // is_visa_expire_mail_sent column dropped Phase 4 - no tracking

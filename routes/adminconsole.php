@@ -24,6 +24,7 @@ use App\Http\Controllers\AdminConsole\ESignatureController;
 use App\Http\Controllers\AdminConsole\EmailLabelController;
 use App\Http\Controllers\AdminConsole\ActivitySearchController;
 use App\Http\Controllers\AdminConsole\OutgoingEmailController;
+use App\Http\Controllers\AdminConsole\SystemGeneratedEmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,6 +153,13 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
             Route::get('/dashboard', [OutgoingEmailController::class, 'dashboard'])->name('dashboard');
             Route::get('/',          [OutgoingEmailController::class, 'index'])->name('index');
             Route::get('/{id}',      [OutgoingEmailController::class, 'show'])->name('show');
+        });
+
+        // System-generated emails — invoices, reminders, appointments, etc.
+        Route::prefix('system-emails')->name('system-emails.')->group(function () {
+            Route::get('/dashboard', [SystemGeneratedEmailController::class, 'dashboard'])->name('dashboard');
+            Route::get('/',          [SystemGeneratedEmailController::class, 'index'])->name('index');
+            Route::get('/{id}',      [SystemGeneratedEmailController::class, 'show'])->name('show');
         });
 
         // E-Signature Management routes

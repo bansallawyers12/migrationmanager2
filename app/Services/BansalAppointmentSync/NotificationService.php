@@ -4,16 +4,18 @@ namespace App\Services\BansalAppointmentSync;
 
 use App\Models\BookingAppointment;
 use App\Services\Sms\UnifiedSmsManager;
-use Illuminate\Support\Facades\Mail;
+use App\Services\SystemEmailLogService;
 use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
     protected UnifiedSmsManager $smsManager;
+    protected SystemEmailLogService $systemEmailLog;
 
-    public function __construct(UnifiedSmsManager $smsManager)
+    public function __construct(UnifiedSmsManager $smsManager, SystemEmailLogService $systemEmailLog)
     {
         $this->smsManager = $smsManager;
+        $this->systemEmailLog = $systemEmailLog;
     }
 
     /**
@@ -38,9 +40,13 @@ class NotificationService
                 'admin_notes' => $appointment->admin_notes,
             ];
 
-            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
-                new \App\Mail\AppointmentDetailedConfirmation($details)
-            );
+            $this->systemEmailLog->logAndSendMailable([
+                'category'  => 'appointment',
+                'from_mail' => config('mail.from.address'),
+                'to_mail'   => $appointment->client_email,
+                'subject'   => 'Appointment Confirmation - Bansal Immigration',
+                'client_id' => $appointment->client_id,
+            ], new \App\Mail\AppointmentDetailedConfirmation($details), $appointment->client_email);
 
             $appointment->update([
                 'confirmation_email_sent' => true,
@@ -76,9 +82,13 @@ class NotificationService
                 'cancellation_reason' => $cancellationReason,
             ];
 
-            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
-                new \App\Mail\AppointmentCancellation($details)
-            );
+            $this->systemEmailLog->logAndSendMailable([
+                'category'  => 'appointment_cancellation',
+                'from_mail' => config('mail.from.address'),
+                'to_mail'   => $appointment->client_email,
+                'subject'   => 'Appointment Cancellation - Bansal Immigration',
+                'client_id' => $appointment->client_id,
+            ], new \App\Mail\AppointmentCancellation($details), $appointment->client_email);
 
             Log::info('Sent cancellation confirmation email', [
                 'appointment_id' => $appointment->id,
@@ -113,9 +123,13 @@ class NotificationService
                 'meeting_type'         => $appointment->meeting_type,
             ];
 
-            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
-                new \App\Mail\AppointmentReschedule($details)
-            );
+            $this->systemEmailLog->logAndSendMailable([
+                'category'  => 'appointment_reschedule',
+                'from_mail' => config('mail.from.address'),
+                'to_mail'   => $appointment->client_email,
+                'subject'   => 'Appointment Rescheduled - Bansal Immigration',
+                'client_id' => $appointment->client_id,
+            ], new \App\Mail\AppointmentReschedule($details), $appointment->client_email);
 
             Log::info('Sent reschedule confirmation email', [
                 'appointment_id' => $appointment->id,
@@ -147,9 +161,13 @@ class NotificationService
                 'location' => $appointment->location,
             ];
 
-            Mail::mailer('sendgrid')->to($appointment->client_email)->send(
-                new \App\Mail\AppointmentReminder($details)
-            );
+            $this->systemEmailLog->logAndSendMailable([
+                'category'  => 'appointment_reminder',
+                'from_mail' => config('mail.from.address'),
+                'to_mail'   => $appointment->client_email,
+                'subject'   => 'Appointment Reminder - Bansal Immigration',
+                'client_id' => $appointment->client_id,
+            ], new \App\Mail\AppointmentReminder($details), $appointment->client_email);
 
             Log::info('Sent appointment reminder email', [
                 'appointment_id' => $appointment->id,
