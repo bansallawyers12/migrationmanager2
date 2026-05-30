@@ -77,6 +77,10 @@ Route::post('/clients/sheets/{visaType}/comment', [\App\Http\Controllers\CRM\Vis
     ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
     ->name('clients.sheets.visa-type.comment');
 
+Route::post('/clients/sheets/{visaType}/record-reminder', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'recordReminder'])
+    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
+    ->name('clients.sheets.visa-type.record-reminder');
+
 // EOI Confirmation Workflow (Staff actions - requires auth)
 Route::post('/clients/sheets/eoi-roi/{eoiId}/verify', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'verifyByStaff'])->name('clients.sheets.eoi-roi.verify');
 Route::post('/clients/sheets/eoi-roi/{eoiId}/send-confirmation', [\App\Http\Controllers\CRM\EoiRoiSheetController::class, 'sendConfirmationEmail'])->name('clients.sheets.eoi-roi.send-confirmation');

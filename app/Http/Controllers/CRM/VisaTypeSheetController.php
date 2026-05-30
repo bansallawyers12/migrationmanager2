@@ -4,6 +4,7 @@ namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\ClientMatter;
 use App\Support\StaffClientVisibility;
 use App\Traits\ClientAuthorization;
 use Illuminate\Http\Request;
@@ -515,6 +516,8 @@ class VisaTypeSheetController extends Controller
                 }
             }
         }
+        $this->attachClientEmails($all);
+
         $total = $all->count();
         $page = (int) $request->get('page', 1);
         $slice = $all->slice(($page - 1) * $perPage, $perPage)->values();
@@ -1129,6 +1132,93 @@ class VisaTypeSheetController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Could not save comment'], 500);
+        }
+    }
+
+    /**
+     * Record a checklist reminder (email, sms, or phone) for a client matter on the visa sheet.
+     */
+    public function recordReminder(Request $request, string $visaType)
+    {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet($visaType)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $config = $this->getVisaTypeConfig($visaType);
+        if (! $config) {
+            return response()->json(['success' => false, 'message' => 'Invalid visa type'], 404);
+        }
+
+        $matterInternalId = (int) $request->input('matter_internal_id', 0);
+        $type = strtolower(trim((string) $request->input('type', '')));
+        $allowed = ['email', 'sms', 'phone'];
+
+        if ($matterInternalId <= 0 || ! in_array($type, $allowed, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid matter or reminder type'], 400);
+        }
+
+        $matterCondition = $this->getMatterCondition($config);
+
+        $matterRow = DB::table('client_matters as cm')
+            ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
+            ->where('cm.id', $matterInternalId)
+            ->whereRaw($matterCondition)
+            ->whereRaw('cm.matter_status = 1')
+            ->select('cm.id', 'cm.client_id')
+            ->first();
+
+        if (! $matterRow) {
+            return response()->json(['success' => false, 'message' => 'Matter not found or not on this sheet'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $matterRow->client_id, Auth::user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $clientMatter = ClientMatter::find($matterInternalId);
+        if (! $clientMatter || ! $clientMatter->recordMatterReminder($type, Auth::id())) {
+            return response()->json(['success' => false, 'message' => 'Could not record reminder'], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => ucfirst($type) . ' reminder recorded',
+            'reminded_at' => now()->format('d/m/Y'),
+        ]);
+    }
+
+    /**
+     * Attach a resolved client email to each checklist row (admins.email or first client_emails row).
+     */
+    protected function attachClientEmails($rows): void
+    {
+        if ($rows->isEmpty()) {
+            return;
+        }
+
+        $clientIds = $rows->pluck('client_id')->filter()->unique()->values();
+        if ($clientIds->isEmpty()) {
+            return;
+        }
+
+        $adminEmails = DB::table('admins')->whereIn('id', $clientIds)->pluck('email', 'id');
+        $fallbackEmails = collect();
+        if (Schema::hasTable('client_emails')) {
+            $fallbackEmails = DB::table('client_emails')
+                ->whereIn('client_id', $clientIds)
+                ->orderByRaw("CASE WHEN email_type = 'Personal' THEN 0 ELSE 1 END")
+                ->orderBy('id')
+                ->get(['client_id', 'email'])
+                ->groupBy('client_id');
+        }
+
+        foreach ($rows as $row) {
+            $clientId = (int) ($row->client_id ?? 0);
+            $email = trim((string) ($adminEmails[$clientId] ?? ''));
+            if ($email === '' && $fallbackEmails->has($clientId)) {
+                $email = trim((string) ($fallbackEmails[$clientId]->first()->email ?? ''));
+            }
+            $row->client_email = $email;
         }
     }
 }

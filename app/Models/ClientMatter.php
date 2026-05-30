@@ -329,6 +329,43 @@ class ClientMatter extends Model
     }
 
     /**
+     * Log an email, SMS, or phone checklist reminder for this matter on the visa sheet.
+     */
+    public function recordMatterReminder(string $type, ?int $staffId = null): bool
+    {
+        $allowed = ['email', 'sms', 'phone'];
+        if (! in_array($type, $allowed, true)) {
+            return false;
+        }
+
+        $sheetType = $this->getVisaSheetType();
+        if (! $sheetType) {
+            return false;
+        }
+
+        $config = config("sheets.visa_types.{$sheetType}", []);
+        $remindersTable = $config['reminders_table'] ?? null;
+        $refType = $config['reference_type'] ?? $sheetType;
+
+        if (! $remindersTable || ! \Illuminate\Support\Facades\Schema::hasTable($remindersTable)) {
+            return false;
+        }
+
+        $now = now();
+        \Illuminate\Support\Facades\DB::table($remindersTable)->insert([
+            'visa_type' => $refType,
+            'client_matter_id' => $this->id,
+            'type' => $type,
+            'reminded_at' => $now,
+            'reminded_by' => $staffId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return true;
+    }
+
+    /**
      * Boot method to add model events for debugging
      */
     protected static function boot()

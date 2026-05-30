@@ -188,6 +188,8 @@
     }
     .visa-sheet-page .reminder-cell { min-width: 120px; }
     .visa-sheet-page .checklist-sent-cell { min-width: 120px; }
+    .sheet-email-reminder-modal { z-index: 1060 !important; }
+    .modal-backdrop.show { z-index: 1055 !important; }
     .visa-sheet-page .checklist-not-sent-text { color: #374151; font-weight: 500; }
     .visa-sheet-page .filter_panel { display: none; }
     .visa-sheet-page .filter_panel.show { display: block; }
@@ -428,7 +430,7 @@
                                                     'client_unique_matter_ref_no' => $row->client_unique_matter_no ?? '',
                                                 ]);
                                                 $matterId = $row->matter_internal_id ?? '';
-                                                $emailReminderUrl = $detailUrl . (!empty($matterId) ? '?matterId=' . $matterId . '&open_email_reminder=1' : '?open_email_reminder=1');
+                                                $clientName = trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? ''));
                                                 $smsReminderUrl = $detailUrl . (!empty($matterId) ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '?open_sms_reminder=1');
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $detailUrl }}'">
@@ -535,7 +537,14 @@
                                                     @else
                                                         —
                                                     @endif
-                                                    <br><a href="{{ $emailReminderUrl }}" class="btn btn-sm btn-outline-secondary mt-1 checklist-reminder-link" onclick="event.stopPropagation();" title="Email reminder">Email reminder</a>
+                                                    <br><button type="button"
+                                                        class="btn btn-sm btn-outline-secondary mt-1 checklist-email-reminder-btn"
+                                                        data-client-id="{{ $row->client_id }}"
+                                                        data-client-email="{{ $row->client_email ?? '' }}"
+                                                        data-client-name="{{ $clientName }}"
+                                                        data-crm-ref="{{ $row->crm_ref ?? '' }}"
+                                                        data-matter-id="{{ $matterId }}"
+                                                        title="Email reminder">Email reminder</button>
                                                 </td>
                                                 <td onclick="event.stopPropagation();" class="reminder-cell">
                                                     @if(!empty($row->sms_reminder_latest ?? null))
@@ -551,7 +560,7 @@
                                                     @else
                                                         —
                                                     @endif
-                                                    <br><button type="button" class="btn btn-sm btn-outline-secondary mt-1 checklist-phone-reminder-btn" data-matter-id="{{ $matterId }}" onclick="event.stopPropagation();" title="Phone reminder">Phone reminder</button>
+                                                    <br><button type="button" class="btn btn-sm btn-outline-secondary mt-1 checklist-phone-reminder-btn" data-matter-id="{{ $matterId }}" data-visa-type="{{ $visaType }}" title="Phone reminder">Phone reminder</button>
                                                 </td>
                                                 @endif
                                             </tr>
@@ -572,6 +581,10 @@
         </div>
     </section>
 </div>
+
+@if($tab === 'checklist')
+    @include('crm.clients.partials.sheet-email-reminder-modal')
+@endif
 @endsection
 
 @push('scripts')
@@ -619,10 +632,30 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // Handle star/pin clicks - use capture phase (true) so we run before td's stopPropagation blocks bubble
+    // Capture phase so reminder/pin clicks work despite td onclick stopPropagation and row navigation
     var visaTable = document.getElementById('visa-sheet-table');
     if (visaTable) {
         visaTable.addEventListener('click', function(e) {
+        var emailBtn = e.target.closest('.checklist-email-reminder-btn');
+        if (emailBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof openSheetEmailReminder === 'function') {
+                openSheetEmailReminder($(emailBtn));
+            }
+            return;
+        }
+
+        var phoneBtn = e.target.closest('.checklist-phone-reminder-btn');
+        if (phoneBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof handleSheetPhoneReminder === 'function') {
+                handleSheetPhoneReminder($(phoneBtn));
+            }
+            return;
+        }
+
         var star = e.target.closest('.pin-star');
         if (!star) return;
         
@@ -918,6 +951,225 @@ jQuery(document).ready(function($) {
             openCommentEditor($(commentCell));
         }, true);
     }
+
+    @if($tab === 'checklist')
+    var sheetEmailMacroValues = null;
+
+    function showSheetEmailModal() {
+        var $modal = $('#emailmodal');
+        if (!$modal.length) {
+            return;
+        }
+        if (typeof $modal.modal === 'function') {
+            $modal.modal('show');
+        } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance($modal[0]).show();
+        }
+    }
+
+    function initSheetEmailReminderTinyMce() {
+        if (typeof tinymce === 'undefined' || !$('#compose_email_message').length) {
+            return;
+        }
+        if (tinymce.get('compose_email_message')) {
+            return;
+        }
+        tinymce.init({
+            license_key: 'gpl',
+            selector: '#compose_email_message',
+            height: 280,
+            menubar: false,
+            plugins: ['lists', 'link', 'autolink'],
+            toolbar: 'bold italic underline | bullist numlist | link',
+            branding: false,
+            promotion: false,
+            setup: function(editor) {
+                editor.on('change', function() { editor.save(); });
+            }
+        });
+    }
+
+    window.saveComposeEmail = function() {
+        if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+            tinymce.get('compose_email_message').save();
+        }
+        if (typeof customValidate === 'function') {
+            customValidate('sendmail');
+        }
+    };
+
+    function applySheetEmailMacroReplacements(text, clientFirstName, crmRef) {
+        text = text || '';
+        var first = clientFirstName || '';
+        if (first) {
+            first = first.charAt(0).toUpperCase() + first.slice(1);
+        }
+        text = text.replace(/\{Client First Name\}/g, first);
+        text = text.replace(/\{client reference\}/g, crmRef || '');
+        if (sheetEmailMacroValues) {
+            Object.keys(sheetEmailMacroValues).forEach(function(key) {
+                if (key === 'PDF_url_for_sign') {
+                    return;
+                }
+                var val = sheetEmailMacroValues[key] || '';
+                text = text.replace(new RegExp('\\{' + key + '\\}', 'g'), val);
+                text = text.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val);
+            });
+        }
+        return text;
+    }
+
+    function resetSheetEmailReminderForm() {
+        $('#compose_checklist_reminder_type').val('email');
+        $('#compose_email_subject').val('');
+        $('#sheet_reminder_template').val('');
+        sheetEmailMacroValues = null;
+        if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+            tinymce.get('compose_email_message').setContent('');
+        } else {
+            $('#compose_email_message').val('');
+        }
+    }
+
+    window.openSheetEmailReminder = function($btn) {
+        var clientId = $btn.data('client-id');
+        var clientEmail = ($btn.data('client-email') || '').trim();
+        var clientName = ($btn.data('client-name') || '').trim();
+        var matterId = $btn.data('matter-id') || '';
+        var crmRef = $btn.data('crm-ref') || '';
+
+        if (!clientId) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'Missing client data', position: 'topRight' });
+            }
+            return;
+        }
+        if (!clientEmail) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'Client email is required to send a reminder.', position: 'topRight' });
+            }
+            return;
+        }
+        if (!matterId) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'A client matter is required to record this reminder.', position: 'topRight' });
+            }
+            return;
+        }
+        if (!$('#emailmodal').length) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.error({ title: 'Error', message: 'Email popup failed to load. Please refresh the page.', position: 'topRight' });
+            }
+            return;
+        }
+
+        resetSheetEmailReminderForm();
+        $('#sheet_reminder_client_id').val(clientId).data('first-name', clientName.split(' ')[0] || '').data('crm-ref', crmRef);
+        $('#sheet_reminder_email_to').val(clientId);
+        $('#compose_client_matter_id').val(matterId);
+        $('#compose_checklist_reminder_type').val('email');
+        $('#sheet_reminder_to_display').text(clientName + ' <' + clientEmail + '>');
+        $('#sheetEmailReminderLabel').text('Email Reminder — ' + (clientName || 'Client'));
+
+        var $templateSelect = $('#sheet_reminder_template');
+        if (!$templateSelect.data('default-html')) {
+            $templateSelect.data('default-html', $templateSelect.html());
+        } else {
+            $templateSelect.html($templateSelect.data('default-html'));
+        }
+        $templateSelect.val('');
+
+        $.get('{{ route('clients.getComposeDefaults') }}', { client_matter_id: matterId })
+            .done(function(res) {
+                sheetEmailMacroValues = res.macro_values || null;
+                if (res.matter_templates && res.matter_templates.length) {
+                    $templateSelect.empty().append('<option value="">Select</option>');
+                    res.matter_templates.forEach(function(t) {
+                        $templateSelect.append($('<option></option>').attr('value', t.id).text(t.name || 'Template'));
+                    });
+                }
+            })
+            .always(function() {
+                initSheetEmailReminderTinyMce();
+                showSheetEmailModal();
+            });
+    };
+
+    window.handleSheetPhoneReminder = function($btn) {
+        var matterId = $btn.data('matter-id');
+        var visaType = $btn.data('visa-type');
+
+        if (!matterId || !visaType) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'Cannot record phone reminder: missing matter data', position: 'topRight' });
+            }
+            return;
+        }
+        if (!confirm('Record a phone reminder for this client?')) {
+            return;
+        }
+
+        $btn.prop('disabled', true);
+        $.ajax({
+            url: '{{ url('/clients/sheets') }}/' + encodeURIComponent(String(visaType)) + '/record-reminder',
+            method: 'POST',
+            data: {
+                matter_internal_id: matterId,
+                type: 'phone',
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                $btn.prop('disabled', false);
+                if (response.success) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Recorded', message: response.message || 'Phone reminder recorded', position: 'topRight', timeout: 2000 });
+                    }
+                    setTimeout(function() { window.location.reload(); }, 500);
+                } else if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: response.message || 'Could not record phone reminder', position: 'topRight' });
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false);
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Could not record phone reminder.';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            }
+        });
+    };
+
+    $('#emailmodal').on('hidden.bs.modal', function() {
+        resetSheetEmailReminderForm();
+    });
+
+    $('#sheet_reminder_template').on('change', function() {
+        var templateId = $(this).val();
+        if (!templateId) {
+            return;
+        }
+        var clientFirst = $('#sheet_reminder_client_id').data('first-name') || '';
+        var crmRef = $('#sheet_reminder_client_id').data('crm-ref') || '';
+        $.get('{{ route('clients.gettemplates') }}', { id: templateId }, function(response) {
+            var res = typeof response === 'string' ? JSON.parse(response) : response;
+            if (!res) {
+                return;
+            }
+            var subject = applySheetEmailMacroReplacements(res.subject || '', clientFirst, crmRef);
+            var body = applySheetEmailMacroReplacements(res.description || '', clientFirst, crmRef);
+            $('#compose_email_subject').val(subject);
+            if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+                tinymce.get('compose_email_message').setContent(body);
+            } else {
+                $('#compose_email_message').val(body);
+            }
+        });
+    });
+
+    $('#emailmodal').on('shown.bs.modal', function() {
+        initSheetEmailReminderTinyMce();
+    });
+    @endif
 });
 </script>
 @endpush
