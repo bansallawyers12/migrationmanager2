@@ -674,7 +674,14 @@ class EoiRoiSheetController extends Controller
                 );
             }
 
-            Mail::mailer('sendgrid')->to($eoi->client->email)->send($mail);
+            app(\App\Services\SystemEmailLogService::class)->logAndSendMailable([
+                'category'  => 'eoi',
+                'from_mail' => is_array($eoiFromConfig) ? ($eoiFromConfig['from_address'] ?? config('mail.from.address')) : config('mail.from.address'),
+                'to_mail'   => $eoi->client->email,
+                'subject'   => $mail->customSubject ?? ('Please Confirm Your EOI Details - ' . $eoi->EOI_number),
+                'client_id' => $eoi->client_id,
+                'user_id'   => auth('admin')->id(),
+            ], $mail, $eoi->client->email);
 
             // Log activity
             $this->logActivity(

@@ -48,6 +48,13 @@ class InvoiceEmailManager extends Mailable
              ]));
          }
 
+         if (!empty($this->array['email_log_id'])) {
+             $emailLogId = (int) $this->array['email_log_id'];
+             $message->withSymfonyMessage(function ($symfonyMessage) use ($emailLogId) {
+                 app(\App\Services\SystemEmailLogService::class)->attachTrackingHeader($symfonyMessage, $emailLogId);
+             });
+         }
+
          return $message;
      }
  }

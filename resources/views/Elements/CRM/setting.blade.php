@@ -100,6 +100,14 @@
 			<li class="{{$sentEmailsClasstype}}"><a class="nav-link" href="{{route('adminconsole.features.sent-emails.dashboard')}}">Sent Emails</a></li>
 
 			<?php
+			$systemEmailsClasstype = '';
+			if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.system-emails.')){
+				$systemEmailsClasstype = 'active';
+			}
+			?>
+			<li class="{{$systemEmailsClasstype}}"><a class="nav-link" href="{{route('adminconsole.features.system-emails.dashboard')}}">System Emails</a></li>
+
+			<?php
 			// E-Signature Management menu - Available for all admin users
 			$esignatureclasstype = '';
 			if(str_starts_with(Route::currentRouteName() ?? '', 'adminconsole.features.esignature.')){

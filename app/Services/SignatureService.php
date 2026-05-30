@@ -18,13 +18,12 @@ use Illuminate\Support\Facades\Auth;
 class SignatureService
 {
     protected EmailConfigService $emailConfigService;
+    protected SystemEmailLogService $systemEmailLog;
 
-    /**
-     * Constructor with dependency injection
-     */
-    public function __construct(EmailConfigService $emailConfigService)
+    public function __construct(EmailConfigService $emailConfigService, SystemEmailLogService $systemEmailLog)
     {
         $this->emailConfigService = $emailConfigService;
+        $this->systemEmailLog = $systemEmailLog;
     }
     /**
      * Send a document for signature
@@ -108,6 +107,9 @@ class SignatureService
      */
     protected function sendSigningEmail(Document $document, Signer $signer, array $options = []): void
     {
+        $systemEmailLog = $this->systemEmailLog;
+        $log = null;
+
         try {
             $signingUrl = url("/sign/{$document->id}/{$signer->token}");
             
@@ -138,7 +140,18 @@ class SignatureService
                 $attachments = $options['attachments'];
             }
 
-            Mail::mailer('sendgrid')->send($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments) {
+            $systemEmailLog = $this->systemEmailLog;
+            $log = $systemEmailLog->createPending([
+                'category'  => 'signature',
+                'from_mail' => $from['from_address'],
+                'to_mail'   => $signer->email,
+                'subject'   => $subject,
+                'message'   => $message,
+                'client_id' => $document->client_id,
+                'user_id'   => Auth::guard('admin')->id(),
+            ]);
+
+            Mail::mailer('sendgrid')->send($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments, $log, $systemEmailLog) {
                 $mail->to($signer->email, $signer->name)
                     ->subject($subject)
                     ->from($from['from_address'], $from['from_name']);
@@ -163,6 +176,8 @@ class SignatureService
                         }
                     }
                 }
+
+                $systemEmailLog->attachTrackingToMailMessage($mail, $log->id);
             });
 
             // Create activity note for successful email delivery
@@ -188,6 +203,10 @@ class SignatureService
                 'email_account' => $from['from_address'],
             ]);
         } catch (\Exception $e) {
+            if ($log !== null) {
+                $systemEmailLog->markSendFailed($log, $e->getMessage());
+            }
+
             // Create activity note for failed email delivery
             try {
                 SignatureActivity::create([
@@ -225,6 +244,9 @@ class SignatureService
      */
     public function remind(Signer $signer, array $options = []): bool
     {
+        $systemEmailLog = $this->systemEmailLog;
+        $log = null;
+
         try {
             // Check if signature is cancelled - cannot send reminders to cancelled signers
             if ($signer->status === 'cancelled') {
@@ -254,10 +276,22 @@ class SignatureService
                 'emailSignature' => $from['email_signature'] ?? '',
             ];
 
-            Mail::mailer('sendgrid')->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from) {
+            $systemEmailLog = $this->systemEmailLog;
+            $log = $systemEmailLog->createPending([
+                'category'  => 'signature_reminder',
+                'from_mail' => $from['from_address'],
+                'to_mail'   => $signer->email,
+                'subject'   => 'Reminder: Please Sign Your Document - Bansal Migration',
+                'client_id' => $document->client_id,
+                'user_id'   => Auth::guard('admin')->id(),
+            ]);
+
+            Mail::mailer('sendgrid')->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from, $log, $systemEmailLog) {
                 $mail->to($signer->email, $signer->name)
                     ->subject('Reminder: Please Sign Your Document - Bansal Migration')
                     ->from($from['from_address'], $from['from_name']);
+
+                $systemEmailLog->attachTrackingToMailMessage($mail, $log->id);
             });
 
             // Update reminder tracking
@@ -289,6 +323,10 @@ class SignatureService
 
             return true;
         } catch (\Exception $e) {
+            if ($log !== null) {
+                $systemEmailLog->markSendFailed($log, $e->getMessage());
+            }
+
             // Create activity note for failed reminder
             try {
                 SignatureActivity::create([

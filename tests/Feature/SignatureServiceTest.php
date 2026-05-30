@@ -10,6 +10,7 @@ use App\Models\Lead;
 use App\Models\Email;
 use App\Services\SignatureService;
 use App\Services\EmailConfigService;
+use App\Services\SystemEmailLogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +27,10 @@ class SignatureServiceTest extends TestCase
         parent::setUp();
         
         $this->emailConfigService = new EmailConfigService();
-        $this->signatureService = new SignatureService($this->emailConfigService);
+        $this->signatureService = new SignatureService(
+            $this->emailConfigService,
+            app(SystemEmailLogService::class)
+        );
         
         Storage::fake('s3');
         Mail::fake();
