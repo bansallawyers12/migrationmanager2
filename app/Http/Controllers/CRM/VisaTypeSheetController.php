@@ -1020,4 +1020,115 @@ class VisaTypeSheetController extends Controller
             return response()->json(['success' => false, 'message' => 'Could not update status'], 500);
         }
     }
+
+    /**
+     * Create or update the sheet comment for a client matter reference row.
+     */
+    public function updateComment(Request $request, string $visaType)
+    {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet($visaType)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $config = $this->getVisaTypeConfig($visaType);
+        if (! $config) {
+            return response()->json(['success' => false, 'message' => 'Invalid visa type'], 404);
+        }
+
+        $clientId = (int) $request->input('client_id', 0);
+        $matterInternalId = (int) $request->input('matter_internal_id', 0);
+        $comment = $request->input('comment');
+        if (is_string($comment)) {
+            $comment = trim($comment);
+            if ($comment === '') {
+                $comment = null;
+            }
+        } else {
+            $comment = null;
+        }
+
+        if ($clientId <= 0 || $matterInternalId <= 0) {
+            return response()->json(['success' => false, 'message' => 'Missing required parameters'], 400);
+        }
+
+        if ($comment !== null && mb_strlen($comment) > 5000) {
+            return response()->json(['success' => false, 'message' => 'Comment must be 5000 characters or fewer'], 422);
+        }
+
+        $refTable = $config['reference_table'];
+        $refType = $config['reference_type'] ?? $visaType;
+
+        if (! Schema::hasTable($refTable)) {
+            return response()->json(['success' => false, 'message' => 'Reference table not found'], 404);
+        }
+
+        if ($refTable === 'client_matter_references' && (empty($refType) || $refType === '')) {
+            return response()->json(['success' => false, 'message' => 'Visa type config missing reference_type'], 500);
+        }
+
+        $matterCondition = $this->getMatterCondition($config);
+
+        $matterRow = DB::table('client_matters as cm')
+            ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
+            ->where('cm.id', $matterInternalId)
+            ->where('cm.client_id', $clientId)
+            ->whereRaw($matterCondition)
+            ->whereRaw('cm.matter_status = 1')
+            ->select('cm.id', 'cm.client_id')
+            ->first();
+
+        if (! $matterRow) {
+            return response()->json(['success' => false, 'message' => 'Matter not found or not on this sheet'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $matterRow->client_id, Auth::user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $query = DB::table($refTable)
+                ->where('client_id', $clientId)
+                ->where('client_matter_id', $matterInternalId);
+            if (! empty($refType) && $refTable === 'client_matter_references') {
+                $query->where('type', $refType);
+            }
+            $reference = $query->first();
+
+            if ($reference) {
+                $updateQuery = DB::table($refTable)
+                    ->where('client_id', $clientId)
+                    ->where('client_matter_id', $matterInternalId);
+                if (! empty($refType) && $refTable === 'client_matter_references') {
+                    $updateQuery->where('type', $refType);
+                }
+                $updateQuery->update([
+                    'comments' => $comment,
+                    'updated_by' => Auth::id(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $insertData = [
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterInternalId,
+                    'comments' => $comment,
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                if ($refTable === 'client_matter_references') {
+                    $insertData['type'] = $refType;
+                }
+                DB::table($refTable)->insert($insertData);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comment saved',
+                'comment' => $comment ?? '',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Could not save comment'], 500);
+        }
+    }
 }
