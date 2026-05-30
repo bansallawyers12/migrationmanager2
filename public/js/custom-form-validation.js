@@ -6,6 +6,49 @@ var min = "This field should be greater than or equal to ";
 var max = "This field should be less than or equal to ";
 var equal = "This field should be equal to ";
 
+/** UTF-8 safe base64 for compose email bodies (avoids WAF/mod_security 403 on HTML/URLs). */
+function mmUtf8ToBase64(str) {
+	try {
+		return btoa(unescape(encodeURIComponent(String(str))));
+	} catch (e) {
+		return '';
+	}
+}
+
+/** Apply WAF-safe encoding to compose-email FormData before POST /sendmail. */
+function mmPrepareComposeEmailFormData(myform, fd, csrfToken) {
+	fd.set('_token', csrfToken);
+
+	var clientIdEl = myform.querySelector('input[name="client_id"]');
+	var clientIdVal = clientIdEl && clientIdEl.value ? String(clientIdEl.value).trim() : '';
+	if (!clientIdVal && typeof window.ClientDetailConfig !== 'undefined' && window.ClientDetailConfig.clientId) {
+		clientIdVal = String(window.ClientDetailConfig.clientId);
+	}
+	if (clientIdVal) {
+		fd.set('client_id', clientIdVal);
+	}
+
+	var leadIdEl = myform.querySelector('input[name="lead_id"]');
+	if (leadIdEl && leadIdEl.value) {
+		fd.set('lead_id', String(leadIdEl.value).trim());
+	}
+
+	var subjectEl = myform.querySelector('input[name="subject"], [name="subject"]');
+	if (subjectEl && subjectEl.value) {
+		fd.set('subject', String(subjectEl.value).replace(/\&/g, '__AMP__'));
+	}
+
+	var messageEl = myform.querySelector('textarea[name="message"], [name="message"]');
+	if (messageEl) {
+		var messageVal = messageEl.value != null ? String(messageEl.value) : '';
+		var encodedMessage = mmUtf8ToBase64(messageVal);
+		if (encodedMessage) {
+			fd.set('message', encodedMessage);
+			fd.set('message_encoding', 'base64');
+		}
+	}
+}
+
 function customValidate(formName, savetype = '')
 	{ //alert(formName);
 		if (formName === 'convert_lead_to_client') {
@@ -2265,13 +2308,7 @@ function customValidate(formName, savetype = '')
 
 						// Create FormData from form
 						var fd = new FormData(myform);
-						// Explicitly set the CSRF token in FormData (overwrites any stale token from form)
-						fd.set('_token', csrfToken);
-						// Replace & in subject with placeholder to avoid WAF 403; server restores it before sending email
-						var subjectEl = myform.querySelector('input[name="subject"], [name="subject"]');
-						if (subjectEl && subjectEl.value) {
-							fd.set('subject', String(subjectEl.value).replace(/\&/g, '__AMP__'));
-						}
+						mmPrepareComposeEmailFormData(myform, fd, csrfToken);
 						
 						// Use same-origin URL to avoid 403 from wrong domain (e.g. APP_URL vs current host)
 						var actionAttr = $("form[name=\"" + formName + "\"]").attr('action') || '';
@@ -2357,7 +2394,7 @@ function customValidate(formName, savetype = '')
 									setTimeout(function(){ location.reload(); }, 1500);
 									return;
 								}
-								// 403 Forbidden — compose email uses compose_email_forbidden + clear message; other 403s fall back
+								// 403 Forbidden — compose CRM denial vs server/WAF block
 								if(xhr.status === 403){
 									var responseText = xhr.responseText || '';
 									var responseJSON = xhr.responseJSON || {};
@@ -2367,9 +2404,17 @@ function customValidate(formName, savetype = '')
 										$('.custom-error-msg').html('<span class="alert alert-warning">Security token expired. Refresh the page and try again.</span>');
 										return;
 									}
-									var msg = (responseJSON.message && String(responseJSON.message).trim() !== '')
-										? responseJSON.message
-										: 'You are not authorized to send email.';
+									var isComposeForbidden = responseJSON.error_type === 'compose_email_forbidden';
+									var msg;
+									if (isComposeForbidden) {
+										msg = (responseJSON.message && String(responseJSON.message).trim() !== '')
+											? responseJSON.message
+											: 'You are not authorized to send email.';
+									} else if (!responseJSON.message || responseText.indexOf('<html') !== -1 || responseText.indexOf('<!DOCTYPE') !== -1) {
+										msg = 'The server blocked this email request (security filter). Please try again or contact support if it persists.';
+									} else {
+										msg = responseJSON.message;
+									}
 									$('.custom-error-msg').html('<span class="alert alert-warning">' + msg + '</span>');
 									alert(msg);
 									return;

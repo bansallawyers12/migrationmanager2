@@ -26,6 +26,7 @@ use App\Models\McqChapter;
 use App\Models\McqSubject;
 use App\Services\EmailService;
 use App\Services\CrmSentEmailS3Service;
+use App\Support\ComposeEmailPayload;
 use App\Support\SendGridFromAllowedDomains;
 use App\Support\StaffClientVisibility;
 use App\Support\WorkflowStageFreeze;
@@ -1156,8 +1157,9 @@ public function getChapters(Request $request)
 
     public function sendmail(Request $request){
 		$requestData = $request->all();
-		// Restore & in subject (front-end sends __AMP__ to avoid WAF 403 on special characters)
-		$requestData['subject'] = str_replace('__AMP__', '&', $requestData['subject'] ?? '');
+		// WAF-safe transport: subject placeholders + optional base64 message body (see ComposeEmailPayload)
+		$requestData['subject'] = ComposeEmailPayload::decodeSubject($requestData);
+		$requestData['message'] = ComposeEmailPayload::decodeMessage($requestData);
 		//echo '<pre>'; print_r($requestData); die;
 
 		// Compose email: explicit CRM record access + structured deny message + audit log
@@ -1555,6 +1557,13 @@ public function getChapters(Request $request)
 			return;
 		}
 
+		$user = Auth::guard('admin')->user();
+
+		// Super Admin, Admin, and other exempt roles always may compose for any client/lead.
+		if ($user && StaffClientVisibility::isExemptFromAllocation($user)) {
+			return;
+		}
+
 		$row = Admin::query()
 			->where('id', $adminId)
 			->whereIn('type', ['client', 'lead'])
@@ -1564,7 +1573,6 @@ public function getChapters(Request $request)
 			return;
 		}
 
-		$user = Auth::guard('admin')->user();
 		if (StaffClientVisibility::canAccessClientOrLead($adminId, $user)) {
 			return;
 		}
