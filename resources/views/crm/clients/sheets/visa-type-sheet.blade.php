@@ -189,6 +189,7 @@
     .visa-sheet-page .reminder-cell { min-width: 120px; }
     .visa-sheet-page .checklist-sent-cell { min-width: 120px; }
     .sheet-email-reminder-modal { z-index: 1060 !important; }
+    .sheet-sms-reminder-modal { z-index: 1060 !important; }
     .modal-backdrop.show { z-index: 1055 !important; }
     .visa-sheet-page .checklist-not-sent-text { color: #374151; font-weight: 500; }
     .visa-sheet-page .filter_panel { display: none; }
@@ -431,7 +432,6 @@
                                                 ]);
                                                 $matterId = $row->matter_internal_id ?? '';
                                                 $clientName = trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? ''));
-                                                $smsReminderUrl = $detailUrl . (!empty($matterId) ? '?matterId=' . $matterId . '&open_sms_reminder=1' : '?open_sms_reminder=1');
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $detailUrl }}'">
                                                 <td class="pin-cell" onclick="event.stopPropagation();">
@@ -552,7 +552,12 @@
                                                     @else
                                                         —
                                                     @endif
-                                                    <br><a href="{{ $smsReminderUrl }}" class="btn btn-sm btn-outline-secondary mt-1 checklist-reminder-link" onclick="event.stopPropagation();" title="SMS reminder">SMS reminder</a>
+                                                    <br><button type="button"
+                                                        class="btn btn-sm btn-outline-secondary mt-1 checklist-sms-reminder-btn"
+                                                        data-client-id="{{ $row->client_id }}"
+                                                        data-client-name="{{ $clientName }}"
+                                                        data-matter-id="{{ $matterId }}"
+                                                        title="SMS reminder">SMS reminder</button>
                                                 </td>
                                                 <td onclick="event.stopPropagation();" class="reminder-cell">
                                                     @if(!empty($row->phone_reminder_latest ?? null))
@@ -584,6 +589,7 @@
 
 @if($tab === 'checklist')
     @include('crm.clients.partials.sheet-email-reminder-modal')
+    @include('crm.clients.partials.sheet-sms-reminder-modal')
 @endif
 @endsection
 
@@ -642,6 +648,16 @@ jQuery(document).ready(function($) {
             e.stopPropagation();
             if (typeof openSheetEmailReminder === 'function') {
                 openSheetEmailReminder($(emailBtn));
+            }
+            return;
+        }
+
+        var smsBtn = e.target.closest('.checklist-sms-reminder-btn');
+        if (smsBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof openSheetSmsReminder === 'function') {
+                openSheetSmsReminder($(smsBtn));
             }
             return;
         }
@@ -954,10 +970,10 @@ jQuery(document).ready(function($) {
 
     @if($tab === 'checklist')
     var sheetEmailMacroValues = null;
+    var sheetSmsClientName = '';
 
-    function showSheetEmailModal() {
-        var $modal = $('#emailmodal');
-        if (!$modal.length) {
+    function showSheetModal($modal) {
+        if (!$modal || !$modal.length) {
             return;
         }
         if (typeof $modal.modal === 'function') {
@@ -965,6 +981,14 @@ jQuery(document).ready(function($) {
         } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
             bootstrap.Modal.getOrCreateInstance($modal[0]).show();
         }
+    }
+
+    function showSheetEmailModal() {
+        showSheetModal($('#emailmodal'));
+    }
+
+    function showSheetSmsModal() {
+        showSheetModal($('#sheetSmsModal'));
     }
 
     function initSheetEmailReminderTinyMce() {
@@ -1031,6 +1055,80 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function resetSheetSmsReminderForm() {
+        $('#sheet_sms_checklist_reminder').val('1');
+        $('#sheet_sms_message').val('').trigger('input');
+        $('#sheet_sms_template').val('');
+    }
+
+    function updateSheetSmsCharCounter() {
+        var len = ($('#sheet_sms_message').val() || '').length;
+        var segSize = 160;
+        var segs = Math.max(1, Math.ceil(len / segSize));
+        var left = (segs * segSize) - len;
+        $('#sheet_sms_char_count').text(len);
+        $('#sheet_sms_char_max').text(segs * segSize);
+        $('#sheet_sms_chars_remaining').html('&nbsp;&middot;&nbsp; ' + left + ' left in this SMS');
+        $('#sheet_sms_segment_badge')
+            .text(segs + ' SMS')
+            .removeClass('badge-success badge-warning')
+            .addClass(segs === 1 ? 'badge-success' : 'badge-warning');
+    }
+
+    function loadSheetSmsPhones(clientId, onDone) {
+        var $phoneSelect = $('#sheet_sms_phone');
+        $phoneSelect.empty().append('<option value="">Loading phone numbers...</option>');
+        $.ajax({
+            url: '{{ URL::to("/clients/fetchClientContactNo") }}',
+            type: 'POST',
+            dataType: 'json',
+            data: { _token: '{{ csrf_token() }}', client_id: clientId },
+            success: function(response) {
+                var data;
+                try {
+                    data = (typeof response === 'string' && response.trim()) ? JSON.parse(response) : (response || {});
+                } catch (e) {
+                    data = {};
+                }
+                $phoneSelect.empty().append('<option value="">Select phone number...</option>');
+                if (data.clientContacts && data.clientContacts.length > 0) {
+                    data.clientContacts.forEach(function(contact) {
+                        var fullPhone = (contact.country_code || '') + (contact.phone || '');
+                        var label = (contact.contact_type || 'Phone') + ': ' + fullPhone;
+                        $phoneSelect.append($('<option></option>').val(fullPhone).text(label));
+                    });
+                } else {
+                    $phoneSelect.append('<option value="">No phone numbers found</option>');
+                }
+            },
+            error: function() {
+                $phoneSelect.empty().append('<option value="">Error loading phone numbers</option>');
+            },
+            complete: function() {
+                if (typeof onDone === 'function') {
+                    onDone();
+                }
+            }
+        });
+    }
+
+    function loadSheetSmsTemplates() {
+        var $templateSelect = $('#sheet_sms_template');
+        $templateSelect.empty().append('<option value="">Type your own message or select a template...</option>');
+        $.ajax({
+            url: '{{ route("clients.sms.templates.active") }}',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data && response.data.length > 0) {
+                    response.data.forEach(function(template) {
+                        $templateSelect.append($('<option></option>').val(template.id).text(template.title));
+                    });
+                }
+            }
+        });
+    }
+
     window.openSheetEmailReminder = function($btn) {
         var clientId = $btn.data('client-id');
         var clientEmail = ($btn.data('client-email') || '').trim();
@@ -1093,6 +1191,53 @@ jQuery(document).ready(function($) {
                 initSheetEmailReminderTinyMce();
                 showSheetEmailModal();
             });
+    };
+
+    window.openSheetSmsReminder = function($btn) {
+        var clientId = $btn.data('client-id');
+        var clientName = ($btn.data('client-name') || '').trim();
+        var matterId = $btn.data('matter-id') || '';
+
+        if (!clientId) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'Missing client data', position: 'topRight' });
+            }
+            return;
+        }
+        if (!matterId) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.warning({ title: 'Error', message: 'A client matter is required to record this reminder.', position: 'topRight' });
+            }
+            return;
+        }
+        if (!$('#sheetSmsModal').length) {
+            if (typeof iziToast !== 'undefined') {
+                iziToast.error({ title: 'Error', message: 'SMS popup failed to load. Please refresh the page.', position: 'topRight' });
+            }
+            return;
+        }
+
+        sheetSmsClientName = clientName;
+        resetSheetSmsReminderForm();
+        $('#sheet_sms_client_id').val(clientId);
+        $('#sheet_sms_matter_id').val(matterId);
+        $('#sheetSmsReminderLabel').html('<i class="fas fa-sms"></i> SMS Reminder — ' + (clientName || 'Client'));
+        loadSheetSmsTemplates();
+        loadSheetSmsPhones(clientId, function() {
+            var hasPhone = false;
+            $('#sheet_sms_phone option').each(function() {
+                if ($(this).val()) {
+                    hasPhone = true;
+                }
+            });
+            if (!hasPhone) {
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.warning({ title: 'Error', message: 'Client phone number is required to send a reminder.', position: 'topRight' });
+                }
+                return;
+            }
+            showSheetSmsModal();
+        });
     };
 
     window.handleSheetPhoneReminder = function($btn) {
@@ -1168,6 +1313,82 @@ jQuery(document).ready(function($) {
 
     $('#emailmodal').on('shown.bs.modal', function() {
         initSheetEmailReminderTinyMce();
+    });
+
+    $('#sheetSmsModal').on('hidden.bs.modal', function() {
+        resetSheetSmsReminderForm();
+    });
+
+    $('#sheet_sms_message').on('input', updateSheetSmsCharCounter);
+
+    $('#sheet_sms_template').on('change', function() {
+        var id = $(this).val();
+        if (!id) {
+            return;
+        }
+        $.ajax({
+            url: '/clients/sms-template/' + id + '/compose',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (!response.success || !response.data) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Could not load SMS template', position: 'topRight' });
+                    }
+                    return;
+                }
+                var name = sheetSmsClientName || '';
+                var processedMessage = response.data.message || '';
+                processedMessage = processedMessage.replace(/\{first_name\}/g, name.split(' ')[0] || '');
+                processedMessage = processedMessage.replace(/\{last_name\}/g, name.split(' ').slice(1).join(' ') || '');
+                processedMessage = processedMessage.replace(/\{client_name\}/g, name);
+                processedMessage = processedMessage.replace(/\{full_name\}/g, name);
+                if (processedMessage.length > 320) {
+                    processedMessage = processedMessage.slice(0, 320);
+                }
+                $('#sheet_sms_message').val(processedMessage).trigger('input');
+            }
+        });
+    });
+
+    $('#sheetSmsForm').on('submit', function(e) {
+        e.preventDefault();
+        var $submitBtn = $('#sheetSendSmsBtn');
+        var originalText = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+
+        $.ajax({
+            url: '{{ route("clients.sms.send") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                client_id: $('#sheet_sms_client_id').val(),
+                client_matter_id: $('#sheet_sms_matter_id').val(),
+                checklist_reminder: 1,
+                phone: $('#sheet_sms_phone').val(),
+                message: $('#sheet_sms_message').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Success', message: 'SMS sent successfully!', position: 'topRight' });
+                    }
+                    $('#sheetSmsModal').modal('hide');
+                    setTimeout(function() { window.location.reload(); }, 800);
+                } else if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: response.message || 'Failed to send SMS', position: 'topRight' });
+                }
+            },
+            error: function(xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'An error occurred while sending SMS';
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
     });
     @endif
 });

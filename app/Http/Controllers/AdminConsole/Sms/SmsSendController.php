@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AdminConsole\Sms;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientMatter;
 use App\Services\Sms\UnifiedSmsManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -40,6 +41,8 @@ class SmsSendController extends Controller
             'message' => 'required|string|max:' . (UnifiedSmsManager::SINGLE_SMS_SEGMENT_MAX_CHARS * 2),
             'client_id' => 'nullable|exists:admins,id',
             'contact_id' => 'nullable|exists:client_contacts,id',
+            'client_matter_id' => 'nullable|integer|min:1',
+            'checklist_reminder' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -59,6 +62,16 @@ class SmsSendController extends Controller
                 'contact_id' => $request->contact_id,
             ]
         );
+
+        if (! empty($result['success']) && $request->boolean('checklist_reminder')) {
+            $matterId = (int) $request->input('client_matter_id', 0);
+            if ($matterId > 0) {
+                $clientMatter = ClientMatter::find($matterId);
+                if ($clientMatter) {
+                    $clientMatter->recordMatterReminder('sms', auth('admin')->id());
+                }
+            }
+        }
 
         return response()->json($result);
     }
