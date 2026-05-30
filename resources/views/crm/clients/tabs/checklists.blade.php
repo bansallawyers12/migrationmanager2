@@ -960,10 +960,7 @@
                 return;
             }
 
-            // Set sidebar matter and compose matter ID
-            if ($('#sel_matter_id_client_detail').length) {
-                $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
-            }
+            // Set compose matter only — do not trigger sidebar matter dropdown change (that reloads the page).
             $('#emailmodal #compose_client_matter_id').val(clientMatterId || '');
 
             // Default subject for checklist email
@@ -1156,8 +1153,8 @@
             }
         });
 
-        // When clicking Visa Agreement or Finalize from checklist list, set sidebar matter first
-        $('#checklists-tab').on('mousedown', '.visaAgreementCreateForm, .finalizeAgreementConvertToPdf', function() {
+        // When clicking Finalize from checklist list, set sidebar matter first (Create Visa Agreement uses data-client-matter-id on click instead — syncing here reloads the page).
+        $('#checklists-tab').on('mousedown', '.finalizeAgreementConvertToPdf', function() {
             var cmId = $(this).data('client-matter-id');
             if (cmId && $('#sel_matter_id_client_detail').length) {
                 $('#sel_matter_id_client_detail').val(cmId).trigger('change');

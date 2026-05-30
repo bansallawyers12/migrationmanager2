@@ -4327,7 +4327,15 @@ success: function(response) {
 
             var client_id = window.ClientDetailConfig.clientId;
 
-            var client_matter_id = $('#sel_matter_id_client_detail').val();
+            // Prefer checklist row matter (avoids sidebar matter sync, which reloads the page when URL matter differs).
+            var client_matter_id = $btn.data('client-matter-id');
+            if (!client_matter_id) {
+                if ($('.general_matter_checkbox_client_detail').is(':checked')) {
+                    client_matter_id = $('.general_matter_checkbox_client_detail').val();
+                } else {
+                    client_matter_id = $('#sel_matter_id_client_detail').val();
+                }
+            }
 
             // FIX: Validate that a matter is selected before proceeding
             // This prevents generating corrupted agreements without matter data
