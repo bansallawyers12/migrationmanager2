@@ -13,10 +13,78 @@
 }
 
 .address-compact-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 15px;
     align-items: center;
+    width: 100%;
+}
+
+.address-compact-grid > .summary-item-inline {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.address-compact-grid > .summary-item-inline.address-current-summary {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.experience-entry-compact {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.experience-compact-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+}
+
+.experience-compact-grid > .summary-item-inline {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.experience-compact-grid > .summary-item-inline.experience-current-summary {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.experience-entry-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 10px;
+    min-height: 36px;
+}
+
+.experience-entry-header .remove-item-btn {
+    position: static;
+    flex-shrink: 0;
+}
+
+.experience-current-toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.experience-current-label {
+    white-space: nowrap;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
 }
 
 /* ===== VISA/PASSPORT SECTIONS ===== */
@@ -163,7 +231,26 @@
 
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
 @media (max-width: 768px) {
-    .address-compact-grid,
+    .address-compact-grid {
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .address-compact-grid > .summary-item-inline {
+        flex: none;
+    }
+
+    .experience-compact-grid {
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .experience-compact-grid > .summary-item-inline {
+        flex: none;
+    }
+
     .passport-compact-grid,
     .visa-compact-grid {
         grid-template-columns: 1fr;

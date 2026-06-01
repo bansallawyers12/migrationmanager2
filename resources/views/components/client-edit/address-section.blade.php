@@ -19,6 +19,10 @@
         @if($clientAddresses->count() > 0)
             <div>
                 @foreach($clientAddresses as $index => $address)
+                    @php
+                        // Current address = latest start_date (first row in display order)
+                        $isCurrentAddress = ($index === 0);
+                    @endphp
                     <div class="address-entry-compact">
                         <div class="address-compact-grid">
                             <div class="summary-item-inline">
@@ -62,6 +66,15 @@
                                 <span class="summary-value strong">{{ $address->regional_code }}</span>
                             </div>
                             @endif
+                            @if($isCurrentAddress)
+                            <div class="summary-item-inline address-current-summary">
+                                <span class="summary-label">CURRENT:</span>
+                                <label class="switch switch-readonly" style="margin: 0;" title="Current address">
+                                    <input type="checkbox" checked disabled>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -87,7 +100,8 @@
                     <x-client-edit.address-field 
                         :index="$index" 
                         :address="$address" 
-                        :showRemoveButton="$index > 0" 
+                        :showRemoveButton="$index > 0"
+                        :isCurrent="$index === 0"
                     />
                 @endforeach
             @else
@@ -95,7 +109,8 @@
                 <x-client-edit.address-field 
                     :index="0" 
                     :address="null" 
-                    :showRemoveButton="false" 
+                    :showRemoveButton="false"
+                    :isCurrent="true"
                 />
             @endif
         </div>

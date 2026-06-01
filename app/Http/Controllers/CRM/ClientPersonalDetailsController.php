@@ -3774,7 +3774,7 @@ class ClientPersonalDetailsController extends Controller
                         "No valid addresses in request - this may indicate an empty form submission or bug.");
                 }
 
-                // Option A: align is_current with the same order as the Address Information UI
+                // Current address = latest start_date (same order as Address Information UI)
                 ClientAddress::syncIsCurrentForClient((int) $client->id);
             }
             

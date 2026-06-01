@@ -1,10 +1,21 @@
 {{-- Work Experience Field Component --}}
-@props(['index', 'experience', 'countries' => []])
+@props(['index', 'experience', 'countries' => [], 'isCurrent' => false])
 
-<div class="repeatable-section">
-    <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)">
-        <i class="fas fa-times-circle"></i>
-    </button>
+<div class="repeatable-section experience-entry-wrapper">
+    <div class="experience-entry-header">
+        @if($isCurrent)
+        <div class="experience-current-toggle experience-current-readonly">
+            <span class="experience-current-label">Current Experience?</span>
+            <label class="switch switch-readonly" title="Current experience (based on latest finish date)">
+                <input type="checkbox" checked disabled>
+                <span class="slider round"></span>
+            </label>
+        </div>
+        @endif
+        <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)">
+            <i class="fas fa-times-circle"></i>
+        </button>
+    </div>
     
     <input type="hidden" name="experience_id[{{ $index }}]" value="{{ $experience->id ?? '' }}">
     

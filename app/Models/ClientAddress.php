@@ -61,6 +61,19 @@ class ClientAddress extends Model
             static::where('id', $winner->id)->update(['is_current' => 1]);
         });
     }
+
+    /**
+     * Mark one address as current for a client (clears is_current on all others).
+     */
+    public static function setIsCurrentByAddressId(int $clientId, int $addressId): void
+    {
+        static::withoutTimestamps(function () use ($clientId, $addressId): void {
+            static::where('client_id', $clientId)->update(['is_current' => 0]);
+            static::where('id', $addressId)
+                ->where('client_id', $clientId)
+                ->update(['is_current' => 1]);
+        });
+    }
 }
 
 

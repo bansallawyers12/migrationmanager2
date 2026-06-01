@@ -1,14 +1,25 @@
 {{-- Single Address Entry Component --}}
-@props(['index', 'address' => null, 'showRemoveButton' => true])
+@props(['index', 'address' => null, 'showRemoveButton' => true, 'isCurrent' => false])
 
 <div class="address-entry-wrapper" data-address-index="{{ $index }}">
-    @if($showRemoveButton)
+    <input type="hidden" name="address_id[]" value="{{ $address->id ?? '' }}">
+
+    <div class="address-entry-header">
+        @if($isCurrent)
+        <div class="address-current-toggle address-current-readonly">
+            <span class="address-current-label">Current Address?</span>
+            <label class="switch switch-readonly" title="Current address (based on latest start date)">
+                <input type="checkbox" checked disabled>
+                <span class="slider round"></span>
+            </label>
+        </div>
+        @endif
+        @if($showRemoveButton)
         <button type="button" class="remove-address-btn" onclick="removeAddressEntry(this)" title="Remove Address">
             <i class="fas fa-times"></i>
         </button>
-    @endif
-    
-    <input type="hidden" name="address_id[]" value="{{ $address->id ?? '' }}">
+        @endif
+    </div>
     
     {{-- Address Search --}}
     <div class="form-group address-search-container">

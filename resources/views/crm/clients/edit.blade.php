@@ -737,7 +737,7 @@
                                 <div style="margin-top: 15px;">
                                     @foreach($experiences as $index => $experience)
                                         <div class="experience-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
-                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                                            <div class="experience-compact-grid">
                                                 <div class="summary-item-inline">
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">JOB TITLE:</span>
                                                     <span class="summary-value" style="color: #212529; font-weight: 500;">{{ $experience->job_title ?: 'Not set' }}</span>
@@ -774,6 +774,15 @@
                                                     <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELEVANT:</span>
                                                     <span class="summary-value" style="color: #212529;">{{ $experience->relevant_experience ? 'Yes' : 'No' }}</span>
                                                 </div>
+                                                @if($index === 0)
+                                                <div class="summary-item-inline experience-current-summary">
+                                                    <span class="summary-label">CURRENT:</span>
+                                                    <label class="switch switch-readonly" style="margin: 0;" title="Current experience">
+                                                        <input type="checkbox" checked disabled>
+                                                        <span class="slider round"></span>
+                                                    </label>
+                                                </div>
+                                                @endif
                                             </div>
                                         </div>
                                     @endforeach
@@ -793,6 +802,7 @@
                                         :index="$index" 
                                         :experience="$experience" 
                                         :countries="$countries->pluck('name')->toArray()"
+                                        :isCurrent="$index === 0"
                                     />
                                 @endforeach
                             </div>

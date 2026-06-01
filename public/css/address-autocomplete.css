@@ -102,6 +102,54 @@
     gap: 15px;
 }
 
+.address-entry-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.address-entry-header .remove-address-btn {
+    float: none;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.address-current-toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.address-current-toggle > label:not(.switch),
+.address-current-label {
+    display: inline;
+    margin-bottom: 0;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #333;
+}
+
+.address-entry-header:empty {
+    display: none;
+    margin-bottom: 0;
+}
+
+.switch-readonly {
+    pointer-events: none;
+    opacity: 1;
+}
+
+.address-current-summary {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
 
 .add-another-address {
     background: #28a745;

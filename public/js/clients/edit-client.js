@@ -804,6 +804,253 @@ function addPassportDetail() {
 }
 
 /**
+ * Parse dd/mm/yyyy address start date for current-address comparison.
+ */
+function parseAddressStartDateMs(value) {
+    if (!value || !String(value).trim()) {
+        return null;
+    }
+    const parts = String(value).trim().split('/');
+    if (parts.length !== 3) {
+        return null;
+    }
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    const date = new Date(year, month, day);
+    if (isNaN(date.getTime()) || date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) {
+        return null;
+    }
+    return date.getTime();
+}
+
+/**
+ * Matches ClientAddress::ORDER_BY_DISPLAY — latest start_date, then id DESC.
+ */
+function isBetterCurrentAddressCandidate(candidate, winner) {
+    if (candidate.hasDate !== winner.hasDate) {
+        return candidate.hasDate;
+    }
+    if (candidate.hasDate && candidate.dateMs !== winner.dateMs) {
+        return candidate.dateMs > winner.dateMs;
+    }
+    if (candidate.addressId !== winner.addressId) {
+        return candidate.addressId > winner.addressId;
+    }
+    return candidate.idx > winner.idx;
+}
+
+function createReadonlyCurrentToggle() {
+    const div = document.createElement('div');
+    div.className = 'address-current-toggle address-current-readonly';
+    div.innerHTML = `
+        <span class="address-current-label">Current Address?</span>
+        <label class="switch switch-readonly" title="Current address (based on latest start date)">
+            <input type="checkbox" checked disabled>
+            <span class="slider round"></span>
+        </label>
+    `;
+    return div;
+}
+
+/**
+ * Show readonly current-address indicator on the row with the latest start date only.
+ */
+function syncCurrentAddressIndicators() {
+    const container = document.getElementById('addresses-container');
+    if (!container) {
+        return;
+    }
+
+    const wrappers = Array.from(container.querySelectorAll('.address-entry-wrapper'));
+    if (wrappers.length === 0) {
+        return;
+    }
+
+    let winnerIdx = 0;
+    let winnerScore = null;
+
+    wrappers.forEach(function(wrapper, idx) {
+        const startInput = wrapper.querySelector('input[name="address_start_date[]"]');
+        const addressId = parseInt(wrapper.querySelector('input[name="address_id[]"]')?.value || '0', 10) || 0;
+        const dateMs = parseAddressStartDateMs(startInput?.value || '');
+        const score = {
+            hasDate: dateMs !== null,
+            dateMs: dateMs ?? 0,
+            addressId: addressId,
+            idx: idx
+        };
+
+        if (winnerScore === null || isBetterCurrentAddressCandidate(score, winnerScore)) {
+            winnerIdx = idx;
+            winnerScore = score;
+        }
+    });
+
+    wrappers.forEach(function(wrapper, idx) {
+        let header = wrapper.querySelector('.address-entry-header');
+        if (!header) {
+            header = document.createElement('div');
+            header.className = 'address-entry-header';
+            const hiddenInput = wrapper.querySelector('input[name="address_id[]"]');
+            if (hiddenInput) {
+                hiddenInput.insertAdjacentElement('afterend', header);
+            } else {
+                wrapper.prepend(header);
+            }
+        }
+
+        const existingToggle = header.querySelector('.address-current-readonly');
+        const isWinner = idx === winnerIdx;
+
+        if (isWinner) {
+            if (!existingToggle) {
+                const removeBtn = header.querySelector('.remove-address-btn');
+                if (removeBtn) {
+                    header.insertBefore(createReadonlyCurrentToggle(), removeBtn);
+                } else {
+                    header.appendChild(createReadonlyCurrentToggle());
+                }
+            }
+        } else if (existingToggle) {
+            existingToggle.remove();
+        }
+
+        if (!header.children.length) {
+            header.style.display = 'none';
+        } else {
+            header.style.display = '';
+        }
+    });
+}
+
+/**
+ * Matches work experience display order — latest job_finish_date, then id DESC.
+ */
+function isBetterCurrentExperienceCandidate(candidate, winner) {
+    if (candidate.hasDate !== winner.hasDate) {
+        return candidate.hasDate;
+    }
+    if (candidate.hasDate && candidate.dateMs !== winner.dateMs) {
+        return candidate.dateMs > winner.dateMs;
+    }
+    if (candidate.experienceId !== winner.experienceId) {
+        return candidate.experienceId > winner.experienceId;
+    }
+    return candidate.idx > winner.idx;
+}
+
+function createReadonlyCurrentExperienceToggle() {
+    const div = document.createElement('div');
+    div.className = 'experience-current-toggle experience-current-readonly';
+    div.innerHTML = `
+        <span class="experience-current-label">Current Experience?</span>
+        <label class="switch switch-readonly" title="Current experience (based on latest finish date)">
+            <input type="checkbox" checked disabled>
+            <span class="slider round"></span>
+        </label>
+    `;
+    return div;
+}
+
+/**
+ * Show readonly current-experience indicator on the row with the latest finish date only.
+ */
+function syncCurrentExperienceIndicators() {
+    const container = document.getElementById('experienceContainer');
+    if (!container) {
+        return;
+    }
+
+    const wrappers = Array.from(container.querySelectorAll('.experience-entry-wrapper'));
+    if (wrappers.length === 0) {
+        return;
+    }
+
+    let winnerIdx = 0;
+    let winnerScore = null;
+
+    wrappers.forEach(function(wrapper, idx) {
+        const finishInput = wrapper.querySelector('input[name*="job_finish_date"]');
+        const experienceId = parseInt(wrapper.querySelector('input[name*="experience_id"]')?.value || '0', 10) || 0;
+        const dateMs = parseAddressStartDateMs(finishInput?.value || '');
+        const score = {
+            hasDate: dateMs !== null,
+            dateMs: dateMs ?? 0,
+            experienceId: experienceId,
+            idx: idx
+        };
+
+        if (winnerScore === null || isBetterCurrentExperienceCandidate(score, winnerScore)) {
+            winnerIdx = idx;
+            winnerScore = score;
+        }
+    });
+
+    wrappers.forEach(function(wrapper, idx) {
+        let header = wrapper.querySelector('.experience-entry-header');
+        if (!header) {
+            header = document.createElement('div');
+            header.className = 'experience-entry-header';
+            wrapper.prepend(header);
+        }
+
+        const existingToggle = header.querySelector('.experience-current-readonly');
+        const isWinner = idx === winnerIdx;
+
+        if (isWinner) {
+            if (!existingToggle) {
+                const removeBtn = header.querySelector('.remove-item-btn');
+                if (removeBtn) {
+                    header.insertBefore(createReadonlyCurrentExperienceToggle(), removeBtn);
+                } else {
+                    header.appendChild(createReadonlyCurrentExperienceToggle());
+                }
+            }
+        } else if (existingToggle) {
+            existingToggle.remove();
+        }
+    });
+}
+
+function sortExperiencesForDisplay(experiences) {
+    return [...experiences].sort(function(a, b) {
+        const scoreA = {
+            hasDate: parseAddressStartDateMs(a.job_finish_date) !== null,
+            dateMs: parseAddressStartDateMs(a.job_finish_date) ?? 0,
+            experienceId: parseInt(a.experience_id || '0', 10) || 0,
+            idx: 0
+        };
+        const scoreB = {
+            hasDate: parseAddressStartDateMs(b.job_finish_date) !== null,
+            dateMs: parseAddressStartDateMs(b.job_finish_date) ?? 0,
+            experienceId: parseInt(b.experience_id || '0', 10) || 0,
+            idx: 0
+        };
+
+        if (isBetterCurrentExperienceCandidate(scoreA, scoreB)) {
+            return -1;
+        }
+        if (isBetterCurrentExperienceCandidate(scoreB, scoreA)) {
+            return 1;
+        }
+        return 0;
+    });
+}
+
+function buildExperienceCurrentSummaryHtml() {
+    return `
+        <div class="summary-item-inline experience-current-summary">
+            <span class="summary-label">CURRENT:</span>
+            <label class="switch switch-readonly" style="margin: 0;" title="Current experience">
+                <input type="checkbox" checked disabled>
+                <span class="slider round"></span>
+            </label>
+        </div>
+    `;
+}
+
+/**
  * Add Another Address (for new component system)
  */
 function addAnotherAddress() {
@@ -827,11 +1074,13 @@ function addAnotherAddress() {
     
     const addressHTML = `
         <div class="address-entry-wrapper" data-address-index="${index}">
-            <button type="button" class="remove-address-btn" onclick="removeAddressEntry(this)" title="Remove Address">
-                <i class="fas fa-times"></i>
-            </button>
-            
             <input type="hidden" name="address_id[]" value="">
+
+            <div class="address-entry-header">
+                <button type="button" class="remove-address-btn" onclick="removeAddressEntry(this)" title="Remove Address">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             
             <div class="form-group address-search-container">
                 <label for="address_search_${index}">Search Address</label>
@@ -937,7 +1186,7 @@ function addAnotherAddress() {
     `;
     
     container.insertAdjacentHTML('beforeend', addressHTML);
-    
+
     // Get the newly added wrapper element
     const newWrapper = container.querySelector(`.address-entry-wrapper[data-address-index="${index}"]`);
     
@@ -977,6 +1226,8 @@ function addAnotherAddress() {
     
     console.log(`✅ Added new address entry with index: ${index}`);
     console.log(`📊 Total address entries now: ${container.querySelectorAll('.address-entry-wrapper').length}`);
+
+    syncCurrentAddressIndicators();
 }
 
 /**
@@ -986,6 +1237,7 @@ function removeAddressEntry(button) {
     if (confirm('Are you sure you want to remove this address?')) {
         const wrapper = button.closest('.address-entry-wrapper');
         wrapper.remove();
+        syncCurrentAddressIndicators();
     }
 }
 
@@ -1621,8 +1873,11 @@ async function addExperience() {
     });
 
     container.insertAdjacentHTML('beforeend', `
-        <div class="repeatable-section">
-            <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fas fa-times-circle"></i></button>
+        <div class="repeatable-section experience-entry-wrapper">
+            <div class="experience-entry-header">
+                <button type="button" class="remove-item-btn" title="Remove Experience" onclick="removeExperienceField(this)"><i class="fas fa-times-circle"></i></button>
+            </div>
+            <input type="hidden" name="experience_id[${index}]" value="">
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
                 <div class="form-group">
                     <label>Job Title</label>
@@ -1681,6 +1936,7 @@ async function addExperience() {
 
     // Reinitialize datepickers for the newly added fields
     initializeDatepickers();
+    syncCurrentExperienceIndicators();
 }
 
 /**
@@ -1786,7 +2042,13 @@ window.toggleEditMode = function(sectionType) {
             // Re-initialize datepickers when entering edit mode for address section
             setTimeout(function() {
                 initializeDatepickers();
+                syncCurrentAddressIndicators();
                 console.log('✅ Date pickers initialized for address edit mode');
+            }, 100);
+        } else if (sectionType === 'experienceInfo') {
+            setTimeout(function() {
+                initializeDatepickers();
+                syncCurrentExperienceIndicators();
             }, 100);
         } else if (sectionType === 'emailAddresses') {
             // Start email verification polling when opening email section
@@ -2903,11 +3165,12 @@ window.saveExperienceInfo = function() {
         const summaryView = document.getElementById('experienceInfoSummary');
         
         if (experiences.length > 0) {
+            const sortedExperiences = sortExperiencesForDisplay(experiences);
             let summaryHTML = '<div style="margin-top: 15px;">';
-            experiences.forEach(exp => {
+            sortedExperiences.forEach(function(exp, index) {
                 summaryHTML += `
                     <div class="experience-entry-compact" style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: center;">
+                        <div class="experience-compact-grid">
                             <div class="summary-item-inline">
                                 <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">JOB TITLE:</span>
                                 <span class="summary-value" style="color: #212529; font-weight: 500;">${exp.job_title || 'Not set'}</span>
@@ -2944,6 +3207,7 @@ window.saveExperienceInfo = function() {
                                 <span class="summary-label" style="font-weight: 600; color: #6c757d; font-size: 0.85em;">RELEVANT:</span>
                                 <span class="summary-value" style="color: #212529;">${exp.relevant_experience ? 'Yes' : 'No'}</span>
                             </div>
+                            ${index === 0 ? buildExperienceCurrentSummaryHtml() : ''}
                         </div>
                     </div>
                 `;
@@ -3995,7 +4259,8 @@ window.removeQualificationField = function(button) {
  */
 window.removeExperienceField = function(button) {
     if (confirm('Are you sure you want to remove this work experience?')) {
-        button.closest('.repeatable-section').remove();
+        button.closest('.experience-entry-wrapper, .repeatable-section').remove();
+        syncCurrentExperienceIndicators();
     }
 };
 
@@ -4065,6 +4330,8 @@ window.addPassportDetail = addPassportDetail;
 window.addTravelDetail = addTravelDetail;
 window.addAddress = addAddress;
 window.addAnotherAddress = addAnotherAddress;
+window.syncCurrentAddressIndicators = syncCurrentAddressIndicators;
+window.syncCurrentExperienceIndicators = syncCurrentExperienceIndicators;
 window.removeAddressEntry = removeAddressEntry;
 window.addQualification = addQualification;
 window.addExperience = addExperience;
@@ -4094,6 +4361,24 @@ $(document).ready(function() {
     
     // Initialize datepickers on page load
     initializeDatepickers();
+
+    if (document.getElementById('addresses-container')) {
+        syncCurrentAddressIndicators();
+    }
+
+    if (document.getElementById('experienceContainer')) {
+        syncCurrentExperienceIndicators();
+    }
+
+    // Readonly current-address indicator follows latest start date in edit mode
+    $(document).on('change input', '#addresses-container input[name="address_start_date[]"]', function() {
+        syncCurrentAddressIndicators();
+    });
+
+    // Readonly current-experience indicator follows latest finish date in edit mode
+    $(document).on('change input', '#experienceContainer input[name*="job_finish_date"]', function() {
+        syncCurrentExperienceIndicators();
+    });
     
     // Initialize scroll spy for sidebar navigation
     initScrollSpy();
