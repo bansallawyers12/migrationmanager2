@@ -1130,6 +1130,8 @@
         
         // Replace cid: references in email message with actual preview URLs for inline images
         message = replaceCidReferences(message, allAttachments);
+        // Collapse leading empty layout spacers (Outlook table columns, etc.) without altering content
+        message = sanitizeEmailHtmlForDisplay(message);
         
         // Debug logging
         console.log('Loading email detail:', {
@@ -1222,6 +1224,200 @@
             ${attachmentHtml}
             ${previewSection}
         `;
+    }
+
+    /**
+     * Whether a table cell or block element is an empty layout spacer (no visible content).
+     */
+    function isEmptyLayoutCell(element) {
+        if (!element) {
+            return true;
+        }
+
+        const clone = element.cloneNode(true);
+        clone.querySelectorAll('script, style').forEach(function(el) {
+            el.remove();
+        });
+
+        const images = clone.querySelectorAll('img');
+        for (let i = 0; i < images.length; i++) {
+            const src = (images[i].getAttribute('src') || '').trim();
+            if (src && !/^cid:/i.test(src)) {
+                return false;
+            }
+        }
+
+        const style = element.getAttribute('style') || '';
+        if (/background-image:\s*url\(['"]?(?!cid:)/i.test(style)) {
+            return false;
+        }
+
+        if (clone.querySelector('iframe, object, embed, video, ul, ol, li, h1, h2, h3, h4, h5, h6, a[href]')) {
+            return false;
+        }
+
+        const nestedTables = clone.querySelectorAll('table');
+        for (let t = 0; t < nestedTables.length; t++) {
+            if (tableHasVisibleContent(nestedTables[t])) {
+                return false;
+            }
+        }
+
+        let text = clone.textContent || '';
+        text = text.replace(/\u00a0/g, ' ').replace(/\s+/g, '').trim();
+
+        return text.length === 0;
+    }
+
+    /**
+     * Whether a table contains any non-spacer cell content.
+     */
+    function tableHasVisibleContent(table) {
+        if (!table) {
+            return false;
+        }
+
+        const cells = table.querySelectorAll('td, th');
+        for (let i = 0; i < cells.length; i++) {
+            if (!isEmptyLayoutCell(cells[i])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get direct table row cells (td/th only).
+     */
+    function getRowCells(row) {
+        return Array.from(row.children).filter(function(el) {
+            return el.tagName === 'TD' || el.tagName === 'TH';
+        });
+    }
+
+    /**
+     * Remove leading columns from a table when every row's cell in that column is empty.
+     */
+    function collapseLeadingEmptyTableColumns(table) {
+        if (!table) {
+            return;
+        }
+
+        const rows = Array.from(table.querySelectorAll(':scope > tbody > tr, :scope > tr'));
+        if (rows.length === 0) {
+            return;
+        }
+
+        let keepRemoving = true;
+
+        while (keepRemoving) {
+            keepRemoving = false;
+
+            let columnIsEmpty = true;
+            let columnExists = false;
+
+            for (let r = 0; r < rows.length; r++) {
+                const cells = getRowCells(rows[r]);
+                if (cells.length === 0) {
+                    continue;
+                }
+
+                columnExists = true;
+
+                if (!isEmptyLayoutCell(cells[0])) {
+                    columnIsEmpty = false;
+                    break;
+                }
+            }
+
+            if (columnExists && columnIsEmpty) {
+                for (let r = 0; r < rows.length; r++) {
+                    const cells = getRowCells(rows[r]);
+                    if (cells.length > 0) {
+                        cells[0].remove();
+                    }
+                }
+                keepRemoving = true;
+            }
+        }
+    }
+
+    /**
+     * Remove leading empty block elements before the first visible content node.
+     */
+    function removeLeadingEmptyBlockSpacers(container) {
+        if (!container) {
+            return;
+        }
+
+        const removableTags = { DIV: true, P: true, SPAN: true, CENTER: true };
+
+        while (container.firstElementChild) {
+            const first = container.firstElementChild;
+
+            if (first.tagName === 'TABLE') {
+                collapseLeadingEmptyTableColumns(first);
+                if (tableHasVisibleContent(first)) {
+                    break;
+                }
+                first.remove();
+                continue;
+            }
+
+            if (!removableTags[first.tagName]) {
+                break;
+            }
+
+            if (first.querySelector('table')) {
+                first.querySelectorAll('table').forEach(collapseLeadingEmptyTableColumns);
+            }
+
+            if (isEmptyLayoutCell(first)) {
+                first.remove();
+                continue;
+            }
+
+            break;
+        }
+    }
+
+    /**
+     * Strip document wrappers and collapse leading empty layout spacers in HTML emails.
+     * Only affects empty left columns/cells — preserves content columns (signatures, body, etc.).
+     */
+    function sanitizeEmailHtmlForDisplay(htmlContent) {
+        if (!htmlContent || typeof htmlContent !== 'string') {
+            return htmlContent;
+        }
+
+        const trimmed = htmlContent.trim();
+        if (!trimmed || trimmed === '(No content)') {
+            return htmlContent;
+        }
+
+        if (!/<[a-z][\s\S]*>/i.test(trimmed)) {
+            return htmlContent;
+        }
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(trimmed, 'text/html');
+            const root = doc.body;
+
+            if (!root) {
+                return htmlContent;
+            }
+
+            root.querySelectorAll('table').forEach(collapseLeadingEmptyTableColumns);
+            removeLeadingEmptyBlockSpacers(root);
+
+            const sanitized = root.innerHTML;
+            return sanitized || htmlContent;
+        } catch (error) {
+            console.warn('sanitizeEmailHtmlForDisplay failed, using original HTML:', error);
+            return htmlContent;
+        }
     }
 
     /**

@@ -261,7 +261,8 @@
 .email-filters { display: flex; gap: 15px; padding: 15px 20px; border-bottom: 1px solid #dee2e6; background-color: #f9f9f9; }
 .filter-select { padding: 8px; border: 1px solid #dee2e6; border-radius: 5px; font-size: 0.9rem; color: #333; background-color: #fff; cursor: pointer; width: 150px; }
 .search-input { flex: 1; padding: 8px; border: 1px solid #dee2e6; border-radius: 5px; font-size: 0.9rem; color: #333; }
-.email-list, .email-list1 { display: grid; gap: 15px; padding: 20px; }
+.emails-container .email-list,
+.emails-container .email-list1 { display: grid; gap: 15px; padding: 20px; }
 .email-card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; }
 .email-card:hover { background-color: #f8f9fa; }
 .email-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
