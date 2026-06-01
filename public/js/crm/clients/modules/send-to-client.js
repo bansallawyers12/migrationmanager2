@@ -377,6 +377,73 @@
     }
 
     /**
+     * Format Hubdoc sent timestamp to match server display (d/m/Y H:i)
+     */
+    function formatHubdocSentAt(dateInput) {
+        var d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+        if (isNaN(d.getTime())) {
+            return '';
+        }
+        var pad = function(n) {
+            return String(n).padStart(2, '0');
+        };
+        return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function getHubdocMenuElements($context, invoiceId) {
+        var $menu = $context.closest('.dropdown-menu');
+        if (!$menu.length) {
+            $menu = $context;
+        }
+        return {
+            $menu: $menu,
+            $hubdocBtn: $menu.find('.send-to-hubdoc-btn[data-invoice-id="' + invoiceId + '"]'),
+            $sentTime: $menu.find('.hubdoc-sent-time'),
+            $refreshBtn: $menu.find('.refresh-hubdoc-status[data-invoice-id="' + invoiceId + '"]')
+        };
+    }
+
+    function updateHubdocDropdownToSent($btn, sentAt) {
+        var invoiceId = $btn.data('invoice-id');
+        var formatted = formatHubdocSentAt(sentAt || new Date());
+        var elements = getHubdocMenuElements($btn, invoiceId);
+
+        elements.$sentTime.remove();
+        elements.$refreshBtn.remove();
+
+        $btn
+            .attr('data-hubdoc-sent', '1')
+            .css('color', '#28a745')
+            .html('<i class="fas fa-check"></i> Already Sent to Hubdoc')
+            .prop('disabled', false);
+
+        var $timeDiv = $('<div class="dropdown-item-text hubdoc-sent-time" style="font-size: 11px; color: #666; padding: 0.25rem 1rem;">Sent: ' + formatted + '</div>');
+        $timeDiv.insertAfter($btn);
+
+        $('<a class="dropdown-item refresh-hubdoc-status" href="javascript:;" data-invoice-id="' + invoiceId + '">' +
+            '<i class="fas fa-sync-alt"></i> Refresh Status</a>')
+            .insertAfter($timeDiv);
+
+        attachSendToClientHandlers();
+    }
+
+    function revertHubdocDropdownToUnsent($btn) {
+        var invoiceId = $btn.data('invoice-id');
+        var elements = getHubdocMenuElements($btn, invoiceId);
+
+        elements.$sentTime.remove();
+        elements.$refreshBtn.remove();
+
+        $btn
+            .removeAttr('data-hubdoc-sent')
+            .removeAttr('style')
+            .html('<i class="fas fa-paper-plane"></i> Send to Hubdoc')
+            .prop('disabled', false);
+
+        attachSendToClientHandlers();
+    }
+
+    /**
      * Send Invoice to Hubdoc
      */
     function handleSendToHubdoc($btn) {
@@ -442,18 +509,16 @@
             },
             success: function(response) {
                 if (response.status) {
+                    updateHubdocDropdownToSent($btn, response.hubdoc_sent_at || new Date());
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
                             text: response.message || 'Invoice sent to Hubdoc successfully!',
                             timer: 2000
-                        }).then(function() {
-                            location.reload();
                         });
                     } else {
                         alert(response.message || 'Invoice sent to Hubdoc successfully!');
-                        location.reload();
                     }
                 } else {
                     if (typeof Swal !== 'undefined') {
@@ -491,7 +556,7 @@
     }
 
     /**
-     * Refresh Hubdoc status (reload so dropdown shows current status)
+     * Refresh Hubdoc status without reloading the page
      */
     function handleRefreshHubdocStatus($btn) {
         var invoiceId = $btn.data('invoice-id');
@@ -501,20 +566,43 @@
             ? window.ClientDetailConfig.urls.checkHubdocStatus
             : null;
         if (!checkUrl) {
-            location.reload();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Configuration not available.' });
+            } else {
+                alert('Configuration not available.');
+            }
             return;
         }
 
+        var originalHtml = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Refreshing...');
         $btn.prop('disabled', true);
+
         $.ajax({
             url: checkUrl + '/' + invoiceId,
             type: 'GET',
             dataType: 'json',
-            success: function() {
-                location.reload();
+            success: function(data) {
+                var elements = getHubdocMenuElements($btn, invoiceId);
+                var $hubdocBtn = elements.$hubdocBtn;
+
+                if (data.hubdoc_sent && $hubdocBtn.length) {
+                    updateHubdocDropdownToSent($hubdocBtn, data.hubdoc_sent_at || new Date());
+                } else if ($hubdocBtn.length) {
+                    revertHubdocDropdownToUnsent($hubdocBtn);
+                } else {
+                    $btn.html(originalHtml);
+                    $btn.prop('disabled', false);
+                }
             },
             error: function() {
-                location.reload();
+                $btn.html(originalHtml);
+                $btn.prop('disabled', false);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to refresh Hubdoc status.' });
+                } else {
+                    alert('Failed to refresh Hubdoc status.');
+                }
             }
         });
     }

@@ -5602,12 +5602,13 @@ public function getInvoiceAmount(Request $request)
         ], new HubdocInvoiceMail($invoiceData), $hubdocEmail);
 
          // Mark invoice as sent to Hubdoc
+         $hubdocSentAt = now();
          $updateResult = DB::table('account_client_receipts')
              ->where('receipt_type', 3)
              ->where('receipt_id', $id)
              ->update([
                  'hubdoc_sent' => true,
-                 'hubdoc_sent_at' => now()
+                 'hubdoc_sent_at' => $hubdocSentAt
              ]);
 
          // Clean up temporary file
@@ -5617,7 +5618,9 @@ public function getInvoiceAmount(Request $request)
 
          return response()->json([
              'status' => true,
-             'message' => 'Invoice sent to Hubdoc successfully!'
+             'message' => 'Invoice sent to Hubdoc successfully!',
+             'hubdoc_sent' => true,
+             'hubdoc_sent_at' => $hubdocSentAt->toIso8601String(),
          ]);
 
         } catch (\Exception $e) {
