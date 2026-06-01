@@ -2320,8 +2320,9 @@ class ClientsController extends Controller
     }
 
     /**
-     * Roles in config `crm.google_review_reminder_exclude_role_ids` must not see
-     * the reminder modal or change reminder state via API (Calling, Accounts, etc.).
+     * Staff matching config `crm.google_review_reminder_exclude_role_ids` or
+     * `crm.google_review_reminder_exclude_office_ids` must not see the reminder
+     * modal or change reminder state via API (Calling, Accounts, INDIA office, etc.).
      */
     protected function currentStaffIsExcludedFromGoogleReviewReminder(): bool
     {
@@ -2331,9 +2332,15 @@ class ClientsController extends Controller
         }
 
         $roleId = (int) ($user->role ?? 0);
-        $excluded = config('crm.google_review_reminder_exclude_role_ids', [14, 15]);
+        $excludedRoles = config('crm.google_review_reminder_exclude_role_ids', [14, 15]);
+        if ($roleId > 0 && in_array($roleId, $excludedRoles, true)) {
+            return true;
+        }
 
-        return $roleId > 0 && in_array($roleId, $excluded, true);
+        $officeId = (int) ($user->office_id ?? 0);
+        $excludedOffices = config('crm.google_review_reminder_exclude_office_ids', [8]);
+
+        return $officeId > 0 && in_array($officeId, $excludedOffices, true);
     }
 
     protected function shouldShowGoogleReviewReminderModal(Admin $record): bool
