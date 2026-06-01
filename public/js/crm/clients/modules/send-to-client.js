@@ -377,17 +377,42 @@
     }
 
     /**
-     * Format Hubdoc sent timestamp to match server display (d/m/Y H:i)
+     * Format Hubdoc sent timestamp to match server display (d/m/Y H:i, app timezone)
      */
     function formatHubdocSentAt(dateInput) {
+        if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateInput)) {
+            return dateInput;
+        }
+
+        var tz = (window.ClientDetailConfig && window.ClientDetailConfig.timezone) || 'Australia/Melbourne';
         var d = dateInput instanceof Date ? dateInput : new Date(dateInput);
         if (isNaN(d.getTime())) {
             return '';
         }
-        var pad = function(n) {
-            return String(n).padStart(2, '0');
-        };
-        return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+
+        try {
+            var parts = {};
+            new Intl.DateTimeFormat('en-GB', {
+                timeZone: tz,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).formatToParts(d).forEach(function(part) {
+                if (part.type !== 'literal') {
+                    parts[part.type] = part.value;
+                }
+            });
+
+            return parts.day + '/' + parts.month + '/' + parts.year + ' ' + parts.hour + ':' + parts.minute;
+        } catch (e) {
+            var pad = function(n) {
+                return String(n).padStart(2, '0');
+            };
+            return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
     }
 
     function getHubdocMenuElements($context, invoiceId) {
@@ -403,9 +428,9 @@
         };
     }
 
-    function updateHubdocDropdownToSent($btn, sentAt) {
+    function updateHubdocDropdownToSent($btn, sentAt, formattedDisplay) {
         var invoiceId = $btn.data('invoice-id');
-        var formatted = formatHubdocSentAt(sentAt || new Date());
+        var formatted = formattedDisplay || formatHubdocSentAt(sentAt || new Date());
         var elements = getHubdocMenuElements($btn, invoiceId);
 
         elements.$sentTime.remove();
@@ -509,7 +534,7 @@
             },
             success: function(response) {
                 if (response.status) {
-                    updateHubdocDropdownToSent($btn, response.hubdoc_sent_at || new Date());
+                    updateHubdocDropdownToSent($btn, response.hubdoc_sent_at, response.hubdoc_sent_at_formatted);
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
@@ -587,7 +612,7 @@
                 var $hubdocBtn = elements.$hubdocBtn;
 
                 if (data.hubdoc_sent && $hubdocBtn.length) {
-                    updateHubdocDropdownToSent($hubdocBtn, data.hubdoc_sent_at || new Date());
+                    updateHubdocDropdownToSent($hubdocBtn, data.hubdoc_sent_at, data.hubdoc_sent_at_formatted);
                 } else if ($hubdocBtn.length) {
                     revertHubdocDropdownToUnsent($hubdocBtn);
                 } else {

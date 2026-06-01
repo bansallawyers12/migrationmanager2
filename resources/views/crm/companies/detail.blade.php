@@ -1311,6 +1311,7 @@ $(document).ready(function() {
         officePhone: @json(($officePhone ?? '')),
         officeCountryCode: @json(($officeCountryCode ?? '+61')),
         csrfToken: @json(csrf_token()),
+        timezone: @json(config('app.timezone')),
         currentDate: @json(date('Y-m-d')),
         appId: @json(($_GET['appid'] ?? '')),
         // AWS Configuration for document URLs

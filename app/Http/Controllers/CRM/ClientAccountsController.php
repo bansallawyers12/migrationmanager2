@@ -5621,6 +5621,7 @@ public function getInvoiceAmount(Request $request)
              'message' => 'Invoice sent to Hubdoc successfully!',
              'hubdoc_sent' => true,
              'hubdoc_sent_at' => $hubdocSentAt->toIso8601String(),
+             'hubdoc_sent_at_formatted' => $hubdocSentAt->format('d/m/Y H:i'),
          ]);
 
         } catch (\Exception $e) {
@@ -5649,14 +5650,20 @@ public function getInvoiceAmount(Request $request)
              ->first();
 
          if ($hubdoc_status) {
+             $hubdocSentAtFormatted = $hubdoc_status->hubdoc_sent_at
+                 ? \Carbon\Carbon::parse($hubdoc_status->hubdoc_sent_at)->format('d/m/Y H:i')
+                 : null;
+
              return response()->json([
                  'hubdoc_sent' => (bool) $hubdoc_status->hubdoc_sent,
-                 'hubdoc_sent_at' => $hubdoc_status->hubdoc_sent_at
+                 'hubdoc_sent_at' => $hubdoc_status->hubdoc_sent_at,
+                 'hubdoc_sent_at_formatted' => $hubdocSentAtFormatted,
              ]);
          } else {
              return response()->json([
                  'hubdoc_sent' => false,
-                 'hubdoc_sent_at' => null
+                 'hubdoc_sent_at' => null,
+                 'hubdoc_sent_at_formatted' => null,
              ]);
          }
 
