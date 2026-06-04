@@ -1352,6 +1352,12 @@ public function getChapters(Request $request)
 			}
 		}
 		}
+
+		$message = ComposeEmailPayload::applySigningLinkToMessage(
+			$message,
+			$requestData['signing_url'] ?? null
+		);
+
 		// Convert plain URLs to clickable links (open in new tab, copyable)
 		$message = $this->linkifyUrlsInHtml($message);
 

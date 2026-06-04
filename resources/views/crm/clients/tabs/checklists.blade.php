@@ -1045,7 +1045,7 @@
             e.preventDefault();
             e.stopPropagation();
             var $btn = $(this);
-            var signingUrl = $btn.data('signing-url');
+            var signingUrl = ($btn.attr('data-signing-url') || '').trim();
             var signerName = ($btn.data('signer-name') || '').trim() || 'there';
             var clientId = $btn.data('client-id');
             var clientEmail = ($btn.data('client-email') || '').trim();
@@ -1069,6 +1069,7 @@
             $('#emailmodal #compose_client_matter_id').val(clientMatterId || '');
             $('#emailmodal').data('pdfUrlForSign', signingUrl || '');
             $('#emailmodal').data('fromSignatureSend', true);
+            $('#compose_signing_url').val(signingUrl || '');
 
             // Default subject and message for checklist signature email
             var subject = 'Action Required: Please Sign Your Visa Agreement';

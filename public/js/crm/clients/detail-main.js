@@ -14,6 +14,19 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
+    /** Build escaped HTML anchor for service agreement signing links in compose templates. */
+    window.mmBuildServiceAgreementSignLink = function(url) {
+        if (!url) {
+            return '';
+        }
+        var safe = String(url)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        return '<a href="' + safe + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">Sign Service Agreement</a>';
+    };
+
     /** Snapshot of CRM template <option>s for #emailmodal (restored when compose opens without a matter). */
     function ensureComposeTemplateCrmOptionsSnapshot($select) {
         if (!$select || !$select.length || $select.data('composeCrmOptionsHtml')) {
@@ -7527,7 +7540,12 @@ success: function(response) {
                             str = str.replace(/\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');
                             str = str.replace(/\$\{GrandTotalFeesAndCosts\}/g, macroVals.GrandTotalFeesAndCosts || '');
                             var pdfUrl = macroVals.PDF_url_for_sign || '';
-                            var pdfLink = pdfUrl ? '<a href="' + pdfUrl + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">Sign Service Agreement</a>' : '';
+                            var pdfLink = typeof window.mmBuildServiceAgreementSignLink === 'function'
+                                ? window.mmBuildServiceAgreementSignLink(pdfUrl)
+                                : '';
+                            if (pdfUrl && $('#compose_signing_url').length) {
+                                $('#compose_signing_url').val(pdfUrl);
+                            }
                             str = str.replace(/\{PDF_url_for_sign\}/g, pdfLink);
                             return str;
                         };

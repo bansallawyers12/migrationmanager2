@@ -502,7 +502,7 @@
                     .replace('{TotalDoHASurcharges}', Total_surcharge_fees)
                     .replace('{TotalEstimatedOthCosts}', Total_department_fees)
                     .replace('{GrandTotalFeesAndCosts}', Total_payable_fees)
-                    .replace('{PDF_url_for_sign}', PDF_url_for_sign ? '<a href="' + PDF_url_for_sign + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">Sign Service Agreement</a>' : '')
+                    .replace('{PDF_url_for_sign}', (typeof window.mmBuildServiceAgreementSignLink === 'function' ? window.mmBuildServiceAgreementSignLink(PDF_url_for_sign) : (PDF_url_for_sign ? '<a href="' + PDF_url_for_sign + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">Sign Service Agreement</a>' : '')))
                     .replace('{visa_apply}', mattertitle);
 
                     $("#preview_email_modal .tinymce-editor").each(function() {

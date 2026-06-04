@@ -494,6 +494,7 @@ use App\Http\Controllers\Controller;
                     <input type="hidden" name="mail_type" value="1">
                     <input type="hidden" name="mail_body_type" value="sent">
                     <input type="hidden" name="compose_client_matter_id" id="compose_client_matter_id" value="">
+                    <input type="hidden" name="signing_url" id="compose_signing_url" value="">
 					<div class="row">
 						<div class="col-12 col-md-6 col-lg-6">
 							<div class="form-group">
@@ -1061,6 +1062,7 @@ var tinymceEmailConfig = {
     menubar: false,
     plugins: ['lists', 'link', 'autolink'],
     toolbar: 'bold italic underline strikethrough | forecolor | bullist numlist | link',
+    convert_urls: false,
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
     branding: false,
     promotion: false,
@@ -1232,6 +1234,7 @@ $(document).ready(function() {
                 $('#mychecklist-datatable').DataTable().draw();
             }
             $('#emailmodal').removeData('composeMacroValues').removeData('pdfUrlForSign').removeData('fromSignatureSend');
+            $('#compose_signing_url').val('');
             return;
         }
         $.get(window.ClientDetailConfig.urls.getComposeDefaults, { client_matter_id: clientMatterId })
@@ -1239,9 +1242,10 @@ $(document).ready(function() {
                 var $checklistCbs = $('#emailmodal .checklistfile-cb');
                 if (res.macro_values) {
                     var macroVals = res.macro_values;
-                    var pdfUrl = $('#emailmodal').data('pdfUrlForSign');
+                    var pdfUrl = $('#emailmodal').data('pdfUrlForSign') || $('#compose_signing_url').val() || '';
                     if (pdfUrl) {
                         macroVals = Object.assign({}, macroVals, { PDF_url_for_sign: pdfUrl });
+                        $('#compose_signing_url').val(pdfUrl);
                     }
                     $('#emailmodal').data('composeMacroValues', macroVals);
                 } else {
@@ -1282,6 +1286,11 @@ $(document).ready(function() {
                     $('#mychecklist-datatable').DataTable().draw();
                 }
             });
+    });
+
+    $('#emailmodal').on('hidden.bs.modal', function() {
+        $('#compose_signing_url').val('');
+        $(this).removeData('pdfUrlForSign').removeData('fromSignatureSend');
     });
 });
 </script>

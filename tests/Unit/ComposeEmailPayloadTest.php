@@ -49,4 +49,48 @@ class ComposeEmailPayloadTest extends TestCase
             ])
         );
     }
+
+    public function test_normalize_signing_url_accepts_valid_sign_path(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/237011/abc123XYZ';
+
+        $this->assertSame($url, ComposeEmailPayload::normalizeSigningUrl($url));
+    }
+
+    public function test_normalize_signing_url_rejects_non_sign_urls(): void
+    {
+        $this->assertNull(ComposeEmailPayload::normalizeSigningUrl('https://example.com/other/page'));
+        $this->assertNull(ComposeEmailPayload::normalizeSigningUrl(''));
+    }
+
+    public function test_apply_signing_link_replaces_macro_with_anchor(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/1/token123';
+        $message = '<p>Agreement: {PDF_url_for_sign}</p>';
+
+        $result = ComposeEmailPayload::applySigningLinkToMessage($message, $url);
+
+        $this->assertStringContainsString('href="' . $url . '"', $result);
+        $this->assertStringContainsString('Sign Service Agreement</a>', $result);
+        $this->assertStringNotContainsString('{PDF_url_for_sign}', $result);
+    }
+
+    public function test_apply_signing_link_repairs_underline_only_label(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/99/abc123';
+        $message = '<p>Please sign: <span style="text-decoration:underline;">Sign Service Agreement</span></p>';
+
+        $result = ComposeEmailPayload::applySigningLinkToMessage($message, $url);
+
+        $this->assertStringContainsString('href="' . $url . '"', $result);
+        $this->assertStringNotContainsString('<span style="text-decoration:underline;">Sign Service Agreement</span>', $result);
+    }
+
+    public function test_apply_signing_link_skips_when_sign_href_already_present(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/2/token456';
+        $message = '<a href="' . $url . '">Sign Service Agreement</a>';
+
+        $this->assertSame($message, ComposeEmailPayload::applySigningLinkToMessage($message, $url));
+    }
 }
