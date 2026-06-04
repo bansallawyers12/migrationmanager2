@@ -16,7 +16,6 @@
 			.then(function(data) {
 				var senders = data.senders || [];
 				var defaultFrom = (data.default_from || '').trim();
-				var defaultFromLc = defaultFrom.toLowerCase();
 				selects.forEach(function(select) {
 					select.innerHTML = '<option value="">Select From</option>';
 					if (senders.length > 0) {
@@ -24,18 +23,17 @@
 							var opt = document.createElement('option');
 							opt.value = s.email || '';
 							opt.textContent = (s.name && s.name !== s.email) ? (s.name + ' <' + s.email + '>') : (s.email || '');
-							if (s.email && s.email.toLowerCase() === defaultFromLc) opt.selected = true;
 							select.appendChild(opt);
 						});
 					} else if (defaultFrom) {
 						var fallback = document.createElement('option');
 						fallback.value = defaultFrom;
 						fallback.textContent = defaultFrom;
-						fallback.selected = true;
 						select.appendChild(fallback);
 					} else {
 						select.innerHTML = '<option value="">No SendGrid senders found</option>';
 					}
+					select.value = '';
 				});
 			})
 			.catch(function() {
@@ -48,6 +46,14 @@
 		document.addEventListener('DOMContentLoaded', refreshEmailFromSenders);
 	} else {
 		refreshEmailFromSenders();
+	}
+	if (typeof jQuery !== 'undefined') {
+		jQuery(document).on('shown.bs.modal', '.modal', function() {
+			var select = this.querySelector('.email-from-sendgrid');
+			if (select && select.options.length > 0) {
+				select.value = '';
+			}
+		});
 	}
 })();
 </script>
