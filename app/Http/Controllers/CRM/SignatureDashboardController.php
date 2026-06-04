@@ -339,6 +339,26 @@ class SignatureDashboardController extends Controller
             ]);
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            if ($success) {
+                $signer->refresh();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Reminder sent successfully!',
+                    'reminder_count' => (int) $signer->reminder_count,
+                    'last_reminder_sent_at' => $signer->last_reminder_sent_at
+                        ? $signer->last_reminder_sent_at->format('M d, Y g:i A')
+                        : null,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send reminder. Please check limits and try again.',
+            ], 422);
+        }
+
         if ($success) {
             return back()->with('success', 'Reminder sent successfully!');
         } else {

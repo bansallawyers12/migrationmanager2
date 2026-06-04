@@ -337,14 +337,13 @@
                                                                             <i class="fas fa-envelope mr-1"></i> Send Email
                                                                         </button>
                                                                         @if($primarySigner)
-                                                                        <form action="{{ route('signatures.reminder', $agreementDoc->id) }}" method="POST" class="d-inline ml-1" onsubmit="return confirm('Send a reminder email to the signer?');">
-                                                                            @csrf
-                                                                            <input type="hidden" name="signer_id" value="{{ $primarySigner->id }}">
-                                                                            <button type="submit" class="btn btn-warning" title="Send reminder to signer"
-                                                                                {{ $primarySigner->reminder_count >= 3 ? 'disabled' : '' }}>
-                                                                                <i class="fas fa-bell mr-1"></i> Send Reminder ({{ $primarySigner->reminder_count }}/3)
-                                                                            </button>
-                                                                        </form>
+                                                                        <button type="button" class="btn btn-warning btn-send-signature-reminder ml-1" title="Send reminder to signer"
+                                                                            data-document-id="{{ $agreementDoc->id }}"
+                                                                            data-signer-id="{{ $primarySigner->id }}"
+                                                                            data-reminder-count="{{ $primarySigner->reminder_count }}"
+                                                                            {{ $primarySigner->reminder_count >= 3 ? 'disabled' : '' }}>
+                                                                            <i class="fas fa-bell mr-1"></i> Send Reminder ({{ $primarySigner->reminder_count }}/3)
+                                                                        </button>
                                                                         @endif
                                                                     </div>
                                                                 </div>
@@ -352,7 +351,7 @@
                                                                     <i class="fas fa-info-circle"></i> Share this link with the client to sign the agreement
                                                                 </small>
                                                                 @if($primarySigner)
-                                                                <small class="text-muted d-block mt-1">
+                                                                <small class="text-muted d-block mt-1 checklist-signature-reminder-status">
                                                                     @if($primarySigner->last_reminder_sent_at)
                                                                         <i class="fas fa-clock"></i> Last reminder: {{ $primarySigner->last_reminder_sent_at->format('M d, Y g:i A') }}
                                                                     @else
@@ -1043,6 +1042,7 @@
 
         // Send Email with Signature Link - opens compose modal with default checklist/signature email
         $(document).on('click', '.btn-send-signature-email', function(e) {
+            e.preventDefault();
             e.stopPropagation();
             var $btn = $(this);
             var signingUrl = $btn.data('signing-url');
@@ -1060,11 +1060,12 @@
                 alert('Client email is required to send. Please ensure the client has an email address.');
                 return;
             }
-
-            // Set sidebar matter and compose matter ID
-            if (clientMatterId && $('#sel_matter_id_client_detail').length) {
-                $('#sel_matter_id_client_detail').val(clientMatterId).trigger('change');
+            if (!$('#emailmodal').length) {
+                alert('Email compose form not found. Please ensure you are on the client detail page.');
+                return;
             }
+
+            // Set compose matter only — do not trigger sidebar matter dropdown change (that reloads the page).
             $('#emailmodal #compose_client_matter_id').val(clientMatterId || '');
             $('#emailmodal').data('pdfUrlForSign', signingUrl || '');
             $('#emailmodal').data('fromSignatureSend', true);
@@ -1097,11 +1098,11 @@
                 });
             }
 
-            var $toSelect = $('.js-data-example-ajax');
-            if ($toSelect.length && $toSelect.data('mmSelect')) {
+            var $toSelect = $('#emailmodal .js-data-example-ajax');
+            if ($toSelect.data('mmSelect')) {
                 $toSelect.mmSelect('destroy');
             }
-            $('.js-data-example-ajax').mmSelect({
+            $toSelect.mmSelect({
                 data: data,
                 escapeMarkup: function(markup) { return markup; },
                 templateResult: function(d) { return d.html; },
@@ -1110,10 +1111,103 @@
                 multiple: true,
                 closeOnSelect: false
             });
-            $('.js-data-example-ajax').val(array).trigger('change');
+            $toSelect.val(array).trigger('change');
 
-            // Subject set above; message will come from First Email template when getComposeDefaults loads it
+            // Set TinyMCE content after modal is shown
+            $('#emailmodal').one('shown.bs.modal', function() {
+                if (typeof setTinyMCEContent === 'function') {
+                    setTinyMCEContent('compose_email_message', message);
+                } else if (typeof tinymce !== 'undefined' && tinymce.get('compose_email_message')) {
+                    tinymce.get('compose_email_message').setContent(message);
+                } else {
+                    $('#compose_email_message').val(message);
+                }
+            });
+
             $('#emailmodal').modal('show');
+        });
+
+        // Send Reminder - AJAX (no full page reload)
+        $(document).on('click', '.btn-send-signature-reminder', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $btn = $(this);
+            if ($btn.prop('disabled')) {
+                return;
+            }
+
+            var docId = $btn.data('document-id');
+            var signerId = $btn.data('signer-id');
+            if (!docId || !signerId) {
+                alert('Unable to send reminder: missing document or signer information.');
+                return;
+            }
+
+            if (!confirm('Send a reminder email to the signer?')) {
+                return;
+            }
+
+            var originalHtml = $btn.html();
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sending...');
+
+            $.ajax({
+                url: '{{ url("/signatures") }}/' + docId + '/reminder',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    signer_id: signerId
+                },
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                dataType: 'json'
+            }).done(function(resp) {
+                if (resp && resp.success) {
+                    var count = resp.reminder_count != null ? resp.reminder_count : (parseInt($btn.data('reminder-count'), 10) + 1);
+                    $btn.data('reminder-count', count);
+                    $btn.html('<i class="fas fa-bell mr-1"></i> Send Reminder (' + count + '/3)');
+                    if (count >= 3) {
+                        $btn.prop('disabled', true);
+                    } else {
+                        $btn.prop('disabled', false);
+                    }
+
+                    var $status = $btn.closest('.signature-section').find('.checklist-signature-reminder-status');
+                    if ($status.length) {
+                        if (resp.last_reminder_sent_at) {
+                            $status.html('<i class="fas fa-clock"></i> Last reminder: ' + resp.last_reminder_sent_at);
+                        } else {
+                            $status.html('<i class="fas fa-info-circle"></i> No reminders sent yet');
+                        }
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'success', title: 'Success', text: resp.message || 'Reminder sent successfully!', timer: 2000 });
+                    } else if (typeof toastr !== 'undefined') {
+                        toastr.success(resp.message || 'Reminder sent successfully!');
+                    } else {
+                        alert(resp.message || 'Reminder sent successfully!');
+                    }
+                } else {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    var errMsg = (resp && resp.message) ? resp.message : 'Failed to send reminder.';
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'error', title: 'Error', text: errMsg });
+                    } else {
+                        alert(errMsg);
+                    }
+                }
+            }).fail(function(xhr) {
+                $btn.prop('disabled', false).html(originalHtml);
+                var errMsg = 'Failed to send reminder. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errMsg = xhr.responseJSON.message;
+                }
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Error', text: errMsg });
+                } else {
+                    alert(errMsg);
+                }
+            });
         });
 
         // Amend checklist - opens the cost assignment modal to make changes
