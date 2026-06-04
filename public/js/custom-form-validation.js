@@ -16,6 +16,43 @@ function mmUtf8ToBase64(str) {
 }
 
 /** Apply WAF-safe encoding to compose-email FormData before POST /sendmail. */
+function mmGenerateInvoiceSubmissionToken() {
+	return 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+}
+
+function mmRefreshInvoiceSubmissionToken() {
+	var $field = $('#invoice_receipt_form input[name="submission_token"]');
+	if ($field.length) {
+		$field.val(mmGenerateInvoiceSubmissionToken());
+	}
+}
+
+function mmAcquireInvoiceSubmitLock() {
+	var $form = $('#invoice_receipt_form');
+	if (!$form.length) {
+		return { acquired: true, $form: $form, $buttons: $() };
+	}
+	if ($form.data('invoice-submitting') === true) {
+		return { acquired: false, $form: $form, $buttons: $() };
+	}
+	var $buttons = $form.find('button.btn-primary');
+	$form.data('invoice-submitting', true);
+	$buttons.prop('disabled', true);
+	return { acquired: true, $form: $form, $buttons: $buttons };
+}
+
+function mmReleaseInvoiceSubmitLock() {
+	var $form = $('#invoice_receipt_form');
+	if (!$form.length) {
+		return;
+	}
+	$form.data('invoice-submitting', false);
+	$form.find('button.btn-primary').prop('disabled', false);
+}
+
+window.mmRefreshInvoiceSubmissionToken = mmRefreshInvoiceSubmissionToken;
+window.mmReleaseInvoiceSubmitLock = mmReleaseInvoiceSubmitLock;
+
 function mmPrepareComposeEmailFormData(myform, fd, csrfToken) {
 	fd.set('_token', csrfToken);
 
@@ -936,10 +973,19 @@ function customValidate(formName, savetype = '')
 					}
 
 					else if(formName == 'invoice_receipt_form'){
+						var invoiceSubmitLock = mmAcquireInvoiceSubmitLock();
+						if (!invoiceSubmitLock.acquired) {
+							$('.popuploader').hide();
+							return false;
+						}
 						var client_id = $('#invoice_receipt_form input[name="client_id"]').val();
 						var myform = document.getElementById('invoice_receipt_form');
 						var fd = new FormData(myform);
 						fd.append('save_type', savetype);
+						if (!fd.get('submission_token')) {
+							mmRefreshInvoiceSubmissionToken();
+							fd.set('submission_token', $('#invoice_receipt_form input[name="submission_token"]').val() || mmGenerateInvoiceSubmissionToken());
+						}
 							$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
@@ -955,12 +1001,14 @@ function customValidate(formName, savetype = '')
 									} catch (error) {
 										console.error('Unable to parse invoice response', response, error);
 										alert('Unexpected server response. Please try again.');
+										mmReleaseInvoiceSubmitLock();
 										return;
 									}
 								}
 								if (!obj || !(obj.status === true || obj.status === 1)) {
 									var failMsg = (obj && obj.message) ? obj.message : 'Could not save invoice. Please try again.';
 									alert(failMsg);
+									mmReleaseInvoiceSubmitLock();
 									return;
 								}
 								var invNo = obj.invoice_no || '';
@@ -1013,6 +1061,7 @@ function customValidate(formName, savetype = '')
 							},
 							error: function(xhr) {
 								$('.popuploader').hide();
+								mmReleaseInvoiceSubmitLock();
 								var msg = 'Could not save invoice. Please try again.';
 								if (xhr.responseJSON && xhr.responseJSON.message) {
 									msg = xhr.responseJSON.message;

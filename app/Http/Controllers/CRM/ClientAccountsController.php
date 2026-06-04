@@ -24,6 +24,7 @@ use App\Services\InvoicePaymentSyncService;
 use App\Services\FCMService;
 use App\Services\SystemEmailLogService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 
@@ -1015,6 +1016,190 @@ class ClientAccountsController extends Controller
 
         return $max;
     }
+
+    /**
+     * Prevent duplicate invoice rows when the same "add" submission is sent twice.
+     * Scoped to function_type=add only; edit/adjust/other receipt types are unaffected.
+     */
+    private function invoiceAddSubmissionCacheKey(int $clientId, string $token): string
+    {
+        $safeToken = preg_replace('/[^a-zA-Z0-9_-]/', '', $token);
+
+        return 'invoice_add_submission:'.$clientId.':'.$safeToken;
+    }
+
+    private function getCachedInvoiceAddResponse(array $requestData): ?array
+    {
+        $token = trim((string) ($requestData['submission_token'] ?? ''));
+        if ($token === '' || strlen($token) > 128) {
+            return null;
+        }
+
+        $cached = Cache::get($this->invoiceAddSubmissionCacheKey((int) $requestData['client_id'], $token));
+
+        return is_array($cached) ? $cached : null;
+    }
+
+    private function cacheInvoiceAddResponse(array $requestData, array $response): void
+    {
+        $token = trim((string) ($requestData['submission_token'] ?? ''));
+        if ($token === '' || strlen($token) > 128) {
+            return;
+        }
+
+        if (empty($response['status'])) {
+            return;
+        }
+
+        Cache::put(
+            $this->invoiceAddSubmissionCacheKey((int) $requestData['client_id'], $token),
+            $response,
+            now()->addMinutes(15)
+        );
+    }
+
+    private function computeInvoiceAddTotalFromRequest(array $requestData): float
+    {
+        $total = 0.0;
+        $count = count($requestData['trans_date'] ?? []);
+        for ($i = 0; $i < $count; $i++) {
+            $amount = floatval($requestData['withdraw_amount'][$i] ?? 0);
+            if (($requestData['payment_type'][$i] ?? '') === 'Discount') {
+                $total -= $amount;
+            } else {
+                $total += $amount;
+            }
+        }
+
+        return round($total, 2);
+    }
+
+    private function invoiceAddFingerprintFromRequest(array $requestData): string
+    {
+        $parts = [];
+        $count = count($requestData['trans_date'] ?? []);
+        for ($i = 0; $i < $count; $i++) {
+            $parts[] = implode('|', [
+                $requestData['trans_date'][$i] ?? '',
+                $requestData['entry_date'][$i] ?? '',
+                $requestData['gst_included'][$i] ?? '',
+                $requestData['payment_type'][$i] ?? '',
+                trim((string) ($requestData['description'][$i] ?? '')),
+                number_format((float) ($requestData['withdraw_amount'][$i] ?? 0), 2, '.', ''),
+            ]);
+        }
+
+        return hash('sha256', implode("\n", $parts));
+    }
+
+    private function invoiceAddFingerprintFromReceiptId(int $receiptId, int $clientId): string
+    {
+        $lines = AccountAllInvoiceReceipt::where('receipt_type', 3)
+            ->where('receipt_id', $receiptId)
+            ->where('client_id', $clientId)
+            ->orderBy('id')
+            ->get();
+
+        $parts = [];
+        foreach ($lines as $line) {
+            $parts[] = implode('|', [
+                $line->trans_date ?? '',
+                $line->entry_date ?? '',
+                $line->gst_included ?? '',
+                $line->payment_type ?? '',
+                trim((string) ($line->description ?? '')),
+                number_format((float) ($line->withdraw_amount ?? 0), 2, '.', ''),
+            ]);
+        }
+
+        return hash('sha256', implode("\n", $parts));
+    }
+
+    private function findRecentDuplicateInvoiceAdd(array $requestData): ?object
+    {
+        if (empty($requestData['trans_date']) || ! is_array($requestData['trans_date'])) {
+            return null;
+        }
+
+        $clientId = (int) $requestData['client_id'];
+        $matterId = $requestData['client_matter_id'] ?? null;
+        $saveType = (string) ($requestData['save_type'] ?? '');
+        $expectedTotal = $this->computeInvoiceAddTotalFromRequest($requestData);
+        $fingerprint = $this->invoiceAddFingerprintFromRequest($requestData);
+        $since = now()->subSeconds(90);
+
+        $query = DB::table('account_client_receipts')
+            ->where('receipt_type', 3)
+            ->where('client_id', $clientId)
+            ->where('created_at', '>=', $since)
+            ->where('save_type', $saveType)
+            ->where('withdraw_amount', $expectedTotal);
+
+        if ($matterId !== null && $matterId !== '') {
+            $query->where('client_matter_id', $matterId);
+        } else {
+            $query->whereNull('client_matter_id');
+        }
+
+        $candidates = $query->orderByDesc('id')->limit(5)->get();
+
+        foreach ($candidates as $row) {
+            if ($this->invoiceAddFingerprintFromReceiptId((int) $row->receipt_id, $clientId) === $fingerprint) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    private function buildInvoiceAddJsonResponseFromExisting(object $headerRow, array $requestData): array
+    {
+        $clientId = (int) $requestData['client_id'];
+        $receiptId = (int) $headerRow->receipt_id;
+        $lines = AccountAllInvoiceReceipt::where('receipt_type', 3)
+            ->where('client_id', $clientId)
+            ->where('receipt_id', $receiptId)
+            ->orderBy('id')
+            ->get();
+
+        $finalArr = [];
+        $totalWithdrawAmount = 0.0;
+        foreach ($lines as $i => $line) {
+            $withdrawAmount = (float) ($line->withdraw_amount ?? 0);
+            $finalArr[$i] = [
+                'trans_date' => $line->trans_date,
+                'entry_date' => $line->entry_date,
+                'trans_no' => $line->trans_no ?? $line->invoice_no,
+                'gst_included' => $line->gst_included,
+                'payment_type' => $line->payment_type,
+                'description' => $line->description,
+                'withdraw_amount' => $withdrawAmount,
+                'balance_amount' => $withdrawAmount,
+                'invoice_no' => $line->invoice_no ?? $line->trans_no,
+                'save_type' => $line->save_type,
+                'receipt_id' => $receiptId,
+                'client_matter_id' => $line->client_matter_id,
+                'invoice_status' => $line->invoice_status,
+                'id' => $line->id,
+            ];
+            if ($line->payment_type === 'Discount') {
+                $totalWithdrawAmount -= $withdrawAmount;
+            } else {
+                $totalWithdrawAmount += $withdrawAmount;
+            }
+        }
+
+        $invoiceNo = $headerRow->invoice_no ?? $headerRow->trans_no ?? '';
+
+        return [
+            'requestData' => $finalArr,
+            'status' => true,
+            'message' => 'Invoice added successfully',
+            'function_type' => 'add',
+            'total_balance_amount' => $totalWithdrawAmount,
+            'invoice_no' => $invoiceNo,
+        ];
+    }
    
        //Save invoice reports
     /**
@@ -1042,11 +1227,24 @@ class ClientAccountsController extends Controller
             
             if( $requestData['function_type'] == 'add')
         {
+            $cachedResponse = $this->getCachedInvoiceAddResponse($requestData);
+            if ($cachedResponse !== null) {
+                return response()->json($cachedResponse);
+            }
+
             $lastInsertId = null;
             $invoice_no = '';
             $finalArr = [];
             $totalWithdrawAmount = 0;
             if(isset($requestData['trans_date'])){
+                $duplicateHeader = $this->findRecentDuplicateInvoiceAdd($requestData);
+                if ($duplicateHeader !== null) {
+                    $duplicateResponse = $this->buildInvoiceAddJsonResponseFromExisting($duplicateHeader, $requestData);
+                    $this->cacheInvoiceAddResponse($requestData, $duplicateResponse);
+
+                    return response()->json($duplicateResponse);
+                }
+
                 //Generate unique receipt id
                 $is_record_exist = DB::table('account_client_receipts')->select('receipt_id')->where('receipt_type',3)->orderBy('receipt_id', 'desc')->first();
                 if(!$is_record_exist){
@@ -1164,6 +1362,7 @@ class ClientAccountsController extends Controller
                 $response['function_type'] = $requestData['function_type'];
                 $response['total_balance_amount'] = $totalWithdrawAmount;
                 $response['invoice_no'] = $invoice_no;
+                $this->cacheInvoiceAddResponse($requestData, $response);
             }else{
                 $response['requestData'] = "";
                 $response['status']     =     false;

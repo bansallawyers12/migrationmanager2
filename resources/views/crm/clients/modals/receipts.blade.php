@@ -326,6 +326,7 @@
 					<input type="hidden" name="receipt_id" id="receipt_id" value="">
 					<input type="hidden" name="function_type" id="function_type" value="">
                     <input type="hidden" name="client_matter_id" id="client_matter_id_invoice" value="">
+					<input type="hidden" name="submission_token" id="invoice_submission_token" value="">
 
 					<div class="row">
 						<div class="col-3 col-md-3 col-lg-3">

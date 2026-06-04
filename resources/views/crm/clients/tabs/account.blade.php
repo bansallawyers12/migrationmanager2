@@ -862,6 +862,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // CRITICAL: Set function_type to "add" for new invoices
             $('#invoice_receipt_form input[name="function_type"]').val('add');
+            if (typeof window.mmRefreshInvoiceSubmissionToken === 'function') {
+                window.mmRefreshInvoiceSubmissionToken();
+            }
             console.log('✏️ Set function_type to: add');
             
             // Set the matter ID
@@ -920,6 +923,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Reset modal when closed (cleanup for next use)
     $('#createreceiptmodal').on('hidden.bs.modal', function() {
+        if (typeof window.mmReleaseInvoiceSubmitLock === 'function') {
+            window.mmReleaseInvoiceSubmitLock();
+        }
         // Show radio buttons again (in case user opens from a different page)
         $(this).find('.form-group:has(input[name="receipt_type"])').show();
         
