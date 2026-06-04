@@ -18,6 +18,8 @@ return [
 
     'skill_assessment' => 'Service_Agreement_Skill_Assessment.docx',
 
+    'psa' => 'Service_Agreement_PSA.docx',
+
     'job_ready' => 'Service_Agreement_Job_Ready.docx',
 
     'subclass_408' => 'Service_Agreement_408.docx',

@@ -165,4 +165,41 @@ class VisaAgreementTemplateResolverTest extends TestCase
         $this->assertSame('subclass_408', $r['rule']);
         $this->assertSame('Service_Agreement_408.docx', $r['candidates'][0]);
     }
+
+    public function test_psa_nick_selects_psa_template_before_skill_assessment(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            false,
+            'psa',
+            'Provisional Skills Assessment-PSA',
+            false
+        );
+        $this->assertSame('psa', $r['rule']);
+        $this->assertSame('Service_Agreement_PSA.docx', $r['candidates'][0]);
+        $this->assertSame('Service_Agreement_general.docx', end($r['candidates']));
+    }
+
+    public function test_provisional_skills_assessment_in_title_selects_psa_template(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            false,
+            'gn',
+            'Provisional Skills Assessment pathway',
+            false
+        );
+        $this->assertSame('psa', $r['rule']);
+        $this->assertSame('Service_Agreement_PSA.docx', $r['candidates'][0]);
+    }
+
+    public function test_vetassess_psa_matter_without_provisional_title_still_uses_skill_assessment(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            false,
+            'vetassespsa',
+            'Skill Assessment Vetassess PSA',
+            false
+        );
+        $this->assertSame('skill_assessment', $r['rule']);
+        $this->assertSame('Service_Agreement_Skill_Assessment.docx', $r['candidates'][0]);
+    }
 }

@@ -131,6 +131,16 @@ class VisaAgreementTemplateResolver
             ];
         }
 
+        if ($this->matchesProvisionalSkillsAssessment($nick, $titleLower)) {
+            return [
+                'candidates' => $this->uniqueFilenames(array_merge(
+                    [$cfg['psa'] ?? ''],
+                    $this->standardNonCompanyTail($cfg)
+                )),
+                'rule' => 'psa',
+            ];
+        }
+
         if ($this->matchesSkillAssessmentOnly($nick, $titleLower, $hasVetassessOccupation)) {
             return [
                 'candidates' => $this->uniqueFilenames(array_merge(
@@ -279,6 +289,15 @@ class VisaAgreementTemplateResolver
     private function matchesSubclass408(string $titleLower): bool
     {
         return (bool) @preg_match('/\b408\b/', $titleLower);
+    }
+
+    private function matchesProvisionalSkillsAssessment(string $nick, string $titleLower): bool
+    {
+        if ($nick === 'psa') {
+            return true;
+        }
+
+        return str_contains($titleLower, 'provisional skills assessment');
     }
 
     private function matchesSkillAssessmentOnly(string $nick, string $titleLower, bool $hasVetassessOccupation): bool
