@@ -19,7 +19,7 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->templatePath = storage_path('app/templates/Service_Agreement_Job_Ready.docx');
     }
 
-    public function test_patches_block2_row_to_match_block1_alignment(): void
+    public function test_patches_block2_and_total_rows_to_match_block1_alignment(): void
     {
         if (! is_file($this->templatePath)) {
             $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
@@ -38,6 +38,11 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertTrue($after['block2']['single_placeholder']);
         $this->assertFalse($after['block2']['red_markup']);
         $this->assertSame($before['block1']['jc'], $after['block2']['jc']);
+
+        $this->assertSame('center', $after['total']['jc']);
+        $this->assertSame($before['block1']['space_count'], $after['total']['space_count']);
+        $this->assertTrue($after['total']['single_placeholder']);
+        $this->assertSame($before['block1']['jc'], $after['total']['jc']);
     }
 
     public function test_patch_is_idempotent_for_job_ready_template(): void
@@ -55,7 +60,7 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertSame($first['xml'], $second['xml']);
     }
 
-    public function test_does_not_modify_xml_without_block2_placeholder(): void
+    public function test_does_not_modify_xml_without_fee_table_placeholders(): void
     {
         $xml = '<w:document><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Other</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>';
 
@@ -78,7 +83,25 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
 
         $this->assertSame($before['block1'], $after['block1']);
         $this->assertSame($before['block3'], $after['block3']);
-        $this->assertSame($before['total'], $after['total']);
+    }
+
+    public function test_does_not_touch_second_blocktotal_placeholder_outside_fee_table(): void
+    {
+        if (! is_file($this->templatePath)) {
+            $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
+        }
+
+        $xml = $this->readDocumentXml($this->templatePath);
+        $firstPos = strpos($xml, 'Blocktotalfeesincltax');
+        $secondPos = strpos($xml, 'Blocktotalfeesincltax', $firstPos + 1);
+        $this->assertNotFalse($secondPos);
+
+        $secondSnippetBefore = $this->placeholderSnippet($xml, $secondPos);
+        $result = $this->patcher->patchDocumentXml($xml);
+        $secondPosAfter = strpos($result['xml'], 'Blocktotalfeesincltax', strpos($result['xml'], 'Blocktotalfeesincltax') + 1);
+        $this->assertNotFalse($secondPosAfter);
+
+        $this->assertSame($secondSnippetBefore, $this->placeholderSnippet($result['xml'], $secondPosAfter));
     }
 
     private function readDocumentXml(string $docxPath): string
@@ -90,6 +113,11 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertNotFalse($xml);
 
         return $xml;
+    }
+
+    private function placeholderSnippet(string $xml, int $position): string
+    {
+        return substr($xml, $position - 80, 200);
     }
 
     /**
