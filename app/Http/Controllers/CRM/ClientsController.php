@@ -86,6 +86,7 @@ use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
 use App\Services\FCMService;
 use App\Services\ClientImportService;
+use App\Services\JobReadyAgreementFeeTablePatcher;
 use App\Services\PsaAgreementFeeTablePatcher;
 use App\Services\VisaAgreementTemplateResolver;
 use App\Traits\ClientAuthorization;
@@ -4696,6 +4697,18 @@ class ClientsController extends Controller
                                 if ($psaPatch['patched']) {
                                     $xmlPatchesApplied = true;
                                     Log::info('[AgreementMacro:PSA] DOCX patch aligned Total Professional Fee amount cell with block fee rows', [
+                                        'client_id' => $request->client_id,
+                                        'client_matter_id' => $request->client_matter_id ?? null,
+                                    ]);
+                                }
+                            }
+
+                            if ($templateFileName === 'Service_Agreement_Job_Ready.docx') {
+                                $jobReadyPatch = app(JobReadyAgreementFeeTablePatcher::class)->patchDocumentXml($xml);
+                                $xml = $jobReadyPatch['xml'];
+                                if ($jobReadyPatch['patched']) {
+                                    $xmlPatchesApplied = true;
+                                    Log::info('[AgreementMacro:JobReady] DOCX patch aligned Block 2 professional fee amount cell with Block 1/3 rows', [
                                         'client_id' => $request->client_id,
                                         'client_matter_id' => $request->client_matter_id ?? null,
                                     ]);
