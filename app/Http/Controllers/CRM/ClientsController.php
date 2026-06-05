@@ -86,6 +86,7 @@ use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
 use App\Services\FCMService;
 use App\Services\ClientImportService;
+use App\Services\PsaAgreementFeeTablePatcher;
 use App\Services\VisaAgreementTemplateResolver;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
@@ -4642,7 +4643,7 @@ class ClientsController extends Controller
                     if ($zip->open($patchedTempPath) === true) {
                         $xml = $zip->getFromName('word/document.xml');
                         if ($xml !== false) {
-                            $patched = false;
+                            $xmlPatchesApplied = false;
                             $oldPlaceholder = '${TotalDoHASurcharges}';
                             $newPlaceholder = '${TotalDoHAChargesInclSurcharge}';
                             $countFullPlaceholder = substr_count($xml, $oldPlaceholder);
@@ -4651,7 +4652,7 @@ class ClientsController extends Controller
                             $lastPos = strrpos($xml, $oldPlaceholder);
                             if ($lastPos !== false) {
                                 $xml = substr_replace($xml, $newPlaceholder, $lastPos, strlen($oldPlaceholder));
-                                $patched = true;
+                                $xmlPatchesApplied = true;
                                 Log::info('[AgreementMacro:TotalDoHASurcharges] DOCX patch REPLACED last exact placeholder with TotalDoHAChargesInclSurcharge', [
                                     'client_id' => $request->client_id,
                                     'client_matter_id' => $request->client_matter_id ?? null,
@@ -4668,7 +4669,7 @@ class ClientsController extends Controller
                                 $lastPos = strrpos($xml, $oldName);
                                 if ($lastPos !== false) {
                                     $xml = substr_replace($xml, $newName, $lastPos, strlen($oldName));
-                                    $patched = true;
+                                    $xmlPatchesApplied = true;
                                     Log::info('[AgreementMacro:TotalDoHASurcharges] DOCX patch REPLACED last bare name with TotalDoHAChargesInclSurcharge', [
                                         'client_id' => $request->client_id,
                                         'client_matter_id' => $request->client_matter_id ?? null,
@@ -4680,7 +4681,7 @@ class ClientsController extends Controller
                                     ]);
                                 }
                             }
-                            if (!$patched) {
+                            if (! $xmlPatchesApplied) {
                                 Log::info('[AgreementMacro:TotalDoHASurcharges] DOCX patch skipped (no TotalDoHASurcharges found in document.xml)', [
                                     'client_id' => $request->client_id,
                                     'client_matter_id' => $request->client_matter_id ?? null,
@@ -4688,12 +4689,25 @@ class ClientsController extends Controller
                                     'occurrences_substring_TotalDoHASurcharges' => $countBareName,
                                 ]);
                             }
-                            if ($patched) {
+
+                            if ($templateFileName === 'Service_Agreement_PSA.docx') {
+                                $psaPatch = app(PsaAgreementFeeTablePatcher::class)->patchDocumentXml($xml);
+                                $xml = $psaPatch['xml'];
+                                if ($psaPatch['patched']) {
+                                    $xmlPatchesApplied = true;
+                                    Log::info('[AgreementMacro:PSA] DOCX patch aligned Total Professional Fee amount cell with block fee rows', [
+                                        'client_id' => $request->client_id,
+                                        'client_matter_id' => $request->client_matter_id ?? null,
+                                    ]);
+                                }
+                            }
+
+                            if ($xmlPatchesApplied) {
                                 $zip->deleteName('word/document.xml');
                                 $zip->addFromString('word/document.xml', $xml);
                                 $zip->close();
                                 $pathToLoad = $patchedTempPath;
-                                Log::info('Patched template: Amount incl Surcharge total cell now uses TotalDoHAChargesInclSurcharge');
+                                Log::info('Patched agreement template working copy before PhpWord merge');
                             } else {
                                 $zip->close();
                             }
