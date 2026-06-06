@@ -1242,10 +1242,11 @@ $(document).ready(function() {
                 var $checklistCbs = $('#emailmodal .checklistfile-cb');
                 if (res.macro_values) {
                     var macroVals = res.macro_values;
-                    var pdfUrl = $('#emailmodal').data('pdfUrlForSign') || $('#compose_signing_url').val() || '';
+                    var pdfUrl = ($('#emailmodal').data('pdfUrlForSign') || $('#compose_signing_url').val() || macroVals.PDF_url_for_sign || '').trim();
                     if (pdfUrl) {
                         macroVals = Object.assign({}, macroVals, { PDF_url_for_sign: pdfUrl });
                         $('#compose_signing_url').val(pdfUrl);
+                        $('#emailmodal').data('pdfUrlForSign', pdfUrl);
                     }
                     $('#emailmodal').data('composeMacroValues', macroVals);
                 } else {

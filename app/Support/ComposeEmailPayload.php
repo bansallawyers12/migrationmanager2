@@ -43,7 +43,7 @@ final class ComposeEmailPayload
         if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
             return null;
         }
-        if (!preg_match('#/sign/\d+/[A-Za-z0-9]+#', $url)) {
+        if (!preg_match('#/sign/\d+/[A-Za-z0-9_-]+#', $url)) {
             return null;
         }
 

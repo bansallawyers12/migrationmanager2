@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
+use App\Models\Document;
 use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
 use App\Models\McqChapter;
@@ -1133,7 +1134,42 @@ public function getChapters(Request $request)
 			$values['GrandTotalFeesAndCosts'] = number_format($grandTotal, 2, '.', '');
 		}
 
+		$signingUrl = $this->getAgreementSigningUrlForMatter($clientMatterId);
+		if ($signingUrl !== '') {
+			$values['PDF_url_for_sign'] = $signingUrl;
+		}
+
 		return $values;
+	}
+
+	/**
+	 * Resolve the pending agreement signing URL for a client matter (compose email / First email macro).
+	 * Matches checklist logic: latest agreement doc with signature_doc_link when not yet signed.
+	 */
+	protected function getAgreementSigningUrlForMatter($clientMatterId): string
+	{
+		$agreementDoc = Document::where('client_matter_id', $clientMatterId)
+			->where('doc_type', 'agreement')
+			->latest()
+			->first();
+
+		if (!$agreementDoc || $agreementDoc->status === 'signed' || empty($agreementDoc->signature_doc_link)) {
+			return '';
+		}
+
+		$signatureLinks = json_decode($agreementDoc->signature_doc_link, true);
+		if (!is_array($signatureLinks)) {
+			return '';
+		}
+
+		$primaryLink = $signatureLinks[0] ?? null;
+		$url = is_array($primaryLink) ? trim((string) ($primaryLink['url'] ?? '')) : '';
+
+		if ($url === '') {
+			return '';
+		}
+
+		return ComposeEmailPayload::normalizeSigningUrl($url) ?? '';
 	}
 
 	/**

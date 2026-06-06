@@ -57,6 +57,13 @@ class ComposeEmailPayloadTest extends TestCase
         $this->assertSame($url, ComposeEmailPayload::normalizeSigningUrl($url));
     }
 
+    public function test_normalize_signing_url_accepts_token_with_underscore(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/193568/alp27l8edYFdBigKvamN68w59MXfl_XF5vw2qBApPmlsEhPk8NYil3Bg21NSzdSJ9';
+
+        $this->assertSame($url, ComposeEmailPayload::normalizeSigningUrl($url));
+    }
+
     public function test_normalize_signing_url_rejects_non_sign_urls(): void
     {
         $this->assertNull(ComposeEmailPayload::normalizeSigningUrl('https://example.com/other/page'));
