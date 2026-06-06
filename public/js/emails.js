@@ -1656,6 +1656,234 @@
         return getMatterId();
     }
 
+    const COMPANY_EMAIL_DOMAINS = [
+        '@bansalimmigration.com.au',
+        '@bansaleducation.com.au',
+        '@bansallawyers.com.au'
+    ];
+
+    /**
+     * Whether an email was sent from the CRM or uploaded as outbound mail.
+     */
+    function isSentEmail(email) {
+        return currentMailType === 'sent' || email.mail_body_type === 'sent';
+    }
+
+    function isFromCompanyDomain(emailAddress) {
+        const addr = extractEmailAddress(emailAddress).toLowerCase();
+        return COMPANY_EMAIL_DOMAINS.some(domain => addr.includes(domain));
+    }
+
+    function hasSentLabel(email) {
+        if (!email.labels || !Array.isArray(email.labels)) {
+            return false;
+        }
+        return email.labels.some(label => (label.name || '').toLowerCase() === 'sent');
+    }
+
+    /**
+     * Sent / outbound mail: reply to original To. Inbox / inbound: reply to original From.
+     */
+    function shouldReplyToOriginalRecipient(email) {
+        return isSentEmail(email)
+            || hasSentLabel(email)
+            || isFromCompanyDomain(email.from_mail);
+    }
+
+    /**
+     * Reply targets: inbox -> original sender; sent/outbound -> original recipient(s).
+     */
+    function getReplyRecipientAddresses(email) {
+        const raw = shouldReplyToOriginalRecipient(email)
+            ? (email.to_mail || '')
+            : (email.from_mail || '');
+        if (!raw) {
+            return [];
+        }
+        return raw.split(',')
+            .map(part => extractEmailAddress(part.trim()))
+            .filter(addr => addr && addr.includes('@'));
+    }
+
+    /**
+     * Look up a CRM client/lead record by email for the compose To dropdown.
+     */
+    async function fetchRecipientByEmail(emailAddress) {
+        const query = extractEmailAddress(emailAddress);
+        if (!query) {
+            return null;
+        }
+
+        const getRecipientsUrl = window.ClientDetailConfig
+            && window.ClientDetailConfig.urls
+            && window.ClientDetailConfig.urls.getRecipients;
+
+        if (!getRecipientsUrl) {
+            return null;
+        }
+
+        try {
+            const response = await fetch(getRecipientsUrl + '?q=' + encodeURIComponent(query), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+
+            const payload = await response.json();
+            const items = payload.items || [];
+            const queryLower = query.toLowerCase();
+            const exact = items.find(item => (item.email || '').toLowerCase() === queryLower);
+            return exact || (items.length ? items[0] : null);
+        } catch (error) {
+            console.error('Recipient lookup failed:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Build Tom Select recipient row when address is not in CRM (backend accepts raw email fallback).
+     */
+    function buildExternalRecipient(emailAddress) {
+        const addr = extractEmailAddress(emailAddress);
+        return {
+            id: addr,
+            name: addr,
+            email: addr,
+            status: 'External'
+        };
+    }
+
+    /**
+     * Resolve email address(es) to CRM records and populate the compose To mmSelect.
+     */
+    async function resolveAndSetComposeTo(emailAddresses) {
+        if (!emailAddresses || !emailAddresses.length || typeof jQuery === 'undefined') {
+            return;
+        }
+
+        const selectedIds = [];
+        const recipients = [];
+
+        for (const raw of emailAddresses) {
+            const addr = extractEmailAddress(raw);
+            if (!addr) {
+                continue;
+            }
+
+            let recipient = await fetchRecipientByEmail(addr);
+            if (!recipient) {
+                recipient = buildExternalRecipient(addr);
+            }
+
+            const id = String(recipient.id);
+            if (selectedIds.includes(id)) {
+                continue;
+            }
+
+            selectedIds.push(id);
+            recipients.push(recipient);
+        }
+
+        if (!selectedIds.length) {
+            return;
+        }
+
+        if (typeof window.initComposeEmailToField === 'function') {
+            window.initComposeEmailToField(selectedIds, recipients);
+            return;
+        }
+
+        // Fallback when detail-main.js helpers are unavailable (e.g. lead detail page).
+        const $toSelect = jQuery('#emailmodal .js-data-example-ajax');
+        if (!$toSelect.length || typeof jQuery.fn.mmSelect === 'undefined') {
+            return;
+        }
+        if ($toSelect[0].tomselect) {
+            $toSelect.mmSelect('destroy');
+        }
+        const data = recipients.map(recipient => {
+            const name = recipient.name || recipient.email || recipient.id;
+            const email = recipient.email || '';
+            const status = recipient.status || 'Client';
+            return {
+                id: String(recipient.id),
+                text: name,
+                html: "<div class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
+                    "<div class='ag-flex ag-align-start'><div class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'>" +
+                    "<span class='mm-result-repository__title text-semi-bold'>" + escapeHtml(name) + "</span></div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>" + escapeHtml(email) + "</small></div>" +
+                    "</div></div>" +
+                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
+                    "<span class='ui label yellow mm-result-repository__statistics'>" + escapeHtml(status) + "</span>" +
+                    "</div></div>",
+                title: name
+            };
+        });
+        const getRecipientsUrl = window.ClientDetailConfig?.urls?.getRecipients;
+        const config = {
+            multiple: true,
+            closeOnSelect: false,
+            dropdownParent: jQuery('#emailmodal'),
+            data: data,
+            escapeMarkup: markup => markup,
+            templateResult: d => d.html,
+            templateSelection: d => d.text
+        };
+        if (getRecipientsUrl) {
+            config.ajax = {
+                url: getRecipientsUrl,
+                dataType: 'json',
+                processResults: ajaxData => ({ results: ajaxData.items || [] }),
+                cache: true
+            };
+        }
+        $toSelect.mmSelect(config);
+        $toSelect.val(selectedIds).trigger('change');
+        jQuery('#emailmodal').data('composeToFieldCustomized', true);
+    }
+
+    /**
+     * Clear and restore the compose To field to default ajax search.
+     */
+    function clearComposeToField() {
+        if (typeof window.resetComposeEmailToField === 'function') {
+            window.resetComposeEmailToField();
+        }
+        if (typeof jQuery !== 'undefined') {
+            const $toSelect = jQuery('#emailmodal .js-data-example-ajax');
+            if ($toSelect.length) {
+                $toSelect.val(null).trigger('change');
+            }
+        }
+    }
+
+    /**
+     * Match and select a SendGrid From address after the modal opens.
+     */
+    function setComposeFromEmail(emailAddress) {
+        const addr = extractEmailAddress(emailAddress);
+        if (!addr) {
+            return;
+        }
+        const fromSelect = document.querySelector('#emailmodal .email-from-sendgrid, #emailmodal select[name="email_from"]');
+        if (!fromSelect) {
+            return;
+        }
+        const match = Array.from(fromSelect.options).find(
+            opt => (opt.value || '').toLowerCase() === addr.toLowerCase()
+        );
+        if (match) {
+            fromSelect.value = match.value;
+        }
+    }
+
     /**
      * Open compose modal and populate fields
      */
@@ -1712,48 +1940,24 @@
             }
         }
 
-        // Set "To" field (mmSelect)
-        if (data.to && data.to.length > 0) {
-            const toSelect = document.querySelector('select[name="email_to[]"]');
-            if (toSelect && typeof jQuery !== 'undefined') {
-                const setToField = () => {
-                    // Wait for mmSelect to initialize
-                    setTimeout(() => {
-                        // Clear existing selections
-                        jQuery(toSelect).val(null).trigger('change');
-                        
-                        // For ajax multi-select, create options then select
-                        const emailAddresses = data.to.map(email => extractEmailAddress(email)).filter(addr => addr);
-                        
-                        if (emailAddresses.length > 0) {
-                            // Create options for each email
-                            emailAddresses.forEach(emailAddr => {
-                                // Check if option already exists
-                                let option = Array.from(toSelect.options).find(opt => opt.value === emailAddr || opt.text === emailAddr);
-                                if (!option) {
-                                    // Create new option
-                                    option = new Option(emailAddr, emailAddr, true, true);
-                                    toSelect.add(option);
-                                } else {
-                                    option.selected = true;
-                                }
-                            });
-                            
-                            // Update mmSelect with the selected values
-                            jQuery(toSelect).val(emailAddresses).trigger('change');
-                        }
-                    }, 200);
-                };
-                
-                // If modal is already shown, set immediately, otherwise wait
-                if (modal.classList.contains('show') || modal.style.display === 'block') {
-                    setToField();
-                } else if (typeof jQuery !== 'undefined') {
-                    jQuery(modal).one('shown.bs.modal', setToField);
-                } else {
-                    modal.addEventListener('shown.bs.modal', setToField, { once: true });
-                }
+        // Set To / From on modal shown (Tom Select + SendGrid From need the modal DOM ready)
+        const applyComposeRecipients = () => {
+            if (data.to && data.to.length > 0) {
+                resolveAndSetComposeTo(data.to);
+            } else {
+                clearComposeToField();
             }
+            if (data.from) {
+                setTimeout(() => setComposeFromEmail(data.from), 150);
+            }
+        };
+
+        if (modal.classList.contains('show') || modal.style.display === 'block') {
+            setTimeout(applyComposeRecipients, 50);
+        } else if (typeof jQuery !== 'undefined') {
+            jQuery(modal).one('shown.bs.modal', applyComposeRecipients);
+        } else {
+            modal.addEventListener('shown.bs.modal', applyComposeRecipients, { once: true });
         }
 
         // Open modal using Bootstrap
@@ -1778,10 +1982,9 @@
             return;
         }
 
-        // Extract sender email for "To" field
-        const senderEmail = extractEmailAddress(email.from_mail);
-        if (!senderEmail) {
-            showNotification('Could not extract sender email address', 'error');
+        const recipientAddresses = getReplyRecipientAddresses(email);
+        if (!recipientAddresses.length) {
+            showNotification('Could not extract recipient email address', 'error');
             return;
         }
 
@@ -1794,13 +1997,19 @@
         // Format message with quoted original
         const replyMessage = formatQuotedMessage(email, false);
 
-        // Open compose modal with reply data
-        openComposeModal({
-            to: [senderEmail],
+        const composeData = {
+            to: recipientAddresses,
             subject: replySubject,
             message: replyMessage,
             matterId: matterId
-        });
+        };
+
+        // Outbound mail: pre-select the mailbox that sent the original email
+        if (shouldReplyToOriginalRecipient(email) && email.from_mail) {
+            composeData.from = email.from_mail;
+        }
+
+        openComposeModal(composeData);
 
         showNotification('Reply email opened', 'info');
     }
@@ -1814,6 +2023,12 @@
             return;
         }
 
+        const recipientAddresses = getReplyRecipientAddresses(email);
+        if (!recipientAddresses.length) {
+            showNotification('Could not extract recipient email address', 'error');
+            return;
+        }
+
         // Get matter ID
         const matterId = getMatterId();
 
@@ -1823,13 +2038,19 @@
         // Format message with forwarded content
         const forwardMessage = formatQuotedMessage(email, true);
 
-        // Open compose modal with forward data (no "To" pre-filled)
-        openComposeModal({
-            to: [],
+        const composeData = {
+            to: recipientAddresses,
             subject: forwardSubject,
             message: forwardMessage,
             matterId: matterId
-        });
+        };
+
+        // Outbound mail: pre-select the mailbox that sent the original email
+        if (shouldReplyToOriginalRecipient(email) && email.from_mail) {
+            composeData.from = email.from_mail;
+        }
+
+        openComposeModal(composeData);
 
         showNotification('Forward email opened', 'info');
     }
@@ -2387,6 +2608,9 @@
                     .off('hidden.bs.modal.preserveReplyForward')
                     .on('hidden.bs.modal.preserveReplyForward', function() {
                         jQuery(this).removeData('preserveReplyForwardBody');
+                        if (typeof window.resetComposeEmailToField === 'function') {
+                            window.resetComposeEmailToField();
+                        }
                     });
             }
             // Listen for modal show event (Bootstrap 4)

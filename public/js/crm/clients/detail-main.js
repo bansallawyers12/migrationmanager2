@@ -7158,6 +7158,68 @@ success: function(response) {
             };
         }
 
+        function buildComposeRecipientSelectItem(recipient) {
+            var id = String(recipient.id);
+            var name = recipient.name || recipient.email || id;
+            var email = recipient.email || '';
+            var status = recipient.status || 'Client';
+
+            return {
+                id: id,
+                name: name,
+                email: email,
+                text: name,
+                html: "<div  class='mm-result-repository ag-flex ag-space-between ag-align-center'>" +
+                    "<div  class='ag-flex ag-align-start'>" +
+                    "<div  class='ag-flex ag-flex-column col-hr-1'><div class='ag-flex'><span  class='mm-result-repository__title text-semi-bold'>" + name + "</span>&nbsp;</div>" +
+                    "<div class='ag-flex ag-align-center'><small class='mm-result-repository__description'>" + email + "</small ></div>" +
+                    "</div>" +
+                    "</div>" +
+                    "<div class='ag-flex ag-flex-column ag-align-end'>" +
+                    "<span class='ui label yellow mm-result-repository__statistics'>" + status + "</span>" +
+                    "</div>" +
+                    "</div>",
+                title: name
+            };
+        }
+
+        /** Pre-fill compose To via Tom Select (reply/forward from email tab). */
+        window.initComposeEmailToField = function (selectedIds, recipients) {
+            var $toSelect = $('#emailmodal .js-data-example-ajax');
+            if (!$toSelect.length) {
+                return;
+            }
+            if ($toSelect[0].tomselect) {
+                $toSelect.mmSelect('destroy');
+            }
+            var data = (recipients || []).map(buildComposeRecipientSelectItem);
+            $toSelect.mmSelect($.extend(emailModalRecipientsTomSelectBase(), { data: data }));
+            var ids = (selectedIds || []).map(String);
+            if (ids.length) {
+                $toSelect.val(ids);
+                $toSelect.trigger('change');
+            } else {
+                $toSelect.val(null);
+                $toSelect.trigger('change');
+            }
+            $('#emailmodal').data('composeToFieldCustomized', true);
+        };
+
+        /** Restore default ajax-only To field after reply/forward compose closes. */
+        window.resetComposeEmailToField = function () {
+            var $toSelect = $('#emailmodal .js-data-example-ajax');
+            if (!$toSelect.length || !$('#emailmodal').data('composeToFieldCustomized')) {
+                return;
+            }
+            if ($toSelect[0].tomselect) {
+                $toSelect.mmSelect('destroy');
+            }
+            $toSelect.mmSelect(emailModalRecipientsTomSelectBase());
+            $toSelect.val(null);
+            $toSelect.trigger('change');
+            $('#emailmodal').removeData('composeToFieldCustomized');
+        };
+
 
 
         $(document).delegate('.clientemail', 'click', function(){
