@@ -9,7 +9,6 @@
         "barryvdh/laravel-dompdf": "*",
         "ezyang/htmlpurifier": "^4.19",
         "firebase/php-jwt": "^7.0",
-        "hfig/mapi": "^1.4",
         "kyslik/column-sortable": "^8.0",
         "laravel/framework": "^13.0",
         "laravel/reverb": "^1.6",
