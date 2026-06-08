@@ -78,7 +78,20 @@
 									<label for="name">Phone Number</label>
 									<div class="cus_field_input">
 									<div class="country_code">
-										<input class="telephone" id="telephone" type="tel" name="country_code" readonly value="{{ old('country_code', !empty($fetchedData->country_code) ? $fetchedData->country_code : '+61') }}" >
+										@php
+											$staffDialCode = old('country_code');
+											if ($staffDialCode === null || trim((string) $staffDialCode) === '') {
+												$staffDialCode = ! empty($fetchedData->country_code)
+													? $fetchedData->country_code
+													: \App\Helpers\PhoneHelper::getDefaultCountryCode();
+											}
+										@endphp
+										@include('partials.country-code-select', [
+											'name' => 'country_code',
+											'selected' => $staffDialCode,
+											'selectClass' => 'country-code-input',
+											'showPlaceholder' => false,
+										])
 									</div>
 									<input type="text" name="phone" value="{{ old('phone', @$fetchedData->phone) }}" class="form-control tel_input" data-valid="" autocomplete="off" placeholder="Enter Phone">
                                     @if ($errors->has('phone'))

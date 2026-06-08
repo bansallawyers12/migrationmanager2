@@ -16,7 +16,6 @@
     @include('components.flatpickr-assets')
     <link rel="stylesheet" href="{{asset('css/tom-select.bootstrap5.min.css')}}">
     <link rel="stylesheet" href="{{ asset('css/tom-select-layout-compat.css') }}?v={{ file_exists(public_path('css/tom-select-layout-compat.css')) ? filemtime(public_path('css/tom-select-layout-compat.css')) : 1 }}">
-    <link rel="stylesheet" href="{{asset('vendor/intl-tel-input/css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
     <link rel="stylesheet" href="{{asset('css/components.css')}}">
     <link rel="stylesheet" href="{{asset('css/custom.css')}}">
@@ -810,8 +809,6 @@
     <script src="{{asset('js/crm-flatpickr.js')}}"></script>
     <script src="{{asset('js/tom-select.complete.min.js')}}"></script>
     <script src="{{ asset('js/mm-tomselect-jquery.js') }}?v={{ file_exists(public_path('js/mm-tomselect-jquery.js')) ? filemtime(public_path('js/mm-tomselect-jquery.js')) : 1 }}"></script>
-    <script src="{{asset('vendor/intl-tel-input/js/intlTelInput.min.js')}}"></script>
-    <script src="{{asset('js/intlTelInput.jquery-bridge.js')}}"></script>
     <script src="{{asset('js/custom-form-validation.js')}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{asset('js/bootstrap5-jquery-compat.js')}}"></script>
@@ -1081,7 +1078,6 @@
             }); */
             //$('.country_input').flagStrap();
 
-            $(".telephone").intlTelInput();
             $('.drop_table_data button').on('click', function(){
                 $('.client_dropdown_list').toggleClass('active');
             });

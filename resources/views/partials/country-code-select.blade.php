@@ -5,6 +5,7 @@
     $selectClass = $selectClass ?? 'country-code-input';
     $showPlaceholder = $showPlaceholder ?? true;
     $placeholderLabel = $placeholderLabel ?? 'Select';
+    $disabled = ! empty($disabled);
 
     $selectedRaw = $selected ?? null;
     $selectedNorm = ($selectedRaw !== null && trim((string) $selectedRaw) !== '')
@@ -17,7 +18,7 @@
 
     $listedCodes = [];
 @endphp
-<select class="{{ $selectClass }} {{ $wrapperClass ?? '' }}" name="{{ $name }}">
+<select class="{{ $selectClass }} {{ $wrapperClass ?? '' }}" name="{{ $disabled ? '' : $name }}" @if($disabled) disabled @endif>
     @if($showPlaceholder)
         <option value="">{{ $placeholderLabel }}</option>
     @endif
@@ -51,3 +52,6 @@
         <option value="{{ $selectedNorm }}" selected>{{ $selectedNorm }} (current)</option>
     @endif
 </select>
+@if($disabled)
+    <input type="hidden" name="{{ $name }}" value="{{ $selectedNorm ?? '' }}">
+@endif

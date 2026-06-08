@@ -170,6 +170,44 @@
                                     }
                                 </style>
 
+                                @php
+                                    $countriesPhoneData = \App\Models\Country::getAllWithPhoneCodes()
+                                        ->map(static fn ($c) => [
+                                            'id' => $c->id,
+                                            'name' => $c->name,
+                                            'sortname' => $c->sortname,
+                                            'phonecode' => $c->phonecode,
+                                        ])
+                                        ->values();
+                                @endphp
+                                <script src="{{ asset('js/shared/phone-country-select-builder.js') }}"></script>
+                                <script>
+                                    window.countriesData = @json($countriesPhoneData);
+                                    window.phonePopularIsoCodes = @json(config('phone.popular_countries'));
+                                    window.phoneDefaultDialCode = @json(config('phone.default_country_code'));
+
+                                    function buildCountryCodeSelectHtml(selectedDial) {
+                                        var dialOpts = typeof window.buildPhoneDialCodeOptionsHtml === 'function'
+                                            ? window.buildPhoneDialCodeOptionsHtml(selectedDial || window.phoneDefaultDialCode, { showPlaceholder: false })
+                                            : '<option value="+61" selected>+61 (Australia)</option>';
+                                        return '<select name="country_code[]" class="country-code-input">' + dialOpts + '</select>';
+                                    }
+
+                                    function freezeContactRowCountryCode($row) {
+                                        var $cc = $row.find('.country-code-input');
+                                        if (!$cc.length || $cc.is(':disabled')) {
+                                            return;
+                                        }
+                                        var $wrap = $cc.closest('.country_code');
+                                        if (!$wrap.find('input[type="hidden"][name="country_code[]"]').length) {
+                                            $('<input type="hidden" class="country-code-frozen" name="country_code[]">')
+                                                .val($cc.val() || '')
+                                                .insertAfter($cc);
+                                        }
+                                        $cc.prop('disabled', true).removeAttr('name');
+                                    }
+                                </script>
+
                                 <div id="contact-wrapper">
                                     @if(count($clientContacts) > 0)
                                         @foreach($clientContacts as $index => $contact)
@@ -190,7 +228,13 @@
                                                         <label for="phone_{{ $index }}">Contact No.<span style="color:#ff0000;">*</span></label>
                                                         <div class="cus_field_input">
                                                             <div class="country_code">
-                                                                <input class="telephone" id="telephone_{{ $index }}" type="tel" name="country_code[]" value="{{ $contact->country_code }}" readonly>
+                                                                @include('partials.country-code-select', [
+                                                                    'name' => 'country_code[]',
+                                                                    'selected' => $contact->country_code,
+                                                                    'selectClass' => 'country-code-input',
+                                                                    'showPlaceholder' => false,
+                                                                    'disabled' => true,
+                                                                ])
                                                             </div>
                                                             <input type="text" name="phone[]" value="{{ $contact->phone }}" class="form-control tel_input" id="phone_{{ $index }}" placeholder="Enter Phone Number" autocomplete="off" readonly>
                                                             <div class="error-message" id="error-phone_{{ $index }}">Phone number must be min 10 digits.</div>
@@ -231,7 +275,7 @@
                                                     <label for="phone_${contactIndexByDefault}">Contact No.<span style="color:#ff0000;">*</span></label>
                                                     <div class="cus_field_input">
                                                          <div class="country_code">
-                                                            <input class="telephone" id="telephone_new_${contactIndexByDefault}" type="tel" name="country_code[]">
+                                                            ${buildCountryCodeSelectHtml(window.phoneDefaultDialCode)}
                                                         </div>
                                                         <input type="text" name="phone[]" class="form-control tel_input" id="phone_${contactIndexByDefault}" placeholder="Enter Phone Number" autocomplete="off">
                                                         <div class="error-message" id="error-phone_${contactIndexByDefault}">Phone number must be min 10 digits.</div>
@@ -246,7 +290,6 @@
 
                                         contactIndexByDefault++;
                                         $('#contact-wrapper').append(newConRowByDefault);
-                                        $(".telephone").intlTelInput();
 
                                         if( $('.contactCls').length >0 ) {
                                             $('.contactCls').each(function(index) {
@@ -290,7 +333,7 @@
                                                     <label for="phone_${contactIndex}">Contact No.<span style="color:#ff0000;">*</span></label>
                                                     <div class="cus_field_input">
                                                          <div class="country_code">
-                                                            <input class="telephone" id="telephone_new_${contactIndex}" type="tel" name="country_code[]">
+                                                            ${buildCountryCodeSelectHtml(window.phoneDefaultDialCode)}
                                                         </div>
                                                         <input type="text" name="phone[]" class="form-control tel_input" id="phone_${contactIndex}" placeholder="Enter Phone Number" autocomplete="off">
                                                         <div class="error-message" id="error-phone_${contactIndex}">Phone number must be min 10 digits.</div>
@@ -304,7 +347,6 @@
                                         </div>`;
 
                                         $('#contact-wrapper').append(newContactRow); // Append new row at the end
-                                        $(".telephone").intlTelInput();
 
 
                                         if( $('.contactCls').length >0 ) {
@@ -395,17 +437,19 @@
                                         if (validatePhoneNumber($currentRow.find('input.tel_input'))) {
                                             if (index === 'new') {
                                                 addNewContactRow('new'); // Add a new row at the end
+                                                freezeContactRowCountryCode($currentRow);
                                                 $currentRow.find('button').prop('disabled', true); // Disable current row's button
-                                                $currentRow.find('input').prop('readonly', true);
-                                                $currentRow.find('select').prop('disabled', true);
+                                                $currentRow.find('input.tel_input').prop('readonly', true);
+                                                $currentRow.find('select.contactCls').prop('disabled', true);
 
                                             } else {
                                                 var isConfirmed = confirm("Are you sure you want to freeze the current row?");
                                                 if (isConfirmed) {
                                                     addNewContactRow(index); // Add a new row after the current row
+                                                    freezeContactRowCountryCode($currentRow);
                                                     $currentRow.find('button').prop('disabled', true); // Disable current row's button
-                                                    $currentRow.find('input').prop('readonly', true);
-                                                    $currentRow.find('select').prop('disabled', true);
+                                                    $currentRow.find('input.tel_input').prop('readonly', true);
+                                                    $currentRow.find('select.contactCls').prop('disabled', true);
                                                 }
                                             }
                                         } else {
