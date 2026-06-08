@@ -25,13 +25,6 @@
       0 => 'Kyslik\\ColumnSortable\\ColumnSortableServiceProvider',
     ),
   ),
-  'laravel/passport' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Passport\\PassportServiceProvider',
-    ),
-  ),
   'laravel/reverb' => 
   array (
     'providers' => 
@@ -54,51 +47,11 @@
       0 => 'Laravel\\Sanctum\\SanctumServiceProvider',
     ),
   ),
-  'laravel/socialite' => 
-  array (
-    'aliases' => 
-    array (
-      'Socialite' => 'Laravel\\Socialite\\Facades\\Socialite',
-    ),
-    'providers' => 
-    array (
-      0 => 'Laravel\\Socialite\\SocialiteServiceProvider',
-    ),
-  ),
   'laravel/tinker' => 
   array (
     'providers' => 
     array (
       0 => 'Laravel\\Tinker\\TinkerServiceProvider',
-    ),
-  ),
-  'laravel/ui' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Ui\\UiServiceProvider',
-    ),
-  ),
-  'maatwebsite/excel' => 
-  array (
-    'aliases' => 
-    array (
-      'Excel' => 'Maatwebsite\\Excel\\Facades\\Excel',
-    ),
-    'providers' => 
-    array (
-      0 => 'Maatwebsite\\Excel\\ExcelServiceProvider',
-    ),
-  ),
-  'mews/captcha' => 
-  array (
-    'aliases' => 
-    array (
-      'Captcha' => 'Mews\\Captcha\\Facades\\Captcha',
-    ),
-    'providers' => 
-    array (
-      0 => 'Mews\\Captcha\\CaptchaServiceProvider',
     ),
   ),
   'nesbot/carbon' => 
@@ -126,24 +79,6 @@
       0 => 'Salman\\GeoCode\\GeoCodeServiceProvider',
     ),
   ),
-  'spatie/laravel-activitylog' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Spatie\\Activitylog\\ActivitylogServiceProvider',
-    ),
-  ),
-  'spatie/laravel-html' => 
-  array (
-    'aliases' => 
-    array (
-      'Html' => 'Spatie\\Html\\Facades\\Html',
-    ),
-    'providers' => 
-    array (
-      0 => 'Spatie\\Html\\HtmlServiceProvider',
-    ),
-  ),
   'spatie/laravel-ignition' => 
   array (
     'aliases' => 
@@ -153,13 +88,6 @@
     'providers' => 
     array (
       0 => 'Spatie\\LaravelIgnition\\IgnitionServiceProvider',
-    ),
-  ),
-  'spatie/laravel-permission' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Spatie\\Permission\\PermissionServiceProvider',
     ),
   ),
   'spatie/laravel-query-builder' => 
