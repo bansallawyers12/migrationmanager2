@@ -35,6 +35,27 @@ final class ComposeEmailPayload
     }
 
     /**
+     * Decode signing_url when the front-end sent it base64-encoded (WAF-safe, same as message body).
+     * Plain signing_url without encoding flag is still accepted for backward compatibility.
+     */
+    public static function decodeSigningUrl(array $requestData): ?string
+    {
+        $raw = trim((string) ($requestData['signing_url'] ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        if (($requestData['signing_url_encoding'] ?? '') === 'base64') {
+            $decoded = base64_decode($raw, true);
+            if ($decoded !== false) {
+                $raw = trim($decoded);
+            }
+        }
+
+        return $raw !== '' ? $raw : null;
+    }
+
+    /**
      * Validate a document signing URL from compose email (must be http(s) with /sign/{id}/{token}).
      */
     public static function normalizeSigningUrl(?string $url): ?string
@@ -74,7 +95,28 @@ final class ComposeEmailPayload
         $link = self::buildServiceAgreementSignLinkHtml($url);
         $message = str_replace('{PDF_url_for_sign}', $link, $message);
 
-        if (preg_match('#href\s*=\s*["\'][^"\']*/sign/#i', $message)) {
+        if (self::messageHasValidSignHref($message)) {
+            return $message;
+        }
+
+        // Repair <a> around the label when href is missing or invalid (TinyMCE / template double-wrap).
+        $message = preg_replace_callback(
+            '#<a\s+(?:(?>[^>"\']+)|"[^"]*"|\'[^\']*\')*>\s*Sign Service Agreement\s*</a>#i',
+            function (array $m) use ($link): string {
+                if (preg_match('#\bhref\s*=\s*("([^"]*)"|\'([^\']*)\')#i', $m[0], $hrefMatch)) {
+                    $candidate = html_entity_decode($hrefMatch[2] ?? $hrefMatch[3] ?? '', ENT_QUOTES, 'UTF-8');
+                    if (self::normalizeSigningUrl($candidate) !== null) {
+                        return $m[0];
+                    }
+                }
+
+                return $link;
+            },
+            $message,
+            1
+        );
+
+        if (self::messageHasValidSignHref($message)) {
             return $message;
         }
 
@@ -90,5 +132,23 @@ final class ComposeEmailPayload
         }
 
         return $message;
+    }
+
+    /**
+     * True when the message already contains a valid /sign/{id}/{token} href.
+     */
+    public static function messageHasValidSignHref(string $message): bool
+    {
+        if (!preg_match_all('#\bhref\s*=\s*["\']([^"\']*)["\']#i', $message, $matches)) {
+            return false;
+        }
+
+        foreach ($matches[1] as $href) {
+            if (self::normalizeSigningUrl(html_entity_decode($href, ENT_QUOTES, 'UTF-8')) !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

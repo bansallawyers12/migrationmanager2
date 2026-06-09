@@ -100,4 +100,49 @@ class ComposeEmailPayloadTest extends TestCase
 
         $this->assertSame($message, ComposeEmailPayload::applySigningLinkToMessage($message, $url));
     }
+
+    public function test_decode_signing_url_decodes_base64_payload(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/42/token_abc';
+        $encoded = base64_encode($url);
+
+        $this->assertSame(
+            $url,
+            ComposeEmailPayload::decodeSigningUrl([
+                'signing_url' => $encoded,
+                'signing_url_encoding' => 'base64',
+            ])
+        );
+    }
+
+    public function test_decode_signing_url_accepts_plain_value_without_encoding_flag(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/7/plainToken';
+
+        $this->assertSame(
+            $url,
+            ComposeEmailPayload::decodeSigningUrl(['signing_url' => $url])
+        );
+    }
+
+    public function test_apply_signing_link_repairs_anchor_with_invalid_href(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/5/realToken';
+        $message = '<p>Agreement: <a href="<a href=&quot;' . $url . '&quot;>broken">Sign Service Agreement</a></p>';
+
+        $result = ComposeEmailPayload::applySigningLinkToMessage($message, $url);
+
+        $this->assertStringContainsString('href="' . $url . '"', $result);
+        $this->assertStringContainsString('Sign Service Agreement</a>', $result);
+    }
+
+    public function test_message_has_valid_sign_href_ignores_broken_sign_like_href(): void
+    {
+        $url = 'https://migrationmanager.example.com/sign/3/goodToken';
+        $broken = '<a href="<a href=&quot;' . $url . '&quot;>x">Sign Service Agreement</a>';
+        $valid = '<a href="' . $url . '">Sign Service Agreement</a>';
+
+        $this->assertFalse(ComposeEmailPayload::messageHasValidSignHref($broken));
+        $this->assertTrue(ComposeEmailPayload::messageHasValidSignHref($valid));
+    }
 }

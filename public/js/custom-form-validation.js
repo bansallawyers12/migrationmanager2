@@ -84,6 +84,16 @@ function mmPrepareComposeEmailFormData(myform, fd, csrfToken) {
 			fd.set('message_encoding', 'base64');
 		}
 	}
+
+	var signingUrlEl = myform.querySelector('input[name="signing_url"], [name="signing_url"]');
+	if (signingUrlEl && signingUrlEl.value) {
+		var signingUrlVal = String(signingUrlEl.value).trim();
+		var encodedSigningUrl = mmUtf8ToBase64(signingUrlVal);
+		if (encodedSigningUrl) {
+			fd.set('signing_url', encodedSigningUrl);
+			fd.set('signing_url_encoding', 'base64');
+		}
+	}
 }
 
 function customValidate(formName, savetype = '')

@@ -1174,19 +1174,47 @@ public function getChapters(Request $request)
 
 	/**
 	 * Convert plain URLs in HTML content to clickable links (open in new tab, copyable).
-	 * URL as link text makes it copyable. Skips URLs inside href="..." (preceded by space/> not ").
+	 * Skips text inside existing <a>...</a> blocks so link text URLs are not double-wrapped.
 	 */
 	protected function linkifyUrlsInHtml(string $html): string
 	{
 		if (empty(trim($html))) {
 			return $html;
 		}
-		// Match URLs preceded by start, whitespace, or > (excludes href="url" where " is before url)
+
+		$parts = preg_split('#(<a\b[^>]*>.*?</a>)#is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+		if ($parts === false) {
+			return $this->linkifyPlainUrlsInHtml($html);
+		}
+
+		$result = '';
+		foreach ($parts as $i => $part) {
+			if ($i % 2 === 1) {
+				$result .= $part;
+				continue;
+			}
+			$result .= $this->linkifyPlainUrlsInHtml($part);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Linkify bare URLs in HTML fragments that are not already inside anchor tags.
+	 */
+	protected function linkifyPlainUrlsInHtml(string $html): string
+	{
+		if ($html === '') {
+			return $html;
+		}
+
 		$pattern = '#(^|[\s>])(https?://[^\s<>"\']+)#i';
+
 		return preg_replace_callback($pattern, function ($m) {
 			$prefix = $m[1];
 			$url = $m[2];
 			$link = '<a href="' . htmlspecialchars($url) . '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;word-break:break-all;">' . htmlspecialchars($url) . '</a>';
+
 			return $prefix . $link;
 		}, $html);
 	}
@@ -1389,10 +1417,13 @@ public function getChapters(Request $request)
 		}
 		}
 
-		$message = ComposeEmailPayload::applySigningLinkToMessage(
-			$message,
-			$requestData['signing_url'] ?? null
-		);
+		$signingUrl = ComposeEmailPayload::decodeSigningUrl($requestData);
+		if ($signingUrl === null && $clientMatterIdForMacros) {
+			$dbSigningUrl = $this->getAgreementSigningUrlForMatter($clientMatterIdForMacros);
+			$signingUrl = $dbSigningUrl !== '' ? $dbSigningUrl : null;
+		}
+
+		$message = ComposeEmailPayload::applySigningLinkToMessage($message, $signingUrl);
 
 		// Convert plain URLs to clickable links (open in new tab, copyable)
 		$message = $this->linkifyUrlsInHtml($message);
