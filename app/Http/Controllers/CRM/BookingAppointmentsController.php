@@ -1080,7 +1080,10 @@ class BookingAppointmentsController extends Controller
                     $appointment->location ?? 'melbourne',
                     $appointment->enquiry_type ?? 'pr_complex'
                 ),
-                'service_type' => $appointment->service_type ?? 'Permanent Residency',
+                'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
+                    $appointment->noe_id ?? 0,
+                    $appointment->service_type ?? 'Permanent Residency'
+                ),
                 'enquiry_details' => $appointment->enquiry_details ?? '',
                 'is_paid' => $appointment->is_paid ?? false,
                 'amount' => $appointment->amount ?? 0,

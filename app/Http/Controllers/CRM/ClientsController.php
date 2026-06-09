@@ -8000,7 +8000,10 @@ class ClientsController extends Controller
                     $location,
                     $serviceTypeMapping['enquiry_type']
                 ),
-                'service_type' => $serviceTypeMapping['service_type'],
+                'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
+                    $requestData['noe_id'],
+                    $serviceTypeMapping['service_type']
+                ),
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
                 'amount' => ($serviceId == 2) ? 0 : 150,

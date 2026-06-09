@@ -8,13 +8,14 @@ use Illuminate\Http\Request;
  * Maps CRM "nature of enquiry" (noe_id / enquiry_item) to Bansal schedule API service_type
  * and builds Melbourne-only extras (is_paid, preferred_language) for get-datetime-backend
  * and get-disabled-datetime. Adelaide uses no extras so payloads stay unchanged for legacy behaviour.
- * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots and
- * employer_sponsored enquiry_type on Bansal add-appointment sync (CRM keeps original labels locally).
+ * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots on the
+ * schedule API. add-appointment sync uses Bansal-valid enquiry_type (pr_complex / ajay) and
+ * service_type slugs (family-visas / citizenship); CRM keeps display labels locally.
  */
 class BansalSchedulingServiceType
 {
-    /** Melbourne NOE ids routed through Employer Sponsored calendar on the Bansal website. */
-    private const MELBOURNE_EMPLOYER_SPONSORED_NOE_IDS = [11, 12];
+    /** NOE ids using Melbourne employer-sponsored timeslots (schedule API only). */
+    private const FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS = [11, 12];
     /**
      * @var array<int, string>
      */
@@ -46,15 +47,37 @@ class BansalSchedulingServiceType
 
     /**
      * enquiry_type for Bansal add-appointment / re-sync API only.
-     * Local CRM records keep family_visas / citizenship for display and reporting.
+     * Bansal accepts: tr, tourist, education, pr_complex, ajay, kunal.
+     * Family Visas / Citizenship: Melbourne → pr_complex, Adelaide → ajay.
      */
     public static function bansalEnquiryTypeForApi(mixed $noeId, ?string $location, string $crmEnquiryType): string
     {
-        if (self::melbourneUsesEmployerSponsoredRouting((int) $noeId, $location)) {
-            return 'employer_sponsored';
+        $key = (int) $noeId;
+        if (! in_array($key, self::FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS, true)) {
+            return $crmEnquiryType;
         }
 
-        return $crmEnquiryType;
+        $loc = $location !== null ? strtolower(trim($location)) : '';
+
+        return match ($loc) {
+            'melbourne' => 'pr_complex',
+            'adelaide' => 'ajay',
+            default => $crmEnquiryType,
+        };
+    }
+
+    /**
+     * service_type slug for Bansal add-appointment / re-sync API (Family Visas / Citizenship only).
+     */
+    public static function bansalServiceTypeForApi(mixed $noeId, string $crmServiceType): string
+    {
+        $key = (int) $noeId;
+
+        if (in_array($key, self::FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS, true)) {
+            return self::ENQUIRY_TO_SERVICE_TYPE[$key];
+        }
+
+        return $crmServiceType;
     }
 
     public static function melbourneUsesEmployerSponsoredRouting(int $noeId, ?string $location): bool
@@ -64,7 +87,7 @@ class BansalSchedulingServiceType
         }
 
         return strtolower(trim($location)) === 'melbourne'
-            && in_array($noeId, self::MELBOURNE_EMPLOYER_SPONSORED_NOE_IDS, true);
+            && in_array($noeId, self::FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS, true);
     }
 
     /**

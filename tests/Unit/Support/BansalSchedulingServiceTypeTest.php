@@ -47,27 +47,35 @@ class BansalSchedulingServiceTypeTest extends TestCase
         );
     }
 
-    public function test_melbourne_family_visas_bansal_sync_uses_employer_sponsored_enquiry_type(): void
+    public function test_melbourne_family_visas_bansal_sync_uses_pr_complex(): void
     {
         $this->assertSame(
-            'employer_sponsored',
+            'pr_complex',
             BansalSchedulingServiceType::bansalEnquiryTypeForApi(11, 'melbourne', 'family_visas')
         );
     }
 
-    public function test_melbourne_citizenship_bansal_sync_uses_employer_sponsored_enquiry_type(): void
+    public function test_melbourne_citizenship_bansal_sync_uses_pr_complex(): void
     {
         $this->assertSame(
-            'employer_sponsored',
+            'pr_complex',
             BansalSchedulingServiceType::bansalEnquiryTypeForApi(12, 'melbourne', 'citizenship')
         );
     }
 
-    public function test_adelaide_family_visas_bansal_sync_keeps_crm_enquiry_type(): void
+    public function test_adelaide_family_visas_bansal_sync_uses_ajay(): void
     {
         $this->assertSame(
-            'family_visas',
+            'ajay',
             BansalSchedulingServiceType::bansalEnquiryTypeForApi(11, 'adelaide', 'family_visas')
+        );
+    }
+
+    public function test_adelaide_citizenship_bansal_sync_uses_ajay(): void
+    {
+        $this->assertSame(
+            'ajay',
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(12, 'adelaide', 'citizenship')
         );
     }
 
@@ -76,6 +84,33 @@ class BansalSchedulingServiceTypeTest extends TestCase
         $this->assertSame(
             'tr',
             BansalSchedulingServiceType::bansalEnquiryTypeForApi(2, 'melbourne', 'tr')
+        );
+    }
+
+    public function test_family_visas_bansal_service_type_slug(): void
+    {
+        $this->assertSame(
+            'family-visas',
+            BansalSchedulingServiceType::bansalServiceTypeForApi(
+                11,
+                'Family Visas (Parent Visa, Partner Visa, Child Visa)'
+            )
+        );
+    }
+
+    public function test_citizenship_bansal_service_type_slug(): void
+    {
+        $this->assertSame(
+            'citizenship',
+            BansalSchedulingServiceType::bansalServiceTypeForApi(12, 'Citizenship')
+        );
+    }
+
+    public function test_other_noe_bansal_service_type_unchanged(): void
+    {
+        $this->assertSame(
+            'TR: 485 visa',
+            BansalSchedulingServiceType::bansalServiceTypeForApi(2, 'TR: 485 visa')
         );
     }
 }

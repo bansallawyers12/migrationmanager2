@@ -682,7 +682,10 @@ class ClientPortalAppointmentController extends BaseController
                     $location,
                     $serviceTypeMapping['enquiry_type']
                 ),
-                'service_type' => $serviceTypeMapping['service_type'],
+                'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
+                    $requestData['noe_id'],
+                    $serviceTypeMapping['service_type']
+                ),
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
                 'amount' => ($serviceId == 2) ? 0 : 150,
@@ -1075,7 +1078,10 @@ class ClientPortalAppointmentController extends BaseController
                     $location,
                     $serviceTypeMapping['enquiry_type']
                 ),
-                'service_type' => $serviceTypeMapping['service_type'],
+                'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
+                    $requestData['noe_id'],
+                    $serviceTypeMapping['service_type']
+                ),
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
                 'amount' => ($serviceId == 2) ? 0 : 150,
@@ -2168,7 +2174,10 @@ class ClientPortalAppointmentController extends BaseController
                     $appointment->location ?? 'melbourne',
                     $appointment->enquiry_type ?? 'pr_complex'
                 ),
-                'service_type' => $appointment->service_type ?? 'Permanent Residency',
+                'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
+                    $appointment->noe_id ?? 0,
+                    $appointment->service_type ?? 'Permanent Residency'
+                ),
                 'enquiry_details' => $appointment->enquiry_details ?? '',
                 'is_paid' => $appointment->is_paid ?? false,
                 'amount' => $appointment->amount ?? 0,
