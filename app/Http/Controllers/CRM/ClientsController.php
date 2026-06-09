@@ -48,6 +48,7 @@ use App\Models\ClientVisaCountry; // Import the ClientAddress model
 use App\Models\ClientOccupation; // Import the ClientAddress model
 use App\Models\ClientSpouseDetail; // Import the ClientAddress model
 use App\Models\AppointmentConsultant; // Import the AppointmentConsultant model
+use App\Support\BansalSchedulingServiceType;
 
 use App\Models\EmailRecord;
 use App\Models\ClientPoint;
@@ -7994,7 +7995,11 @@ class ClientsController extends Controller
                 'meeting_type' => $meetingType,
                 'preferred_language' => $requestData['preferred_language'],
                 'specific_service' => $specificService,
-                'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
+                'enquiry_type' => BansalSchedulingServiceType::bansalEnquiryTypeForApi(
+                    $requestData['noe_id'],
+                    $location,
+                    $serviceTypeMapping['enquiry_type']
+                ),
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,

@@ -46,4 +46,36 @@ class BansalSchedulingServiceTypeTest extends TestCase
             BansalSchedulingServiceType::fromEnquiryItem(10, 'melbourne')
         );
     }
+
+    public function test_melbourne_family_visas_bansal_sync_uses_employer_sponsored_enquiry_type(): void
+    {
+        $this->assertSame(
+            'employer_sponsored',
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(11, 'melbourne', 'family_visas')
+        );
+    }
+
+    public function test_melbourne_citizenship_bansal_sync_uses_employer_sponsored_enquiry_type(): void
+    {
+        $this->assertSame(
+            'employer_sponsored',
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(12, 'melbourne', 'citizenship')
+        );
+    }
+
+    public function test_adelaide_family_visas_bansal_sync_keeps_crm_enquiry_type(): void
+    {
+        $this->assertSame(
+            'family_visas',
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(11, 'adelaide', 'family_visas')
+        );
+    }
+
+    public function test_melbourne_tr_bansal_sync_unchanged(): void
+    {
+        $this->assertSame(
+            'tr',
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(2, 'melbourne', 'tr')
+        );
+    }
 }

@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use Carbon\Carbon;
+use App\Support\BansalSchedulingServiceType;
 use App\Support\StaffClientVisibility;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -1074,7 +1075,11 @@ class BookingAppointmentsController extends Controller
                 'meeting_type' => $meetingTypeForApi,
                 'preferred_language' => $currentPreferredLanguage,
                 'specific_service' => $specificService,
-                'enquiry_type' => $appointment->enquiry_type ?? 'pr_complex',
+                'enquiry_type' => BansalSchedulingServiceType::bansalEnquiryTypeForApi(
+                    $appointment->noe_id ?? 0,
+                    $appointment->location ?? 'melbourne',
+                    $appointment->enquiry_type ?? 'pr_complex'
+                ),
                 'service_type' => $appointment->service_type ?? 'Permanent Residency',
                 'enquiry_details' => $appointment->enquiry_details ?? '',
                 'is_paid' => $appointment->is_paid ?? false,

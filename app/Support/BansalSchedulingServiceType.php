@@ -8,10 +8,13 @@ use Illuminate\Http\Request;
  * Maps CRM "nature of enquiry" (noe_id / enquiry_item) to Bansal schedule API service_type
  * and builds Melbourne-only extras (is_paid, preferred_language) for get-datetime-backend
  * and get-disabled-datetime. Adelaide uses no extras so payloads stay unchanged for legacy behaviour.
- * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots.
+ * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots and
+ * employer_sponsored enquiry_type on Bansal add-appointment sync (CRM keeps original labels locally).
  */
 class BansalSchedulingServiceType
 {
+    /** Melbourne NOE ids routed through Employer Sponsored calendar on the Bansal website. */
+    private const MELBOURNE_EMPLOYER_SPONSORED_NOE_IDS = [11, 12];
     /**
      * @var array<int, string>
      */
@@ -34,11 +37,34 @@ class BansalSchedulingServiceType
     {
         $key = (int) $enquiryItem;
 
-        if ($location === 'melbourne' && in_array($key, [11, 12], true)) {
+        if (self::melbourneUsesEmployerSponsoredRouting($key, $location)) {
             return 'employer-sponsored';
         }
 
         return self::ENQUIRY_TO_SERVICE_TYPE[$key] ?? 'permanent-residency';
+    }
+
+    /**
+     * enquiry_type for Bansal add-appointment / re-sync API only.
+     * Local CRM records keep family_visas / citizenship for display and reporting.
+     */
+    public static function bansalEnquiryTypeForApi(mixed $noeId, ?string $location, string $crmEnquiryType): string
+    {
+        if (self::melbourneUsesEmployerSponsoredRouting((int) $noeId, $location)) {
+            return 'employer_sponsored';
+        }
+
+        return $crmEnquiryType;
+    }
+
+    public static function melbourneUsesEmployerSponsoredRouting(int $noeId, ?string $location): bool
+    {
+        if ($location === null || $location === '') {
+            return false;
+        }
+
+        return strtolower(trim($location)) === 'melbourne'
+            && in_array($noeId, self::MELBOURNE_EMPLOYER_SPONSORED_NOE_IDS, true);
     }
 
     /**

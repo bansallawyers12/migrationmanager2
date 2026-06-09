@@ -677,7 +677,11 @@ class ClientPortalAppointmentController extends BaseController
                 'meeting_type' => $meetingType,
                 'preferred_language' => $preferredLanguage,
                 'specific_service' => $specificService,
-                'enquiry_type' => $serviceTypeMapping['enquiry_type'], // Required: use enquiry_type not service_type
+                'enquiry_type' => BansalSchedulingServiceType::bansalEnquiryTypeForApi(
+                    $requestData['noe_id'],
+                    $location,
+                    $serviceTypeMapping['enquiry_type']
+                ),
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
@@ -1066,7 +1070,11 @@ class ClientPortalAppointmentController extends BaseController
                 'meeting_type' => $meetingType,
                 'preferred_language' => $preferredLanguage,
                 'specific_service' => $specificService,
-                'enquiry_type' => $serviceTypeMapping['enquiry_type'],
+                'enquiry_type' => BansalSchedulingServiceType::bansalEnquiryTypeForApi(
+                    $requestData['noe_id'],
+                    $location,
+                    $serviceTypeMapping['enquiry_type']
+                ),
                 'service_type' => $serviceTypeMapping['service_type'],
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
@@ -2155,7 +2163,11 @@ class ClientPortalAppointmentController extends BaseController
                 'meeting_type' => $meetingTypeForApi,
                 'preferred_language' => $preferredLanguage,
                 'specific_service' => $specificService,
-                'enquiry_type' => $appointment->enquiry_type ?? 'pr_complex',
+                'enquiry_type' => BansalSchedulingServiceType::bansalEnquiryTypeForApi(
+                    $appointment->noe_id ?? 0,
+                    $appointment->location ?? 'melbourne',
+                    $appointment->enquiry_type ?? 'pr_complex'
+                ),
                 'service_type' => $appointment->service_type ?? 'Permanent Residency',
                 'enquiry_details' => $appointment->enquiry_details ?? '',
                 'is_paid' => $appointment->is_paid ?? false,
