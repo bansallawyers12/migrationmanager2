@@ -88,7 +88,7 @@ class VisaAgreementTemplateResolver
             ];
         }
 
-        if ($this->matchesEoiAndRoi($titleLower)) {
+        if ($this->matchesEoiOrRoi($nick, $titleLower)) {
             return [
                 'candidates' => $this->uniqueFilenames(array_merge(
                     [$cfg['eoi_roi'] ?? ''],
@@ -262,14 +262,18 @@ class VisaAgreementTemplateResolver
         return (bool) @preg_match($pattern, $titleLower);
     }
 
-    private function matchesEoiAndRoi(string $titleLower): bool
+    private function matchesEoiOrRoi(string $nick, string $titleLower): bool
     {
+        if ($nick === 'eoi') {
+            return true;
+        }
+
         $hasEoi = str_contains($titleLower, 'eoi')
             || str_contains($titleLower, 'expression of interest');
         $hasRoi = str_contains($titleLower, 'roi')
             || str_contains($titleLower, 'registration of interest');
 
-        return $hasEoi && $hasRoi;
+        return $hasEoi || $hasRoi;
     }
 
     private function matchesCitizenship(string $titleLower): bool

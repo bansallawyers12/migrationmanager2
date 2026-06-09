@@ -152,6 +152,27 @@ class VisaAgreementTemplateResolverTest extends TestCase
         $this->assertSame('Service_Agreement_EOI_ROI.docx', $r['candidates'][0]);
     }
 
+    public function test_expression_of_interest_title_selects_eoi_roi_template(): void
+    {
+        $r = $this->resolver->determineCandidates(false, 'gn', 'EOI_1 - Expression Of Interest', false);
+        $this->assertSame('eoi_roi', $r['rule']);
+        $this->assertSame('Service_Agreement_EOI_ROI.docx', $r['candidates'][0]);
+    }
+
+    public function test_eoi_nick_name_selects_eoi_roi_template(): void
+    {
+        $r = $this->resolver->determineCandidates(false, 'eoi', 'General', false);
+        $this->assertSame('eoi_roi', $r['rule']);
+        $this->assertSame('Service_Agreement_EOI_ROI.docx', $r['candidates'][0]);
+    }
+
+    public function test_registration_of_interest_only_title_selects_eoi_roi_template(): void
+    {
+        $r = $this->resolver->determineCandidates(false, 'gn', 'SA Registration of Interest', false);
+        $this->assertSame('eoi_roi', $r['rule']);
+        $this->assertSame('Service_Agreement_EOI_ROI.docx', $r['candidates'][0]);
+    }
+
     public function test_citizenship_in_title_selects_citizenship_template(): void
     {
         $r = $this->resolver->determineCandidates(false, 'gn', 'Australian citizenship application', false);
