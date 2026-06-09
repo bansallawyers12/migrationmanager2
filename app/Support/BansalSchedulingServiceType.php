@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
  * Maps CRM "nature of enquiry" (noe_id / enquiry_item) to Bansal schedule API service_type
  * and builds Melbourne-only extras (is_paid, preferred_language) for get-datetime-backend
  * and get-disabled-datetime. Adelaide uses no extras so payloads stay unchanged for legacy behaviour.
+ * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots.
  */
 class BansalSchedulingServiceType
 {
@@ -29,9 +30,13 @@ class BansalSchedulingServiceType
         12 => 'citizenship',
     ];
 
-    public static function fromEnquiryItem(mixed $enquiryItem): string
+    public static function fromEnquiryItem(mixed $enquiryItem, ?string $location = null): string
     {
         $key = (int) $enquiryItem;
+
+        if ($location === 'melbourne' && in_array($key, [11, 12], true)) {
+            return 'employer-sponsored';
+        }
 
         return self::ENQUIRY_TO_SERVICE_TYPE[$key] ?? 'permanent-residency';
     }

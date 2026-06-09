@@ -83,9 +83,9 @@ class ConsultantAssignmentService
             return 'ajay';
         }
 
-        // Family visas / Citizenship → Ajay (Melbourne)
+        // Family visas / Citizenship → Employer Sponsored Calendar (Melbourne)
         if (in_array($noeId, [11, 12], true)) {
-            return 'ajay';
+            return 'paid';
         }
 
         // TR (485) + JRP / Skill assessment → same JRP calendar (paid or free)

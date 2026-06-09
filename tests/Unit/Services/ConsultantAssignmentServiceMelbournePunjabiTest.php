@@ -120,4 +120,40 @@ class ConsultantAssignmentServiceMelbournePunjabiTest extends TestCase
             'service_type' => 'Tourist Visa',
         ]));
     }
+
+    public function test_melbourne_family_visas_goes_employer_sponsored(): void
+    {
+        $this->assertSame('paid', $this->calendarType([
+            'noe_id' => 11,
+            'location' => 'melbourne',
+            'inperson_address' => 2,
+            'service_id' => 1,
+            'specific_service' => 'paid-consultation',
+            'service_type' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)',
+        ]));
+    }
+
+    public function test_melbourne_citizenship_goes_employer_sponsored(): void
+    {
+        $this->assertSame('paid', $this->calendarType([
+            'noe_id' => 12,
+            'location' => 'melbourne',
+            'inperson_address' => 2,
+            'service_id' => 2,
+            'specific_service' => 'consultation',
+            'service_type' => 'Citizenship',
+        ]));
+    }
+
+    public function test_adelaide_family_visas_stays_adelaide(): void
+    {
+        $this->assertSame('adelaide', $this->calendarType([
+            'noe_id' => 11,
+            'location' => 'adelaide',
+            'inperson_address' => 1,
+            'service_id' => 1,
+            'specific_service' => 'paid-consultation',
+            'service_type' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)',
+        ]));
+    }
 }

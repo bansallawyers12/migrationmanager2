@@ -1471,15 +1471,15 @@ class ClientPortalAppointmentController extends BaseController
                 3 => 'overseas-enquiry'
             ];
             $specific_service = $specific_service_map[$id] ?? 'consultation';
-            
-            $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item);
-            
+
             // Map inperson_address to location
             $location_map = [
                 1 => 'adelaide',
                 2 => 'melbourne'
             ];
             $location = $location_map[$inperson_address] ?? 'adelaide';
+
+            $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item, $location);
             
             // Prepare request data for external API
             $requestData = [
@@ -1629,15 +1629,15 @@ class ClientPortalAppointmentController extends BaseController
                 3 => 'overseas-enquiry'
             ];
             $specific_service = $specific_service_map[$service_id] ?? 'consultation';
-            
-            $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item);
-            
+
             // Map inperson_address to location
             $location_map = [
                 1 => 'adelaide',
                 2 => 'melbourne'
             ];
             $location = $location_map[$inperson_address] ?? 'adelaide';
+
+            $service_type = BansalSchedulingServiceType::fromEnquiryItem($enquiry_item, $location);
             
             [$isPaid, $preferredLanguage] = BansalSchedulingServiceType::melbourneApiExtras(
                 $request,
