@@ -162,6 +162,26 @@ return [
     | "GURP2502080,OASH2505088".
     |
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Company email domains
+    |--------------------------------------------------------------------------
+    |
+    | Used by EmailMatchingService (inbox vs sent detection) and
+    | EmailUploadController::autoAssignLabels(). Emails whose sender matches one
+    | of these domains are treated as outbound/sent mail. Override via the
+    | CRM_COMPANY_EMAIL_DOMAINS env variable as a comma-separated list,
+    | e.g. "bansalimmigration.com.au,bansaleducation.com.au".
+    |
+    */
+    'company_email_domains' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env(
+            'CRM_COMPANY_EMAIL_DOMAINS',
+            'bansalimmigration.com.au,bansaleducation.com.au,bansallawyers.com.au'
+        ))
+    ), fn (string $d) => $d !== '')),
+
     'super_admin_only_client_file_ids' => array_values(array_unique(array_filter(
         array_map(
             static fn (string $id) => trim($id),

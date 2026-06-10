@@ -47,6 +47,9 @@ class Kernel extends ConsoleKernel
         
         // Client Reference Management Commands
         '\App\Console\Commands\FixDuplicateClientReferences',
+
+        // Smart Email Import
+        '\App\Console\Commands\CleanSmartEmailImportStaging',
         
         // Client Age Management Commands
         '\App\Console\Commands\UpdateClientAges',
@@ -79,6 +82,13 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')
         //          ->hourly();
 	$schedule->command('CronJob:cronjob')->daily();
+
+        // Smart Email Import — prune staging folders older than 24h
+        $schedule->command('smart-email-import:clean')
+            ->dailyAt('03:00')
+            ->timezone('Australia/Melbourne')
+            ->withoutOverlapping(5)
+            ->appendOutputTo(storage_path('logs/smart-email-import-clean.log'));
         //$schedule->command('CompleteTaskRemoval:daily')->daily();
 
         //InPerson Complete Task Removal daily 1 time

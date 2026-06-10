@@ -13,6 +13,7 @@ use App\Http\Controllers\CRM\EmailVerificationController;
 use App\Http\Controllers\AdminConsole\AnzscoOccupationController;
 use App\Http\Controllers\CRM\CRMUtilityController;
 use App\Http\Controllers\CRM\EmailUploadController;
+use App\Http\Controllers\CRM\SmartEmailImportController;
 use App\Http\Controllers\CRM\EmailLabelController;
 use App\Http\Controllers\CRM\EmailLogAttachmentController;
 use App\Http\Controllers\CRM\ClientPortalController;
@@ -136,6 +137,11 @@ Route::post('/upload-mail', [ClientsController::class, 'uploadmail']);
 Route::post('/upload-fetch-mail', [EmailUploadController::class, 'uploadInboxEmails'])->name('email.upload.inbox');
 Route::post('/upload-sent-fetch-mail', [EmailUploadController::class, 'uploadSentEmails'])->name('email.upload.sent');
 Route::get('/email/check-service', [EmailUploadController::class, 'checkPythonService'])->name('email.check.service');
+
+// Smart Email Import — parse .msg files first, assign client+matter during review
+Route::get('/emails/smart-import', [SmartEmailImportController::class, 'index'])->name('email.smart-import.index');
+Route::post('/emails/smart-import/analyze', [SmartEmailImportController::class, 'analyze'])->name('email.smart-import.analyze');
+Route::post('/emails/smart-import/confirm', [SmartEmailImportController::class, 'confirm'])->name('email.smart-import.confirm');
 
 Route::post('/reassiginboxemail', [ClientsController::class, 'reassiginboxemail'])->name('clients.reassiginboxemail');
 Route::post('/reassigsentemail', [ClientsController::class, 'reassigsentemail'])->name('clients.reassigsentemail');
