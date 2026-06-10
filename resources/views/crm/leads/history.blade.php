@@ -542,10 +542,14 @@ $(function () {
 	$('.js-data-example-ajaxccd').mmSelect({
 		 multiple: true,
 		 closeOnSelect: false,
-		dropdownParent: $('#emailmodal'),
+		dropdownParent: $('body'),
+		dropdownCssClass: 'mm-compose-email-recipients-dropdown',
 		  ajax: {
 			url: '{{URL::to('/clients/get-recipients')}}',
 			dataType: 'json',
+			data: function (params) {
+				return { q: params.term || '' };
+			},
 			processResults: function (data) {
 			  // Transforms the top-level key of the response object from 'items' to 'results'
 			  return {

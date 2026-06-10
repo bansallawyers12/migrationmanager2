@@ -1282,14 +1282,7 @@ public function getChapters(Request $request)
 			? implode(',', array_unique($resolvedTo))
 			: implode(',', $emailToList);
 		if (isset($requestData['email_cc']) && ! empty($requestData['email_cc'])) {
-			$ccEmails = [];
-			foreach ($requestData['email_cc'] as $ccId) {
-				$ccRow = \App\Models\Admin::where('id', $ccId)->first();
-				if ($ccRow && ! empty($ccRow->email)) {
-					$ccEmails[] = $ccRow->email;
-				}
-			}
-			$obj->cc = implode(',', array_unique($ccEmails));
+			$obj->cc = implode(',', $this->resolveComposeEmailCcAddresses($requestData['email_cc']));
 		}
         $obj->template_id 	=  $requestData['template'] ?? null;
 		$obj->reciept_id 	=  $reciept_id;
@@ -1519,15 +1512,7 @@ public function getChapters(Request $request)
 			$message = str_replace('{Client Assignee Name}', $client->first_name, $message);
 			$message = str_replace('{Company Name}', optional(Auth::user())->company_name ?? '', $message);
 
-			$ccarray = [];
-			if (isset($requestData['email_cc']) && !empty($requestData['email_cc'])) {
-				foreach ($requestData['email_cc'] as $cc) {
-					$clientcc = \App\Models\Admin::where('id', $cc)->first();
-					if ($clientcc) {
-						$ccarray[] = $clientcc->email;
-					}
-				}
-			}
+			$ccarray = $this->resolveComposeEmailCcAddresses($requestData['email_cc'] ?? []);
 
 			try {
 				$this->emailService->sendEmail(
@@ -1639,6 +1624,40 @@ public function getChapters(Request $request)
 		if ($clientMatter) {
 			$clientMatter->recordMatterReminder('email', Auth::user()->id);
 		}
+	}
+
+	/**
+	 * Resolve compose CC values: CRM Admin IDs or raw email addresses from Tom Select tags.
+	 *
+	 * @param  array<int|string>  $ccValues
+	 * @return array<int, string>
+	 */
+	private function resolveComposeEmailCcAddresses(array $ccValues): array
+	{
+		$ccEmails = [];
+
+		foreach ($ccValues as $ccValue) {
+			$ccValue = trim((string) $ccValue);
+			if ($ccValue === '') {
+				continue;
+			}
+
+			if (filter_var($ccValue, FILTER_VALIDATE_EMAIL)) {
+				$ccEmails[] = $ccValue;
+				continue;
+			}
+
+			if (! ctype_digit($ccValue)) {
+				continue;
+			}
+
+			$ccRow = Admin::where('id', (int) $ccValue)->first();
+			if ($ccRow && ! empty($ccRow->email)) {
+				$ccEmails[] = $ccRow->email;
+			}
+		}
+
+		return array_values(array_unique($ccEmails));
 	}
 
 	/**

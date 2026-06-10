@@ -7020,48 +7020,6 @@ success: function(response) {
 
 
 
-        $('.js-data-example-ajaxccapp').mmSelect({
-
-                multiple: true,
-
-                closeOnSelect: false,
-
-                dropdownParent: $('#matteremailmodal'),
-
-                ajax: {
-
-                    url: window.ClientDetailConfig.urls.getRecipients,
-
-                    dataType: 'json',
-
-                    processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-
-
-                    },
-
-                    cache: true
-
-
-
-                },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
-
-        });
-
-
-
         $('.js-data-example-ajaxcontact').mmSelect({
 
                 multiple: true,
@@ -7137,25 +7095,63 @@ success: function(response) {
 
 
 
+        function composeEmailRecipientAjaxConfig() {
+            return {
+                url: window.ClientDetailConfig.urls.getRecipients,
+                dataType: 'json',
+                data: function (params) {
+                    return { q: params.term || '' };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.items
+                    };
+                },
+                cache: true
+            };
+        }
+
+        function composeEmailCcCreateOption(input) {
+            var value = $.trim(String(input || ''));
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                return false;
+            }
+            return {
+                id: value,
+                name: value,
+                email: value,
+                text: value
+            };
+        }
+
+        /** Compose Email To/CC: dropdown on body so Tom Select positionDropdown() runs in modals. */
+        function composeEmailRecipientDropdownOptions() {
+            return {
+                dropdownParent: $('body'),
+                dropdownCssClass: 'mm-compose-email-recipients-dropdown'
+            };
+        }
+
         /** Compose Email "To" field: shared Tom Select options (ajax + formatRepo) */
         function emailModalRecipientsTomSelectBase() {
-            return {
+            return $.extend({
                 multiple: true,
                 closeOnSelect: false,
-                dropdownParent: $('#emailmodal'),
-                ajax: {
-                    url: window.ClientDetailConfig.urls.getRecipients,
-                    dataType: 'json',
-                    processResults: function (data) {
-                        return {
-                            results: data.items
-                        };
-                    },
-                    cache: true
-                },
+                ajax: composeEmailRecipientAjaxConfig(),
                 templateResult: formatRepo,
                 templateSelection: formatRepoSelection
-            };
+            }, composeEmailRecipientDropdownOptions());
+        }
+
+        /** Compose Email CC: CRM search + optional raw email addresses */
+        function emailModalCcTomSelectBase() {
+            return $.extend({}, emailModalRecipientsTomSelectBase(), {
+                create: composeEmailCcCreateOption,
+                createFilter: function (input) {
+                    return composeEmailCcCreateOption(input) !== false;
+                },
+                createOnBlur: true
+            });
         }
 
         function buildComposeRecipientSelectItem(recipient) {
@@ -7218,6 +7214,19 @@ success: function(response) {
             $toSelect.val(null);
             $toSelect.trigger('change');
             $('#emailmodal').removeData('composeToFieldCustomized');
+        };
+
+        window.resetComposeEmailCcField = function () {
+            var $ccSelect = $('#emailmodal .js-data-example-ajaxccd');
+            if (!$ccSelect.length) {
+                return;
+            }
+            if ($ccSelect[0].tomselect) {
+                $ccSelect[0].tomselect.clear(true);
+            } else {
+                $ccSelect.val(null);
+                $ccSelect.trigger('change');
+            }
         };
 
 
@@ -7679,41 +7688,9 @@ success: function(response) {
 
 
 
-        $('#emailmodal .js-data-example-ajaxccd').mmSelect({
+        $('#emailmodal .js-data-example-ajaxccd').mmSelect(emailModalCcTomSelectBase());
 
-            multiple: true,
-
-            closeOnSelect: false,
-
-            dropdownParent: $('#emailmodal'),
-
-            ajax: {
-
-                url: window.ClientDetailConfig.urls.getRecipients,
-
-                dataType: 'json',
-
-                processResults: function (data) {
-
-                    // Transforms the top-level key of the response object from 'items' to 'results'
-
-                    return {
-
-                        results: data.items
-
-                    };
-
-                },
-
-                cache: true
-
-            },
-
-            templateResult: formatRepo,
-
-            templateSelection: formatRepoSelection
-
-        });
+        $('.js-data-example-ajaxccapp').mmSelect(emailModalCcTomSelectBase());
 
 
 

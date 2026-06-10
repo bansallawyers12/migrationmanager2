@@ -1830,7 +1830,8 @@
         const config = {
             multiple: true,
             closeOnSelect: false,
-            dropdownParent: jQuery('#emailmodal'),
+            dropdownParent: jQuery('body'),
+            dropdownCssClass: 'mm-compose-email-recipients-dropdown',
             data: data,
             escapeMarkup: markup => markup,
             templateResult: d => d.html,
@@ -1840,6 +1841,9 @@
             config.ajax = {
                 url: getRecipientsUrl,
                 dataType: 'json',
+                data: function (params) {
+                    return { q: params.term || '' };
+                },
                 processResults: ajaxData => ({ results: ajaxData.items || [] }),
                 cache: true
             };
@@ -2610,6 +2614,9 @@
                         jQuery(this).removeData('preserveReplyForwardBody');
                         if (typeof window.resetComposeEmailToField === 'function') {
                             window.resetComposeEmailToField();
+                        }
+                        if (typeof window.resetComposeEmailCcField === 'function') {
+                            window.resetComposeEmailCcField();
                         }
                     });
             }

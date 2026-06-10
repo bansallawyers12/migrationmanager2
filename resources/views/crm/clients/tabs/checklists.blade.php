@@ -996,7 +996,8 @@
                 escapeMarkup: function(markup) { return markup; },
                 templateResult: function(d) { return d.html; },
                 templateSelection: function(d) { return d.text; },
-                dropdownParent: $('#emailmodal'),
+                dropdownParent: $('body'),
+                dropdownCssClass: 'mm-compose-email-recipients-dropdown',
                 multiple: true,
                 closeOnSelect: false
             });
@@ -1108,7 +1109,8 @@
                 escapeMarkup: function(markup) { return markup; },
                 templateResult: function(d) { return d.html; },
                 templateSelection: function(d) { return d.text; },
-                dropdownParent: $('#emailmodal'),
+                dropdownParent: $('body'),
+                dropdownCssClass: 'mm-compose-email-recipients-dropdown',
                 multiple: true,
                 closeOnSelect: false
             });

@@ -136,6 +136,12 @@
   box-sizing: border-box;
 }
 
+/* Compose Email To/CC recipient search (same body + z-index pattern as template dropdown) */
+.ts-dropdown.mm-compose-email-recipients-dropdown {
+  z-index: 100060 !important;
+  box-sizing: border-box;
+}
+
 /*
  * Create In Person Client (#checkinmodal): contact search + assignee Tom Selects.
  * dropdownParent is body + this class (see layout init); match #emailmodal control styling.

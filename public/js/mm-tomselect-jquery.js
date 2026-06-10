@@ -225,9 +225,15 @@
         var payload =
           typeof ajax.data === 'function'
             ? ajax.data({ term: query, page: 1 })
-            : ajax.data || {};
-        if (ajax.cache !== true && payload && typeof payload === 'object' && !Array.isArray(payload)) {
-          payload._ = Date.now();
+            : $.extend({}, ajax.data || {});
+        // Legacy Select2 configs often omitted ajax.data; /clients/get-recipients requires ?q=
+        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+          if (Object.keys(payload).length === 0) {
+            payload.q = query;
+          }
+          if (ajax.cache !== true) {
+            payload._ = Date.now();
+          }
         }
         $.ajax({
           url: ajax.url,
