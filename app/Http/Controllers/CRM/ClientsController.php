@@ -5080,7 +5080,8 @@ class ClientsController extends Controller
                 'AgentTitle' => $responsiblePerson->company_name,
                 'MARN' => $responsiblePerson->marn_number,
 
-                'visa_apply'=>$visa_subclass,
+                'Visa_apply' => $visa_subclass,
+                'visa_apply' => $visa_subclass,
 
                 'Block1description'=>$Block_1_Description,
                 'Block1feesincltax'=>$Block_1_Ex_Tax,
