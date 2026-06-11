@@ -216,8 +216,8 @@ class VisaAgreementTemplateResolver
             $ordered = [$nomFile, $sponFile, $defaultGeneral];
             $rule = 'company_nomination_and_sponsorship_hint';
         } else {
-            $ordered = [$sponFile, $nomFile, $defaultGeneral];
-            $rule = 'company_default_sponsorship_first';
+            $ordered = [$defaultGeneral];
+            $rule = 'company_general';
         }
 
         return [
@@ -228,26 +228,31 @@ class VisaAgreementTemplateResolver
 
     private function matchesCompanyNominationHint(string $nick, string $titleLower): bool
     {
-        if (str_contains($titleLower, 'nomination') || str_contains($titleLower, 'nominate')) {
-            return true;
+        foreach (config('visa_agreement_templates.company_nomination_matter_nick_names', []) as $n) {
+            if ($nick === strtolower(trim((string) $n))) {
+                return true;
+            }
         }
 
-        return str_contains($nick, 'nom');
+        foreach (config('visa_agreement_templates.company_nomination_title_markers', []) as $marker) {
+            if (str_contains($titleLower, strtolower(trim((string) $marker)))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function matchesCompanySponsorshipHint(string $nick, string $titleLower): bool
     {
-        if (str_contains($titleLower, 'sponsor') || str_contains($titleLower, 'sponsorship')) {
-            return true;
-        }
-
-        $employerPattern = config('visa_agreement_templates.employer_subclass_pattern', '/\b(407|186|482|494)\b/');
-        if (@preg_match($employerPattern, $titleLower)) {
-            return true;
-        }
-
-        foreach (config('sheets.visa_types.employer-sponsored.matter_nick_names', []) as $n) {
+        foreach (config('visa_agreement_templates.company_sponsorship_matter_nick_names', ['sbs', 'tas']) as $n) {
             if ($nick === strtolower(trim((string) $n))) {
+                return true;
+            }
+        }
+
+        foreach (config('visa_agreement_templates.company_sponsorship_title_markers', []) as $marker) {
+            if (str_contains($titleLower, strtolower(trim((string) $marker)))) {
                 return true;
             }
         }

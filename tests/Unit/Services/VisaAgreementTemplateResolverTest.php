@@ -15,40 +15,67 @@ class VisaAgreementTemplateResolverTest extends TestCase
         $this->resolver = new VisaAgreementTemplateResolver();
     }
 
-    public function test_company_client_without_nomination_or_sponsorship_hints_uses_sponsorship_first_chain(): void
+    public function test_company_client_without_nomination_or_sponsorship_hints_uses_general_template(): void
     {
         $r = $this->resolver->determineCandidates(true, 'gn', 'General', false);
-        $this->assertSame('company_default_sponsorship_first', $r['rule']);
-        $this->assertSame(
-            [
-                'Service_Agreement_company_sponsorship.docx',
-                'Service_Agreement_company_nomination.docx',
-                'Service_Agreement_general.docx',
-            ],
-            $r['candidates']
-        );
+        $this->assertSame('company_general', $r['rule']);
+        $this->assertSame(['Service_Agreement_general.docx'], $r['candidates']);
     }
 
-    public function test_company_client_nomination_hint_orders_nomination_first(): void
+    public function test_company_client_standard_business_sponsorship_uses_sponsorship_template(): void
     {
-        $r = $this->resolver->determineCandidates(true, 'gn', 'Employer nomination pathway', false);
-        $this->assertSame('company_nomination', $r['rule']);
-        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
-        $this->assertSame('Service_Agreement_company_sponsorship.docx', $r['candidates'][1]);
-    }
-
-    public function test_company_client_with_nomination_and_employer_subclass_prefers_nomination_template_first(): void
-    {
-        $r = $this->resolver->determineCandidates(true, 'gn', 'Employer nomination subclass 186', false);
-        $this->assertSame('company_nomination_and_sponsorship_hint', $r['rule']);
-        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
-    }
-
-    public function test_company_client_sponsorship_hint_orders_sponsorship_first(): void
-    {
-        $r = $this->resolver->determineCandidates(true, 'es', 'TSS sponsorship 482', false);
+        $r = $this->resolver->determineCandidates(true, 'sbs', 'Standard Business Sponsorship', false);
         $this->assertSame('company_sponsorship', $r['rule']);
         $this->assertSame('Service_Agreement_company_sponsorship.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_temporary_activities_sponsorship_uses_sponsorship_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'tas', 'Temporary Activities Sponsorship', false);
+        $this->assertSame('company_sponsorship', $r['rule']);
+        $this->assertSame('Service_Agreement_company_sponsorship.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_employer_nomination_scheme_uses_nomination_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'de', 'Employer Nomination Scheme', false);
+        $this->assertSame('company_nomination', $r['rule']);
+        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_regional_employer_nomination_uses_nomination_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'sesr', 'Regional Employer Nomination', false);
+        $this->assertSame('company_nomination', $r['rule']);
+        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_skill_in_demand_nomination_uses_nomination_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'sidcoreskills', 'Skill in Demand Nomination - Core Skills', false);
+        $this->assertSame('company_nomination', $r['rule']);
+        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_training_nomination_uses_nomination_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'tn 407', 'Training Nomination', false);
+        $this->assertSame('company_nomination', $r['rule']);
+        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_generic_nomination_title_without_listed_matter_uses_general_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'gn', 'Employer nomination subclass 186', false);
+        $this->assertSame('company_general', $r['rule']);
+        $this->assertSame('Service_Agreement_general.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_client_employer_subclass_without_nomination_uses_general_template(): void
+    {
+        $r = $this->resolver->determineCandidates(true, 'es', 'TSS sponsorship 482', false);
+        $this->assertSame('company_general', $r['rule']);
+        $this->assertSame('Service_Agreement_general.docx', $r['candidates'][0]);
     }
 
     public function test_art_matter_uses_art_template_and_legacy_tail(): void
@@ -128,8 +155,8 @@ class VisaAgreementTemplateResolverTest extends TestCase
     public function test_company_overrides_personal_art_branch(): void
     {
         $r = $this->resolver->determineCandidates(true, 'art', 'ART', false);
-        $this->assertSame('company_default_sponsorship_first', $r['rule']);
-        $this->assertStringContainsString('Service_Agreement_company_sponsorship.docx', $r['candidates'][0]);
+        $this->assertSame('company_general', $r['rule']);
+        $this->assertSame('Service_Agreement_general.docx', $r['candidates'][0]);
     }
 
     public function test_job_ready_path_takes_priority_over_conflict_subclass_in_title(): void

@@ -37,6 +37,28 @@ return [
     'company_nomination' => 'Service_Agreement_company_nomination.docx',
 
     /*
+    | Company nomination template: only these company matters (nick_name or title marker).
+    */
+    'company_nomination_matter_nick_names' => ['de', 'sesr', 'sidcoreskills', 'tn 407'],
+
+    'company_nomination_title_markers' => [
+        'training nomination',
+        'regional employer nomination',
+        'employer nomination scheme',
+        'skill in demand nomination - core skills',
+    ],
+
+    /*
+    | Company sponsorship template: only these company matters (nick_name or title marker).
+    */
+    'company_sponsorship_matter_nick_names' => ['sbs', 'tas'],
+
+    'company_sponsorship_title_markers' => [
+        'standard business sponsorship',
+        'temporary activities sponsorship',
+    ],
+
+    /*
     |----------------------------------------------------------------------
     | Legacy / fallback templates (tried after primary when files missing)
     |----------------------------------------------------------------------
@@ -64,7 +86,7 @@ return [
     'partner_subclass_pattern' => '/\b(820|801|309|100)\b/',
 
     /*
-    | Employer-sponsored subclasses (company sponsorship hint + personal conflict routing).
+    | Employer-sponsored subclasses (personal conflict-of-interest routing only).
     */
     'employer_subclass_pattern' => '/\b(407|186|482|494)\b/',
 
