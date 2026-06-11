@@ -84,6 +84,8 @@ use App\Services\FCMService;
 use App\Services\ClientImportService;
 use App\Services\JobReadyAgreementFeeTablePatcher;
 use App\Services\PsaAgreementFeeTablePatcher;
+use App\Services\CompanyAgreementDocxPatcher;
+use App\Services\CompanyVisaAgreementMacroBuilder;
 use App\Services\VisaAgreementTemplateResolver;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
@@ -4641,6 +4643,9 @@ class ClientsController extends Controller
                         $xml = $zip->getFromName('word/document.xml');
                         if ($xml !== false) {
                             $xmlPatchesApplied = false;
+                            $isCompanyAgreementTemplate = CompanyAgreementDocxPatcher::isCompanyAgreementTemplate($templateFileName);
+
+                            if (! $isCompanyAgreementTemplate) {
                             $oldPlaceholder = '${TotalDoHASurcharges}';
                             $newPlaceholder = '${TotalDoHAChargesInclSurcharge}';
                             $countFullPlaceholder = substr_count($xml, $oldPlaceholder);
@@ -4685,6 +4690,21 @@ class ClientsController extends Controller
                                     'occurrences_${TotalDoHASurcharges}' => $countFullPlaceholder,
                                     'occurrences_substring_TotalDoHASurcharges' => $countBareName,
                                 ]);
+                            }
+                            }
+
+                            if ($isCompanyAgreementTemplate) {
+                                $companyPatch = app(CompanyAgreementDocxPatcher::class)->patchDocumentXml($xml);
+                                $xml = $companyPatch['xml'];
+                                if ($companyPatch['patched']) {
+                                    $xmlPatchesApplied = true;
+                                    Log::info('[AgreementMacro:Company] DOCX patch applied to company agreement template', [
+                                        'client_id' => $request->client_id,
+                                        'client_matter_id' => $request->client_matter_id ?? null,
+                                        'template' => $templateFileName,
+                                        'fixes' => $companyPatch['fixes'],
+                                    ]);
+                                }
                             }
 
                             if ($templateFileName === 'Service_Agreement_PSA.docx') {
@@ -4991,11 +5011,12 @@ class ClientsController extends Controller
             // ${TotalDoHASurcharges}: read only from cost_assignment_forms — sum of Total DoHA Charges + Total DoHA Surcharges + Additional Fee 1
             // (Isolated from other agreement variables so the macro always matches the three DB fields on that form row.)
             $TotalDoHASurchargesMacroSum = '0.00';
+            $costRowForMacro = null;
             if (isset($request->client_matter_id) && $request->client_matter_id !== '') {
                 $costRowForMacro = DB::table('cost_assignment_forms')
                     ->where('client_id', $request->client_id)
                     ->where('client_matter_id', $request->client_matter_id)
-                    ->first(['TotalDoHACharges', 'TotalDoHASurcharges', 'additional_fee_1']);
+                    ->first();
                 if ($costRowForMacro !== null) {
                     $dbBase = floatval($costRowForMacro->TotalDoHACharges ?? 0);
                     $dbSurchargeOnly = floatval($costRowForMacro->TotalDoHASurcharges ?? 0);
@@ -5108,6 +5129,13 @@ class ClientsController extends Controller
                 'ScheduleA_ChildList' => $scheduleAFamily['children'],
             ];
 
+            if ($client->isCompany()) {
+                $replacements = array_merge(
+                    $replacements,
+                    app(CompanyVisaAgreementMacroBuilder::class)->build($client, $costRowForMacro)
+                );
+            }
+
             // Log each replacement
             foreach ($replacements as $key => $value) {
                 // FIX: Handle NULL values properly - convert to empty string
@@ -5124,9 +5152,13 @@ class ClientsController extends Controller
                 $fixedVarsCount = 0;
                 foreach ($allTemplateVars as $templateVar) {
                     // Only set if not already in replacements array
-                    if (!isset($replacements[$templateVar])) {
+                    if (! isset($replacements[$templateVar]) && $this->isSafePhpWordTemplateVariableName($templateVar)) {
                         $templateProcessor->setValue($templateVar, '');
                         $fixedVarsCount++;
+                    } elseif (! isset($replacements[$templateVar])) {
+                        Log::warning('Skipped clearing malformed agreement template variable', [
+                            'variable_preview' => substr($templateVar, 0, 80),
+                        ]);
                     }
                 }
                 Log::info("Fixed {$fixedVarsCount} unreplaced template variables to prevent document corruption");
@@ -5509,6 +5541,18 @@ class ClientsController extends Controller
         }
 
         return '';
+    }
+
+    /**
+     * PhpWord variable names must be simple tokens; malformed names (e.g. from broken ${...} in DOCX) must not be cleared.
+     */
+    protected function isSafePhpWordTemplateVariableName(string $name): bool
+    {
+        if ($name === '' || strlen($name) > 64) {
+            return false;
+        }
+
+        return (bool) preg_match('/^[A-Za-z0-9_]+$/', $name);
     }
 
     /**
