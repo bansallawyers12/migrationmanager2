@@ -298,10 +298,12 @@
         position: sticky;
         z-index: 10;
         background: #fff;
+        overflow: visible;
     }
     .visa-sheet-page #visa-sheet-table thead th.frozen-col {
         z-index: 13;
         background: #f8fafc !important;
+        overflow: visible;
     }
     .visa-sheet-page #visa-sheet-table .frozen-col-1 { left: var(--frozen-left-1, 0); }
     .visa-sheet-page #visa-sheet-table .frozen-col-2 { left: var(--frozen-left-2, 45px); }
@@ -341,7 +343,7 @@
     .visa-sheet-page .sortable {
         cursor: pointer;
         user-select: none;
-        position: sticky;
+        position: relative;
         padding-right: 22px !important;
     }
     .visa-sheet-page .sortable:hover {
@@ -820,6 +822,7 @@ jQuery(document).ready(function($) {
         updateScroll();
         updateFrozenColumnOffsets();
     }, 100);
+    setTimeout(updateFrozenColumnOffsets, 600);
     $(window).on('resize', updateFrozenColumnOffsets);
     $scroll.on('wheel', function(e) {
         if (e.shiftKey && e.originalEvent.deltaY && this.scrollWidth > this.clientWidth) {

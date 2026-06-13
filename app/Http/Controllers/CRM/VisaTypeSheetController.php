@@ -915,9 +915,10 @@ class VisaTypeSheetController extends Controller
                     return (string) ($row->dob ?? '');
                 case 'visa_expiry':
                     $expiry = $row->visa_expiry ?? null;
-                    return ($expiry && $expiry !== '0000-00-00') ? (string) $expiry : '';
+                    return ($expiry && $expiry !== '0000-00-00') ? (string) $expiry : '9999-99-99';
                 case 'deadline':
-                    return (string) ($row->deadline ?? '');
+                    $dl = $row->deadline ?? null;
+                    return $dl ? (string) $dl : '9999-99-99';
                 case 'assignee':
                     return strtolower(trim((string) ($row->assignee_name ?? '')));
                 case 'matter':
