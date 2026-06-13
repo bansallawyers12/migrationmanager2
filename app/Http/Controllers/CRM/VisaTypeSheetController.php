@@ -122,6 +122,8 @@ class VisaTypeSheetController extends Controller
         $activeFilterCount = $this->countActiveFilters($request, $config);
         $showRefusedVisaType = $this->hasRefusedVisaTypeFeature($config);
         $refusedVisaTypeOptions = $showRefusedVisaType ? $this->getRefusedVisaTypeOptions($config) : [];
+        $refusedVisaTypeLabel = $showRefusedVisaType ? $this->getRefusedVisaTypeLabel($config) : '';
+        $refusedVisaTypeSuggestRules = $showRefusedVisaType ? $this->getRefusedVisaTypeSuggestRules($config) : [];
 
         return view('crm.clients.sheets.visa-type-sheet', compact(
             'rows',
@@ -137,7 +139,9 @@ class VisaTypeSheetController extends Controller
             'visaType',
             'setupRequired',
             'showRefusedVisaType',
-            'refusedVisaTypeOptions'
+            'refusedVisaTypeOptions',
+            'refusedVisaTypeLabel',
+            'refusedVisaTypeSuggestRules'
         ));
     }
 
@@ -162,6 +166,23 @@ class VisaTypeSheetController extends Controller
         $options = $config['refused_visa_type_options'] ?? [];
 
         return is_array($options) ? $options : [];
+    }
+
+    protected function getRefusedVisaTypeLabel(array $config): string
+    {
+        $label = trim((string) ($config['refused_visa_type_label'] ?? 'Category'));
+
+        return $label !== '' ? $label : 'Category';
+    }
+
+    /**
+     * @return array<string, list<string>> option key => title needles (lowercase match)
+     */
+    protected function getRefusedVisaTypeSuggestRules(array $config): array
+    {
+        $rules = $config['refused_visa_type_suggest'] ?? [];
+
+        return is_array($rules) ? $rules : [];
     }
 
     /**
@@ -854,7 +875,7 @@ class VisaTypeSheetController extends Controller
     }
 
     /**
-     * SELECT fragment for refused_visa_type (ART Matters only when column exists).
+     * SELECT fragment for refused_visa_type when sheet config enables the feature.
      */
     protected function refusedVisaTypeSelectColumn(array $config, string $refAlias): \Illuminate\Database\Query\Expression|string
     {
@@ -1279,7 +1300,9 @@ class VisaTypeSheetController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $valueToStore === null ? 'Refused visa type cleared' : 'Refused visa type saved',
+                'message' => $valueToStore === null
+                    ? ($this->getRefusedVisaTypeLabel($config) . ' cleared')
+                    : ($this->getRefusedVisaTypeLabel($config) . ' saved'),
                 'refused_visa_type' => $valueToStore,
                 'refused_visa_type_label' => $label,
             ]);

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Refused visa / matter category for ART Matters sheet rows (nullable for all other sheet types).
+     * Refused visa / matter category for sheet rows (nullable; used by ART, TR, Visitor, Student sheets).
      */
     public function up(): void
     {

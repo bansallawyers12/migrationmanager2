@@ -43,6 +43,19 @@ return [
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
+
+        'has_refused_visa_type' => true,
+        'refused_visa_type_label' => 'TR Stream',
+        'refused_visa_type_options' => [
+            'post-vocational' => 'Post-Vocational',
+            'post-higher' => 'Post-Higher',
+            'second-post-higher' => 'Second Post-Higher',
+        ],
+        'refused_visa_type_suggest' => [
+            'second-post-higher' => ['second post-higher', 'second post higher', '2nd post-higher'],
+            'post-vocational' => ['post-vocational', 'post vocational', 'vocational', 'tvg'],
+            'post-higher' => ['post-higher', 'post higher', 'graduate', 'pt'],
+        ],
     ],
 
     'art-matters' => [
@@ -76,6 +89,7 @@ return [
         'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
 
         'has_refused_visa_type' => true,
+        'refused_visa_type_label' => 'Refused For',
         'refused_visa_type_options' => [
             'student' => 'Student Visa (500)',
             'visitor' => 'Visitor Visa (600)',
@@ -88,6 +102,18 @@ return [
             'nomination' => 'Nomination',
             'parent' => 'Parent Visa',
             'other' => 'Other',
+        ],
+        'refused_visa_type_suggest' => [
+            'student' => ['student', '500', 'sse'],
+            'visitor' => ['visitor', 'tourist', '600', 'vbv', 'vvd'],
+            'tr' => ['485', 'tvg', 'temp resident', 'temporary graduate', 'post study'],
+            'partner' => ['partner', '820', '801', '309', '100'],
+            'pr' => ['189', '190', '191', '491', 'permanent', 'skilled independent'],
+            'employer-sponsored' => ['482', '494', '186', 'employer sponsored'],
+            '407' => ['407', 'training visa'],
+            'sbs' => ['sbs', 'standard business sponsor', 'sponsorship approval'],
+            'nomination' => ['nomination', 'nominated person'],
+            'parent' => ['parent', '103', '143', '804', '870', 'contributory parent'],
         ],
     ],
 
@@ -120,6 +146,19 @@ return [
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
+
+        'has_refused_visa_type' => true,
+        'refused_visa_type_label' => 'Visit Purpose',
+        'refused_visa_type_options' => [
+            'tourist' => 'Tourist',
+            'family' => 'Family',
+            'business' => 'Business',
+        ],
+        'refused_visa_type_suggest' => [
+            'family' => ['family', 'sponsored family', 'relative'],
+            'business' => ['business', 'conference', 'work event', 'commercial'],
+            'tourist' => ['tourist', 'tourism', 'holiday', 'sightseeing', 'vbv', 'vvd', 'vsf'],
+        ],
     ],
 
     'student' => [
@@ -151,6 +190,21 @@ return [
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
+
+        'has_refused_visa_type' => true,
+        'refused_visa_type_label' => 'Application Type',
+        'refused_visa_type_options' => [
+            'single' => 'Single',
+            'couple' => 'Couple',
+            'family' => 'Family',
+            'dependent' => 'Dependent',
+        ],
+        'refused_visa_type_suggest' => [
+            'couple' => ['couple', 'spouse', 'partner applicant'],
+            'family' => ['family', 'family unit'],
+            'dependent' => ['dependent', 'dependant', 'child', 'children'],
+            'single' => ['single', 'primary applicant', 'main applicant'],
+        ],
     ],
 
     'pr' => [
