@@ -13,14 +13,8 @@ return new class extends Migration
     {
         if (! Schema::hasColumn('client_matters', 'art_checklist_status')) {
             Schema::table('client_matters', function (Blueprint $table) {
-                $after = Schema::hasColumn('client_matters', 'parents_checklist_status')
-                    ? 'parents_checklist_status'
-                    : (Schema::hasColumn('client_matters', 'partner_checklist_status')
-                        ? 'partner_checklist_status'
-                        : 'employer_sponsored_checklist_status');
                 $table->string('art_checklist_status', 32)->nullable()
-                    ->after($after)
-                    ->comment('ART sheet checklist status: active, hold, convert_to_client, discontinue');
+                    ->comment('ART Matters sheet checklist status: active, hold, convert_to_client, discontinue');
             });
         }
     }

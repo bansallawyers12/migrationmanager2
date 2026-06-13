@@ -243,8 +243,8 @@ class ClientMatter extends Model
     }
 
     /**
-     * Get the visa sheet type for this matter (tr, visitor, student, pr, employer-sponsored).
-     * Used for checklist-sent integration - updates the correct reference table per subclass.
+     * Get the visa sheet type for this matter (tr, art-matters, visitor, student, pr, employer-sponsored, partner, parents).
+     * Determined by matching matter nick_name / title against config/sheets/visa_types.php.
      */
     public function getVisaSheetType(): ?string
     {
@@ -275,7 +275,7 @@ class ClientMatter extends Model
 
     /**
      * When a checklist is sent for this matter, update the sheet reference table and log reminder.
-     * Works for TR, Visitor, Student, PR, Employer Sponsored (by subclass).
+     * Works for any visa-type sheet defined in config/sheets/visa_types.php (TR, ART Matters, Visitor, etc.).
      */
     public function recordChecklistSent(?int $staffId = null): bool
     {

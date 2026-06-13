@@ -109,7 +109,7 @@
                 <a href="{{ \App\Support\CrmSheets::urlForKey($firstSheetKey) }}" class="icon-btn" title="Sheets"><i class="fas fa-table"></i></a>
                 <div class="icon-dropdown-menu">
                     @foreach($visibleCrmSheets as $vt => $vc)
-                    <a class="dropdown-item" href="{{ \App\Support\CrmSheets::urlForKey($vt) }}"><i class="fas fa-{{ $vt === 'eoi-roi' ? 'passport' : ($vt === 'art' ? 'gavel' : 'clipboard-list') }} mr-2"></i> {{ $vc }}</a>
+                    <a class="dropdown-item" href="{{ \App\Support\CrmSheets::urlForKey($vt) }}"><i class="fas fa-{{ $vt === 'eoi-roi' ? 'passport' : (in_array($vt, ['art', 'art-matters']) ? 'gavel' : 'clipboard-list') }} mr-2"></i> {{ $vc }}</a>
                     @endforeach
                 </div>
             </div>
