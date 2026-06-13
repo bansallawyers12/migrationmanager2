@@ -21,6 +21,9 @@ class JobReadyAgreementFeeTablePatcher
 
     private const SECTION4_TABLE_ANCHOR = 'GrandTotalFeesAndCosts';
 
+    /** Section 4 authority row after ClientsController renames TotalDoHASurcharges for merge. */
+    private const PLACEHOLDER_SECTION4_AUTHORITY = 'TotalDoHAChargesInclSurcharge';
+
     private const REFERENCE_SPACES = '             ';
 
     /**
@@ -175,6 +178,10 @@ class JobReadyAgreementFeeTablePatcher
 
         if (str_contains($row, 'TotalEstimatedOthCosts') || str_contains($row, 'TotalEstimatedOth')) {
             return 'TotalEstimatedOthCosts';
+        }
+
+        if (str_contains($row, self::PLACEHOLDER_SECTION4_AUTHORITY)) {
+            return self::PLACEHOLDER_SECTION4_AUTHORITY;
         }
 
         if (str_contains($row, 'TotalDoHASurcharges')) {

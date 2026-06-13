@@ -108,6 +108,26 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertSame('right', $after['header']['jc']);
     }
 
+    public function test_patches_section4_authority_row_after_clients_controller_placeholder_rename(): void
+    {
+        if (! is_file($this->templatePath)) {
+            $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
+        }
+
+        $xml = $this->readDocumentXml($this->templatePath);
+        $lastPos = strrpos($xml, 'TotalDoHASurcharges');
+        $this->assertNotFalse($lastPos);
+        $xml = substr_replace($xml, 'TotalDoHAChargesInclSurcharge', $lastPos, strlen('TotalDoHASurcharges'));
+
+        $result = $this->patcher->patchDocumentXml($xml);
+        $after = $this->section4SummaryTableAmountRowStats($result['xml'], 'TotalDoHAChargesInclSurcharge');
+
+        $this->assertTrue($result['patched']);
+        $this->assertSame('right', $after['authority_charges']['jc']);
+        $this->assertSame(0, $after['authority_charges']['space_count']);
+        $this->assertTrue($after['authority_charges']['single_placeholder']);
+    }
+
     public function test_does_not_change_fee_table_blocktotal_row_alignment(): void
     {
         if (! is_file($this->templatePath)) {
@@ -161,7 +181,7 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
      *     grand_total: array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool}
      * }
      */
-    private function section4SummaryTableAmountRowStats(string $xml): array
+    private function section4SummaryTableAmountRowStats(string $xml, string $authorityPlaceholder = 'TotalDoHASurcharges'): array
     {
         $anchorPos = strpos($xml, 'GrandTotalFeesAndCosts');
         $this->assertNotFalse($anchorPos);
@@ -186,7 +206,7 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
                 $grandTotalRow = $row;
             } elseif (str_contains($row, 'TotalEstimatedOthCosts') || str_contains($row, 'TotalEstimatedOth')) {
                 $estimatedCostsRow = $row;
-            } elseif (str_contains($row, 'TotalDoHASurcharges')) {
+            } elseif (str_contains($row, 'TotalDoHAChargesInclSurcharge') || str_contains($row, 'TotalDoHASurcharges')) {
                 $authorityChargesRow = $row;
             } elseif (str_contains($row, 'Blocktotalfeesincltax')) {
                 $professionalFeesRow = $row;
@@ -204,7 +224,7 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         return [
             'header' => $this->amountCellStats($this->lastTableCell($headerRow)),
             'professional_fees' => $this->section4AmountCellStats($this->lastTableCell($professionalFeesRow), 'Blocktotalfeesincltax'),
-            'authority_charges' => $this->section4AmountCellStats($this->lastTableCell($authorityChargesRow), 'TotalDoHASurcharges'),
+            'authority_charges' => $this->section4AmountCellStats($this->lastTableCell($authorityChargesRow), $authorityPlaceholder),
             'estimated_costs' => $this->section4AmountCellStats($this->lastTableCell($estimatedCostsRow), 'TotalEstimatedOthCosts'),
             'grand_total' => $this->section4AmountCellStats($this->lastTableCell($grandTotalRow), 'GrandTotalFeesAndCosts'),
         ];
