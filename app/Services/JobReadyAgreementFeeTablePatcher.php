@@ -10,6 +10,9 @@ namespace App\Services;
  *
  * Section 4 summary table ("Total Fees, Charges and Costs"): amount cells used justify
  * alignment and leading spaces while the Amount header is right-aligned.
+ *
+ * Authority charges stage rows (JRE/JRWA/JRFA): Amount columns used center alignment with
+ * inconsistent manual space padding, so digits did not line up vertically.
  */
 class JobReadyAgreementFeeTablePatcher
 {
@@ -20,6 +23,8 @@ class JobReadyAgreementFeeTablePatcher
     private const PLACEHOLDER_TOTAL = 'Blocktotalfeesincltax';
 
     private const SECTION4_TABLE_ANCHOR = 'GrandTotalFeesAndCosts';
+
+    private const AUTHORITY_CHARGES_SECTION_ANCHOR = 'Relevant Authority Charges';
 
     /** Section 4 authority row after ClientsController renames TotalDoHASurcharges for merge. */
     private const PLACEHOLDER_SECTION4_AUTHORITY = 'TotalDoHAChargesInclSurcharge';
@@ -44,6 +49,10 @@ class JobReadyAgreementFeeTablePatcher
         $section4Patch = $this->patchSection4SummaryTable($xml);
         $xml = $section4Patch['xml'];
         $patched = $patched || $section4Patch['patched'];
+
+        $authorityPatch = $this->patchAuthorityChargesTable($xml);
+        $xml = $authorityPatch['xml'];
+        $patched = $patched || $authorityPatch['patched'];
 
         return ['xml' => $xml, 'patched' => $patched];
     }
@@ -168,6 +177,175 @@ class JobReadyAgreementFeeTablePatcher
         $newXml = substr($xml, 0, $tblStart) . $table . substr($xml, $tblEnd);
 
         return ['xml' => $newXml, 'patched' => true];
+    }
+
+    /**
+     * @return array{xml: string, patched: bool}
+     */
+    private function patchAuthorityChargesTable(string $xml): array
+    {
+        $anchorPos = strpos($xml, self::AUTHORITY_CHARGES_SECTION_ANCHOR);
+        if ($anchorPos === false) {
+            return ['xml' => $xml, 'patched' => false];
+        }
+
+        $tblStart = strrpos(substr($xml, 0, $anchorPos), '<w:tbl>');
+        if ($tblStart === false) {
+            return ['xml' => $xml, 'patched' => false];
+        }
+
+        $tblEnd = $this->authorityChargesTableEnd($xml, $anchorPos);
+        if ($tblEnd === false) {
+            return ['xml' => $xml, 'patched' => false];
+        }
+
+        $table = substr($xml, $tblStart, $tblEnd - $tblStart);
+        $patched = false;
+
+        preg_match_all('/<w:tr\b.*?<\/w:tr>/s', $table, $rowMatches);
+        foreach ($rowMatches[0] as $row) {
+            if ($this->isAuthorityChargesHeaderRow($row)) {
+                $patchedRow = $this->patchAuthorityChargesHeaderRow($row);
+            } elseif ($this->isAuthorityStageChargeRow($row)) {
+                $patchedRow = $this->patchAuthorityStageChargeRow($row);
+            } else {
+                continue;
+            }
+
+            if ($patchedRow === $row) {
+                continue;
+            }
+
+            $table = str_replace($row, $patchedRow, $table);
+            $patched = true;
+        }
+
+        if (! $patched) {
+            return ['xml' => $xml, 'patched' => false];
+        }
+
+        $newXml = substr($xml, 0, $tblStart) . $table . substr($xml, $tblEnd);
+
+        return ['xml' => $newXml, 'patched' => true];
+    }
+
+    private function isAuthorityChargesHeaderRow(string $row): bool
+    {
+        return str_contains($row, 'Charge Type') && str_contains($row, 'Amount incl Surcharge');
+    }
+
+    private function isAuthorityStageChargeRow(string $row): bool
+    {
+        if (! str_contains($row, 'Application Charge')) {
+            return false;
+        }
+
+        return preg_match('/JRE\s+Stage/u', $row) === 1
+            || preg_match('/JRWA\s+Stage/u', $row) === 1
+            || preg_match('/JRFA\s+Stage/u', $row) === 1;
+    }
+
+    private function patchAuthorityChargesHeaderRow(string $row): string
+    {
+        if (! preg_match_all('/<w:tc>.*?<\/w:tc>/s', $row, $cellMatches) || count($cellMatches[0]) < 3) {
+            return $row;
+        }
+
+        $patchedRow = $row;
+        foreach ([1, 2] as $cellIndex) {
+            $cell = $cellMatches[0][$cellIndex];
+            $text = $this->extractCellPlainText($cell);
+            $patchedCell = $this->patchAuthorityChargeTextCell($cell, $text);
+            if ($patchedCell !== $cell) {
+                $patchedRow = str_replace($cell, $patchedCell, $patchedRow);
+            }
+        }
+
+        return $patchedRow;
+    }
+
+    private function patchAuthorityStageChargeRow(string $row): string
+    {
+        if (! preg_match_all('/<w:tc>.*?<\/w:tc>/s', $row, $cellMatches) || count($cellMatches[0]) < 3) {
+            return $row;
+        }
+
+        $patchedRow = $row;
+        foreach ([1, 2] as $cellIndex) {
+            $cell = $cellMatches[0][$cellIndex];
+            $text = trim($this->extractCellPlainText($cell));
+            if ($text === '' || ! preg_match('/\$[\d,.]+/', $text)) {
+                continue;
+            }
+
+            $patchedCell = $this->patchAuthorityChargeTextCell($cell, $text);
+            if ($patchedCell !== $cell) {
+                $patchedRow = str_replace($cell, $patchedCell, $patchedRow);
+            }
+        }
+
+        return $patchedRow;
+    }
+
+    private function patchAuthorityChargeTextCell(string $cell, string $text): string
+    {
+        if ($this->authorityChargeTextCellAlreadyAligned($cell, $text)) {
+            return $cell;
+        }
+
+        $cell = $this->stripEditorColorMarkup($cell);
+        $cell = $this->ensureRightParagraphAlignment($cell);
+
+        $patched = preg_replace_callback(
+            '/(<w:pPr>.*?<\/w:pPr>).*?(<\/w:p><\/w:tc>)/s',
+            fn (array $matches): string => $matches[1] . $this->plainTextRuns($text) . $matches[2],
+            $cell,
+            1
+        );
+
+        return is_string($patched) ? $patched : $cell;
+    }
+
+    private function authorityChargeTextCellAlreadyAligned(string $cell, string $text): bool
+    {
+        return str_contains($cell, '<w:jc w:val="right"/>')
+            && trim($this->extractCellPlainText($cell)) === $text
+            && ! preg_match('/xml:space="preserve">\s+/', $cell)
+            && ! str_contains($cell, 'spellStart')
+            && str_contains($cell, '<w:t>' . $text . '</w:t>');
+    }
+
+    private function extractCellPlainText(string $cell): string
+    {
+        if (! preg_match_all('/<w:t[^>]*>([^<]*)<\/w:t>/', $cell, $matches)) {
+            return '';
+        }
+
+        return trim(implode('', $matches[1]));
+    }
+
+    private function plainTextRuns(string $text): string
+    {
+        return '<w:r><w:rPr><w:rFonts w:ascii="Franklin Gothic Book" w:hAnsi="Franklin Gothic Book"/>'
+            . '<w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t>' . $text . '</w:t></w:r>';
+    }
+
+    private function authorityChargesTableEnd(string $xml, int $anchorPos): int|false
+    {
+        $nextMajorSection = strpos($xml, 'Total Fees, Charges', $anchorPos);
+        if ($nextMajorSection !== false) {
+            $relativeEnd = strrpos(substr($xml, 0, $nextMajorSection), '</w:tbl>');
+            if ($relativeEnd !== false) {
+                return $relativeEnd + strlen('</w:tbl>');
+            }
+        }
+
+        $relativeEnd = strpos($xml, '</w:tbl>', $anchorPos);
+        if ($relativeEnd === false) {
+            return false;
+        }
+
+        return $relativeEnd + strlen('</w:tbl>');
     }
 
     private function section4PlaceholderInRow(string $row): ?string
@@ -304,7 +482,7 @@ class JobReadyAgreementFeeTablePatcher
         }
 
         $withRight = preg_replace(
-            '/(<w:pPr>.*?<w:spacing w:before="80" w:after="40"\/>)/s',
+            '/(<w:pPr>.*?<w:spacing w:before="80" w:after="(?:40|80)"\/>)/s',
             '$1<w:jc w:val="right"/>',
             $amountCell,
             1

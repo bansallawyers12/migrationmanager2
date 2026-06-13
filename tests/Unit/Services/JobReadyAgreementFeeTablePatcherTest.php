@@ -128,6 +128,44 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertTrue($after['authority_charges']['single_placeholder']);
     }
 
+    public function test_patches_authority_stage_charge_amount_cells_to_right_alignment(): void
+    {
+        if (! is_file($this->templatePath)) {
+            $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
+        }
+
+        $xml = $this->readDocumentXml($this->templatePath);
+        $before = $this->authorityStageChargeRowStats($xml);
+        $result = $this->patcher->patchDocumentXml($xml);
+        $after = $this->authorityStageChargeRowStats($result['xml']);
+
+        $this->assertTrue($result['patched']);
+
+        foreach (['jre', 'jrwa', 'jrfa'] as $stage) {
+            foreach (['amount', 'surcharge'] as $column) {
+                $this->assertSame('right', $after[$stage][$column]['jc'], "{$stage} {$column} should be right-aligned");
+                $this->assertSame(0, $after[$stage][$column]['space_count'], "{$stage} {$column} should not use padding spaces");
+                $this->assertSame($before[$stage][$column]['text'], $after[$stage][$column]['text'], "{$stage} {$column} value should be unchanged");
+            }
+        }
+
+        $this->assertSame('right', $after['header']['amount']['jc']);
+        $this->assertSame('right', $after['header']['surcharge']['jc']);
+    }
+
+    public function test_does_not_change_other_cost_rows_in_authority_charges_table(): void
+    {
+        if (! is_file($this->templatePath)) {
+            $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
+        }
+
+        $xml = $this->readDocumentXml($this->templatePath);
+        $before = $this->otherCostRowSnippet($xml);
+        $result = $this->patcher->patchDocumentXml($xml);
+
+        $this->assertSame($before, $this->otherCostRowSnippet($result['xml']));
+    }
+
     public function test_does_not_change_fee_table_blocktotal_row_alignment(): void
     {
         if (! is_file($this->templatePath)) {
@@ -239,6 +277,138 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $stats['single_placeholder'] = str_contains($cell, '<w:t>$${' . $placeholder . '}</w:t>');
 
         return $stats;
+    }
+
+    /**
+     * @return array{
+     *     header: array{amount: array{jc: string, space_count: int, text: string}, surcharge: array{jc: string, space_count: int, text: string}},
+     *     jre: array{amount: array{jc: string, space_count: int, text: string}, surcharge: array{jc: string, space_count: int, text: string}},
+     *     jrwa: array{amount: array{jc: string, space_count: int, text: string}, surcharge: array{jc: string, space_count: int, text: string}},
+     *     jrfa: array{amount: array{jc: string, space_count: int, text: string}, surcharge: array{jc: string, space_count: int, text: string}}
+     * }
+     */
+    private function authorityStageChargeRowStats(string $xml): array
+    {
+        $rows = $this->authorityChargesTableRows($xml);
+
+        $headerRow = null;
+        $jreRow = null;
+        $jrwaRow = null;
+        $jrfaRow = null;
+
+        foreach ($rows as $row) {
+            if ($this->patcherRowIsAuthorityHeader($row)) {
+                $headerRow = $row;
+            } elseif (preg_match('/JRE\s+Stage/u', $row)) {
+                $jreRow = $row;
+            } elseif (preg_match('/JRWA\s+Stage/u', $row)) {
+                $jrwaRow = $row;
+            } elseif (preg_match('/JRFA\s+Stage/u', $row)) {
+                $jrfaRow = $row;
+            }
+        }
+
+        $this->assertNotNull($headerRow);
+        $this->assertNotNull($jreRow);
+        $this->assertNotNull($jrwaRow);
+        $this->assertNotNull($jrfaRow);
+
+        return [
+            'header' => [
+                'amount' => $this->authorityAmountCellStats($this->tableCellAt($headerRow, 1)),
+                'surcharge' => $this->authorityAmountCellStats($this->tableCellAt($headerRow, 2)),
+            ],
+            'jre' => [
+                'amount' => $this->authorityAmountCellStats($this->tableCellAt($jreRow, 1)),
+                'surcharge' => $this->authorityAmountCellStats($this->tableCellAt($jreRow, 2)),
+            ],
+            'jrwa' => [
+                'amount' => $this->authorityAmountCellStats($this->tableCellAt($jrwaRow, 1)),
+                'surcharge' => $this->authorityAmountCellStats($this->tableCellAt($jrwaRow, 2)),
+            ],
+            'jrfa' => [
+                'amount' => $this->authorityAmountCellStats($this->tableCellAt($jrfaRow, 1)),
+                'surcharge' => $this->authorityAmountCellStats($this->tableCellAt($jrfaRow, 2)),
+            ],
+        ];
+    }
+
+    private function otherCostRowSnippet(string $xml): string
+    {
+        $rows = $this->authorityChargesTableRows($xml);
+        foreach ($rows as $row) {
+            if (str_contains($row, 'Interpreter')) {
+                return $row;
+            }
+        }
+
+        $this->fail('Interpreter row not found in authority charges table');
+
+        return '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function authorityChargesTableRows(string $xml): array
+    {
+        $anchorPos = strpos($xml, 'Relevant Authority Charges');
+        $this->assertNotFalse($anchorPos);
+
+        $tblStart = strrpos(substr($xml, 0, $anchorPos), '<w:tbl>');
+        $nextMajorSection = strpos($xml, 'Total Fees, Charges', $anchorPos);
+        if ($nextMajorSection !== false) {
+            $tblEnd = strrpos(substr($xml, 0, $nextMajorSection), '</w:tbl>');
+        } else {
+            $tblEnd = strpos($xml, '</w:tbl>', $anchorPos);
+        }
+        $this->assertNotFalse($tblStart);
+        $this->assertNotFalse($tblEnd);
+
+        $section = substr($xml, $tblStart, $tblEnd - $tblStart + 8);
+        preg_match_all('/<w:tr\b.*?<\/w:tr>/s', $section, $rows);
+
+        return $rows[0];
+    }
+
+    private function patcherRowIsAuthorityHeader(string $row): bool
+    {
+        return str_contains($row, 'Charge Type') && str_contains($row, 'Amount incl Surcharge');
+    }
+
+    private function tableCellAt(string $row, int $index): string
+    {
+        preg_match_all('/<w:tc>.*?<\/w:tc>/s', $row, $cells);
+        $this->assertNotEmpty($cells[0][$index] ?? null);
+
+        return $cells[0][$index];
+    }
+
+    /**
+     * @return array{jc: string, space_count: int, text: string}
+     */
+    private function authorityAmountCellStats(string $cell): array
+    {
+        $jc = 'none';
+        if (preg_match('/<w:jc w:val="([^"]+)"/', $cell, $m)) {
+            $jc = $m[1];
+        }
+
+        $spaceCount = 0;
+        if (preg_match_all('/xml:space="preserve">(\s+)</', $cell, $spaces)) {
+            foreach ($spaces[1] as $chunk) {
+                $spaceCount += strlen($chunk);
+            }
+        }
+
+        $text = trim(strip_tags(preg_replace('/<w:t[^>]*>/', '', $cell)));
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return [
+            'jc' => $jc,
+            'space_count' => $spaceCount,
+            'text' => $text,
+        ];
     }
 
     /**
