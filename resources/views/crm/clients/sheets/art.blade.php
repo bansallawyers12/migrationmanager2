@@ -153,12 +153,7 @@
         color: #334155;
     }
     .art-table { font-size: 13px; }
-    /* Override global sticky table headers */
-    .art-sheet-page .art-table th,
-    .art-sheet-page .art-table thead th,
-    .listing-container.art-sheet-page .table thead th,
-    #art-sheet-table thead th,
-    table#art-sheet-table thead th {
+    #art-sheet-table thead th {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
         font-weight: 600;
         white-space: nowrap;
@@ -167,11 +162,46 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
         color: #475569;
-        border-bottom: 2px solid #94a3b8;
-        position: static !important;
-        top: auto !important;
-        z-index: auto !important;
+        box-shadow: inset 0 -2px 0 #94a3b8;
+        position: sticky;
+        top: 0;
+        z-index: 11;
     }
+    /* Vertical + horizontal scroll container */
+    .art-sheet-page .card-body { overflow: visible; padding: 20px 30px 30px; }
+    #table-scroll-container {
+        max-height: calc(100vh - 280px);
+        min-height: 320px;
+        overflow: auto !important;
+        position: relative;
+        -webkit-overflow-scrolling: touch;
+    }
+    #table-scroll-container::-webkit-scrollbar { height: 10px; width: 10px; }
+    #table-scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    #art-sheet-table { border-collapse: separate; border-spacing: 0; }
+    /* Frozen columns */
+    #art-sheet-table .frozen-col {
+        position: sticky;
+        z-index: 10;
+        background: #fff;
+        overflow: visible;
+    }
+    #art-sheet-table thead th.frozen-col {
+        z-index: 13;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        overflow: visible;
+    }
+    #art-sheet-table .frozen-col-1 { left: var(--art-frozen-left-1, 0); }
+    #art-sheet-table .frozen-col-2 { left: var(--art-frozen-left-2, 40px); }
+    #art-sheet-table .frozen-col-3 { left: var(--art-frozen-left-3, 150px); }
+    #art-sheet-table .frozen-col-3.frozen-col-last::after {
+        content: '';
+        position: absolute;
+        top: 0; right: -6px; bottom: 0; width: 6px;
+        pointer-events: none;
+        background: linear-gradient(to right, rgba(15, 23, 42, 0.08), transparent);
+    }
+    #art-sheet-table tbody tr:hover .frozen-col { background: #f8fafc; }
     .art-table td { padding: 10px 8px; vertical-align: middle; }
     .art-table tbody tr:hover { background-color: #f8fafc; }
     .art-link { color: #475569; font-weight: 600; text-decoration: none; }
@@ -407,16 +437,19 @@
                         </form>
                     </div>
 
+                    <div class="px-1 pt-1 mb-2" style="font-size: 13px; color: #64748b;">
+                        <i class="fas fa-arrows-alt-h"></i> Scroll inside the table to browse rows and columns. Hold <kbd>Shift</kbd> while scrolling to move horizontally.
+                    </div>
                     <div class="table-container">
                         <div class="scroll-indicator scroll-indicator-left"></div>
                         <div class="scroll-indicator scroll-indicator-right visible"></div>
                         <div class="table-responsive" id="table-scroll-container">
                             <table class="table table-bordered table-hover art-table" id="art-sheet-table">
-                                <thead style="position: static !important;">
+                                <thead>
                                     <tr>
-                                        <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
-                                        <th class="sortable {{ request('sort') == 'crm_ref' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="crm_ref">CRM Ref</th>
-                                        <th class="sortable {{ request('sort') == 'other_reference' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="other_reference">Other Reference</th>
+                                        <th class="pin-cell frozen-col frozen-col-1" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
+                                        <th class="sortable frozen-col frozen-col-2 {{ request('sort') == 'crm_ref' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="crm_ref">CRM Ref</th>
+                                        <th class="sortable frozen-col frozen-col-3 frozen-col-last {{ request('sort') == 'other_reference' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="other_reference">Other Reference</th>
                                         <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Name</th>
                                         <th>Total Payment</th>
                                         <th>Pending Payment</th>
@@ -449,14 +482,14 @@
                                                 $matterInternalId = $row->matter_internal_id ?? '';
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $clientDetailUrl }}'">
-                                                <td class="pin-cell" onclick="event.stopPropagation();">
+                                                <td class="pin-cell frozen-col frozen-col-1" onclick="event.stopPropagation();">
                                                     <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}"
                                                        data-client-id="{{ $row->client_id }}"
                                                        data-matter-internal-id="{{ $matterInternalId }}"
                                                        title="{{ ($row->is_pinned ?? false) ? 'Unpin from top' : 'Pin to top' }}"></i>
                                                 </td>
-                                                <td onclick="event.stopPropagation();"><a href="{{ $clientDetailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
-                                                <td onclick="event.stopPropagation();">{{ $otherRef }}</td>
+                                                <td class="frozen-col frozen-col-2" onclick="event.stopPropagation();"><a href="{{ $clientDetailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
+                                                <td class="frozen-col frozen-col-3 frozen-col-last" onclick="event.stopPropagation();">{{ $otherRef }}</td>
                                                 <td onclick="event.stopPropagation();"><a href="{{ $clientDetailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
                                                 <td onclick="event.stopPropagation();">${{ $row->total_payment ?? '0.00' }}</td>
                                                 <td onclick="event.stopPropagation();">${{ $row->pending_payment ?? '0.00' }}</td>
@@ -538,11 +571,23 @@ jQuery(document).ready(function($) {
         $leftIndicator.toggleClass('visible', scrollLeft > 10);
         $rightIndicator.toggleClass('visible', scrollLeft < maxScroll - 10);
     }
+    function updateFrozenColumnOffsets() {
+        var table = document.getElementById('art-sheet-table');
+        if (!table) return;
+        var left = 0;
+        [1, 2, 3].forEach(function(index) {
+            var header = table.querySelector('thead th.frozen-col-' + index);
+            if (!header) return;
+            table.style.setProperty('--art-frozen-left-' + index, left + 'px');
+            left += header.getBoundingClientRect().width;
+        });
+    }
     $scrollContainer.on('scroll', updateScrollIndicators);
-    $(window).on('resize', updateScrollIndicators);
-    setTimeout(updateScrollIndicators, 100);
+    $(window).on('resize', function() { updateScrollIndicators(); updateFrozenColumnOffsets(); });
+    setTimeout(function() { updateScrollIndicators(); updateFrozenColumnOffsets(); }, 100);
+    setTimeout(updateFrozenColumnOffsets, 600);
     $scrollContainer.on('wheel', function(e) {
-        if (e.originalEvent.deltaY !== 0 && !e.shiftKey) {
+        if (e.shiftKey && e.originalEvent.deltaY && this.scrollWidth > this.clientWidth) {
             e.preventDefault();
             this.scrollLeft += e.originalEvent.deltaY;
         }
@@ -555,6 +600,7 @@ jQuery(document).ready(function($) {
     });
     $('.filter_btn').on('click', function() {
         $('.filter_panel').toggleClass('show');
+        setTimeout(updateFrozenColumnOffsets, 50);
     });
     if (typeof flatpickr !== 'undefined') {
         $('.datepicker').each(function() {
@@ -578,13 +624,6 @@ jQuery(document).ready(function($) {
     // Office filter auto-submit
     $('.office-filter-checkbox').on('change', function() {
         $('#officeFilterForm').submit();
-    });
-
-    // Force remove sticky positioning from table headers (override global CSS)
-    $('#art-sheet-table thead th').css({
-        'position': 'static',
-        'top': 'auto',
-        'z-index': 'auto'
     });
 
     // Handle star/pin clicks and inline comment editing (capture phase)

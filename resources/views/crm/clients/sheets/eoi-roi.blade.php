@@ -61,15 +61,27 @@
         border-bottom: 2px solid #667eea;
     }
 
-    /* First column (EOI ID) – fit content (e.g. E0039757088). Override listing-container.css 40px rule. */
+    /* Pin col (col 1) and EOI ID col (col 2) width overrides */
     .listing-container table.eoi-roi-table th:first-child,
     .listing-container table.eoi-roi-table td:first-child {
-        width: 140px !important;
-        min-width: 140px !important;
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+    }
+    #eoi-roi-sheet-table .frozen-col-2,
+    #eoi-roi-sheet-table thead th.frozen-col-2 {
+        min-width: 140px;
         max-width: none !important;
         white-space: nowrap;
         overflow: visible !important;
         text-overflow: clip !important;
+    }
+    #eoi-roi-sheet-table .frozen-col-3,
+    #eoi-roi-sheet-table thead th.frozen-col-3 {
+        min-width: 130px;
+        max-width: none !important;
+        white-space: nowrap;
+        overflow: visible !important;
     }
     
     .eoi-roi-table td {
@@ -256,63 +268,76 @@
         white-space: nowrap;
     }
 
-    /* Improved horizontal scroll */
-    .table-responsive {
+    /* Vertical + horizontal scroll container */
+    .listing-container .card-body { overflow: visible; }
+    #table-scroll-container {
+        max-height: calc(100vh - 280px);
+        min-height: 320px;
+        overflow: auto !important;
         position: relative;
-        overflow-x: auto;
-        overflow-y: visible;
         -webkit-overflow-scrolling: touch;
     }
-
-    /* Custom scrollbar styling */
-    .table-responsive::-webkit-scrollbar {
-        height: 12px;
-    }
-
-    .table-responsive::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .table-responsive::-webkit-scrollbar-thumb {
+    #table-scroll-container::-webkit-scrollbar { height: 10px; width: 10px; }
+    #table-scroll-container::-webkit-scrollbar-thumb {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
+        border-radius: 8px;
     }
 
-    .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    /* Sticky thead */
+    #eoi-roi-sheet-table {
+        border-collapse: separate;
+        border-spacing: 0;
     }
-
-    /* Scroll shadows to indicate more content */
-    .table-container {
-        position: relative;
-    }
-
-    .scroll-indicator {
-        position: absolute;
+    #eoi-roi-sheet-table thead th {
+        position: sticky;
         top: 0;
-        bottom: 20px;
-        width: 40px;
-        pointer-events: none;
-        z-index: 10;
-        transition: opacity 0.3s ease;
+        z-index: 11;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        box-shadow: inset 0 -2px 0 #667eea;
     }
 
+    /* Frozen columns */
+    #eoi-roi-sheet-table .frozen-col {
+        position: sticky;
+        z-index: 10;
+        background: #fff;
+        overflow: visible;
+    }
+    #eoi-roi-sheet-table thead th.frozen-col {
+        z-index: 13;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        overflow: visible;
+    }
+    #eoi-roi-sheet-table .frozen-col-1 { left: var(--eoi-frozen-left-1, 0); }
+    #eoi-roi-sheet-table .frozen-col-2 { left: var(--eoi-frozen-left-2, 40px); }
+    #eoi-roi-sheet-table .frozen-col-3 { left: var(--eoi-frozen-left-3, 180px); }
+    #eoi-roi-sheet-table .frozen-col-3.frozen-col-last::after {
+        content: '';
+        position: absolute;
+        top: 0; right: -6px; bottom: 0; width: 6px;
+        pointer-events: none;
+        background: linear-gradient(to right, rgba(15, 23, 42, 0.08), transparent);
+    }
+    #eoi-roi-sheet-table tbody tr:hover .frozen-col { background: #f8f9ff; }
+    #eoi-roi-sheet-table tbody tr.has-warning .frozen-col { background: #fff5f5; }
+    #eoi-roi-sheet-table tbody tr.has-warning:hover .frozen-col { background: #ffe5e5; }
+
+    /* Scroll shadows */
+    .table-container { position: relative; }
+    .scroll-indicator {
+        position: absolute; top: 0; bottom: 20px; width: 40px;
+        pointer-events: none; z-index: 14; transition: opacity 0.3s ease;
+    }
     .scroll-indicator-left {
         left: 0;
         background: linear-gradient(to right, rgba(255,255,255,0.95), transparent);
         opacity: 0;
     }
-
     .scroll-indicator-right {
         right: 0;
         background: linear-gradient(to left, rgba(255,255,255,0.95), transparent);
     }
-
-    .scroll-indicator-left.visible,
-    .scroll-indicator-right.visible {
-        opacity: 1;
-    }
+    .scroll-indicator-left.visible, .scroll-indicator-right.visible { opacity: 1; }
 
     /* Pin star styles */
     .listing-container .pin-cell { width: 40px; text-align: center; }
@@ -543,7 +568,7 @@
 
                     {{-- Scroll hint --}}
                     <div class="scroll-hint">
-                        <i class="fas fa-arrows-alt-h"></i> Scroll horizontally to see all columns.
+                        <i class="fas fa-arrows-alt-h"></i> Scroll inside the table to browse rows and columns. Hold <kbd>Shift</kbd> while scrolling to move horizontally.
                     </div>
 
                     {{-- Table --}}
@@ -554,9 +579,9 @@
                             <table class="table table-bordered table-hover eoi-roi-table" id="eoi-roi-sheet-table">
                             <thead>
                                 <tr>
-                                    <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
-                                    <th class="sortable {{ request('sort') == 'eoi_number' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="eoi_number">EOI ID</th>
-                                    <th class="sortable {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Client Name</th>
+                                    <th class="pin-cell frozen-col frozen-col-1" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
+                                    <th class="sortable frozen-col frozen-col-2 {{ request('sort') == 'eoi_number' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="eoi_number">EOI ID</th>
+                                    <th class="sortable frozen-col frozen-col-3 frozen-col-last {{ request('sort') == 'client_name' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="client_name">Client Name</th>
                                     <th class="sortable {{ request('sort') == 'occupation' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="occupation">Nominated Occupation</th>
                                     <th>Current Job</th>
                                     <th class="sortable {{ request('sort') == 'individual_points' ? (request('direction') == 'asc' ? 'asc' : 'desc') : '' }}" data-sort="individual_points">Individual Points</th>
@@ -598,13 +623,13 @@
                                             $eoiRecord = \App\Models\ClientEoiReference::find($row->eoi_id);
                                         @endphp
                                         <tr class="{{ !empty($row->warnings_text) ? 'has-warning' : '' }}">
-                                            <td class="pin-cell">
+                                            <td class="pin-cell frozen-col frozen-col-1">
                                                 <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}"
                                                    data-eoi-id="{{ $row->eoi_id }}"
                                                    title="{{ ($row->is_pinned ?? false) ? 'Unpin from top' : 'Pin to top' }}"></i>
                                             </td>
-                                            <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->EOI_number ?? '—' }}</a></td>
-                                            <td><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->first_name }} {{ $row->last_name }}</a></td>
+                                            <td class="frozen-col frozen-col-2"><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->EOI_number ?? '—' }}</a></td>
+                                            <td class="frozen-col frozen-col-3 frozen-col-last"><a href="{{ $eoiPageUrl }}" class="eoi-link">{{ $row->first_name }} {{ $row->last_name }}</a></td>
                                             <td>{{ $row->EOI_occupation ?? '—' }}</td>
                                             <td class="text-muted">—</td>
                                             <td>{{ $row->individual_points ?? '—' }}</td>
@@ -753,34 +778,29 @@ jQuery(document).ready(function($) {
         var scrollWidth = $scrollContainer[0].scrollWidth;
         var clientWidth = $scrollContainer[0].clientWidth;
         var maxScroll = scrollWidth - clientWidth;
-
-        // Show/hide left indicator
-        if (scrollLeft > 10) {
-            $leftIndicator.addClass('visible');
-        } else {
-            $leftIndicator.removeClass('visible');
-        }
-
-        // Show/hide right indicator
-        if (scrollLeft < maxScroll - 10) {
-            $rightIndicator.addClass('visible');
-        } else {
-            $rightIndicator.removeClass('visible');
-        }
+        $leftIndicator.toggleClass('visible', scrollLeft > 10);
+        $rightIndicator.toggleClass('visible', scrollLeft < maxScroll - 10);
     }
 
-    // Update on scroll
-    $scrollContainer.on('scroll', updateScrollIndicators);
-    
-    // Update on window resize
-    $(window).on('resize', updateScrollIndicators);
-    
-    // Initial check
-    setTimeout(updateScrollIndicators, 100);
+    function updateFrozenColumnOffsets() {
+        var table = document.getElementById('eoi-roi-sheet-table');
+        if (!table) return;
+        var left = 0;
+        [1, 2, 3].forEach(function(index) {
+            var header = table.querySelector('thead th.frozen-col-' + index);
+            if (!header) return;
+            table.style.setProperty('--eoi-frozen-left-' + index, left + 'px');
+            left += header.getBoundingClientRect().width;
+        });
+    }
 
-    // Smooth scroll with mouse wheel horizontal
+    $scrollContainer.on('scroll', updateScrollIndicators);
+    $(window).on('resize', function() { updateScrollIndicators(); updateFrozenColumnOffsets(); });
+    setTimeout(function() { updateScrollIndicators(); updateFrozenColumnOffsets(); }, 100);
+    setTimeout(updateFrozenColumnOffsets, 600);
+
     $scrollContainer.on('wheel', function(e) {
-        if (e.originalEvent.deltaY !== 0 && !e.shiftKey) {
+        if (e.shiftKey && e.originalEvent.deltaY && this.scrollWidth > this.clientWidth) {
             e.preventDefault();
             this.scrollLeft += e.originalEvent.deltaY;
         }
@@ -797,6 +817,7 @@ jQuery(document).ready(function($) {
     // Filter panel toggle
     $('.filter_btn').on('click', function() {
         $('.filter_panel').toggleClass('show');
+        setTimeout(updateFrozenColumnOffsets, 50);
     });
 
     // Datepicker - Flatpickr (loaded in layout)
@@ -833,15 +854,6 @@ jQuery(document).ready(function($) {
         currentUrl.searchParams.set('sort', sortField);
         currentUrl.searchParams.set('direction', newDirection);
         currentUrl.searchParams.delete('page');
-        window.location.href = currentUrl.toString();
-    });
-
-    // Per page selector
-    $('#per_page').on('change', function() {
-        var perPage = $(this).val();
-        var currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('per_page', perPage);
-        currentUrl.searchParams.delete('page'); // Reset to page 1
         window.location.href = currentUrl.toString();
     });
 
