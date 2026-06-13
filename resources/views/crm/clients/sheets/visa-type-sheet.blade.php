@@ -236,6 +236,138 @@
         font-size: 11px;
         margin-top: 2px;
     }
+
+    /* Table scroll area: vertical + horizontal scroll with sticky header */
+    .visa-sheet-page .card-body {
+        overflow: visible;
+        padding: 20px 30px 30px;
+    }
+    .visa-sheet-page .table-container {
+        position: relative;
+    }
+    .visa-sheet-page .scroll-indicator {
+        position: absolute;
+        top: 0;
+        bottom: 20px;
+        width: 40px;
+        pointer-events: none;
+        z-index: 14;
+        transition: opacity 0.3s ease;
+    }
+    .visa-sheet-page .scroll-indicator-left {
+        left: 0;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0.95), transparent);
+        opacity: 0;
+    }
+    .visa-sheet-page .scroll-indicator-right {
+        right: 0;
+        background: linear-gradient(to left, rgba(255, 255, 255, 0.95), transparent);
+    }
+    .visa-sheet-page .scroll-indicator-left.visible,
+    .visa-sheet-page .scroll-indicator-right.visible {
+        opacity: 1;
+    }
+    .visa-sheet-page #visa-table-scroll {
+        max-height: calc(100vh - 280px);
+        min-height: 320px;
+        overflow: auto;
+        position: relative;
+        -webkit-overflow-scrolling: touch;
+    }
+    .visa-sheet-page #visa-table-scroll::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+    }
+    .visa-sheet-page #visa-table-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+    }
+    .visa-sheet-page #visa-sheet-table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .visa-sheet-page #visa-sheet-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 11;
+        background: #f8fafc !important;
+        color: #334155 !important;
+        box-shadow: inset 0 -2px 0 #e2e8f0;
+    }
+    .visa-sheet-page #visa-sheet-table .frozen-col {
+        position: sticky;
+        z-index: 10;
+        background: #fff;
+    }
+    .visa-sheet-page #visa-sheet-table thead th.frozen-col {
+        z-index: 13;
+        background: #f8fafc !important;
+    }
+    .visa-sheet-page #visa-sheet-table .frozen-col-1 { left: var(--frozen-left-1, 0); }
+    .visa-sheet-page #visa-sheet-table .frozen-col-2 { left: var(--frozen-left-2, 45px); }
+    .visa-sheet-page #visa-sheet-table .frozen-col-3 { left: var(--frozen-left-3, 205px); }
+    .visa-sheet-page #visa-sheet-table .frozen-col-3.frozen-col-last::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: -6px;
+        bottom: 0;
+        width: 6px;
+        pointer-events: none;
+        background: linear-gradient(to right, rgba(15, 23, 42, 0.08), transparent);
+    }
+    .visa-sheet-page #visa-sheet-table tbody tr:hover .frozen-col {
+        background: #f8fafc;
+    }
+    .visa-sheet-page #visa-sheet-table .matter-col {
+        min-width: 150px;
+        max-width: 200px;
+    }
+    .visa-sheet-page #visa-sheet-table .crm-ref-col {
+        min-width: 110px;
+    }
+    .visa-sheet-page #visa-sheet-table .frozen-col,
+    .visa-sheet-page #visa-sheet-table .matter-col,
+    .visa-sheet-page #visa-sheet-table .crm-ref-col,
+    .visa-sheet-page #visa-sheet-table .client-name-col {
+        max-width: none;
+        white-space: nowrap;
+    }
+    .visa-sheet-page #visa-sheet-table .client-name-col {
+        min-width: 140px;
+    }
+
+    /* Sortable column headers */
+    .visa-sheet-page .sortable {
+        cursor: pointer;
+        user-select: none;
+        position: sticky;
+        padding-right: 22px !important;
+    }
+    .visa-sheet-page .sortable:hover {
+        background: rgba(0, 87, 146, 0.08) !important;
+    }
+    .visa-sheet-page .sortable::after {
+        content: '\f0dc';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.35;
+        font-size: 11px;
+    }
+    .visa-sheet-page .sortable.asc::after {
+        content: '\f0de';
+        opacity: 1;
+        color: #005792;
+    }
+    .visa-sheet-page .sortable.desc::after {
+        content: '\f0dd';
+        opacity: 1;
+        color: #005792;
+    }
 </style>
 @endsection
 
@@ -248,6 +380,18 @@
     if ($showRefusedVisaType) {
         $emptyColspan++;
     }
+    $currentSort = request('sort');
+    $currentDirection = request('direction', 'asc');
+    $sortThClass = function (string $field) use ($currentSort, $currentDirection): string {
+        if ($currentSort !== $field) {
+            return '';
+        }
+
+        return $currentDirection === 'asc' ? 'asc' : 'desc';
+    };
+    $freezeThirdIsRefused = $showRefusedVisaType;
+    $freezeThirdIsCrmRef = ! $freezeThirdIsRefused && $tab !== 'checklist';
+    $freezeThirdIsClientName = ! $freezeThirdIsRefused && $tab === 'checklist';
 @endphp
 <div class="listing-container visa-sheet-page art-sheet-page">
     <section class="listing-section">
@@ -388,7 +532,7 @@
                         </div>
                     @endif
                     <div class="visa-sheet-scroll-hint px-3 pt-2 mb-2" style="font-size: 13px; color: #64748b;">
-                        <i class="fas fa-arrows-alt-h"></i> Scroll horizontally to see all columns.
+                        <i class="fas fa-arrows-alt-h"></i> Scroll inside the table to browse rows and columns. Hold <kbd>Shift</kbd> while scrolling to move horizontally.
                     </div>
                     <div class="table-container">
                         <div class="scroll-indicator scroll-indicator-left"></div>
@@ -397,16 +541,16 @@
                             <table class="table table-bordered table-hover art-table" id="visa-sheet-table">
                                 <thead>
                                     <tr>
-                                        <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
-                                        <th>Matter / Course</th>
+                                        <th class="pin-cell frozen-col frozen-col-1" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
+                                        <th class="matter-col frozen-col frozen-col-2 sortable {{ $sortThClass('matter') }}" data-sort="matter">Matter / Course</th>
                                         @if($showRefusedVisaType)
-                                        <th>{{ $refusedVisaTypeLabel ?? 'Category' }}</th>
+                                        <th class="frozen-col frozen-col-3 frozen-col-last">{{ $refusedVisaTypeLabel ?? 'Category' }}</th>
                                         @endif
                                         @if($tab !== 'checklist')
-                                        <th>CRM Ref</th>
+                                        <th class="crm-ref-col {{ $freezeThirdIsCrmRef ? 'frozen-col frozen-col-3 frozen-col-last' : '' }} sortable {{ $sortThClass('crm_ref') }}" data-sort="crm_ref">CRM Ref</th>
                                         @endif
-                                        <th>Client Name</th>
-                                        <th>DOB</th>
+                                        <th class="client-name-col {{ $freezeThirdIsClientName ? 'frozen-col frozen-col-3 frozen-col-last' : '' }} sortable {{ $sortThClass('name') }}" data-sort="name">Client Name</th>
+                                        <th class="sortable {{ $sortThClass('dob') }}" data-sort="dob">DOB</th>
                                         @if($tab === 'checklist')
                                         <th class="text-nowrap visa-sheet-col-payment-request" title="Payment Request">Payment Request</th>
                                         @elseif($tab === 'ongoing')
@@ -417,11 +561,11 @@
                                         @if($tab !== 'checklist')
                                         <th>Branch</th>
                                         @endif
-                                        <th>Migration Agent</th>
-                                        <th>Visa Expiry</th>
-                                        <th>Deadline</th>
+                                        <th class="sortable {{ $sortThClass('assignee') }}" data-sort="assignee">Migration Agent</th>
+                                        <th class="sortable {{ $sortThClass('visa_expiry') }}" data-sort="visa_expiry">Visa Expiry</th>
+                                        <th class="sortable {{ $sortThClass('deadline') }}" data-sort="deadline">Deadline</th>
                                         @if($tab !== 'checklist')
-                                        <th>Current Stage</th>
+                                        <th class="sortable {{ $sortThClass('stage') }}" data-sort="stage">Current Stage</th>
                                         @endif
                                         @if($tab === 'discontinue')
                                         <th>Outcome</th>
@@ -462,7 +606,7 @@
                                                 $clientName = trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? ''));
                                             @endphp
                                             <tr style="cursor: pointer;" onclick="window.location.href='{{ $detailUrl }}'">
-                                                <td class="pin-cell" onclick="event.stopPropagation();">
+                                                <td class="pin-cell frozen-col frozen-col-1" onclick="event.stopPropagation();">
                                                     @if(!$isLead || !empty($row->matter_internal_id))
                                                     <i class="fas fa-star pin-star {{ ($row->is_pinned ?? false) ? 'pinned' : '' }}" 
                                                        data-client-id="{{ $row->client_id }}" 
@@ -473,9 +617,9 @@
                                                     <span class="text-muted" title="Lead">{{ __('Lead') }}</span>
                                                     @endif
                                                 </td>
-                                                <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->matter_title ?? $row->client_unique_matter_no ?? $row->other_reference ?? '—' }}</a></td>
+                                                <td class="matter-col frozen-col frozen-col-2" onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->matter_title ?? $row->client_unique_matter_no ?? $row->other_reference ?? '—' }}</a></td>
                                                 @if($showRefusedVisaType)
-                                                <td onclick="event.stopPropagation();" class="refused-visa-type-cell">
+                                                <td onclick="event.stopPropagation();" class="refused-visa-type-cell frozen-col frozen-col-3 frozen-col-last">
                                                     @if(! $isLead && ! empty($matterId))
                                                         @php
                                                             $currentRefused = $row->refused_visa_type ?? '';
@@ -499,9 +643,9 @@
                                                 </td>
                                                 @endif
                                                 @if($tab !== 'checklist')
-                                                <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
+                                                <td class="crm-ref-col {{ $freezeThirdIsCrmRef ? 'frozen-col frozen-col-3 frozen-col-last' : '' }}" onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
                                                 @endif
-                                                <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
+                                                <td class="client-name-col {{ $freezeThirdIsClientName ? 'frozen-col frozen-col-3 frozen-col-last' : '' }}" onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')) ?: '—' }}</a></td>
                                                 <td>{{ $row->dob ? \Carbon\Carbon::parse($row->dob)->format('d/m/Y') : '—' }}</td>
                                                 <td title="{{ $tab === 'checklist' ? 'Our Cost (Block Fees)' : ($tab === 'ongoing' ? 'Current Funds Held (Account → Client Funds Ledger)' : '') }}">
                                                     @if($tab === 'checklist')
@@ -659,10 +803,26 @@ jQuery(document).ready(function($) {
         $left.toggleClass('visible', sl > 10);
         $right.toggleClass('visible', sl < sw - cw - 10);
     }
+    function updateFrozenColumnOffsets() {
+        var table = document.getElementById('visa-sheet-table');
+        if (!table) return;
+        var left = 0;
+        [1, 2, 3].forEach(function(index) {
+            var header = table.querySelector('thead th.frozen-col-' + index);
+            if (!header) return;
+            table.style.setProperty('--frozen-left-' + index, left + 'px');
+            left += header.getBoundingClientRect().width;
+        });
+    }
+
     $scroll.on('scroll resize', updateScroll);
-    setTimeout(updateScroll, 100);
+    setTimeout(function() {
+        updateScroll();
+        updateFrozenColumnOffsets();
+    }, 100);
+    $(window).on('resize', updateFrozenColumnOffsets);
     $scroll.on('wheel', function(e) {
-        if (e.originalEvent.deltaY && !e.shiftKey && this.scrollWidth > this.clientWidth) {
+        if (e.shiftKey && e.originalEvent.deltaY && this.scrollWidth > this.clientWidth) {
             e.preventDefault();
             this.scrollLeft += e.originalEvent.deltaY;
         }
@@ -681,6 +841,20 @@ jQuery(document).ready(function($) {
     });
     $('.filter_btn').on('click', function() {
         $('.filter_panel').toggleClass('show');
+        setTimeout(updateFrozenColumnOffsets, 50);
+    });
+    $('.visa-sheet-page .sortable').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var sortField = $(this).data('sort');
+        var currentSort = @json($currentSort);
+        var currentDirection = @json($currentDirection);
+        var newDirection = (currentSort === sortField && currentDirection === 'asc') ? 'desc' : 'asc';
+        var url = new URL(window.location.href);
+        url.searchParams.set('sort', sortField);
+        url.searchParams.set('direction', newDirection);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
     });
     if (typeof flatpickr !== 'undefined') {
         $('.datepicker').each(function() {

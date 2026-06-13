@@ -538,16 +538,20 @@ class VisaTypeSheetController extends Controller
                 ? (int) ($row->lead_ref_row_id ?? 0)
                 : (int) ($row->matter_internal_id ?? 0);
         };
-        // Newest-created first globally (matter created_at vs lead reference created_at).
-        $all = $all->sort(function ($a, $b) use ($sheetRowTimestamp, $checklistSortTieBreaker) {
-            $ta = $sheetRowTimestamp($a);
-            $tb = $sheetRowTimestamp($b);
-            if ($tb !== $ta) {
-                return $tb <=> $ta;
-            }
+        if ($request->filled('sort')) {
+            $all = $this->sortChecklistCollection($all, $request);
+        } else {
+            // Newest-created first globally (matter created_at vs lead reference created_at).
+            $all = $all->sort(function ($a, $b) use ($sheetRowTimestamp, $checklistSortTieBreaker) {
+                $ta = $sheetRowTimestamp($a);
+                $tb = $sheetRowTimestamp($b);
+                if ($tb !== $ta) {
+                    return $tb <=> $ta;
+                }
 
-            return $checklistSortTieBreaker($b) <=> $checklistSortTieBreaker($a);
-        })->values();
+                return $checklistSortTieBreaker($b) <=> $checklistSortTieBreaker($a);
+            })->values();
+        }
         if ($remindersTable && Schema::hasTable($remindersTable)) {
             foreach ($all as $row) {
                 if ($row->is_lead) {
@@ -813,49 +817,137 @@ class VisaTypeSheetController extends Controller
     protected function applySorting($query, Request $request, string $tab, array $config)
     {
         $refAlias = $config['reference_alias'] ?? 'ref';
-        
+        $driver = DB::connection()->getDriverName();
+
         // First priority: pinned items (is_pinned DESC) - pinned items on top
-        // Use CASE to convert boolean to integer for PostgreSQL compatibility
         $query->orderByRaw("CASE WHEN {$refAlias}.is_pinned = true THEN 1 ELSE 0 END DESC");
-        
+
         // Second priority: checklist hold status (only for checklist tab)
         if ($tab === 'checklist') {
             $query->orderByRaw("CASE WHEN COALESCE(latest_matter.checklist_status, 'active') = 'hold' THEN 1 ELSE 0 END ASC");
         }
-        
-        // Third priority: deadline (ASC) - nearest deadline first, nulls last
-        $driver = DB::connection()->getDriverName();
-        if ($driver === 'mysql') {
-            $query->orderByRaw('latest_matter.deadline IS NULL ASC, latest_matter.deadline ASC');
-        } else {
-            $query->orderByRaw('latest_matter.deadline ASC NULLS LAST');
-        }
-        
-        // Fourth priority: visa expiry (ASC) - closest expiry dates first
-        // NULL expiry dates go to the end
-        // Use quoted "visaExpiry" for PostgreSQL (case-sensitive column)
-        $query->orderByRaw("CASE WHEN admins.\"visaExpiry\" IS NULL OR admins.\"visaExpiry\"::text = '0000-00-00' THEN 1 ELSE 0 END ASC");
-        $query->orderByRaw('admins."visaExpiry" ASC');
-        
-        // Fifth priority: custom staff sort if provided
+
         $sortField = $request->get('sort');
-        $sortDirection = $request->get('direction', 'asc');
-        if ($sortField && in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-            $sortable = [
-                'crm_ref' => 'admins.client_id',
-                'name' => 'admins.first_name',
-                'dob' => 'admins.dob',
-                'stage' => 'ws.name',
-            ];
-            if (isset($sortable[$sortField])) {
-                $query->orderBy($sortable[$sortField], $sortDirection);
-            }
+        $sortDirection = strtolower($request->get('direction', 'asc'));
+        if (!in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'asc';
         }
-        
-        // Final tiebreaker: matter ID
+
+        if ($sortField) {
+            $this->applyExplicitSort($query, $sortField, $sortDirection, $driver);
+        } else {
+            // Default: nearest deadline, then visa expiry
+            if ($driver === 'mysql') {
+                $query->orderByRaw('latest_matter.deadline IS NULL ASC, latest_matter.deadline ASC');
+            } else {
+                $query->orderByRaw('latest_matter.deadline ASC NULLS LAST');
+            }
+
+            $query->orderByRaw("CASE WHEN admins.\"visaExpiry\" IS NULL OR admins.\"visaExpiry\"::text = '0000-00-00' THEN 1 ELSE 0 END ASC");
+            $query->orderByRaw('admins."visaExpiry" ASC');
+        }
+
         $query->orderBy('latest_matter.matter_id', 'asc');
-        
+
         return $query;
+    }
+
+    protected function applyExplicitSort($query, string $sortField, string $sortDirection, string $driver): void
+    {
+        $nullsLast = $sortDirection === 'asc' ? 'LAST' : 'FIRST';
+
+        switch ($sortField) {
+            case 'crm_ref':
+                $query->orderBy('admins.client_id', $sortDirection);
+                break;
+            case 'name':
+                $query->orderBy('admins.last_name', $sortDirection);
+                $query->orderBy('admins.first_name', $sortDirection);
+                break;
+            case 'dob':
+                if ($driver === 'mysql') {
+                    $query->orderByRaw('admins.dob IS NULL ASC, admins.dob ' . $sortDirection);
+                } else {
+                    $query->orderByRaw('admins.dob ' . $sortDirection . ' NULLS ' . $nullsLast);
+                }
+                break;
+            case 'stage':
+                $query->orderBy('ws.name', $sortDirection);
+                break;
+            case 'assignee':
+                $query->orderBy('agent.last_name', $sortDirection);
+                $query->orderBy('agent.first_name', $sortDirection);
+                break;
+            case 'matter':
+                $query->orderBy('latest_matter.matter_title', $sortDirection);
+                break;
+            case 'visa_expiry':
+                $query->orderByRaw("CASE WHEN admins.\"visaExpiry\" IS NULL OR admins.\"visaExpiry\"::text = '0000-00-00' THEN 1 ELSE 0 END ASC");
+                if ($driver === 'mysql') {
+                    $query->orderByRaw('admins."visaExpiry" ' . $sortDirection);
+                } else {
+                    $query->orderByRaw('admins."visaExpiry" ' . $sortDirection . ' NULLS ' . $nullsLast);
+                }
+                break;
+            case 'deadline':
+                if ($driver === 'mysql') {
+                    $query->orderByRaw('latest_matter.deadline IS NULL ASC, latest_matter.deadline ' . $sortDirection);
+                } else {
+                    $query->orderByRaw('latest_matter.deadline ' . $sortDirection . ' NULLS ' . $nullsLast);
+                }
+                break;
+        }
+    }
+
+    protected function sortChecklistCollection($collection, Request $request)
+    {
+        $sortField = $request->get('sort');
+        $sortDirection = strtolower($request->get('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $multiplier = $sortDirection === 'asc' ? 1 : -1;
+
+        $valueFor = static function ($row, string $field) {
+            switch ($field) {
+                case 'crm_ref':
+                    return strtolower((string) ($row->crm_ref ?? ''));
+                case 'name':
+                    return strtolower(trim(($row->last_name ?? '') . ' ' . ($row->first_name ?? '')));
+                case 'dob':
+                    return (string) ($row->dob ?? '');
+                case 'visa_expiry':
+                    $expiry = $row->visa_expiry ?? null;
+                    return ($expiry && $expiry !== '0000-00-00') ? (string) $expiry : '';
+                case 'deadline':
+                    return (string) ($row->deadline ?? '');
+                case 'assignee':
+                    return strtolower(trim((string) ($row->assignee_name ?? '')));
+                case 'matter':
+                    return strtolower((string) ($row->matter_title ?? ''));
+                default:
+                    return '';
+            }
+        };
+
+        return $collection->sort(function ($a, $b) use ($sortField, $multiplier, $valueFor) {
+            $aPin = !empty($a->is_pinned) ? 1 : 0;
+            $bPin = !empty($b->is_pinned) ? 1 : 0;
+            if ($bPin !== $aPin) {
+                return $bPin <=> $aPin;
+            }
+
+            $aHold = (($a->tr_checklist_status ?? 'active') === 'hold') ? 1 : 0;
+            $bHold = (($b->tr_checklist_status ?? 'active') === 'hold') ? 1 : 0;
+            if ($aHold !== $bHold) {
+                return $aHold <=> $bHold;
+            }
+
+            $va = $valueFor($a, (string) $sortField);
+            $vb = $valueFor($b, (string) $sortField);
+            if ($va === $vb) {
+                return 0;
+            }
+
+            return ($va < $vb ? -1 : 1) * $multiplier;
+        })->values();
     }
 
     protected function countActiveFilters(Request $request, array $config = []): int
