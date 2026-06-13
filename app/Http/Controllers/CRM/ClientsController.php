@@ -4724,7 +4724,7 @@ class ClientsController extends Controller
                                 $xml = $jobReadyPatch['xml'];
                                 if ($jobReadyPatch['patched']) {
                                     $xmlPatchesApplied = true;
-                                    Log::info('[AgreementMacro:JobReady] DOCX patch aligned fee tables, Section 4 summary, and authority stage charge amount cells', [
+                                    Log::info('[AgreementMacro:JobReady] DOCX patch aligned professional fee, Section 4 summary, and authority stage charge amount cells', [
                                         'client_id' => $request->client_id,
                                         'client_matter_id' => $request->client_matter_id ?? null,
                                     ]);

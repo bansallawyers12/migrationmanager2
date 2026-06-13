@@ -5,8 +5,8 @@ namespace App\Services;
 /**
  * Runtime DOCX XML patch for Service_Agreement_Job_Ready.docx table amount alignment.
  *
- * Professional-fee table: Block 2 (JRWA) and Total Professional Fee amount cells were
- * inconsistent with Block 1/3 (center alignment + leading spaces).
+ * Professional-fee table: amount cells used center alignment with manual leading spaces;
+ * header was right-aligned while block rows were not, so digits did not line up vertically.
  *
  * Section 4 summary table ("Total Fees, Charges and Costs"): amount cells used justify
  * alignment and leading spaces while the Amount header is right-aligned.
@@ -18,7 +18,11 @@ class JobReadyAgreementFeeTablePatcher
 {
     private const ROW_ANCHOR_TOTAL = 'Total Professional Fee';
 
+    private const PLACEHOLDER_BLOCK1 = 'Block1feesincltax';
+
     private const PLACEHOLDER_BLOCK2 = 'Block2feesincltax';
+
+    private const PLACEHOLDER_BLOCK3 = 'Block3feesincltax';
 
     private const PLACEHOLDER_TOTAL = 'Blocktotalfeesincltax';
 
@@ -29,8 +33,6 @@ class JobReadyAgreementFeeTablePatcher
     /** Section 4 authority row after ClientsController renames TotalDoHASurcharges for merge. */
     private const PLACEHOLDER_SECTION4_AUTHORITY = 'TotalDoHAChargesInclSurcharge';
 
-    private const REFERENCE_SPACES = '             ';
-
     /**
      * @return array{xml: string, patched: bool}
      */
@@ -38,13 +40,9 @@ class JobReadyAgreementFeeTablePatcher
     {
         $patched = false;
 
-        $block2Patch = $this->patchRowByPlaceholder($xml, self::PLACEHOLDER_BLOCK2);
-        $xml = $block2Patch['xml'];
-        $patched = $patched || $block2Patch['patched'];
-
-        $totalPatch = $this->patchTotalProfessionalFeeRow($xml);
-        $xml = $totalPatch['xml'];
-        $patched = $patched || $totalPatch['patched'];
+        $professionalFeePatch = $this->patchProfessionalFeeTable($xml);
+        $xml = $professionalFeePatch['xml'];
+        $patched = $patched || $professionalFeePatch['patched'];
 
         $section4Patch = $this->patchSection4SummaryTable($xml);
         $xml = $section4Patch['xml'];
@@ -60,69 +58,160 @@ class JobReadyAgreementFeeTablePatcher
     /**
      * @return array{xml: string, patched: bool}
      */
-    private function patchTotalProfessionalFeeRow(string $xml): array
+    private function patchProfessionalFeeTable(string $xml): array
     {
-        $pos = strpos($xml, self::ROW_ANCHOR_TOTAL);
-        if ($pos === false) {
+        $bounds = $this->professionalFeeTableBounds($xml);
+        if ($bounds === null) {
             return ['xml' => $xml, 'patched' => false];
         }
 
-        return $this->patchRowAtAnchor($xml, $pos, self::PLACEHOLDER_TOTAL);
+        [$tblStart, $tblEnd] = $bounds;
+        $table = substr($xml, $tblStart, $tblEnd - $tblStart);
+        $patched = false;
+
+        preg_match_all('/<w:tr\b.*?<\/w:tr>/s', $table, $rowMatches);
+        foreach ($rowMatches[0] as $row) {
+            if ($this->isProfessionalFeeHeaderRow($row)) {
+                $patchedRow = $this->patchProfessionalFeeHeaderRow($row);
+            } else {
+                $placeholder = $this->professionalFeePlaceholderInRow($row);
+                if ($placeholder === null) {
+                    continue;
+                }
+
+                $patchedRow = $this->patchProfessionalFeePlaceholderRow($row, $placeholder);
+            }
+
+            if ($patchedRow === $row) {
+                continue;
+            }
+
+            $table = str_replace($row, $patchedRow, $table);
+            $patched = true;
+        }
+
+        if (! $patched) {
+            return ['xml' => $xml, 'patched' => false];
+        }
+
+        $newXml = substr($xml, 0, $tblStart) . $table . substr($xml, $tblEnd);
+
+        return ['xml' => $newXml, 'patched' => true];
     }
 
     /**
-     * @return array{xml: string, patched: bool}
+     * @return array{0: int, 1: int}|null
      */
-    private function patchRowByPlaceholder(string $xml, string $placeholder): array
+    private function professionalFeeTableBounds(string $xml): ?array
     {
-        $pos = strpos($xml, $placeholder);
-        if ($pos === false) {
-            return ['xml' => $xml, 'patched' => false];
+        $block1Pos = strpos($xml, self::PLACEHOLDER_BLOCK1);
+        if ($block1Pos === false) {
+            return null;
         }
 
-        return $this->patchRowAtAnchor($xml, $pos, $placeholder);
+        $tblStart = strrpos(substr($xml, 0, $block1Pos), '<w:tbl>');
+        $totalRowPos = strpos($xml, self::ROW_ANCHOR_TOTAL);
+        if ($tblStart === false || $totalRowPos === false) {
+            return null;
+        }
+
+        $totalPlaceholderPos = strpos($xml, self::PLACEHOLDER_TOTAL, $totalRowPos);
+        if ($totalPlaceholderPos === false) {
+            return null;
+        }
+
+        $tblEnd = strpos($xml, '</w:tbl>', $totalPlaceholderPos);
+        if ($tblEnd === false) {
+            return null;
+        }
+
+        return [$tblStart, $tblEnd + strlen('</w:tbl>')];
     }
 
-    /**
-     * @return array{xml: string, patched: bool}
-     */
-    private function patchRowAtAnchor(string $xml, int $pos, string $placeholder): array
+    private function isProfessionalFeeHeaderRow(string $row): bool
     {
-        $rowStart = strrpos(substr($xml, 0, $pos), '<w:tr');
-        if ($rowStart === false) {
-            return ['xml' => $xml, 'patched' => false];
+        return str_contains($row, 'Fee Type') && str_contains($row, '>Amount</w:t>');
+    }
+
+    private function professionalFeePlaceholderInRow(string $row): ?string
+    {
+        if (str_contains($row, self::PLACEHOLDER_BLOCK1)) {
+            return self::PLACEHOLDER_BLOCK1;
         }
 
-        $rowEnd = strpos($xml, '</w:tr>', $pos);
-        if ($rowEnd === false) {
-            return ['xml' => $xml, 'patched' => false];
-        }
-        $rowEnd += strlen('</w:tr>');
-
-        $row = substr($xml, $rowStart, $rowEnd - $rowStart);
-        if (! str_contains($row, $placeholder)) {
-            return ['xml' => $xml, 'patched' => false];
+        if (str_contains($row, self::PLACEHOLDER_BLOCK2)) {
+            return self::PLACEHOLDER_BLOCK2;
         }
 
-        if (! preg_match_all('/<w:tc>.*?<\/w:tc>/s', $row, $cellMatches) || empty($cellMatches[0])) {
-            return ['xml' => $xml, 'patched' => false];
+        if (str_contains($row, self::PLACEHOLDER_BLOCK3)) {
+            return self::PLACEHOLDER_BLOCK3;
+        }
+
+        if (str_contains($row, self::ROW_ANCHOR_TOTAL) && str_contains($row, self::PLACEHOLDER_TOTAL)) {
+            return self::PLACEHOLDER_TOTAL;
+        }
+
+        return null;
+    }
+
+    private function patchProfessionalFeeHeaderRow(string $row): string
+    {
+        if (! preg_match_all('/<w:tc>.*?<\/w:tc>/s', $row, $cellMatches) || count($cellMatches[0]) < 2) {
+            return $row;
         }
 
         $amountCell = $cellMatches[0][count($cellMatches[0]) - 1];
-        $patchedAmountCell = $this->patchAmountCell($amountCell, $placeholder);
+        $text = preg_replace('/\s+/', ' ', $this->extractCellPlainText($amountCell));
+        $patchedCell = $this->patchAuthorityChargeTextCell($amountCell, $text);
+
+        if ($patchedCell === $amountCell) {
+            return $row;
+        }
+
+        return str_replace($amountCell, $patchedCell, $row);
+    }
+
+    private function patchProfessionalFeePlaceholderRow(string $row, string $placeholder): string
+    {
+        if (! preg_match_all('/<w:tc>.*?<\/w:tc>/s', $row, $cellMatches) || empty($cellMatches[0])) {
+            return $row;
+        }
+
+        $amountCell = $cellMatches[0][count($cellMatches[0]) - 1];
+        $patchedAmountCell = $this->patchProfessionalFeeAmountCell($amountCell, $placeholder);
         if ($patchedAmountCell === $amountCell) {
-            return ['xml' => $xml, 'patched' => false];
+            return $row;
         }
 
-        $cellPos = strrpos($row, $amountCell);
-        if ($cellPos === false) {
-            return ['xml' => $xml, 'patched' => false];
+        return str_replace($amountCell, $patchedAmountCell, $row);
+    }
+
+    private function patchProfessionalFeeAmountCell(string $amountCell, string $placeholder): string
+    {
+        if ($this->professionalFeeAmountCellAlreadyAligned($amountCell, $placeholder)) {
+            return $amountCell;
         }
 
-        $newRow = substr($row, 0, $cellPos) . $patchedAmountCell . substr($row, $cellPos + strlen($amountCell));
-        $newXml = substr($xml, 0, $rowStart) . $newRow . substr($xml, $rowEnd);
+        $amountCell = $this->stripEditorColorMarkup($amountCell);
+        $amountCell = $this->ensureRightParagraphAlignment($amountCell);
 
-        return ['xml' => $newXml, 'patched' => true];
+        $runs = $this->section4AmountRuns($placeholder);
+        $patched = preg_replace(
+            '/(<w:pPr>.*?<\/w:pPr>).*?(<\/w:p><\/w:tc>)/s',
+            '$1' . $runs . '$2',
+            $amountCell,
+            1
+        );
+
+        return is_string($patched) ? $patched : $amountCell;
+    }
+
+    private function professionalFeeAmountCellAlreadyAligned(string $amountCell, string $placeholder): bool
+    {
+        return str_contains($amountCell, '<w:jc w:val="right"/>')
+            && str_contains($amountCell, '<w:t>$${' . $placeholder . '}</w:t>')
+            && ! preg_match('/xml:space="preserve">\s+<\/w:t>/', $amountCell)
+            && ! str_contains($amountCell, 'spellStart');
     }
 
     /**
@@ -406,65 +495,9 @@ class JobReadyAgreementFeeTablePatcher
             && ! str_contains($amountCell, 'spellStart');
     }
 
-    private function patchAmountCell(string $amountCell, string $placeholder): string
-    {
-        if ($this->amountCellAlreadyAligned($amountCell, $placeholder)) {
-            return $amountCell;
-        }
-
-        $amountCell = $this->stripEditorColorMarkup($amountCell);
-        $amountCell = $this->ensureCenterParagraphAlignment($amountCell);
-
-        $patched = preg_replace(
-            '/(<w:pPr>.*?<\/w:pPr>).*?(<\/w:p><\/w:tc>)/s',
-            '$1' . $this->feeAmountRuns($placeholder) . '$2',
-            $amountCell,
-            1
-        );
-
-        return is_string($patched) ? $patched : $amountCell;
-    }
-
-    private function feeAmountRuns(string $placeholder): string
-    {
-        return '<w:r><w:rPr><w:rFonts w:ascii="Franklin Gothic Book" w:hAnsi="Franklin Gothic Book"/>'
-            . '<w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">' . self::REFERENCE_SPACES . '</w:t></w:r>'
-            . '<w:r><w:rPr><w:rFonts w:ascii="Franklin Gothic Book" w:hAnsi="Franklin Gothic Book"/>'
-            . '<w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t>$${' . $placeholder . '}</w:t></w:r>';
-    }
-
-    private function amountCellAlreadyAligned(string $amountCell, string $placeholder): bool
-    {
-        return str_contains($amountCell, '<w:jc w:val="center"/>')
-            && str_contains($amountCell, '<w:t xml:space="preserve">' . self::REFERENCE_SPACES . '</w:t>')
-            && str_contains($amountCell, '<w:t>$${' . $placeholder . '}</w:t>')
-            && ! str_contains($amountCell, 'w:color w:val="FF0000"')
-            && ! str_contains($amountCell, 'spellStart');
-    }
-
     private function stripEditorColorMarkup(string $amountCell): string
     {
         return (string) preg_replace('/<w:color w:val="FF0000"\/>/', '', $amountCell);
-    }
-
-    private function ensureCenterParagraphAlignment(string $amountCell): string
-    {
-        if (str_contains($amountCell, '<w:jc w:val="right"/>')) {
-            return str_replace('<w:jc w:val="right"/>', '<w:jc w:val="center"/>', $amountCell);
-        }
-
-        if (str_contains($amountCell, '<w:jc w:val="center"/>')) {
-            return $amountCell;
-        }
-
-        $withCenter = preg_replace(
-            '/(<w:pPr>.*?<w:spacing w:before="80" w:after="80"\/>)/s',
-            '$1<w:jc w:val="center"/>',
-            $amountCell,
-            1
-        );
-
-        return is_string($withCenter) ? $withCenter : $amountCell;
     }
 
     private function ensureRightParagraphAlignment(string $amountCell): string

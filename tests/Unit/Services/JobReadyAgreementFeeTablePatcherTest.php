@@ -19,30 +19,23 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->templatePath = storage_path('app/templates/Service_Agreement_Job_Ready.docx');
     }
 
-    public function test_patches_block2_and_total_rows_to_match_block1_alignment(): void
+    public function test_patches_professional_fee_table_amount_cells_to_right_alignment(): void
     {
         if (! is_file($this->templatePath)) {
             $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
         }
 
         $xml = $this->readDocumentXml($this->templatePath);
-        $before = $this->professionalFeeTableAmountRowStats($xml);
-
         $result = $this->patcher->patchDocumentXml($xml);
-
-        $this->assertTrue($result['patched']);
         $after = $this->professionalFeeTableAmountRowStats($result['xml']);
 
-        $this->assertSame('center', $after['block2']['jc']);
-        $this->assertSame($before['block1']['space_count'], $after['block2']['space_count']);
-        $this->assertTrue($after['block2']['single_placeholder']);
-        $this->assertFalse($after['block2']['red_markup']);
-        $this->assertSame($before['block1']['jc'], $after['block2']['jc']);
+        $this->assertTrue($result['patched']);
 
-        $this->assertSame('center', $after['total']['jc']);
-        $this->assertSame($before['block1']['space_count'], $after['total']['space_count']);
-        $this->assertTrue($after['total']['single_placeholder']);
-        $this->assertSame($before['block1']['jc'], $after['total']['jc']);
+        foreach (['block1', 'block2', 'block3', 'total'] as $rowKey) {
+            $this->assertSame('right', $after[$rowKey]['jc'], "Professional fee row {$rowKey} should be right-aligned");
+            $this->assertSame(0, $after[$rowKey]['space_count'], "Professional fee row {$rowKey} should not use padding spaces");
+            $this->assertTrue($after[$rowKey]['single_placeholder'], "Professional fee row {$rowKey} should use a single placeholder run");
+        }
     }
 
     public function test_patch_is_idempotent_for_job_ready_template(): void
@@ -70,19 +63,21 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertSame($xml, $result['xml']);
     }
 
-    public function test_does_not_change_block1_or_block3_rows(): void
+    public function test_patches_fee_table_and_section4_blocktotal_rows_independently(): void
     {
         if (! is_file($this->templatePath)) {
             $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
         }
 
         $xml = $this->readDocumentXml($this->templatePath);
-        $before = $this->professionalFeeTableAmountRowStats($xml);
         $result = $this->patcher->patchDocumentXml($xml);
-        $after = $this->professionalFeeTableAmountRowStats($result['xml']);
+        $feeTable = $this->professionalFeeTableAmountRowStats($result['xml']);
+        $section4 = $this->section4SummaryTableAmountRowStats($result['xml']);
 
-        $this->assertSame($before['block1'], $after['block1']);
-        $this->assertSame($before['block3'], $after['block3']);
+        $this->assertSame('right', $feeTable['total']['jc']);
+        $this->assertSame('right', $section4['professional_fees']['jc']);
+        $this->assertSame(0, $feeTable['total']['space_count']);
+        $this->assertSame(0, $section4['professional_fees']['space_count']);
     }
 
     public function test_patches_section4_summary_table_amount_cells_to_right_alignment(): void
@@ -173,25 +168,11 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         }
 
         $xml = $this->readDocumentXml($this->templatePath);
-        $feeTablePos = strpos($xml, 'Total Professional Fee');
-        $this->assertNotFalse($feeTablePos);
-
-        $rowStart = strrpos(substr($xml, 0, $feeTablePos), '<w:tr');
-        $rowEnd = strpos($xml, '</w:tr>', $feeTablePos) + 7;
-        $feeTableTotalRowBefore = substr($xml, $rowStart, $rowEnd - $rowStart);
-
         $result = $this->patcher->patchDocumentXml($xml);
+        $after = $this->professionalFeeTableAmountRowStats($result['xml']);
 
-        $feeTablePosAfter = strpos($result['xml'], 'Total Professional Fee');
-        $rowStartAfter = strrpos(substr($result['xml'], 0, $feeTablePosAfter), '<w:tr');
-        $rowEndAfter = strpos($result['xml'], '</w:tr>', $feeTablePosAfter) + 7;
-        $feeTableTotalRowAfter = substr($result['xml'], $rowStartAfter, $rowEndAfter - $rowStartAfter);
-
-        $this->assertSame('center', $this->amountCellStats($this->lastTableCell($feeTableTotalRowAfter))['jc']);
-        $this->assertNotSame(
-            $this->amountCellStats($this->lastTableCell($feeTableTotalRowBefore))['jc'],
-            'center'
-        );
+        $this->assertSame('right', $after['total']['jc']);
+        $this->assertSame(0, $after['total']['space_count']);
     }
 
     private function readDocumentXml(string $docxPath): string
