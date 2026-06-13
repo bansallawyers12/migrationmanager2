@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schema;
 class VisaSheetService
 {
     /**
-     * Get visa sheet type (tr, visitor, student, pr, employer-sponsored) for a matter by ID.
+     * Get visa sheet type (tr, visitor, student, pr, employer-sponsored, art, etc.) for a matter by ID.
      */
     public static function getSheetTypeForMatter(int $matterId): ?string
     {

@@ -45,6 +45,37 @@ return [
         'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
     ],
 
+    'art-matters' => [
+        'title' => 'ART Matters Sheet',
+        'route' => 'clients.sheets.visa-type',
+        'reference_table' => 'client_matter_references',
+        'reference_type' => 'art-matters',
+        'lead_reference_table' => 'lead_matter_references',
+        'lead_reminders_table' => 'lead_reminders',
+        'reference_model' => \App\Models\ClientMatterReference::class,
+        'reference_alias' => 'art_ref',
+        'reminders_table' => 'matter_reminders',
+        'checklist_status_column' => 'art_checklist_status',
+        'session_prefix' => 'art_matters_sheet_',
+
+        'matter_nick_names' => ['art'],
+        'matter_title_patterns' => ['administrative appeals', 'tribunal'],
+
+        'ongoing_stages' => [
+            'Cost Agreement, form 956 and First email Sent',
+            'Cost Agreement, form 956 Received',
+            'Pending documents and payment requested',
+            'Documents Completed and Preparing for Lodgement',
+            'Verification: Payment, Service Agreement, Forms',
+            'Ready for Lodgement/Draft Application sent for confirmation',
+            'Draft Application confirmation received',
+        ],
+        'lodged_stages' => ['Application Lodged', 'Immi Request Received'],
+        'checklist_early_stages' => ['Checklist'],
+        'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
+        'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
+    ],
+
     'visitor' => [
         'title' => 'Visitor Visa Sheet',
         'route' => 'clients.sheets.visa-type',

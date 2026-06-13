@@ -62,24 +62,24 @@ Route::post('/clients/sheets/art/toggle-pin', [\App\Http\Controllers\CRM\ArtShee
 Route::post('/clients/sheets/art/comment', [\App\Http\Controllers\CRM\ArtSheetController::class, 'updateComment'])->name('clients.sheets.art.comment');
 
 Route::get('/clients/sheets/{visaType}', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'index'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
+    ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type');
 
 // Sheet Pin/Star Actions
 Route::post('/clients/sheets/{visaType}/toggle-pin', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'togglePin'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
+    ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type.toggle-pin');
 
 Route::post('/clients/sheets/{visaType}/checklist-status', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'updateChecklistStatus'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
+    ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type.checklist-status');
 
 Route::post('/clients/sheets/{visaType}/comment', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'updateComment'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
+    ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type.comment');
 
 Route::post('/clients/sheets/{visaType}/record-reminder', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'recordReminder'])
-    ->where('visaType', 'tr|visitor|student|pr|employer-sponsored|partner|parents')
+    ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type.record-reminder');
 
 // EOI Confirmation Workflow (Staff actions - requires auth)

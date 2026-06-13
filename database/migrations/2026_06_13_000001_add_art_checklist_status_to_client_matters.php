@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Adds art_checklist_status for ART Sheet Checklist tab (active, hold, convert_to_client, discontinue).
+     */
+    public function up(): void
+    {
+        if (! Schema::hasColumn('client_matters', 'art_checklist_status')) {
+            Schema::table('client_matters', function (Blueprint $table) {
+                $after = Schema::hasColumn('client_matters', 'parents_checklist_status')
+                    ? 'parents_checklist_status'
+                    : (Schema::hasColumn('client_matters', 'partner_checklist_status')
+                        ? 'partner_checklist_status'
+                        : 'employer_sponsored_checklist_status');
+                $table->string('art_checklist_status', 32)->nullable()
+                    ->after($after)
+                    ->comment('ART sheet checklist status: active, hold, convert_to_client, discontinue');
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        if (Schema::hasColumn('client_matters', 'art_checklist_status')) {
+            Schema::table('client_matters', function (Blueprint $table) {
+                $table->dropColumn('art_checklist_status');
+            });
+        }
+    }
+};

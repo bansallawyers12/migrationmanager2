@@ -35,6 +35,16 @@ class CrmSheets
         return array_keys(self::definitions());
     }
 
+    /**
+     * Route where() regex pattern for all visa-type sheet keys from config.
+     */
+    public static function visaTypeRoutePattern(): string
+    {
+        $keys = array_keys(config('sheets.visa_types', []));
+
+        return implode('|', array_map(static fn ($key) => preg_quote((string) $key, '/'), $keys));
+    }
+
     public static function urlForKey(string $key): string
     {
         if (! array_key_exists($key, self::definitions())) {
