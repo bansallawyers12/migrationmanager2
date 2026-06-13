@@ -21,6 +21,7 @@ class ClientMatterReference extends Model
         'comments',
         'checklist_sent_at',
         'is_pinned',
+        'refused_visa_type',
         'created_by',
         'updated_by',
     ];

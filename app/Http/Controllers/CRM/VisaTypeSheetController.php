@@ -119,7 +119,9 @@ class VisaTypeSheetController extends Controller
         $assignees = $this->getAssignees();
         $currentStages = $this->getCurrentStagesForTab($tab, $config);
         $matterTypes = $this->getMatterTypesForVisaType($config);
-        $activeFilterCount = $this->countActiveFilters($request);
+        $activeFilterCount = $this->countActiveFilters($request, $config);
+        $showRefusedVisaType = $this->hasRefusedVisaTypeFeature($config);
+        $refusedVisaTypeOptions = $showRefusedVisaType ? $this->getRefusedVisaTypeOptions($config) : [];
 
         return view('crm.clients.sheets.visa-type-sheet', compact(
             'rows',
@@ -133,7 +135,9 @@ class VisaTypeSheetController extends Controller
             'config',
             'tabConfig',
             'visaType',
-            'setupRequired'
+            'setupRequired',
+            'showRefusedVisaType',
+            'refusedVisaTypeOptions'
         ));
     }
 
@@ -141,6 +145,31 @@ class VisaTypeSheetController extends Controller
     {
         $configs = config('sheets.visa_types', []);
         return $configs[$visaType] ?? null;
+    }
+
+    protected function hasRefusedVisaTypeFeature(array $config): bool
+    {
+        return ! empty($config['has_refused_visa_type'])
+            && ($config['reference_table'] ?? '') === 'client_matter_references'
+            && Schema::hasColumn('client_matter_references', 'refused_visa_type');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function getRefusedVisaTypeOptions(array $config): array
+    {
+        $options = $config['refused_visa_type_options'] ?? [];
+
+        return is_array($options) ? $options : [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function allowedRefusedVisaTypeKeys(array $config): array
+    {
+        return array_keys($this->getRefusedVisaTypeOptions($config));
     }
 
     protected function isSetupRequired(array $config): bool
@@ -174,7 +203,7 @@ class VisaTypeSheetController extends Controller
 
     protected function getFiltersFromSession(Request $request, string $sessionKey): array
     {
-        $filterParams = ['branch', 'assignee', 'current_stage', 'visa_expiry_from', 'visa_expiry_to', 'deadline_from', 'deadline_to', 'matter_type', 'search', 'per_page'];
+        $filterParams = ['branch', 'assignee', 'current_stage', 'visa_expiry_from', 'visa_expiry_to', 'deadline_from', 'deadline_to', 'matter_type', 'refused_visa_type', 'search', 'per_page'];
         foreach ($filterParams as $key) {
             $val = $request->input($key);
             if ($request->has($key) && $val !== null && $val !== '' && (!is_array($val) || !empty($val))) {
@@ -195,6 +224,7 @@ class VisaTypeSheetController extends Controller
             'deadline_from' => $request->input('deadline_from'),
             'deadline_to' => $request->input('deadline_to'),
             'matter_type' => $request->input('matter_type'),
+            'refused_visa_type' => $request->input('refused_visa_type'),
             'search' => $request->input('search'),
             'per_page' => $request->input('per_page'),
         ], function ($v) {
@@ -367,6 +397,7 @@ class VisaTypeSheetController extends Controller
                 "{$refAlias}.comments as sheet_comment_text",
                 "{$refAlias}.checklist_sent_at",
                 "{$refAlias}.is_pinned",
+                $this->refusedVisaTypeSelectColumn($config, $refAlias),
                 DB::raw("COALESCE(cm.{$checklistCol}, 'active') as tr_checklist_status"),
                 DB::raw($checklistBlockFeeSelect),
                 DB::raw('cm.created_at as sheet_row_created_at'),
@@ -377,7 +408,9 @@ class VisaTypeSheetController extends Controller
         $clientRows = $clientQuery->get();
 
         $leadRows = collect();
-        if ($leadRefTable && Schema::hasTable($leadRefTable)) {
+        $skipLeadsForRefusedFilter = $this->hasRefusedVisaTypeFeature($config)
+            && $request->filled('refused_visa_type');
+        if ($leadRefTable && Schema::hasTable($leadRefTable) && ! $skipLeadsForRefusedFilter) {
             $matterIds = DB::table(DB::raw('matters as m'))->whereRaw($matterCondition)->pluck('id');
             if ($matterIds->isNotEmpty()) {
                 $leadBlockFeeSql = Schema::hasTable('cost_assignment_forms')
@@ -415,6 +448,7 @@ class VisaTypeSheetController extends Controller
                         DB::raw('NULL as sheet_comment_text'),
                         'lr.checklist_sent_at',
                         DB::raw('false as is_pinned'),
+                        DB::raw('NULL as refused_visa_type'),
                         DB::raw("'active' as tr_checklist_status"),
                         DB::raw($leadBlockFeeSql),
                         'lr.created_at as sheet_row_created_at',
@@ -610,6 +644,7 @@ class VisaTypeSheetController extends Controller
                 "{$refAlias}.comments as sheet_comment_text",
                 "{$refAlias}.checklist_sent_at",
                 "{$refAlias}.is_pinned",
+                $this->refusedVisaTypeSelectColumn($config, $refAlias),
                 'latest_matter.checklist_status as tr_checklist_status',
                 'latest_matter.decision_outcome',
                 'latest_matter.decision_note'
@@ -732,6 +767,12 @@ class VisaTypeSheetController extends Controller
             $matterTitleCol = $matterAlias === 'latest_matter' ? 'latest_matter.matter_title' : 'm.title';
             $query->whereRaw("LOWER({$matterTitleCol}) LIKE ?", ['%' . strtolower($val) . '%']);
         }
+        if ($this->hasRefusedVisaTypeFeature($config) && $request->filled('refused_visa_type')) {
+            $refusedType = (string) $request->input('refused_visa_type');
+            if (in_array($refusedType, $this->allowedRefusedVisaTypeKeys($config), true)) {
+                $query->where("{$refAlias}.refused_visa_type", $refusedType);
+            }
+        }
         if ($request->filled('search')) {
             $search = '%' . strtolower($request->input('search')) . '%';
             $query->where(function ($q) use ($search, $refAlias, $matterAlias) {
@@ -796,7 +837,7 @@ class VisaTypeSheetController extends Controller
         return $query;
     }
 
-    protected function countActiveFilters(Request $request): int
+    protected function countActiveFilters(Request $request, array $config = []): int
     {
         $count = 0;
         if ($request->filled('branch')) $count++;
@@ -807,8 +848,21 @@ class VisaTypeSheetController extends Controller
         if ($request->filled('deadline_from')) $count++;
         if ($request->filled('deadline_to')) $count++;
         if ($request->filled('matter_type')) $count++;
+        if ($this->hasRefusedVisaTypeFeature($config) && $request->filled('refused_visa_type')) $count++;
         if ($request->filled('search')) $count++;
         return $count;
+    }
+
+    /**
+     * SELECT fragment for refused_visa_type (ART Matters only when column exists).
+     */
+    protected function refusedVisaTypeSelectColumn(array $config, string $refAlias): \Illuminate\Database\Query\Expression|string
+    {
+        if ($this->hasRefusedVisaTypeFeature($config)) {
+            return "{$refAlias}.refused_visa_type";
+        }
+
+        return DB::raw('NULL as refused_visa_type');
     }
 
     protected function calculatePaymentsForMatter($clientId, $matterInternalId): array
@@ -1132,6 +1186,105 @@ class VisaTypeSheetController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Could not save comment'], 500);
+        }
+    }
+
+    /**
+     * Set refused visa / matter type on an ART Matters sheet reference row.
+     */
+    public function updateRefusedVisaType(Request $request, string $visaType)
+    {
+        if (! $this->hasModuleAccess('20') || ! $this->canAccessCrmSheet($visaType)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $config = $this->getVisaTypeConfig($visaType);
+        if (! $config || ! $this->hasRefusedVisaTypeFeature($config)) {
+            return response()->json(['success' => false, 'message' => 'Not available for this sheet'], 404);
+        }
+
+        $clientId = (int) $request->input('client_id', 0);
+        $matterInternalId = (int) $request->input('matter_internal_id', 0);
+        $refusedType = trim((string) $request->input('refused_visa_type', ''));
+        $allowed = $this->allowedRefusedVisaTypeKeys($config);
+
+        if ($clientId <= 0 || $matterInternalId <= 0) {
+            return response()->json(['success' => false, 'message' => 'Missing required parameters'], 400);
+        }
+
+        if ($refusedType !== '' && ! in_array($refusedType, $allowed, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid refused visa type'], 422);
+        }
+
+        $refTable = $config['reference_table'];
+        $refType = $config['reference_type'] ?? $visaType;
+        $matterCondition = $this->getMatterCondition($config);
+
+        $matterRow = DB::table('client_matters as cm')
+            ->join('matters as m', 'm.id', '=', 'cm.sel_matter_id')
+            ->where('cm.id', $matterInternalId)
+            ->where('cm.client_id', $clientId)
+            ->whereRaw($matterCondition)
+            ->select('cm.id', 'cm.client_id')
+            ->first();
+
+        if (! $matterRow) {
+            return response()->json(['success' => false, 'message' => 'Matter not found or not on this sheet'], 404);
+        }
+
+        if (! StaffClientVisibility::canAccessClientOrLead((int) $matterRow->client_id, Auth::user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $valueToStore = $refusedType === '' ? null : $refusedType;
+
+        try {
+            $query = DB::table($refTable)
+                ->where('client_id', $clientId)
+                ->where('client_matter_id', $matterInternalId);
+            if ($refTable === 'client_matter_references') {
+                $query->where('type', $refType);
+            }
+            $reference = $query->first();
+
+            if ($reference) {
+                DB::table($refTable)
+                    ->where('client_id', $clientId)
+                    ->where('client_matter_id', $matterInternalId)
+                    ->when($refTable === 'client_matter_references', fn ($q) => $q->where('type', $refType))
+                    ->update([
+                        'refused_visa_type' => $valueToStore,
+                        'updated_by' => Auth::id(),
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                $insertData = [
+                    'client_id' => $clientId,
+                    'client_matter_id' => $matterInternalId,
+                    'refused_visa_type' => $valueToStore,
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                if ($refTable === 'client_matter_references') {
+                    $insertData['type'] = $refType;
+                }
+                DB::table($refTable)->insert($insertData);
+            }
+
+            $label = $valueToStore === null
+                ? ''
+                : ($this->getRefusedVisaTypeOptions($config)[$valueToStore] ?? $valueToStore);
+
+            return response()->json([
+                'success' => true,
+                'message' => $valueToStore === null ? 'Refused visa type cleared' : 'Refused visa type saved',
+                'refused_visa_type' => $valueToStore,
+                'refused_visa_type_label' => $label,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Could not save refused visa type'], 500);
         }
     }
 

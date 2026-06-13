@@ -74,6 +74,21 @@ return [
         'checklist_early_stages' => ['Checklist'],
         'discontinue_stages' => ['Decision Received', 'Ready to Close', 'File Closed', 'Withdrawn', 'Refund', 'Discontinued'],
         'checklist_convert_to_client_stage' => 'Cost Agreement, form 956 and First email Sent',
+
+        'has_refused_visa_type' => true,
+        'refused_visa_type_options' => [
+            'student' => 'Student Visa (500)',
+            'visitor' => 'Visitor Visa (600)',
+            'tr' => 'Temp Resident (485)',
+            'partner' => 'Partner Visa',
+            'pr' => 'PR Application (189/190/491)',
+            'employer-sponsored' => 'Employer Sponsored (482/494/186)',
+            '407' => '407 Training Visa',
+            'sbs' => 'SBS Sponsorship',
+            'nomination' => 'Nomination',
+            'parent' => 'Parent Visa',
+            'other' => 'Other',
+        ],
     ],
 
     'visitor' => [

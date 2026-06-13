@@ -3760,40 +3760,6 @@ class ClientPortalController extends Controller
 				}
 			}
 
-			// When advancing FROM "Verification: Payment, Service Agreement, Forms", only a Migration Agent can proceed.
-			// Any Migration Agent (role 16) can verify and proceed. They must tick and may add optional text.
-			$currentStageName = $currentStage->name ?? '';
-			$verificationStageNames = ['payment verified', 'verification: payment, service agreement, forms'];
-			$isAtVerificationStage = in_array(strtolower(trim($currentStageName)), $verificationStageNames);
-			if ($isAtVerificationStage) {
-				$user = Auth::guard('admin')->user();
-				$userRole = $user ? (int) $user->role : 0;
-				// Role 16 = Migration Agent; Role 1 = Admin (typically can do anything - allow admin too)
-				if ($userRole !== 16 && $userRole !== 1) {
-					return response()->json([
-						'status' => false,
-						'message' => 'Only a Migration Agent (or Admin) can verify and proceed to the next stage.'
-					], 403);
-				}
-				$userId = Auth::guard('admin')->id();
-				$verificationConfirm = $request->input('verification_confirm');
-				if (!filter_var($verificationConfirm, FILTER_VALIDATE_BOOLEAN)) {
-					return response()->json([
-						'status' => false,
-						'message' => 'Please confirm that you have verified Payment, Service Agreement, and Forms before proceeding.'
-					], 422);
-				}
-				// Record the verification
-				DB::table('client_matter_payment_forms_verifications')->insert([
-					'client_matter_id' => (int) $matterId,
-					'verified_by' => $userId,
-					'verified_at' => now(),
-					'note' => $request->input('verification_note'),
-					'created_at' => now(),
-					'updated_at' => now(),
-				]);
-			}
-
 			// Update client_matters table
 			$clientMatter->workflow_stage_id = $nextStage->id;
 			if ($isAdvancingToDecisionReceived) {
@@ -3835,13 +3801,6 @@ class ClientPortalController extends Controller
 							$comments .= '<br>Note: ' . e($decisionNote);
 						}
 					}
-					if ($isAtVerificationStage) {
-						$verificationNote = $request->input('verification_note', '');
-						if (!empty(trim($verificationNote))) {
-							$comments .= '<br>Verification note: ' . e($verificationNote);
-						}
-					}
-
 					$activityLog = new ActivitiesLog;
 					$activityLog->client_id = $clientMatter->client_id;
 					$activityLog->created_by = Auth::user()->id;

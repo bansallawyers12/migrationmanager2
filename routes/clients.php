@@ -78,6 +78,10 @@ Route::post('/clients/sheets/{visaType}/comment', [\App\Http\Controllers\CRM\Vis
     ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type.comment');
 
+Route::post('/clients/sheets/{visaType}/refused-visa-type', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'updateRefusedVisaType'])
+    ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
+    ->name('clients.sheets.visa-type.refused-visa-type');
+
 Route::post('/clients/sheets/{visaType}/record-reminder', [\App\Http\Controllers\CRM\VisaTypeSheetController::class, 'recordReminder'])
     ->where('visaType', \App\Support\CrmSheets::visaTypeRoutePattern())
     ->name('clients.sheets.visa-type.record-reminder');

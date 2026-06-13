@@ -227,6 +227,15 @@
     .visa-sheet-page .visa-sheet-col-payment-receipt {
         min-width: 11rem;
     }
+    .visa-sheet-page .refused-visa-type-cell .refused-visa-type-select {
+        min-width: 11rem;
+        max-width: 14rem;
+    }
+    .visa-sheet-page .refused-visa-suggest-hint {
+        display: block;
+        font-size: 11px;
+        margin-top: 2px;
+    }
 </style>
 @endsection
 
@@ -234,6 +243,11 @@
 @php
     $sheetRoute = $config['route'] ?? 'clients.sheets.visa-type';
     $sheetRouteParams = ['visaType' => $visaType];
+    $showRefusedVisaType = (bool) ($showRefusedVisaType ?? false);
+    $emptyColspan = $tab === 'checklist' ? 15 : ($tab === 'discontinue' ? 15 : 13);
+    if ($showRefusedVisaType) {
+        $emptyColspan++;
+    }
 @endphp
 <div class="listing-container visa-sheet-page art-sheet-page">
     <section class="listing-section">
@@ -315,6 +329,17 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @if($showRefusedVisaType)
+                                <div class="col-md-2">
+                                    <label>Refused Visa Type</label>
+                                    <select name="refused_visa_type" class="form-control">
+                                        <option value="">All types</option>
+                                        @foreach($refusedVisaTypeOptions ?? [] as $val => $lbl)
+                                            <option value="{{ $val }}" {{ request('refused_visa_type') == $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @endif
                                 <div class="col-md-2">
                                     <label>Current Stage</label>
                                     <select name="current_stage" class="form-control">
@@ -374,6 +399,9 @@
                                     <tr>
                                         <th class="pin-cell" title="Click star to pin row to top"><i class="fas fa-star"></i></th>
                                         <th>Matter / Course</th>
+                                        @if($showRefusedVisaType)
+                                        <th>Refused For</th>
+                                        @endif
                                         @if($tab !== 'checklist')
                                         <th>CRM Ref</th>
                                         @endif
@@ -412,7 +440,7 @@
                                 <tbody>
                                     @if($rows->isEmpty())
                                         <tr>
-                                            <td colspan="{{ $tab === 'checklist' ? 15 : ($tab === 'discontinue' ? 15 : 13) }}" class="text-center text-muted py-4">
+                                            <td colspan="{{ $emptyColspan }}" class="text-center text-muted py-4">
                                                 @if($setupRequired ?? false)
                                                     <i class="fas fa-info-circle"></i> Run migrations to enable data. Add a {{ strtoupper($visaType) }} matter type and assign matters to clients.
                                                 @else
@@ -446,6 +474,30 @@
                                                     @endif
                                                 </td>
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->matter_title ?? $row->client_unique_matter_no ?? $row->other_reference ?? '—' }}</a></td>
+                                                @if($showRefusedVisaType)
+                                                <td onclick="event.stopPropagation();" class="refused-visa-type-cell">
+                                                    @if(! $isLead && ! empty($matterId))
+                                                        @php
+                                                            $currentRefused = $row->refused_visa_type ?? '';
+                                                            $matterTitleForSuggest = $row->matter_title ?? '';
+                                                        @endphp
+                                                        <select class="form-control form-control-sm refused-visa-type-select"
+                                                                data-client-id="{{ $row->client_id }}"
+                                                                data-matter-id="{{ $matterId }}"
+                                                                data-visa-type="{{ $visaType }}"
+                                                                data-matter-title="{{ e($matterTitleForSuggest) }}"
+                                                                title="Refused visa or matter type">
+                                                            <option value="">— Select —</option>
+                                                            @foreach($refusedVisaTypeOptions ?? [] as $val => $lbl)
+                                                                <option value="{{ $val }}" {{ $currentRefused === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <small class="refused-visa-suggest-hint text-muted" style="display:none;"></small>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
+                                                @endif
                                                 @if($tab !== 'checklist')
                                                 <td onclick="event.stopPropagation();"><a href="{{ $detailUrl }}" class="art-link">{{ $row->crm_ref ?? '—' }}</a></td>
                                                 @endif
@@ -808,6 +860,115 @@ jQuery(document).ready(function($) {
             }
         });
     });
+
+    @if($showRefusedVisaType ?? false)
+    var refusedVisaTypeLabels = @json($refusedVisaTypeOptions ?? []);
+
+    function suggestRefusedVisaTypeFromTitle(title) {
+        title = (title || '').toLowerCase();
+        if (!title) {
+            return '';
+        }
+        var rules = [
+            ['student', ['student', '500', 'sse']],
+            ['visitor', ['visitor', 'tourist', '600', 'vbv', 'vvd', 'vsf']],
+            ['tr', ['485', 'tvg', 'temp resident', 'temporary graduate', 'post study']],
+            ['partner', ['partner', '820', '801', '309', '100', '300']],
+            ['pr', ['189', '190', '191', '491', 'permanent', 'skilled independent']],
+            ['employer-sponsored', ['482', '494', '186', 'employer sponsored', 'employer-sponsored']],
+            ['407', ['407', 'training visa', 'training']],
+            ['sbs', ['sbs', 'standard business sponsor', 'sponsorship approval']],
+            ['nomination', ['nomination', 'nominated person']],
+            ['parent', ['parent', '103', '143', '804', '870', 'contributory parent']],
+        ];
+        for (var i = 0; i < rules.length; i++) {
+            var key = rules[i][0];
+            var needles = rules[i][1];
+            for (var j = 0; j < needles.length; j++) {
+                if (title.indexOf(needles[j]) !== -1) {
+                    return key;
+                }
+            }
+        }
+        return '';
+    }
+
+    $('.visa-sheet-page .refused-visa-type-select').each(function() {
+        var $sel = $(this);
+        if ($sel.val()) {
+            return;
+        }
+        var suggested = suggestRefusedVisaTypeFromTitle($sel.data('matter-title'));
+        if (suggested && refusedVisaTypeLabels[suggested]) {
+            $sel.siblings('.refused-visa-suggest-hint').text('Suggested: ' + refusedVisaTypeLabels[suggested]).show();
+            $sel.attr('data-suggested', suggested);
+        }
+    });
+
+    $('.visa-sheet-page .refused-visa-type-select').each(function() {
+        $(this).data('previous-refused', $(this).val());
+    });
+
+    $(document).on('focus', '.visa-sheet-page .refused-visa-type-select', function() {
+        $(this).data('previous-refused', $(this).val());
+    });
+
+    $(document).on('change', '.visa-sheet-page .refused-visa-type-select', function() {
+        var $sel = $(this);
+        var clientId = $sel.data('client-id');
+        var matterId = $sel.data('matter-id');
+        var visaType = $sel.data('visa-type');
+        var refusedType = $sel.val();
+        var prev = $sel.data('previous-refused');
+        if (!clientId || !matterId || !visaType) {
+            if (prev !== undefined) {
+                $sel.val(prev);
+            }
+            return;
+        }
+        $sel.prop('disabled', true);
+        $.ajax({
+            url: '{{ url('/clients/sheets') }}/' + encodeURIComponent(String(visaType)) + '/refused-visa-type',
+            method: 'POST',
+            data: {
+                client_id: clientId,
+                matter_internal_id: matterId,
+                refused_visa_type: refusedType,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                $sel.prop('disabled', false);
+                if (response.success) {
+                    $sel.data('previous-refused', refusedType);
+                    $sel.siblings('.refused-visa-suggest-hint').hide();
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.success({ title: 'Saved', message: response.message || 'Refused visa type saved', position: 'topRight', timeout: 2000 });
+                    }
+                } else {
+                    if (prev !== undefined) {
+                        $sel.val(prev);
+                    }
+                    if (typeof iziToast !== 'undefined') {
+                        iziToast.error({ title: 'Error', message: response.message || 'Could not save', position: 'topRight' });
+                    }
+                }
+            },
+            error: function(xhr) {
+                $sel.prop('disabled', false);
+                if (prev !== undefined) {
+                    $sel.val(prev);
+                }
+                var msg = 'Could not save refused visa type.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                if (typeof iziToast !== 'undefined') {
+                    iziToast.error({ title: 'Error', message: msg, position: 'topRight' });
+                }
+            }
+        });
+    });
+    @endif
 
     var visaTypeForComments = @json($visaType);
     var activeCommentEditor = null;
