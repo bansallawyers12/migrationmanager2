@@ -185,15 +185,17 @@
         z-index: 10;
         background: #fff;
         overflow: visible;
+        max-width: none;
+        white-space: nowrap;
     }
     #art-sheet-table thead th.frozen-col {
         z-index: 13;
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
         overflow: visible;
     }
-    #art-sheet-table .frozen-col-1 { left: var(--art-frozen-left-1, 0); }
-    #art-sheet-table .frozen-col-2 { left: var(--art-frozen-left-2, 40px); }
-    #art-sheet-table .frozen-col-3 { left: var(--art-frozen-left-3, 150px); }
+    #art-sheet-table .frozen-col-1 { left: var(--art-frozen-left-1, 0); width: 40px; min-width: 40px; }
+    #art-sheet-table .frozen-col-2 { left: var(--art-frozen-left-2, 40px); min-width: 110px; }
+    #art-sheet-table .frozen-col-3 { left: var(--art-frozen-left-3, 150px); min-width: 120px; }
     #art-sheet-table .frozen-col-3.frozen-col-last::after {
         content: '';
         position: absolute;
@@ -265,7 +267,7 @@
     .sortable.desc::after { content: '\f0dd'; opacity: 1; color: #475569; }
     .table-responsive { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .table-container { position: relative; }
-    .scroll-indicator { position: absolute; top: 0; bottom: 20px; width: 40px; pointer-events: none; z-index: 10; transition: opacity 0.3s; }
+    .scroll-indicator { position: absolute; top: 0; bottom: 20px; width: 40px; pointer-events: none; z-index: 14; transition: opacity 0.3s; }
     .scroll-indicator-left { left: 0; background: linear-gradient(to right, rgba(255,255,255,0.95), transparent); opacity: 0; }
     .scroll-indicator-right { right: 0; background: linear-gradient(to left, rgba(255,255,255,0.95), transparent); }
     .scroll-indicator-left.visible, .scroll-indicator-right.visible { opacity: 1; }

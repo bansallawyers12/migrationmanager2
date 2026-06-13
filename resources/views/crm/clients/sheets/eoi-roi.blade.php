@@ -293,6 +293,7 @@
         top: 0;
         z-index: 11;
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        border-bottom: none;
         box-shadow: inset 0 -2px 0 #667eea;
     }
 
