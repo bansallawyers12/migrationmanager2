@@ -85,23 +85,55 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
         $this->assertSame($before['block3'], $after['block3']);
     }
 
-    public function test_does_not_touch_second_blocktotal_placeholder_outside_fee_table(): void
+    public function test_patches_section4_summary_table_amount_cells_to_right_alignment(): void
     {
         if (! is_file($this->templatePath)) {
             $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
         }
 
         $xml = $this->readDocumentXml($this->templatePath);
-        $firstPos = strpos($xml, 'Blocktotalfeesincltax');
-        $secondPos = strpos($xml, 'Blocktotalfeesincltax', $firstPos + 1);
-        $this->assertNotFalse($secondPos);
-
-        $secondSnippetBefore = $this->placeholderSnippet($xml, $secondPos);
+        $before = $this->section4SummaryTableAmountRowStats($xml);
         $result = $this->patcher->patchDocumentXml($xml);
-        $secondPosAfter = strpos($result['xml'], 'Blocktotalfeesincltax', strpos($result['xml'], 'Blocktotalfeesincltax') + 1);
-        $this->assertNotFalse($secondPosAfter);
+        $after = $this->section4SummaryTableAmountRowStats($result['xml']);
 
-        $this->assertSame($secondSnippetBefore, $this->placeholderSnippet($result['xml'], $secondPosAfter));
+        $this->assertTrue($result['patched']);
+
+        foreach (['professional_fees', 'authority_charges', 'estimated_costs', 'grand_total'] as $rowKey) {
+            $this->assertSame('right', $after[$rowKey]['jc'], "Section 4 row {$rowKey} should be right-aligned");
+            $this->assertSame(0, $after[$rowKey]['space_count'], "Section 4 row {$rowKey} should not use leading spaces");
+            $this->assertTrue($after[$rowKey]['single_placeholder'], "Section 4 row {$rowKey} should use a single placeholder run");
+        }
+
+        $this->assertSame('right', $before['header']['jc']);
+        $this->assertSame('right', $after['header']['jc']);
+    }
+
+    public function test_does_not_change_fee_table_blocktotal_row_alignment(): void
+    {
+        if (! is_file($this->templatePath)) {
+            $this->markTestSkipped('Service_Agreement_Job_Ready.docx not present in storage/app/templates');
+        }
+
+        $xml = $this->readDocumentXml($this->templatePath);
+        $feeTablePos = strpos($xml, 'Total Professional Fee');
+        $this->assertNotFalse($feeTablePos);
+
+        $rowStart = strrpos(substr($xml, 0, $feeTablePos), '<w:tr');
+        $rowEnd = strpos($xml, '</w:tr>', $feeTablePos) + 7;
+        $feeTableTotalRowBefore = substr($xml, $rowStart, $rowEnd - $rowStart);
+
+        $result = $this->patcher->patchDocumentXml($xml);
+
+        $feeTablePosAfter = strpos($result['xml'], 'Total Professional Fee');
+        $rowStartAfter = strrpos(substr($result['xml'], 0, $feeTablePosAfter), '<w:tr');
+        $rowEndAfter = strpos($result['xml'], '</w:tr>', $feeTablePosAfter) + 7;
+        $feeTableTotalRowAfter = substr($result['xml'], $rowStartAfter, $rowEndAfter - $rowStartAfter);
+
+        $this->assertSame('center', $this->amountCellStats($this->lastTableCell($feeTableTotalRowAfter))['jc']);
+        $this->assertNotSame(
+            $this->amountCellStats($this->lastTableCell($feeTableTotalRowBefore))['jc'],
+            'center'
+        );
     }
 
     private function readDocumentXml(string $docxPath): string
@@ -118,6 +150,75 @@ class JobReadyAgreementFeeTablePatcherTest extends TestCase
     private function placeholderSnippet(string $xml, int $position): string
     {
         return substr($xml, $position - 80, 200);
+    }
+
+    /**
+     * @return array{
+     *     header: array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool},
+     *     professional_fees: array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool},
+     *     authority_charges: array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool},
+     *     estimated_costs: array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool},
+     *     grand_total: array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool}
+     * }
+     */
+    private function section4SummaryTableAmountRowStats(string $xml): array
+    {
+        $anchorPos = strpos($xml, 'GrandTotalFeesAndCosts');
+        $this->assertNotFalse($anchorPos);
+
+        $tblStart = strrpos(substr($xml, 0, $anchorPos), '<w:tbl>');
+        $tblEnd = strpos($xml, '</w:tbl>', $anchorPos);
+        $this->assertNotFalse($tblStart);
+        $this->assertNotFalse($tblEnd);
+
+        $section = substr($xml, $tblStart, $tblEnd - $tblStart + 8);
+        preg_match_all('/<w:tr\b.*?<\/w:tr>/s', $section, $rows);
+        $this->assertNotEmpty($rows[0]);
+
+        $headerRow = null;
+        $professionalFeesRow = null;
+        $authorityChargesRow = null;
+        $estimatedCostsRow = null;
+        $grandTotalRow = null;
+
+        foreach ($rows[0] as $row) {
+            if (str_contains($row, 'GrandTotalFeesAndCosts')) {
+                $grandTotalRow = $row;
+            } elseif (str_contains($row, 'TotalEstimatedOthCosts') || str_contains($row, 'TotalEstimatedOth')) {
+                $estimatedCostsRow = $row;
+            } elseif (str_contains($row, 'TotalDoHASurcharges')) {
+                $authorityChargesRow = $row;
+            } elseif (str_contains($row, 'Blocktotalfeesincltax')) {
+                $professionalFeesRow = $row;
+            } elseif (str_contains($row, '>Amount</w:t>')) {
+                $headerRow = $row;
+            }
+        }
+
+        $this->assertNotNull($headerRow);
+        $this->assertNotNull($professionalFeesRow);
+        $this->assertNotNull($authorityChargesRow);
+        $this->assertNotNull($estimatedCostsRow);
+        $this->assertNotNull($grandTotalRow);
+
+        return [
+            'header' => $this->amountCellStats($this->lastTableCell($headerRow)),
+            'professional_fees' => $this->section4AmountCellStats($this->lastTableCell($professionalFeesRow), 'Blocktotalfeesincltax'),
+            'authority_charges' => $this->section4AmountCellStats($this->lastTableCell($authorityChargesRow), 'TotalDoHASurcharges'),
+            'estimated_costs' => $this->section4AmountCellStats($this->lastTableCell($estimatedCostsRow), 'TotalEstimatedOthCosts'),
+            'grand_total' => $this->section4AmountCellStats($this->lastTableCell($grandTotalRow), 'GrandTotalFeesAndCosts'),
+        ];
+    }
+
+    /**
+     * @return array{jc: string, split: bool, single_placeholder: bool, space_count: int, red_markup: bool}
+     */
+    private function section4AmountCellStats(string $cell, string $placeholder): array
+    {
+        $stats = $this->amountCellStats($cell);
+        $stats['single_placeholder'] = str_contains($cell, '<w:t>$${' . $placeholder . '}</w:t>');
+
+        return $stats;
     }
 
     /**
