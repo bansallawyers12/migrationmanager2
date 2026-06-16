@@ -44,7 +44,7 @@ class MatterEmailBodyCleanupService
 
     /**
      * Archive email bodies from the database to S3, then clear body fields for the matter.
-     * Existing S3 objects are never deleted or overwritten unless the same archive path is reused.
+     * Existing S3 objects are never deleted. body_s3_key is preserved for archived-body viewing.
      *
      * @return array{archived: int, cleared: int, skipped: int}
      */
@@ -72,30 +72,25 @@ class MatterEmailBodyCleanupService
 
         DB::transaction(function () use ($emails, $sanitizedClientId, $matterId, &$archived, &$skipped, &$cleared) {
             foreach ($emails as $email) {
+                $s3Path = $this->buildArchiveS3Path($sanitizedClientId, $matterId, (int) $email->id);
                 $body = $this->extractBodyContent($email);
-                if ($body === '') {
-                    $skipped++;
-                    continue;
-                }
 
-                $s3Path = $sanitizedClientId
-                    . '/email_body_archive/matter_'
-                    . $matterId
-                    . '/email_'
-                    . $email->id
-                    . '.html';
+                if ($body !== '' && !Storage::disk('s3')->exists($s3Path)) {
+                    $html = $this->wrapBodyHtml($email, $body);
+                    if (!Storage::disk('s3')->put($s3Path, $html)) {
+                        throw new \RuntimeException('Failed to upload email body to S3 for email #' . $email->id);
+                    }
+                    $archived++;
+                }
 
                 if (Storage::disk('s3')->exists($s3Path)) {
+                    if (Schema::hasColumn('email_logs', 'body_s3_key')) {
+                        $email->body_s3_key = $s3Path;
+                        $email->save();
+                    }
+                } else {
                     $skipped++;
-                    continue;
                 }
-
-                $html = $this->wrapBodyHtml($email, $body);
-                if (!Storage::disk('s3')->put($s3Path, $html)) {
-                    throw new \RuntimeException('Failed to upload email body to S3 for email #' . $email->id);
-                }
-
-                $archived++;
             }
 
             $cleared = $this->clearBodiesForMatter($matterId);
@@ -127,6 +122,76 @@ class MatterEmailBodyCleanupService
         return EmailLog::where('client_matter_id', $matterId)
             ->get()
             ->contains(fn (EmailLog $email) => $this->extractBodyContent($email) !== '');
+    }
+
+    /**
+     * Resolve the S3 key for an archived email body, if one exists.
+     */
+    public function resolveArchivedBodyS3Key(EmailLog $email): ?string
+    {
+        if (!$this->isS3Configured()) {
+            return null;
+        }
+
+        if (Schema::hasColumn('email_logs', 'body_s3_key')) {
+            $storedKey = trim((string) ($email->body_s3_key ?? ''));
+            if ($storedKey !== '' && Storage::disk('s3')->exists($storedKey)) {
+                return $storedKey;
+            }
+        }
+
+        $conventionKey = $this->buildArchiveS3PathForEmail($email);
+        if ($conventionKey !== null && Storage::disk('s3')->exists($conventionKey)) {
+            return $conventionKey;
+        }
+
+        return null;
+    }
+
+    public function hasArchivedBodyOnS3(EmailLog $email): bool
+    {
+        return $this->resolveArchivedBodyS3Key($email) !== null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $emailArray
+     * @return array<string, mixed>
+     */
+    public function appendArchivedBodyMeta(array $emailArray, EmailLog $email): array
+    {
+        $s3Key = $this->resolveArchivedBodyS3Key($email);
+
+        $emailArray['has_archived_body'] = $s3Key !== null;
+        $emailArray['archived_body_view_url'] = $s3Key !== null
+            ? route('clients.email.view-archived-body', ['id' => $email->id])
+            : null;
+
+        return $emailArray;
+    }
+
+    public function buildArchiveS3PathForEmail(EmailLog $email): ?string
+    {
+        if (!$email->client_matter_id || !$email->id) {
+            return null;
+        }
+
+        $sanitizedClientId = $this->sanitizeClientIdForPath((int) $email->client_id);
+
+        return $this->buildArchiveS3Path(
+            $sanitizedClientId,
+            (int) $email->client_matter_id,
+            (int) $email->id
+        );
+    }
+
+    public function buildArchiveS3Path(string $sanitizedClientId, int $matterId, int $emailLogId): string
+    {
+        return $sanitizedClientId
+            . '/email_body_archive/matter_'
+            . $matterId
+            . '/email_'
+            . $emailLogId
+            . '.html';
     }
 
     protected function isS3Configured(): bool

@@ -154,6 +154,7 @@ Route::post('/updatemailreadbit', [ClientsController::class, 'updatemailreadbit'
 
 Route::post('/clients/filter-emails', [ClientsController::class, 'filterEmails'])->name('clients.filter.emails');
 Route::post('/clients/email/send-bodies-to-s3', [ClientsController::class, 'sendMatterEmailBodiesToS3'])->name('clients.email.send-bodies-to-s3');
+Route::get('/clients/email/{id}/archived-body', [ClientsController::class, 'viewArchivedEmailBody'])->name('clients.email.view-archived-body');
 Route::post('/clients/filter-sentemails', [ClientsController::class, 'filterSentEmails'])->name('clients.filter.sentmails');
 Route::post('/clients/filter-lead-emails', [ClientsController::class, 'filterLeadEmails'])->name('clients.filter.leademails');
 Route::delete('/email-logs/{id}', [ClientsController::class, 'deleteEmailLog'])->name('email-logs.delete');

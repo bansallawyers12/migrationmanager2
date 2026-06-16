@@ -4116,6 +4116,8 @@ class ClientsController extends Controller
                 
                 // Add preview_url to the array
                 $emailArray['preview_url'] = $previewUrl;
+
+                $emailArray = app(MatterEmailBodyCleanupService::class)->appendArchivedBodyMeta($emailArray, $email);
                 
                 return $emailArray;
             });
@@ -4190,6 +4192,50 @@ class ClientsController extends Controller
                 'status' => false,
                 'message' => 'Failed to send email bodies to S3: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Stream archived email body HTML from S3 (after super-admin S3 archive action).
+     */
+    public function viewArchivedEmailBody($id)
+    {
+        try {
+            $emailLog = \App\Models\EmailLog::find($id);
+            if (!$emailLog) {
+                abort(404, 'Email not found.');
+            }
+
+            $service = app(MatterEmailBodyCleanupService::class);
+            $s3Key = $service->resolveArchivedBodyS3Key($emailLog);
+
+            if ($s3Key === null) {
+                abort(404, 'Archived email body not found.');
+            }
+
+            $content = Storage::disk('s3')->get($s3Key);
+            if ($content === null || $content === '') {
+                abort(404, 'Archived email body is empty.');
+            }
+
+            if (Schema::hasColumn('email_logs', 'body_s3_key') && empty($emailLog->body_s3_key)) {
+                $emailLog->body_s3_key = $s3Key;
+                $emailLog->save();
+            }
+
+            return response($content, 200, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Failed to view archived email body', [
+                'email_log_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(500, 'Failed to load archived email body.');
         }
     }
 
@@ -4451,6 +4497,8 @@ class ClientsController extends Controller
 				$emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
 				$emailArray['subject'] = $emailArray['subject'] ?? '';
 				$emailArray['message'] = $emailArray['message'] ?? '';
+
+				$emailArray = app(MatterEmailBodyCleanupService::class)->appendArchivedBodyMeta($emailArray, $email);
 				
 				return $emailArray;
 			});

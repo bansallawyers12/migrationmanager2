@@ -107,6 +107,35 @@
     cursor: not-allowed;
 }
 
+.archived-body-notice {
+    padding: 16px;
+    border: 1px dashed #93c5fd;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #334155;
+}
+
+.archived-body-notice p {
+    margin: 0 0 12px;
+}
+
+.archived-body-view-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 4px;
+    background: #2563eb;
+    color: #fff !important;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.archived-body-view-link:hover {
+    background: #1d4ed8;
+    color: #fff !important;
+}
+
 .action-section {
     flex: 0 0 auto;
 }

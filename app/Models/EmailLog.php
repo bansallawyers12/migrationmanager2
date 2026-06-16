@@ -26,6 +26,7 @@ class EmailLog extends Authenticatable
         'template_id',
         'subject',
         'message',
+        'body_s3_key',
         'type',
         'reciept_id',
         'attachments',

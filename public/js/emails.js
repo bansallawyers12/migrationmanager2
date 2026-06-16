@@ -1122,7 +1122,19 @@
         const from = email.from_mail || 'Unknown';
         const to = cleanRecipients(email.to_mail) || 'Unknown';
         const date = formatDate(getEmailDate(email));
-        let message = email.message || '(No content)';
+        const hasDbBody = typeof email.message === 'string' && email.message.trim() !== '';
+        let message = hasDbBody ? email.message : '(No content)';
+
+        if (!hasDbBody && email.has_archived_body && email.archived_body_view_url) {
+            message = `
+                <div class="archived-body-notice">
+                    <p>Email body has been moved to S3 storage.</p>
+                    <a href="${email.archived_body_view_url}" target="_blank" rel="noopener noreferrer" class="archived-body-view-link">
+                        <i class="fas fa-external-link-alt"></i> View Email Body
+                    </a>
+                </div>
+            `;
+        }
 
         // Get all attachments (including inline) - show all so users can download important files like payment receipts
         // Even if they're displayed inline in the email body, they should also be available as downloadable attachments
@@ -1131,9 +1143,10 @@
         const hasAttachments = regularAttachments.length > 0;
         
         // Replace cid: references in email message with actual preview URLs for inline images
-        message = replaceCidReferences(message, allAttachments);
-        // Collapse leading empty layout spacers (Outlook table columns, etc.) without altering content
-        message = sanitizeEmailHtmlForDisplay(message);
+        if (hasDbBody) {
+            message = replaceCidReferences(message, allAttachments);
+            message = sanitizeEmailHtmlForDisplay(message);
+        }
         
         // Debug logging
         console.log('Loading email detail:', {
