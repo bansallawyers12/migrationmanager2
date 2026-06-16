@@ -15,5 +15,6 @@ class MatterEmailBodyCleanupServiceTest extends TestCase
 
         $this->assertSame(0, $service->clearBodiesForMatter(0));
         $this->assertSame(0, $service->clearBodiesForMatter(-1));
+        $this->assertFalse($service->matterHasBodyContentInDatabase(0));
     }
 }

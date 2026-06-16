@@ -77,6 +77,7 @@ use App\Models\ClientEoiReference;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use App\Mail\HubdocInvoiceMail;
+use App\Services\MatterEmailBodyCleanupService;
 use App\Services\Sms\UnifiedSmsManager;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\ClientExportService;
@@ -4126,6 +4127,68 @@ class ClientsController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while fetching emails: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Super admin only: archive all email bodies for a matter to S3, then clear DB body fields.
+     */
+    public function sendMatterEmailBodiesToS3(Request $request)
+    {
+        if ((int) (Auth::user()->role ?? 0) !== 1) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized: Only super admin can perform this action.',
+            ], 403);
+        }
+
+        $matterId = (int) $request->input('client_matter_id');
+        if ($matterId <= 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Matter ID is required.',
+            ], 422);
+        }
+
+        $matter = ClientMatter::find($matterId);
+        if (!$matter) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Client matter not found.',
+            ], 404);
+        }
+
+        $service = app(MatterEmailBodyCleanupService::class);
+
+        if (!$service->matterHasBodyContentInDatabase($matterId)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No email body content found in database for this matter.',
+                'has_body_content' => false,
+            ], 422);
+        }
+
+        try {
+            $result = $service->sendAllBodiesToS3AndClearForMatter($matterId);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Email bodies were sent to S3 and removed from the database for this matter.',
+                'archived' => $result['archived'],
+                'skipped' => $result['skipped'],
+                'cleared' => $result['cleared'],
+                'has_body_content' => false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to send matter email bodies to S3', [
+                'client_matter_id' => $matterId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to send email bodies to S3: ' . $e->getMessage(),
             ], 500);
         }
     }

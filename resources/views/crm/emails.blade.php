@@ -24,14 +24,23 @@
         config('crm.email_log_delete_role_ids', [1, 12, 16]) ?: [1, 12, 16],
         true
     );
+    $canSendEmailBodiesToS3 = Auth::user() && (int) Auth::user()->role === 1;
 @endphp
-<div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}">
+<div class="email-interface-container" data-client-id="{{ $clientData->id ?? '' }}" data-matter-id="{{ $matterId ?? '' }}" data-can-delete-email="{{ $canDeleteEmail ? '1' : '0' }}" data-can-send-email-bodies-to-s3="{{ $canSendEmailBodiesToS3 ? '1' : '0' }}">
     <!-- Top Control Bar (Search & Filters) -->
     <div class="email-control-bar">
         <div class="control-section search-section">
             <label for="emailSearchInput">Search:</label>
             <input type="text" id="emailSearchInput" class="search-input" placeholder="Search emails...">
         </div>
+
+        @if($canSendEmailBodiesToS3)
+        <div class="control-section archive-section" id="emailBodyArchiveSection" style="display: none;">
+            <button type="button" id="sendEmailBodiesToS3Btn" class="archive-bodies-btn" title="Send all email bodies to S3 and remove them from the database">
+                Send All Email Body To S3 From Db
+            </button>
+        </div>
+        @endif
         
         <div class="control-section filter-section">
             <label for="mailTypeFilter">Type:</label>
@@ -209,6 +218,10 @@ document.addEventListener('DOMContentLoaded', function() {
         window.initializeSearch();
     } else {
         console.error('Search module not available!');
+    }
+
+    if (typeof window.initializeSendBodiesToS3Button === 'function') {
+        window.initializeSendBodiesToS3Button();
     }
     
     // Load emails on page load (will use the correct tab based on filter)

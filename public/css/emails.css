@@ -80,6 +80,33 @@
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
+.archive-section {
+    flex: 1;
+    justify-content: center;
+    min-width: 220px;
+}
+
+.archive-bodies-btn {
+    padding: 8px 14px;
+    border: 1px solid #2563eb;
+    border-radius: 4px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.archive-bodies-btn:hover:not(:disabled) {
+    background: #dbeafe;
+}
+
+.archive-bodies-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .action-section {
     flex: 0 0 auto;
 }
