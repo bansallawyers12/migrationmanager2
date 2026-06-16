@@ -21,6 +21,7 @@ use App\Models\ActivitiesLog;
 use App\Models\Note;
 use App\Models\ClientMatter;
 use App\Models\Document;
+use App\Services\MatterEmailBodyCleanupService;
 use Carbon\Carbon;
 use App\Models\ClientVisaCountry;
 use App\Models\McqChapter;
@@ -746,7 +747,19 @@ class CRMUtilityController extends Controller
 							}
 						}
                         else if($requestData['table'] == 'client_matters'){
-                            $response = DB::table($requestData['table'])->where('id', $requestData['id'])->update(['matter_status' => 0]);
+                            $matterId = (int) $requestData['id'];
+                            $response = false;
+
+                            DB::transaction(function () use ($requestData, $matterId, &$response) {
+                                $response = DB::table($requestData['table'])
+                                    ->where('id', $requestData['id'])
+                                    ->update(['matter_status' => 0]);
+
+                                if ($response) {
+                                    app(MatterEmailBodyCleanupService::class)->clearBodiesForMatter($matterId);
+                                }
+                            });
+
 							if($response) {
 								$status = 1;
 								$message = 'Record has been enabled successfully.';

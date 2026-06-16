@@ -27,6 +27,7 @@ use App\Models\ClientTestScore;
 use App\Models\ClientTravelInformation;
 use App\Models\ClientVisaCountry;
 use App\Services\ClientPortalActionNoteService;
+use App\Services\MatterEmailBodyCleanupService;
 use App\Services\MessageAttachmentStorageService;
 use App\Models\WorkflowStage;
 use App\Models\Message;
@@ -4194,8 +4195,15 @@ class ClientPortalController extends Controller
 				return response()->json(['status' => false, 'message' => 'Client matter not found.'], 404);
 			}
 
-			$clientMatter->matter_status = 0;
-			$saved = $clientMatter->save();
+			$saved = false;
+			DB::transaction(function () use ($clientMatter, $matterId, &$saved) {
+				$clientMatter->matter_status = 0;
+				$saved = $clientMatter->save();
+
+				if ($saved) {
+					app(MatterEmailBodyCleanupService::class)->clearBodiesForMatter((int) $matterId);
+				}
+			});
 
 			if ($saved) {
 				// applications table removed
@@ -4773,8 +4781,17 @@ class ClientPortalController extends Controller
 			echo json_encode(['status' => false, 'message' => 'Matter not found']);
 			return;
 		}
-		$obj->matter_status = 0;
-		$saved = $obj->save();
+
+		$saved = false;
+		DB::transaction(function () use ($obj, &$saved) {
+			$obj->matter_status = 0;
+			$saved = $obj->save();
+
+			if ($saved) {
+				app(MatterEmailBodyCleanupService::class)->clearBodiesForMatter((int) $obj->id);
+			}
+		});
+
 		echo json_encode(['status' => $saved, 'message' => $saved ? 'Matter successfully discontinued.' : 'Please try again']);
 	}
 
