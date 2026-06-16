@@ -77,8 +77,9 @@ return [
 
     /*
     | Parent / contributory parent subclasses (parents template).
+    | Includes sponsored parent temporary (870) alongside contributory / aged parent subclasses.
     */
-    'parents_subclass_pattern' => '/\b(143|173|103|804|864|884)\b/',
+    'parents_subclass_pattern' => '/\b(143|173|103|804|864|884|870)\b/',
 
     /*
     | Partner subclasses (conflict-of-interest routing uses default general template).

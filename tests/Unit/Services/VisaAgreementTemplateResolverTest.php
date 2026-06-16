@@ -172,6 +172,19 @@ class VisaAgreementTemplateResolverTest extends TestCase
         $this->assertSame('Service_Agreement_parents.docx', $r['candidates'][0]);
     }
 
+    public function test_sponsored_parent_870_subclass_in_title_selects_parents_template(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            false,
+            'gn',
+            '870 - Sponsored Parent (Temporary)',
+            false
+        );
+        $this->assertSame('parents', $r['rule']);
+        $this->assertSame('Service_Agreement_parents.docx', $r['candidates'][0]);
+        $this->assertSame('Service_Agreement_general.docx', end($r['candidates']));
+    }
+
     public function test_eoi_and_roi_in_title_selects_eoi_roi_template(): void
     {
         $r = $this->resolver->determineCandidates(false, 'gn', 'EOI and ROI for state nomination', false);
