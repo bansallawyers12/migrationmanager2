@@ -84,7 +84,7 @@ use App\Services\ClientExportService;
 use App\Services\FCMService;
 use App\Services\ClientImportService;
 use App\Services\JobReadyAgreementFeeTablePatcher;
-use App\Services\PsaAgreementFeeTablePatcher;
+use App\Services\VisaAgreementAmountTablePatcher;
 use App\Services\CompanyAgreementDocxPatcher;
 use App\Services\CompanyVisaAgreementMacroBuilder;
 use App\Services\VisaAgreementTemplateResolver;
@@ -4818,14 +4818,15 @@ class ClientsController extends Controller
                                 }
                             }
 
-                            if ($templateFileName === 'Service_Agreement_PSA.docx') {
-                                $psaPatch = app(PsaAgreementFeeTablePatcher::class)->patchDocumentXml($xml);
-                                $xml = $psaPatch['xml'];
-                                if ($psaPatch['patched']) {
+                            if (VisaAgreementAmountTablePatcher::supportsTemplate($templateFileName)) {
+                                $amountPatch = app(VisaAgreementAmountTablePatcher::class)->patchDocumentXml($xml);
+                                $xml = $amountPatch['xml'];
+                                if ($amountPatch['patched']) {
                                     $xmlPatchesApplied = true;
-                                    Log::info('[AgreementMacro:PSA] DOCX patch aligned Total Professional Fee amount cell with block fee rows', [
+                                    Log::info('[AgreementMacro:AmountAlignment] DOCX patch aligned fee and charge amount cells', [
                                         'client_id' => $request->client_id,
                                         'client_matter_id' => $request->client_matter_id ?? null,
+                                        'template' => $templateFileName,
                                     ]);
                                 }
                             }
