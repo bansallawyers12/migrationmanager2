@@ -884,8 +884,6 @@
             // Update counts
             updateEmailCounts(sortedEmails.length);
 
-            updateArchiveBodiesButtonVisibility(sortedEmails);
-
         } catch (error) {
             console.error('Error loading emails:', error);
             showNotification('Failed to load emails: ' + error.message, 'error');
@@ -2728,33 +2726,9 @@
      * Navigate to /adminconsole/features/email-labels to create/edit labels
      */
 
-    function emailHasBodyContent(email) {
-        if (!email) {
-            return false;
-        }
-
-        const fields = ['message', 'enhanced_html', 'rendered_html', 'text_preview'];
-        return fields.some((field) => {
-            const value = email[field];
-            return typeof value === 'string' && value.trim() !== '';
-        });
-    }
-
     function canSendEmailBodiesToS3() {
         const container = document.querySelector('.email-interface-container');
         return container && container.dataset.canSendEmailBodiesToS3 === '1';
-    }
-
-    function updateArchiveBodiesButtonVisibility(emails) {
-        const section = document.getElementById('emailBodyArchiveSection');
-        const button = document.getElementById('sendEmailBodiesToS3Btn');
-        if (!section || !button || !canSendEmailBodiesToS3()) {
-            return;
-        }
-
-        const hasBodyContent = Array.isArray(emails) && emails.some(emailHasBodyContent);
-        section.style.display = hasBodyContent ? 'flex' : 'none';
-        button.disabled = !hasBodyContent;
     }
 
     window.initializeSendBodiesToS3Button = function() {
@@ -2799,16 +2773,16 @@
 
                 const data = await response.json();
 
+                if (data.already_archived) {
+                    alert('All emails are already moved to S3 from db');
+                    return;
+                }
+
                 if (!response.ok || !data.status) {
                     throw new Error(data.message || 'Failed to send email bodies to S3.');
                 }
 
                 showNotification(data.message || 'Email bodies sent to S3 successfully.', 'success');
-
-                const section = document.getElementById('emailBodyArchiveSection');
-                if (section) {
-                    section.style.display = 'none';
-                }
 
                 if (typeof window.loadEmails === 'function') {
                     window.loadEmails();
@@ -2816,6 +2790,7 @@
             } catch (error) {
                 console.error('Send bodies to S3 failed:', error);
                 showNotification(error.message || 'Failed to send email bodies to S3.', 'error');
+            } finally {
                 button.disabled = false;
                 button.textContent = originalText;
             }

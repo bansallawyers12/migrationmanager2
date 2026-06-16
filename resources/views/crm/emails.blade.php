@@ -35,7 +35,7 @@
         </div>
 
         @if($canSendEmailBodiesToS3)
-        <div class="control-section archive-section" id="emailBodyArchiveSection" style="display: none;">
+        <div class="control-section archive-section" id="emailBodyArchiveSection">
             <button type="button" id="sendEmailBodiesToS3Btn" class="archive-bodies-btn" title="Send all email bodies to S3 and remove them from the database">
                 Send All Email Body To S3 From Db
             </button>

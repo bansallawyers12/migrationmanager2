@@ -4166,9 +4166,9 @@ class ClientsController extends Controller
         if (!$service->matterHasBodyContentInDatabase($matterId)) {
             return response()->json([
                 'status' => false,
-                'message' => 'No email body content found in database for this matter.',
-                'has_body_content' => false,
-            ], 422);
+                'already_archived' => true,
+                'message' => 'All emails are already moved to S3 from db.',
+            ]);
         }
 
         try {

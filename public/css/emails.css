@@ -82,6 +82,7 @@
 
 .archive-section {
     flex: 1;
+    display: flex;
     justify-content: center;
     min-width: 220px;
 }
