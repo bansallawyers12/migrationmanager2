@@ -3,13 +3,13 @@
 namespace App\Services;
 
 /**
- * Runtime DOCX XML patch for Service_Agreement_parents.docx service-type row.
+ * Runtime DOCX XML patch for visa service agreement templates.
  *
- * The template places "Category" and "Subclass" on one line with manual spaces.
+ * Service Type rows place "Category" and "Subclass" on one line with manual spaces.
  * This adds a right tab stop and tab character so "Subclass: ${visa_apply}" aligns
  * to the right margin after merge.
  */
-class ParentsAgreementDocxPatcher
+class VisaAgreementServiceTypeRowPatcher
 {
     private const RIGHT_TAB_POS = '9360';
 
@@ -67,7 +67,7 @@ class ParentsAgreementDocxPatcher
         $categoryLabelRun = null;
         $categoryValueRunProperties = null;
         $subclassLabelRun = null;
-        $placeholderRun = null;
+        $placeholderData = null;
 
         foreach ($runs as $run) {
             $runText = $this->extractPlainText($run);
@@ -82,19 +82,22 @@ class ParentsAgreementDocxPatcher
                 continue;
             }
 
-            if ($placeholderRun === null && str_contains($runText, $placeholder)) {
-                $placeholderRun = $run;
-                continue;
-            }
-
             if ($categoryLabelRun !== null && $subclassLabelRun === null && trim($runText) !== '') {
                 $categoryValueRunProperties = $this->extractRunProperties($run);
             }
         }
 
-        if ($categoryLabelRun === null || $subclassLabelRun === null || $placeholderRun === null) {
+        if ($categoryLabelRun !== null && $subclassLabelRun !== null) {
+            $placeholderData = $this->mergePlaceholderFromRuns(
+                $this->extractPlaceholderRuns($runs, $subclassLabelRun)
+            );
+        }
+
+        if ($categoryLabelRun === null || $subclassLabelRun === null || $placeholderData === null) {
             return $paragraph;
         }
+
+        $placeholderRun = $placeholderData['run'];
 
         if (! preg_match('/^(<w:p\b[^>]*>)(<w:pPr>.*?<\/w:pPr>)?/s', $paragraph, $openMatch)) {
             return $paragraph;
@@ -151,6 +154,57 @@ class ParentsAgreementDocxPatcher
         return is_string($updated) ? $updated : $paragraph;
     }
 
+    private function extractPlaceholderRuns(array $runs, string $subclassLabelRun): array
+    {
+        $placeholderRuns = [];
+        $collect = false;
+
+        foreach ($runs as $run) {
+            if ($run === $subclassLabelRun) {
+                $collect = true;
+                continue;
+            }
+
+            if ($collect) {
+                $placeholderRuns[] = $run;
+            }
+        }
+
+        return $placeholderRuns;
+    }
+
+    /**
+     * @param  list<string>  $placeholderRuns
+     * @return array{text: string, run: string}|null
+     */
+    private function mergePlaceholderFromRuns(array $placeholderRuns): ?array
+    {
+        if ($placeholderRuns === []) {
+            return null;
+        }
+
+        $text = '';
+        $runProperties = '';
+
+        foreach ($placeholderRuns as $run) {
+            $chunk = $this->extractPlainText($run);
+            $text .= $chunk;
+            if ($runProperties === '' && $chunk !== '') {
+                $runProperties = $this->extractRunProperties($run);
+            }
+        }
+
+        $text = trim($text);
+        if (! preg_match('/^(\$\{(?:visa_apply|Visa_apply)\})$/', $text, $matches)) {
+            return null;
+        }
+
+        return [
+            'text' => $matches[1],
+            'run' => $this->buildTextRun($runProperties, $matches[1]),
+        ];
+    }
+
     private function buildTextRun(string $runProperties, string $text): string
     {
         $escaped = htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
@@ -174,11 +228,17 @@ class ParentsAgreementDocxPatcher
 
     private function extractPlainText(string $xmlFragment): string
     {
-        return trim(preg_replace('/\s+/', ' ', strip_tags(preg_replace('/<w:t[^>]*>/', '', $xmlFragment))));
+        $text = trim(preg_replace('/\s+/', ' ', strip_tags(preg_replace('/<w:t[^>]*>/', '', $xmlFragment))));
+
+        return html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
     }
 
     public static function supportsTemplate(?string $templateFileName): bool
     {
-        return $templateFileName === config('visa_agreement_templates.parents', 'Service_Agreement_parents.docx');
+        if ($templateFileName === null || $templateFileName === '') {
+            return false;
+        }
+
+        return str_starts_with($templateFileName, 'Service_Agreement_') && str_ends_with($templateFileName, '.docx');
     }
 }

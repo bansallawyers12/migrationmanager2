@@ -2,7 +2,7 @@
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-use App\Services\ParentsAgreementDocxPatcher;
+use App\Services\VisaAgreementServiceTypeRowPatcher;
 
 $path = dirname(__DIR__) . '/storage/app/templates/Service_Agreement_parents.docx';
 $zip = new ZipArchive();
@@ -10,7 +10,7 @@ $zip->open($path);
 $xml = $zip->getFromName('word/document.xml');
 $zip->close();
 
-$result = (new ParentsAgreementDocxPatcher())->patchDocumentXml($xml);
+$result = (new VisaAgreementServiceTypeRowPatcher())->patchDocumentXml($xml);
 preg_match_all('/<w:p\b.*?<\/w:p>/s', $result['xml'], $paras);
 foreach ($paras[0] as $p) {
     $text = trim(preg_replace('/\s+/', ' ', strip_tags(preg_replace('/<w:t[^>]*>/', '', $p))));

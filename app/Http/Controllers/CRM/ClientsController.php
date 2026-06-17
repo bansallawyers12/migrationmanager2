@@ -85,7 +85,7 @@ use App\Services\FCMService;
 use App\Services\ClientImportService;
 use App\Services\JobReadyAgreementFeeTablePatcher;
 use App\Services\VisaAgreementAmountTablePatcher;
-use App\Services\ParentsAgreementDocxPatcher;
+use App\Services\VisaAgreementServiceTypeRowPatcher;
 use App\Services\CompanyAgreementDocxPatcher;
 use App\Services\CompanyVisaAgreementMacroBuilder;
 use App\Services\VisaAgreementTemplateResolver;
@@ -4832,14 +4832,15 @@ class ClientsController extends Controller
                                 }
                             }
 
-                            if (ParentsAgreementDocxPatcher::supportsTemplate($templateFileName)) {
-                                $parentsPatch = app(ParentsAgreementDocxPatcher::class)->patchDocumentXml($xml);
-                                $xml = $parentsPatch['xml'];
-                                if ($parentsPatch['patched']) {
+                            if (VisaAgreementServiceTypeRowPatcher::supportsTemplate($templateFileName)) {
+                                $serviceTypePatch = app(VisaAgreementServiceTypeRowPatcher::class)->patchDocumentXml($xml);
+                                $xml = $serviceTypePatch['xml'];
+                                if ($serviceTypePatch['patched']) {
                                     $xmlPatchesApplied = true;
-                                    Log::info('[AgreementMacro:Parents] DOCX patch right-aligned Subclass on service type row', [
+                                    Log::info('[AgreementMacro:ServiceType] DOCX patch right-aligned Subclass on service type row', [
                                         'client_id' => $request->client_id,
                                         'client_matter_id' => $request->client_matter_id ?? null,
+                                        'template' => $templateFileName,
                                     ]);
                                 }
                             }
