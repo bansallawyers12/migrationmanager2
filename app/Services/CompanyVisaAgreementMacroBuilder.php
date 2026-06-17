@@ -204,4 +204,22 @@ class CompanyVisaAgreementMacroBuilder
     {
         return number_format($amount, 2, '.', '');
     }
+
+    /**
+     * Section 4 grand total for company nomination / sponsorship templates.
+     *
+     * Company templates merge TotalDoHASurcharges in the DoHA row (not TotalDoHAChargesInclSurcharge),
+     * so the grand total must sum the same three section-4 values shown in the document.
+     */
+    public static function calculateGrandTotalFeesAndCosts(
+        float $blockTotalFeesInclTax,
+        string $section4DohaChargesInclSurcharges,
+        float $totalEstimatedOtherCosts
+    ): string {
+        $total = $blockTotalFeesInclTax
+            + floatval($section4DohaChargesInclSurcharges)
+            + $totalEstimatedOtherCosts;
+
+        return number_format($total, 2, '.', '');
+    }
 }

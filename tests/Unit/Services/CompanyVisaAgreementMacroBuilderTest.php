@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use App\Models\Admin;
 use App\Models\Company;
 use App\Models\CompanyDirector;
+use App\Services\CompanyAgreementDocxPatcher;
 use App\Services\CompanyVisaAgreementMacroBuilder;
 use Tests\TestCase;
 
@@ -72,6 +73,25 @@ class CompanyVisaAgreementMacroBuilderTest extends TestCase
         $this->assertSame('547.56', $macros['DoHANominationApplicantSurcharge']);
         $this->assertSame('420.00', $macros['DoHASponsorshipApplicantCharge']);
         $this->assertSame('425.88', $macros['DoHASponsorshipApplicantSurcharge']);
+    }
+
+    public function test_calculate_grand_total_sums_section_four_summary_rows(): void
+    {
+        $this->assertSame(
+            '3847.56',
+            CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(3300.00, '547.56', 0.0)
+        );
+        $this->assertSame(
+            '4969.78',
+            CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(2200.00, '2769.00', 0.78)
+        );
+    }
+
+    public function test_grand_total_recalculation_applies_to_company_sponsorship_template(): void
+    {
+        $this->assertTrue(
+            CompanyAgreementDocxPatcher::isCompanyAgreementTemplate('Service_Agreement_company_sponsorship.docx')
+        );
     }
 
     public function test_linked_director_client_names_and_dob_are_used(): void

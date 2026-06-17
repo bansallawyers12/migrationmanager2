@@ -4806,7 +4806,7 @@ class ClientsController extends Controller
                             }
 
                             if ($isCompanyAgreementTemplate) {
-                                $companyPatch = app(CompanyAgreementDocxPatcher::class)->patchDocumentXml($xml);
+                                $companyPatch = app(CompanyAgreementDocxPatcher::class)->patchDocumentXml($xml, $templateFileName);
                                 $xml = $companyPatch['xml'];
                                 if ($companyPatch['patched']) {
                                     $xmlPatchesApplied = true;
@@ -5002,6 +5002,8 @@ class ClientsController extends Controller
             $TotalDoHAChargesInclSurcharge = '0.00';
             $TotalEstimatedOtherCosts = 0;
             $GrandTotalFeesAndCosts = 0;
+            $GrandTotalFeesAndCostsFormated = '0.00';
+            $BlocktotalfeesincltaxFormated = '0.00';
 
             if( isset($request->client_matter_id) && $request->client_matter_id != '' )
             {  //dd($request->client_matter_id);
@@ -5172,6 +5174,23 @@ class ClientsController extends Controller
             } else {
                 Log::warning('[AgreementMacro:TotalDoHASurcharges] Missing client_matter_id — macro stays 0.00', [
                     'client_id' => $request->client_id,
+                ]);
+            }
+
+            if (CompanyAgreementDocxPatcher::isCompanyAgreementTemplate($templateFileName)) {
+                $GrandTotalFeesAndCostsFormated = CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(
+                    floatval($Blocktotalfeesincltax),
+                    $TotalDoHASurchargesMacroSum,
+                    floatval($TotalEstimatedOtherCosts)
+                );
+                Log::info('[AgreementMacro:Company] Recalculated GrandTotalFeesAndCosts from section 4 summary rows', [
+                    'client_id' => $request->client_id,
+                    'client_matter_id' => $request->client_matter_id ?? null,
+                    'template' => $templateFileName,
+                    'Blocktotalfeesincltax' => $BlocktotalfeesincltaxFormated,
+                    'TotalDoHASurcharges' => $TotalDoHASurchargesMacroSum,
+                    'TotalEstimatedOthCosts' => number_format(floatval($TotalEstimatedOtherCosts), 2, '.', ''),
+                    'GrandTotalFeesAndCosts' => $GrandTotalFeesAndCostsFormated,
                 ]);
             }
 
