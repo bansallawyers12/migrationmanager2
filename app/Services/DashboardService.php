@@ -8,6 +8,7 @@ use App\Models\CheckinLog;
 use App\Models\ClientVisaCountry;
 use App\Models\ActivitiesLog;
 use App\Models\EmailLog;
+use App\Models\Workflow;
 use App\Models\WorkflowStage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -98,9 +99,17 @@ class DashboardService
             });
         }
 
-        // Apply stage filter
+        // Apply stage filter (match by stage name so one dropdown entry covers all workflows)
         if ($request->has('client_stage') && !empty($request->client_stage)) {
-            $query->where('workflow_stage_id', $request->client_stage);
+            $stageName = WorkflowStage::query()
+                ->whereKey($request->client_stage)
+                ->value('name');
+
+            if ($stageName !== null) {
+                $query->whereHas('workflowStage', function ($q) use ($stageName) {
+                    $q->where('name', $stageName);
+                });
+            }
         } else {
             $query->where('workflow_stage_id', '!=', 14);
         }
@@ -462,16 +471,29 @@ class DashboardService
     }
 
     /**
-     * Get workflow stages.
+     * Get workflow stages for the dashboard filter dropdown.
+     *
+     * Uses the General workflow template only so duplicate stage names from
+     * per-matter workflows do not appear multiple times. Filtering matches by
+     * stage name (see getClientMatters) so matters on other workflows still match.
      *
      * Cache plain rows only — caching Eloquent collections can deserialize as
      * __PHP_Incomplete_Class and break Blade (sanitizeComponentAttribute / method_exists).
      */
     private function getWorkflowStages(): Collection
     {
-        $rows = Cache::remember('workflow_stages_v2', 3600, function () {
-            return WorkflowStage::query()
-                ->orderByRaw('COALESCE(sort_order, id) ASC')
+        $rows = Cache::remember('workflow_stages_v3_general', 3600, function () {
+            $query = WorkflowStage::query()->orderByRaw('COALESCE(sort_order, id) ASC');
+
+            $generalWorkflowId = Workflow::query()
+                ->whereRaw('LOWER(name) = ?', ['general'])
+                ->value('id');
+
+            if ($generalWorkflowId) {
+                $query->where('workflow_id', $generalWorkflowId);
+            }
+
+            return $query
                 ->get(['id', 'name'])
                 ->map(fn (WorkflowStage $stage) => $stage->only(['id', 'name']))
                 ->values()
