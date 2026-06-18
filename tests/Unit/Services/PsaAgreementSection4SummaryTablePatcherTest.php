@@ -40,6 +40,7 @@ class PsaAgreementSection4SummaryTablePatcherTest extends TestCase
         $this->assertTrue($result['patched']);
         $this->assertSame('right', $after['jc']);
         $this->assertTrue($after['single_placeholder']);
+        $this->assertSame('TotalDoHAChargesInclSurcharge', $after['placeholder']);
         $this->assertSame(0, $after['literal_dollar_runs']);
         $this->assertSame(0, $after['space_count']);
     }
@@ -87,7 +88,7 @@ class PsaAgreementSection4SummaryTablePatcherTest extends TestCase
     }
 
     /**
-     * @return array{jc: string, single_placeholder: bool, literal_dollar_runs: int, space_count: int}
+     * @return array{jc: string, single_placeholder: bool, placeholder: ?string, literal_dollar_runs: int, space_count: int}
      */
     private function authorityChargesRowStats(string $xml): array
     {
@@ -104,7 +105,8 @@ class PsaAgreementSection4SummaryTablePatcherTest extends TestCase
 
         $authorityRow = null;
         foreach ($rows[0] as $row) {
-            if (str_contains($row, 'TotalDoHACharges')) {
+            if (str_contains($row, 'TotalDoHAChargesInclSurcharge')
+                || (str_contains($row, 'TotalDoHACharges') && str_contains($row, 'relevant authority'))) {
                 $authorityRow = $row;
                 break;
             }
@@ -132,9 +134,15 @@ class PsaAgreementSection4SummaryTablePatcherTest extends TestCase
             $literalDollarRuns = count($dollarMatches[0]);
         }
 
+        $placeholder = null;
+        if (preg_match('/\$\\$\\{(TotalDoHAChargesInclSurcharge|TotalDoHACharges)\\}/', $amountCell, $placeholderMatch)) {
+            $placeholder = $placeholderMatch[1];
+        }
+
         return [
             'jc' => $jc,
-            'single_placeholder' => str_contains($amountCell, '<w:t>$${TotalDoHACharges}</w:t>'),
+            'single_placeholder' => str_contains($amountCell, '<w:t>$${TotalDoHAChargesInclSurcharge}</w:t>'),
+            'placeholder' => $placeholder,
             'literal_dollar_runs' => $literalDollarRuns,
             'space_count' => $spaceCount,
         ];

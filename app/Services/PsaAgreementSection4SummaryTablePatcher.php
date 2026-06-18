@@ -8,12 +8,17 @@ namespace App\Services;
  * The "Total relevant authority charges" amount cell uses a stray "$" run plus "$${TotalDoHACharges}",
  * which renders as "$$130.00" after merge. It is also center-aligned with manual padding instead of
  * right-aligned like the other Section 4 amount rows.
+ *
+ * The placeholder is normalized to {@see TotalDoHAChargesInclSurcharge} so PSA matches other templates:
+ * department charges plus surcharge (same value used in the grand total).
  */
 class PsaAgreementSection4SummaryTablePatcher
 {
     private const SECTION4_TABLE_ANCHOR = 'GrandTotalFeesAndCosts';
 
-    private const AUTHORITY_PLACEHOLDER = 'TotalDoHACharges';
+    private const LEGACY_AUTHORITY_PLACEHOLDER = 'TotalDoHACharges';
+
+    private const AUTHORITY_PLACEHOLDER = 'TotalDoHAChargesInclSurcharge';
 
     /**
      * @return array{xml: string, patched: bool}
@@ -41,7 +46,7 @@ class PsaAgreementSection4SummaryTablePatcher
 
         preg_match_all('/<w:tr\b.*?<\/w:tr>/s', $table, $rowMatches);
         foreach ($rowMatches[0] as $row) {
-            if (! str_contains($row, self::AUTHORITY_PLACEHOLDER)) {
+            if (! $this->isAuthorityChargesRow($row)) {
                 continue;
             }
 
@@ -73,6 +78,12 @@ class PsaAgreementSection4SummaryTablePatcher
     public static function supportsTemplate(?string $templateFileName): bool
     {
         return $templateFileName === config('visa_agreement_templates.psa', 'Service_Agreement_PSA.docx');
+    }
+
+    private function isAuthorityChargesRow(string $row): bool
+    {
+        return str_contains($row, self::LEGACY_AUTHORITY_PLACEHOLDER)
+            || str_contains($row, self::AUTHORITY_PLACEHOLDER);
     }
 
     private function patchAuthorityAmountCell(string $amountCell): string
