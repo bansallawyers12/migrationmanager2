@@ -3,6 +3,8 @@
     display: flex;
     flex-direction: column;
     min-height: 500px;
+    height: calc(100vh - 200px);
+    max-height: calc(100vh - 200px);
     background: #f5f5f5;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -18,6 +20,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     gap: 20px;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .control-section {
@@ -163,12 +166,12 @@
     gap: 20px;
     padding: 20px;
     min-height: 0;
-    height: 600px;
 }
 
 /* Left Email List Pane */
 .email-list-pane {
     flex: 0 0 400px;
+    min-height: 0;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -182,6 +185,7 @@
     padding: 12px 16px;
     background: #f8f9fa;
     border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
 }
 
 .upload-title {
@@ -196,6 +200,7 @@
     padding: 16px;
     border-bottom: 1px solid #e0e0e0;
     background: #ffffff;
+    flex-shrink: 0;
 }
 
 /* Drag & Drop Zone */
@@ -315,6 +320,7 @@
     padding: 12px 16px;
     border-bottom: 1px solid #e0e0e0;
     background: #f8f9fa;
+    flex-shrink: 0;
 }
 
 .results-count {
@@ -360,8 +366,11 @@
 .email-interface-container .email-list {
     display: block;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .email-item {
@@ -422,6 +431,7 @@
 /* Right Content Viewing Pane */
 .email-content-pane {
     flex: 1;
+    min-height: 0;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -457,8 +467,10 @@
 
 .email-content-view {
     flex: 1;
+    min-height: 0;
     padding: 24px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .email-content-header {
@@ -619,6 +631,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .email-interface-container {
+        height: auto;
+        max-height: none;
+    }
+
     .email-control-bar {
         flex-direction: column;
         gap: 12px;
