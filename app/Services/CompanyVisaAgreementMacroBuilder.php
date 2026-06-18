@@ -206,6 +206,14 @@ class CompanyVisaAgreementMacroBuilder
     }
 
     /**
+     * Section 4 "Total DOHA charges Inc Surcharges" for all service agreement templates.
+     */
+    public static function calculateDohaChargesInclSurcharges(float $totalDoHACharges, float $totalDoHASurcharges): string
+    {
+        return number_format($totalDoHACharges + $totalDoHASurcharges, 2, '.', '');
+    }
+
+    /**
      * Section 4 grand total for company nomination / sponsorship templates.
      *
      * Company templates merge TotalDoHASurcharges in the DoHA row (not TotalDoHAChargesInclSurcharge),

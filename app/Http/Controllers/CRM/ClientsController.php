@@ -4774,7 +4774,7 @@ class ClientsController extends Controller
                                     'occurrences_substring_TotalDoHASurcharges' => $countBareName,
                                     'last_match_byte_offset' => $lastPos,
                                     'patch_mode' => 'full_placeholder',
-                                    'note' => 'Clause 4 cell will merge TotalDoHAChargesInclSurcharge (line-sum), NOT TotalDoHASurchargesMacroSum (DB triple sum).',
+                                    'note' => 'Clause 4 cell will merge TotalDoHAChargesInclSurcharge (charges + surcharges), same as TotalDoHASurcharges.',
                                 ]);
                             } else {
                                 // Word may split placeholder across XML runs; try name only (last occurrence)
@@ -4791,7 +4791,7 @@ class ClientsController extends Controller
                                         'occurrences_substring_TotalDoHASurcharges' => $countBareName,
                                         'last_match_byte_offset' => $lastPos,
                                         'patch_mode' => 'bare_name_only',
-                                        'note' => 'Clause 4 cell will merge TotalDoHAChargesInclSurcharge (line-sum), NOT TotalDoHASurchargesMacroSum (DB triple sum).',
+                                        'note' => 'Clause 4 cell will merge TotalDoHAChargesInclSurcharge (charges + surcharges), same as TotalDoHASurcharges.',
                                     ]);
                                 }
                             }
@@ -5120,24 +5120,21 @@ class ClientsController extends Controller
 
                     $TotalDoHACharges = $matter_info->TotalDoHACharges ?? 0;
                     $TotalDoHASurcharges = $matter_info->TotalDoHASurcharges ?? 0;
-                    // Total for "Amount incl Surcharge" column = sum of per-row Amount incl Surcharge (matches table total)
-                    $TotalDoHAChargesInclSurcharge = number_format(
-                        floatval($DoHAMainApplicantSurcharge ?? 0) + floatval($DoHAAdditional18PlusSurcharge ?? 0)
-                        + floatval($DoHAAdditionalUnder18Surcharge ?? 0) + floatval($DoHASecondInstalmentMainSurcharge ?? 0)
-                        + floatval($DoHASubsequentApplicantCharge18PlusSurcharge ?? 0) + floatval($DoHASubsequentTempAppSurcharge ?? 0)
-                        + floatval($DoHANonInternetSurcharge ?? 0),
-                        2, '.', ''
+                    // Section 4 "Total DOHA charges Inc Surcharges" = Total DoHA Charges + Total DoHA Surcharges only
+                    $TotalDoHAChargesInclSurcharge = CompanyVisaAgreementMacroBuilder::calculateDohaChargesInclSurcharges(
+                        floatval($TotalDoHACharges),
+                        floatval($TotalDoHASurcharges)
                     );
 
                     $TotalEstimatedOtherCosts = $matter_info->additional_fee_1 ?? 0;
-                    // Total Fees, Charges & Costs = professional fees + full DoHA charges (incl surcharge) + estimated costs
+                    // Total Fees, Charges & Costs = professional fees + DoHA charges (incl surcharge) + estimated costs
                     $GrandTotalFeesAndCosts = floatval($Blocktotalfeesincltax) + floatval($TotalDoHAChargesInclSurcharge) + floatval($TotalEstimatedOtherCosts);
                     $GrandTotalFeesAndCostsFormated = number_format($GrandTotalFeesAndCosts, 2, '.', '');
                 }
             }
 
-            // ${TotalDoHASurcharges}: read only from cost_assignment_forms — sum of Total DoHA Charges + Total DoHA Surcharges + Additional Fee 1
-            // (Isolated from other agreement variables so the macro always matches the three DB fields on that form row.)
+            // ${TotalDoHASurcharges} / ${TotalDoHAChargesInclSurcharge}: Total DoHA Charges + Total DoHA Surcharges only
+            // (Additional Fee 1 is merged via ${TotalEstimatedOthCosts}.)
             $TotalDoHASurchargesMacroSum = '0.00';
             $costRowForMacro = null;
             if (isset($request->client_matter_id) && $request->client_matter_id !== '') {
@@ -5148,22 +5145,24 @@ class ClientsController extends Controller
                 if ($costRowForMacro !== null) {
                     $dbBase = floatval($costRowForMacro->TotalDoHACharges ?? 0);
                     $dbSurchargeOnly = floatval($costRowForMacro->TotalDoHASurcharges ?? 0);
-                    $dbAdditionalFee1 = floatval($costRowForMacro->additional_fee_1 ?? 0);
-                    $TotalDoHASurchargesMacroSum = number_format(
-                        $dbBase + $dbSurchargeOnly + $dbAdditionalFee1,
-                        2,
-                        '.',
-                        ''
+                    $TotalDoHASurchargesMacroSum = CompanyVisaAgreementMacroBuilder::calculateDohaChargesInclSurcharges(
+                        $dbBase,
+                        $dbSurchargeOnly
                     );
-                    Log::info('[AgreementMacro:TotalDoHASurcharges] DB triple-sum for merge key TotalDoHASurcharges', [
+                    $TotalDoHAChargesInclSurcharge = $TotalDoHASurchargesMacroSum;
+                    $GrandTotalFeesAndCostsFormated = CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(
+                        floatval($Blocktotalfeesincltax),
+                        $TotalDoHASurchargesMacroSum,
+                        floatval($TotalEstimatedOtherCosts)
+                    );
+                    Log::info('[AgreementMacro:TotalDoHASurcharges] DoHA incl surcharge (charges + surcharges only)', [
                         'client_id' => $request->client_id,
                         'client_matter_id' => $request->client_matter_id,
+                        'template' => $templateFileName,
                         'TotalDoHACharges' => $dbBase,
                         'TotalDoHASurcharges_surcharge_only' => $dbSurchargeOnly,
-                        'additional_fee_1' => $dbAdditionalFee1,
                         'macro_TotalDoHASurcharges_merge_value' => $TotalDoHASurchargesMacroSum,
-                        'compare_TotalDoHAChargesInclSurcharge_line_sum' => $TotalDoHAChargesInclSurcharge,
-                        'note' => 'If clause 4 shows line_sum instead, DOCX patch rewrote placeholder to TotalDoHAChargesInclSurcharge.',
+                        'GrandTotalFeesAndCosts' => $GrandTotalFeesAndCostsFormated,
                     ]);
                 } else {
                     Log::warning('[AgreementMacro:TotalDoHASurcharges] No cost_assignment_forms row for client/matter — macro stays 0.00', [
@@ -5174,23 +5173,6 @@ class ClientsController extends Controller
             } else {
                 Log::warning('[AgreementMacro:TotalDoHASurcharges] Missing client_matter_id — macro stays 0.00', [
                     'client_id' => $request->client_id,
-                ]);
-            }
-
-            if (CompanyAgreementDocxPatcher::isCompanyAgreementTemplate($templateFileName)) {
-                $GrandTotalFeesAndCostsFormated = CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(
-                    floatval($Blocktotalfeesincltax),
-                    $TotalDoHASurchargesMacroSum,
-                    floatval($TotalEstimatedOtherCosts)
-                );
-                Log::info('[AgreementMacro:Company] Recalculated GrandTotalFeesAndCosts from section 4 summary rows', [
-                    'client_id' => $request->client_id,
-                    'client_matter_id' => $request->client_matter_id ?? null,
-                    'template' => $templateFileName,
-                    'Blocktotalfeesincltax' => $BlocktotalfeesincltaxFormated,
-                    'TotalDoHASurcharges' => $TotalDoHASurchargesMacroSum,
-                    'TotalEstimatedOthCosts' => number_format(floatval($TotalEstimatedOtherCosts), 2, '.', ''),
-                    'GrandTotalFeesAndCosts' => $GrandTotalFeesAndCostsFormated,
                 ]);
             }
 

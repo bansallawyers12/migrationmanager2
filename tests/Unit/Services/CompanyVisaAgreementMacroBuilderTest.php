@@ -75,6 +75,14 @@ class CompanyVisaAgreementMacroBuilderTest extends TestCase
         $this->assertSame('425.88', $macros['DoHASponsorshipApplicantSurcharge']);
     }
 
+    public function test_calculate_doha_charges_incl_surcharges_sums_charges_and_surcharges_only(): void
+    {
+        $this->assertSame(
+            '2768.22',
+            CompanyVisaAgreementMacroBuilder::calculateDohaChargesInclSurcharges(2730.00, 38.22)
+        );
+    }
+
     public function test_calculate_grand_total_sums_section_four_summary_rows(): void
     {
         $this->assertSame(
@@ -82,8 +90,8 @@ class CompanyVisaAgreementMacroBuilderTest extends TestCase
             CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(3300.00, '547.56', 0.0)
         );
         $this->assertSame(
-            '4969.78',
-            CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(2200.00, '2769.00', 0.78)
+            '4969.00',
+            CompanyVisaAgreementMacroBuilder::calculateGrandTotalFeesAndCosts(2200.00, '2768.22', 0.78)
         );
     }
 
