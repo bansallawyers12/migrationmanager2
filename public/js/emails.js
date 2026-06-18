@@ -14,6 +14,7 @@
     let lastPage = 1;
     let isLoading = false;
     let isUploading = false;
+    const MAX_FILES_PER_UPLOAD = 10;
     let currentMailType = 'inbox'; // 'inbox' or 'sent' - determines endpoint
     let currentLabelId = ''; // EmailLabel.id for filtering
     let currentSearch = '';
@@ -511,6 +512,22 @@
 
             if (msgFiles.length !== files.length) {
                 showNotification(`Only ${msgFiles.length} of ${files.length} files are .msg files`, 'info');
+            }
+
+            if (msgFiles.length > MAX_FILES_PER_UPLOAD) {
+                showNotification(
+                    `Maximum ${MAX_FILES_PER_UPLOAD} files allowed per upload. You selected ${msgFiles.length}. Please upload in smaller batches.`,
+                    'error'
+                );
+                fileStatus.textContent = `Maximum ${MAX_FILES_PER_UPLOAD} files per upload`;
+                fileStatus.parentElement.className = 'upload-progress error';
+                updateFileCount(0);
+                fileInput.value = '';
+                setTimeout(() => {
+                    fileStatus.textContent = 'Ready to upload';
+                    fileStatus.parentElement.className = 'upload-progress';
+                }, 4000);
+                return;
             }
 
             // Update file count badge

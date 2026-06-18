@@ -71,6 +71,7 @@
                         <i class="fas fa-cloud-upload-alt drag-drop-icon"></i>
                         <div class="drag-drop-text">Drag & drop .msg files here</div>
                         <div class="drag-drop-subtext">or click to browse</div>
+                        <div class="drag-drop-limit-hint">Maximum 10 .msg files per upload</div>
                         <div id="file-count" class="file-count-badge">0</div>
                     </div>
                     <input type="file" id="emailFileInput" class="file-input" accept=".msg" multiple style="display: none;">

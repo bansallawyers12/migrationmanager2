@@ -257,6 +257,13 @@
     color: #6c757d;
 }
 
+.drag-drop-limit-hint {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 6px;
+    font-style: italic;
+}
+
 .file-input {
     display: none;
 }
