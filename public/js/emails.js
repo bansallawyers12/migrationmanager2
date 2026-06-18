@@ -20,13 +20,80 @@
     let currentSort = 'date';
     let availableLabels = []; // Loaded from API
 
+    function getMailTypeStorageKey() {
+        const clientId = getClientId();
+        if (!clientId) {
+            return null;
+        }
+        if (isLeadContext()) {
+            return 'crmEmailMailType:lead:' + clientId;
+        }
+        const matterId = getMatterId();
+        if (!matterId) {
+            return 'crmEmailMailType:client:' + clientId;
+        }
+        return 'crmEmailMailType:matter:' + clientId + ':' + matterId;
+    }
+
+    function persistMailType(type) {
+        if (type !== 'inbox' && type !== 'sent') {
+            return;
+        }
+        const key = getMailTypeStorageKey();
+        if (!key) {
+            return;
+        }
+        try {
+            sessionStorage.setItem(key, type);
+        } catch (e) {
+            // sessionStorage may be unavailable in some browsers/private mode
+        }
+    }
+
+    function loadPersistedMailType() {
+        const key = getMailTypeStorageKey();
+        if (!key) {
+            return 'inbox';
+        }
+        try {
+            const stored = sessionStorage.getItem(key);
+            return stored === 'sent' || stored === 'inbox' ? stored : 'inbox';
+        } catch (e) {
+            return 'inbox';
+        }
+    }
+
     // Expose function to set mail type (for external use)
     window.setEmailMailType = function(type) {
+        if (type !== 'inbox' && type !== 'sent') {
+            return;
+        }
         currentMailType = type;
         const mailTypeFilter = document.getElementById('mailTypeFilter');
         if (mailTypeFilter) {
             mailTypeFilter.value = type;
         }
+        persistMailType(type);
+    };
+
+    /**
+     * Restore Inbox/Sent filter from session (per client/matter) or post-send localStorage flag.
+     */
+    window.restoreEmailMailType = function() {
+        let type = 'inbox';
+        try {
+            const switchToSent = localStorage.getItem('emailTabSwitchToSent');
+            if (switchToSent === '1') {
+                localStorage.removeItem('emailTabSwitchToSent');
+                type = 'sent';
+            } else {
+                type = loadPersistedMailType();
+            }
+        } catch (e) {
+            type = 'inbox';
+        }
+        window.setEmailMailType(type);
+        return type;
     };
 
     // =========================================================================
@@ -2581,6 +2648,12 @@
      * Initialize new filter and modal features
      */
     function initializeNewFeatures() {
+        // Restore mail type before filters bind and initial email load
+        const mailTypeFilter = document.getElementById('mailTypeFilter');
+        if (mailTypeFilter && typeof window.restoreEmailMailType === 'function') {
+            window.restoreEmailMailType();
+        }
+
         // Fetch labels on load
         fetchLabels();
 
@@ -2588,10 +2661,9 @@
         initializeContextMenu();
 
         // Mail type filter (Inbox/Sent)
-        const mailTypeFilter = document.getElementById('mailTypeFilter');
         if (mailTypeFilter) {
             mailTypeFilter.addEventListener('change', function() {
-                currentMailType = this.value;
+                window.setEmailMailType(this.value);
                 loadEmailsFromServer();
             });
         }

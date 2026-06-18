@@ -189,17 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Upload area found:', !!uploadArea);
     console.log('File status found:', !!fileStatus);
     
-    // If email was just sent, switch to "Sent" tab (flag set before page reload)
-    const switchToSent = localStorage.getItem('emailTabSwitchToSent');
-    if (switchToSent === '1') {
-        localStorage.removeItem('emailTabSwitchToSent');
-        const mailTypeFilter = document.getElementById('mailTypeFilter');
-        if (mailTypeFilter && typeof window.setEmailMailType === 'function') {
-            window.setEmailMailType('sent');
-            mailTypeFilter.value = 'sent';
-        }
-    }
-    
     // Debug: Check if modules are available
     console.log('initializeUpload available:', typeof window.initializeUpload);
     console.log('initializeSearch available:', typeof window.initializeSearch);
@@ -227,10 +216,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load emails on page load (will use the correct tab based on filter)
     if (typeof window.loadEmails === 'function') {
         console.log('Loading initial emails...');
-        // Small delay to ensure filter is set correctly
         setTimeout(function() {
             window.loadEmails();
-        }, switchToSent === '1' ? 100 : 0);
+        }, 0);
     } else {
         console.error('Load emails function not available!');
     }
