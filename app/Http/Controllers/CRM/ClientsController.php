@@ -84,6 +84,8 @@ use App\Services\ClientExportService;
 use App\Services\FCMService;
 use App\Services\ClientImportService;
 use App\Services\JobReadyAgreementFeeTablePatcher;
+use App\Services\PsaAgreementSection4SummaryTablePatcher;
+use App\Services\PsaAgreementServiceTypeRowPatcher;
 use App\Services\VisaAgreementAmountTablePatcher;
 use App\Services\VisaAgreementServiceTypeRowPatcher;
 use App\Services\CompanyAgreementDocxPatcher;
@@ -4833,12 +4835,38 @@ class ClientsController extends Controller
                                 }
                             }
 
+                            if (PsaAgreementSection4SummaryTablePatcher::supportsTemplate($templateFileName)) {
+                                $psaSection4Patch = app(PsaAgreementSection4SummaryTablePatcher::class)->patchDocumentXml($xml);
+                                $xml = $psaSection4Patch['xml'];
+                                if ($psaSection4Patch['patched']) {
+                                    $xmlPatchesApplied = true;
+                                    Log::info('[AgreementMacro:Section4] DOCX patch fixed PSA authority charges amount cell', [
+                                        'client_id' => $request->client_id,
+                                        'client_matter_id' => $request->client_matter_id ?? null,
+                                        'template' => $templateFileName,
+                                    ]);
+                                }
+                            }
+
                             if (VisaAgreementServiceTypeRowPatcher::supportsTemplate($templateFileName)) {
                                 $serviceTypePatch = app(VisaAgreementServiceTypeRowPatcher::class)->patchDocumentXml($xml);
                                 $xml = $serviceTypePatch['xml'];
                                 if ($serviceTypePatch['patched']) {
                                     $xmlPatchesApplied = true;
                                     Log::info('[AgreementMacro:ServiceType] DOCX patch right-aligned Subclass on service type row', [
+                                        'client_id' => $request->client_id,
+                                        'client_matter_id' => $request->client_matter_id ?? null,
+                                        'template' => $templateFileName,
+                                    ]);
+                                }
+                            }
+
+                            if (PsaAgreementServiceTypeRowPatcher::supportsTemplate($templateFileName)) {
+                                $psaServiceTypePatch = app(PsaAgreementServiceTypeRowPatcher::class)->patchDocumentXml($xml);
+                                $xml = $psaServiceTypePatch['xml'];
+                                if ($psaServiceTypePatch['patched']) {
+                                    $xmlPatchesApplied = true;
+                                    Log::info('[AgreementMacro:ServiceType] DOCX patch right-aligned Stream on PSA service type row', [
                                         'client_id' => $request->client_id,
                                         'client_matter_id' => $request->client_matter_id ?? null,
                                         'template' => $templateFileName,
