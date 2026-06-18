@@ -88,6 +88,7 @@ use App\Services\VisaAgreementAmountTablePatcher;
 use App\Services\VisaAgreementServiceTypeRowPatcher;
 use App\Services\CompanyAgreementDocxPatcher;
 use App\Services\CompanyVisaAgreementMacroBuilder;
+use App\Services\VisaAgreementApplicantAddressResolver;
 use App\Services\VisaAgreementTemplateResolver;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
@@ -4935,23 +4936,18 @@ class ClientsController extends Controller
             }
 
             // Try to find client address
+            $addressRow = null;
             $address_record_cnt = DB::table('client_addresses')->where('client_id', $id)->count();
-            if( $address_record_cnt > 0 ){
-                // If a record with is_current = 1 is found, return its address
-                $addressArr = DB::table('client_addresses')->where('client_id', $id)->where('is_current', 1)->first();
-                if ($addressArr) {
-                    $client_address = $addressArr->address;
-                    $client_zip = $addressArr->zip;
-                } else {
-                    // If no record with is_current = 1 is found, get the latest record by created_at
-                    $latestAddressRecord = DB::table('client_addresses')->where('client_id', $id)->orderByRaw(ClientAddress::ORDER_BY_DISPLAY_SQL)->orderByDesc('id')->first();
-                    $client_address = $latestAddressRecord->address;
-                    $client_zip = $latestAddressRecord->zip;
+            if ($address_record_cnt > 0) {
+                $addressRow = DB::table('client_addresses')->where('client_id', $id)->where('is_current', 1)->first();
+                if ($addressRow === null) {
+                    $addressRow = DB::table('client_addresses')->where('client_id', $id)->orderByRaw(ClientAddress::ORDER_BY_DISPLAY_SQL)->orderByDesc('id')->first();
                 }
-            } else {
-                $client_address = null;
-                $client_zip = null;
             }
+
+            $addressMacros = app(VisaAgreementApplicantAddressResolver::class)->resolveForTemplate($addressRow, $templateFileName);
+            $client_address = $addressMacros['street'];
+            $client_zip = $addressMacros['postcode'];
 
             //Get client matter info
             $visa_subclass = '';
