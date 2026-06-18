@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Services\CompanyAgreementDocxPatcher;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CompanyAgreementDocxPatcherTest extends TestCase
@@ -153,6 +154,85 @@ class CompanyAgreementDocxPatcherTest extends TestCase
         );
 
         $this->assertFalse(str_contains($patch['xml'], '<w:pageBreakBefore'));
+    }
+
+    #[DataProvider('companyAgreementTemplateProvider')]
+    public function test_signature_name_field_is_on_one_line(string $templateFileName): void
+    {
+        $path = storage_path('app/templates/' . $templateFileName);
+        if (! is_file($path)) {
+            $this->markTestSkipped($templateFileName . ' not present in storage/app/templates');
+        }
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($path));
+        $xml = $zip->getFromName('word/document.xml');
+        $zip->close();
+        $this->assertNotFalse($xml);
+
+        $patch = (new CompanyAgreementDocxPatcher())->patchDocumentXml($xml, $templateFileName);
+
+        $this->assertTrue($patch['patched']);
+        $this->assertContains('signature_name_single_line', $patch['fixes']);
+        $this->assertSame(0, $this->signatureNameParagraphBreakCount($patch['xml']));
+    }
+
+    #[DataProvider('companyAgreementTemplateProvider')]
+    public function test_signature_name_single_line_patch_is_idempotent(string $templateFileName): void
+    {
+        $path = storage_path('app/templates/' . $templateFileName);
+        if (! is_file($path)) {
+            $this->markTestSkipped($templateFileName . ' not present in storage/app/templates');
+        }
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($path));
+        $xml = $zip->getFromName('word/document.xml');
+        $zip->close();
+        $this->assertNotFalse($xml);
+
+        $patcher = new CompanyAgreementDocxPatcher();
+        $first = $patcher->patchDocumentXml($xml, $templateFileName);
+        $second = $patcher->patchDocumentXml($first['xml'], $templateFileName);
+
+        $this->assertContains('signature_name_single_line', $first['fixes']);
+        $this->assertNotContains('signature_name_single_line', $second['fixes']);
+        $this->assertSame($first['xml'], $second['xml']);
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public static function companyAgreementTemplateProvider(): array
+    {
+        return [
+            'company_nomination' => ['Service_Agreement_company_nomination.docx'],
+            'company_sponsorship' => ['Service_Agreement_company_sponsorship.docx'],
+        ];
+    }
+
+    private function signatureNameParagraphBreakCount(string $xml): int
+    {
+        $marker = 'Name: </w:t>';
+        $offset = 0;
+
+        while (($pos = strpos($xml, $marker, $offset)) !== false) {
+            $window = substr($xml, $pos, 6000);
+            if (
+                str_contains($window, 'DirectorSur')
+                && str_contains($window, 'on behalf of')
+                && str_contains($window, 'CompanyName')
+            ) {
+                $cellEnd = strpos($window, '</w:tc>');
+                if ($cellEnd !== false) {
+                    return substr_count(substr($window, 0, $cellEnd), '</w:p><w:p');
+                }
+            }
+
+            $offset = $pos + strlen($marker);
+        }
+
+        return -1;
     }
 
     private function pageBreakBeforeCountForHeading(string $xml, string $heading): int

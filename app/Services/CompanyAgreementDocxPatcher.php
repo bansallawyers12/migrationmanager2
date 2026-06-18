@@ -36,6 +36,15 @@ class CompanyAgreementDocxPatcher
             $patched = true;
         }
 
+        if (self::isCompanyAgreementTemplate($templateFileName)) {
+            $nameLinePatch = $this->patchSignatureNameOnOneLine($xml);
+            $xml = $nameLinePatch['xml'];
+            if ($nameLinePatch['patched']) {
+                $fixes[] = 'signature_name_single_line';
+                $patched = true;
+            }
+        }
+
         if ($this->isCompanyNominationTemplate($templateFileName)) {
             $safLevyPatch = $this->patchSafLevyChargeTypeLabel($xml);
             $xml = $safLevyPatch['xml'];
@@ -57,6 +66,65 @@ class CompanyAgreementDocxPatcher
             'patched' => $patched,
             'fixes' => $fixes,
         ];
+    }
+
+    /**
+     * Keep "Name: {Director} on behalf of {Company}" on one line in the client signature row.
+     *
+     * Uploaded templates split ${DirectorGivenname} and ${DirectorSurname} across two paragraphs.
+     *
+     * @return array{xml: string, patched: bool}
+     */
+    private function patchSignatureNameOnOneLine(string $xml): array
+    {
+        $marker = 'Name: </w:t>';
+        $offset = 0;
+
+        while (($pos = strpos($xml, $marker, $offset)) !== false) {
+            $window = substr($xml, $pos, 6000);
+
+            if (
+                ! str_contains($window, 'DirectorSur')
+                || ! str_contains($window, 'on behalf of')
+                || ! str_contains($window, 'CompanyName')
+            ) {
+                $offset = $pos + strlen($marker);
+
+                continue;
+            }
+
+            $cellEnd = strpos($window, '</w:tc>');
+            if ($cellEnd === false) {
+                $offset = $pos + strlen($marker);
+
+                continue;
+            }
+
+            $cell = substr($window, 0, $cellEnd);
+            $spaceRun = '<w:r><w:rPr><w:rFonts w:ascii="Franklin Gothic Book" w:hAnsi="Franklin Gothic Book"/>'
+                .'<w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
+                .'<w:t xml:space="preserve"> </w:t></w:r>';
+
+            $collapsed = preg_replace(
+                '/<\/w:p><w:p\b[^>]*>(?:<w:pPr>.*?<\/w:pPr>)?/',
+                $spaceRun,
+                $cell,
+                1
+            );
+
+            if (! is_string($collapsed) || $collapsed === $cell) {
+                $offset = $pos + strlen($marker);
+
+                continue;
+            }
+
+            return [
+                'xml' => substr($xml, 0, $pos).$collapsed.substr($xml, $pos + $cellEnd),
+                'patched' => true,
+            ];
+        }
+
+        return ['xml' => $xml, 'patched' => false];
     }
 
     /**
