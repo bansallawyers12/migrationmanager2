@@ -227,7 +227,11 @@ class MatterEmailBodyCleanupService
     {
         $subject = htmlspecialchars((string) ($email->subject ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $from = htmlspecialchars((string) ($email->from_mail ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $to = htmlspecialchars((string) ($email->to_mail ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $to = htmlspecialchars(EmailLog::resolveRecipientDisplay($email->to_mail, $email->type), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $ccResolved = EmailLog::resolveRecipientDisplay($email->cc, $email->type);
+        $ccLine = $ccResolved !== ''
+            ? '<p><strong>Cc:</strong> ' . htmlspecialchars($ccResolved, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>'
+            : '';
 
         return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'
             . $subject
@@ -235,6 +239,7 @@ class MatterEmailBodyCleanupService
             . '<p><strong>Subject:</strong> ' . $subject . '</p>'
             . '<p><strong>From:</strong> ' . $from . '</p>'
             . '<p><strong>To:</strong> ' . $to . '</p>'
+            . $ccLine
             . '<hr>'
             . $body
             . '</body></html>';

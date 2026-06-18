@@ -4120,6 +4120,7 @@ class ClientsController extends Controller
                 
                 // Add preview_url to the array
                 $emailArray['preview_url'] = $previewUrl;
+                $emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? 'client');
 
                 $emailArray = app(MatterEmailBodyCleanupService::class)->appendArchivedBodyMeta($emailArray, $email);
                 
@@ -4499,6 +4500,7 @@ class ClientsController extends Controller
 				$emailArray['preview_url'] = $previewUrl;
 				$emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
 				$emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? null);
+				$emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? null);
 				$emailArray['subject'] = $emailArray['subject'] ?? '';
 				$emailArray['message'] = $emailArray['message'] ?? '';
 
@@ -4630,6 +4632,7 @@ class ClientsController extends Controller
                 $emailArray['preview_url'] = $previewUrl;
                 $emailArray['from_mail'] = $emailArray['from_mail'] ?? '';
                 $emailArray['to_mail'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['to_mail'] ?? '', $email->type ?? 'lead');
+                $emailArray['cc'] = \App\Models\EmailLog::resolveRecipientDisplay($emailArray['cc'] ?? '', $email->type ?? 'lead');
                 $emailArray['subject'] = $emailArray['subject'] ?? '';
                 $emailArray['message'] = $emailArray['message'] ?? '';
                 return $emailArray;

@@ -1119,6 +1119,7 @@
         const subject = email.subject || '(No subject)';
         const from = email.from_mail || 'Unknown';
         const to = cleanRecipients(email.to_mail) || 'Unknown';
+        const cc = cleanRecipients(email.cc) || '';
         const date = formatDate(getEmailDate(email));
         const hasDbBody = typeof email.message === 'string' && email.message.trim() !== '';
         let message = hasDbBody ? email.message : '(No content)';
@@ -1228,6 +1229,7 @@
                 <div class="email-content-meta">
                     <div><strong>From:</strong> ${escapeHtml(from)}</div>
                     <div><strong>To:</strong> ${escapeHtml(to)}</div>
+                    ${cc ? `<div><strong>Cc:</strong> ${escapeHtml(cc)}</div>` : ''}
                     <div><strong>Date:</strong> ${date}</div>
                 </div>
             </div>
@@ -1612,6 +1614,7 @@
     function formatQuotedMessage(email, isForward = false) {
         const from = email.from_mail || 'Unknown';
         const to = cleanRecipients(email.to_mail) || 'Unknown';
+        const cc = cleanRecipients(email.cc) || '';
         const date = formatDate(getEmailDate(email));
         const subject = email.subject || '(No subject)';
         const message = email.message || '(No content)';
@@ -1623,6 +1626,9 @@
             quotedText = '\n\n---------- Forwarded message ----------\n';
             quotedText += 'From: ' + from + '\n';
             quotedText += 'To: ' + to + '\n';
+            if (cc) {
+                quotedText += 'Cc: ' + cc + '\n';
+            }
             quotedText += 'Date: ' + date + '\n';
             quotedText += 'Subject: ' + subject + '\n\n';
         } else {

@@ -237,7 +237,11 @@ class CrmSentEmailS3Service
     protected function buildEmailHtml(EmailLog $emailLog, string $subject, string $messageHtml): string
     {
         $from = htmlspecialchars($emailLog->from_mail ?? '');
-        $to = htmlspecialchars($emailLog->to_mail ?? '');
+        $to = htmlspecialchars(EmailLog::resolveRecipientDisplay($emailLog->to_mail, $emailLog->type));
+        $ccResolved = EmailLog::resolveRecipientDisplay($emailLog->cc, $emailLog->type);
+        $ccLine = $ccResolved !== ''
+            ? '<p><strong>Cc:</strong> ' . htmlspecialchars($ccResolved) . '</p>'
+            : '';
         $date = $emailLog->created_at ? $emailLog->created_at->format('d/m/Y h:i a') : date('d/m/Y h:i a');
         $subjectEscaped = htmlspecialchars($subject);
         $body = $messageHtml;
@@ -246,6 +250,7 @@ class CrmSentEmailS3Service
             '<div style="font-family:Arial,sans-serif;max-width:800px;">' .
             '<p><strong>From:</strong> ' . $from . '</p>' .
             '<p><strong>To:</strong> ' . $to . '</p>' .
+            $ccLine .
             '<p><strong>Date:</strong> ' . $date . '</p>' .
             '<p><strong>Subject:</strong> ' . $subjectEscaped . '</p>' .
             '<hr>' .
