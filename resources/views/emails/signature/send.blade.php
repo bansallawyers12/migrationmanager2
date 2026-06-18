@@ -232,7 +232,7 @@
                     <strong>Important:</strong> This link is unique to you and should not be shared. 
                     It will expire once the document is signed or after the due date.
                     <br><br>
-                    Above sign document link cannot be accessed from outside India or Australia. From outside, you can access this link with the use of VPN.
+                    <strong>Above sign document link cannot be accessed from outside India or Australia. From outside, you can access this link with the use of VPN.</strong>
                 </div>
 
                 <p class="message">
