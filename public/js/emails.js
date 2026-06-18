@@ -978,6 +978,7 @@
         const subject = email.subject || '(No subject)';
         const from = email.from_mail || 'Unknown sender';
         const to = cleanRecipients(email.to_mail) || 'Unknown recipient';
+        const cc = cleanRecipients(email.cc) || '';
         const date = formatDate(getEmailDate(email));
         const isRead = email.mail_is_read == 1;
 
@@ -1006,6 +1007,7 @@
             </div>
             <div class="email-sender">From: ${escapeHtml(from)}</div>
             <div class="email-sender" style="font-size: 12px; color: #999;">To: ${escapeHtml(to)}</div>
+            ${cc ? `<div class="email-sender" style="font-size: 12px; color: #999;">Cc: ${escapeHtml(cc)}</div>` : ''}
             <div class="email-badges">
                 ${labelBadges}
             </div>
