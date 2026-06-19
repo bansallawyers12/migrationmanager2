@@ -167,8 +167,15 @@
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="title" class="col-form-label" style="color:#495057 !important; font-weight: 500 !important;">Matter Name</label>
-                                                <input type="text" name="title" value="{{ old('title', Request::get('title')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Select Matter" id="title">
+                                                <label for="matter_id" class="col-form-label" style="color:#495057 !important; font-weight: 500 !important;">Matter Name</label>
+                                                <select name="matter_id" id="matter_id" class="form-control mm-select">
+                                                    <option value="">Select Matter</option>
+                                                    @foreach ($activeMatters as $matter)
+                                                        <option value="{{ $matter->id }}" {{ (string) old('matter_id', Request::get('matter_id')) === (string) $matter->id ? 'selected' : '' }}>
+                                                            {{ $matter->title }}@if(!empty($matter->nick_name)) ({{ $matter->nick_name }})@endif
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -260,6 +267,14 @@ jQuery(document).ready(function($){
     $('.matter-index-page .filter_btn').on('click', function(){
 		$('.matter-index-page .filter_panel').toggle();
 	});
+
+    if (typeof $.fn.mmSelect !== 'undefined') {
+        $('#matter_id').mmSelect({
+            placeholder: 'Select Matter',
+            allowClear: true,
+            width: '100%'
+        });
+    }
 
     if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
         document.querySelectorAll('.matter-index-page .matter-action-dropdown-toggle').forEach(function (el) {

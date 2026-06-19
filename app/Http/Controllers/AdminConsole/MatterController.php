@@ -29,7 +29,9 @@ class MatterController extends Controller
         $query = Matter::query();
         $totalData = $query->count(); // for all data
         //dd($totalData);
-        if ($request->has('title')) {
+        if ($request->filled('matter_id')) {
+            $query->where('id', $request->input('matter_id'));
+        } elseif ($request->has('title')) {
             $title 		= 	$request->input('title');
             if(trim($title) != '') {
                 $query->where('title', 'LIKE', '%' . $title . '%');
@@ -44,8 +46,12 @@ class MatterController extends Controller
                 });
             }
         }
+        $activeMatters = Matter::select('id', 'title', 'nick_name')
+            ->where('status', 1)
+            ->orderBy('title', 'asc')
+            ->get();
         $lists	= $query->sortable(['id' => 'desc'])->paginate(20);
-        return view('AdminConsole.features.matter.index', compact(['lists', 'totalData']));
+        return view('AdminConsole.features.matter.index', compact(['lists', 'totalData', 'activeMatters']));
     }
 
     public function create(Request $request)
