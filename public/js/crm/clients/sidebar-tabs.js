@@ -241,6 +241,14 @@
                 if (typeof showClientMatterPortalData === 'function') {
                     showClientMatterPortalData(SidebarTabs.selectedMatter);
                 }
+                if (typeof window.ensureStageNavBackButtonVisible === 'function') {
+                    window.ensureStageNavBackButtonVisible();
+                }
+                break;
+            case 'workflow':
+                if (typeof window.ensureStageNavBackButtonVisible === 'function') {
+                    window.ensureStageNavBackButtonVisible();
+                }
                 break;
         }
     }

@@ -3583,7 +3583,10 @@ body:has(#create_checklist.modal.show) .modal-backdrop {
     opacity: 1 !important;
 }
 
-#back-to-previous-stage {
+/* Back to Previous Stage — always visible (workflow + client portal button IDs) */
+.stage-navigation-buttons .btn-outline-primary,
+#back-to-previous-stage,
+#workflow-tab-back-to-previous-stage {
     display: inline-block !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -3591,12 +3594,29 @@ body:has(#create_checklist.modal.show) .modal-backdrop {
     z-index: 10 !important;
     width: 100% !important;
     min-width: 180px !important;
+    color: #3490dc !important;
+    border-color: #3490dc !important;
+    background-color: #ffffff !important;
+}
+
+.stage-navigation-buttons .btn-outline-primary:hover,
+.stage-navigation-buttons .btn-outline-primary:focus,
+#back-to-previous-stage:hover,
+#back-to-previous-stage:focus,
+#workflow-tab-back-to-previous-stage:hover,
+#workflow-tab-back-to-previous-stage:focus {
+    color: #ffffff !important;
+    background-color: #3490dc !important;
+    border-color: #3490dc !important;
 }
 
 /* Override any global styles that might hide the button */
 .stage-navigation-buttons #back-to-previous-stage,
+.stage-navigation-buttons #workflow-tab-back-to-previous-stage,
 .in-progress-section #back-to-previous-stage,
-.info-card #back-to-previous-stage {
+.in-progress-section #workflow-tab-back-to-previous-stage,
+.info-card #back-to-previous-stage,
+.info-card #workflow-tab-back-to-previous-stage {
     display: inline-block !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -3818,69 +3838,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Back to Previous Stage button handler
     function ensureBackButtonVisible() {
-        const backStageBtn = document.getElementById('back-to-previous-stage');
-        if (backStageBtn) {
-            // Force button to be visible - override any conflicting styles
+        ['back-to-previous-stage', 'workflow-tab-back-to-previous-stage'].forEach(function(btnId) {
+            const backStageBtn = document.getElementById(btnId);
+            if (!backStageBtn) return;
+
             backStageBtn.style.setProperty('display', 'inline-block', 'important');
             backStageBtn.style.setProperty('visibility', 'visible', 'important');
             backStageBtn.style.setProperty('opacity', '1', 'important');
             backStageBtn.style.setProperty('position', 'relative', 'important');
             backStageBtn.style.setProperty('z-index', '10', 'important');
-            
-            // Also ensure parent container is visible
+            backStageBtn.style.setProperty('color', '#3490dc', 'important');
+            backStageBtn.style.setProperty('border-color', '#3490dc', 'important');
+            backStageBtn.style.setProperty('background-color', '#ffffff', 'important');
+
             const parentContainer = backStageBtn.closest('.stage-navigation-buttons');
             if (parentContainer) {
                 parentContainer.style.setProperty('display', 'flex', 'important');
                 parentContainer.style.setProperty('visibility', 'visible', 'important');
                 parentContainer.style.setProperty('opacity', '1', 'important');
             }
-        }
+        });
     }
     
     // Ensure button is visible immediately and after a short delay
     ensureBackButtonVisible();
     setTimeout(ensureBackButtonVisible, 100);
     setTimeout(ensureBackButtonVisible, 500);
-    
-    const backStageBtn = document.getElementById('back-to-previous-stage');
-    if (backStageBtn) {
-        backStageBtn.addEventListener('click', function() {
-            const matterId = this.getAttribute('data-matter-id');
-            if (!matterId) {
-                alert('Error: Matter ID not found');
-                return;
-            }
-            if (!confirm('Are you sure you want to move back to the previous stage?')) return;
-            const originalText = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            fetch('{{ route("clients.matter.update-previous-stage") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                },
-                body: JSON.stringify({ matter_id: matterId, source: 'client_portal' })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status) {
-                    alert(data.message || 'Matter has been successfully moved to the previous stage.');
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Failed to move to previous stage. Please try again.');
-                    backStageBtn.disabled = false;
-                    backStageBtn.innerHTML = originalText;
-                }
-            })
-            .catch(function() {
-                alert('Failed to move to previous stage. Please try again.');
-                backStageBtn.disabled = false;
-                backStageBtn.innerHTML = originalText;
-            });
-        });
-    }
-    
+
+    // Back to Previous Stage — handled by workflow-tab.js (partial tab refresh, no full page reload)
+
     // Proceed to Next Stage button handler
     const nextStageBtn = document.getElementById('proceed-to-next-stage');
     if (nextStageBtn) {
@@ -3993,8 +3979,13 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.disabled = false;
             btn.innerHTML = orig;
             if (data.status) {
-                alert(data.message || 'Matter has been successfully moved to the next stage.');
-                window.location.reload();
+                const activeTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab');
+                if (activeTab === 'workflow' && typeof window.handleWorkflowStageUpdateSuccess === 'function') {
+                    window.handleWorkflowStageUpdateSuccess(data.message || 'Matter has been successfully moved to the next stage.');
+                } else {
+                    alert(data.message || 'Matter has been successfully moved to the next stage.');
+                    window.location.reload();
+                }
             } else {
                 alert(data.message || 'Failed to move to next stage.');
                 $('#decision-received-modal').modal('show');

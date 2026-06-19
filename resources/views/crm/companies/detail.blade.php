@@ -1406,6 +1406,12 @@ $(document).ready(function() {
             sendInvoiceToClient: '{{ url("/clients/send-invoice-to-client") }}',
             sendClientFundReceiptToClient: '{{ url("/clients/send-client-fund-receipt-to-client") }}',
             sendOfficeReceiptToClient: '{{ url("/clients/send-office-receipt-to-client") }}',
+            updateNextStage: '{{ route("clients.matter.update-next-stage") }}',
+            updatePreviousStage: '{{ route("clients.matter.update-previous-stage") }}',
+            updateDeadline: '{{ route("clients.matter.update-deadline") }}',
+            changeWorkflow: '{{ route("clients.matter.change-workflow") }}',
+            discontinue: '{{ route("clients.matter.discontinue") }}',
+            reopen: '{{ route("clients.matter.reopen") }}',
         }
     };
     
@@ -1573,6 +1579,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/visa-expiry.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/workflow-tab.js') }}?v={{ time() }}"></script>
 {{-- Main detail page JavaScript --}}
 <script src="{{ URL::asset('js/crm/clients/detail-main.js') }}?v={{ time() }}"></script>
 
