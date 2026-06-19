@@ -215,6 +215,15 @@ class VisaAgreementTemplateResolver
         } elseif ($nom && $spon) {
             $ordered = [$nomFile, $sponFile, $defaultGeneral];
             $rule = 'company_nomination_and_sponsorship_hint';
+        } elseif ($this->matchesArtMatter($nick, $titleLower)) {
+            $ordered = array_merge(
+                [
+                    $cfg['art'] ?? '',
+                    $cfg['legacy_art'] ?? '',
+                ],
+                [$defaultGeneral]
+            );
+            $rule = 'company_art';
         } else {
             $ordered = [$defaultGeneral];
             $rule = 'company_general';
@@ -288,8 +297,16 @@ class VisaAgreementTemplateResolver
 
     private function matchesArtMatter(string $nick, string $titleLower): bool
     {
-        if ($nick === 'art') {
-            return true;
+        foreach (config('visa_agreement_templates.art_matter_nick_names', ['art']) as $n) {
+            if ($nick === strtolower(trim((string) $n))) {
+                return true;
+            }
+        }
+
+        foreach (config('visa_agreement_templates.art_matter_title_markers', []) as $marker) {
+            if (str_contains($titleLower, strtolower(trim((string) $marker)))) {
+                return true;
+            }
         }
 
         return (bool) @preg_match('/\bart\b/i', $titleLower);

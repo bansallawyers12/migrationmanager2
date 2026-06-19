@@ -26,6 +26,16 @@ return [
 
     'art' => 'Service_Agreement_ART.docx',
 
+    /*
+    | ART template: matter nick_name (exact, case-insensitive) or title substring.
+    */
+    'art_matter_nick_names' => ['art', 'employerart'],
+
+    'art_matter_title_markers' => [
+        'administrative review tribunal',
+        'administrative appeals tribunal',
+    ],
+
     'citizenship' => 'Service_Agreement_citizenship.docx',
 
     'eoi_roi' => 'Service_Agreement_EOI_ROI.docx',

@@ -152,11 +152,54 @@ class VisaAgreementTemplateResolverTest extends TestCase
         $this->assertSame('general', $r['rule']);
     }
 
-    public function test_company_overrides_personal_art_branch(): void
+    public function test_company_art_matter_uses_art_template(): void
     {
         $r = $this->resolver->determineCandidates(true, 'art', 'ART', false);
-        $this->assertSame('company_general', $r['rule']);
-        $this->assertSame('Service_Agreement_general.docx', $r['candidates'][0]);
+        $this->assertSame('company_art', $r['rule']);
+        $this->assertSame(
+            [
+                'Service_Agreement_ART.docx',
+                'agreement_template-ART.docx',
+                'Service_Agreement_general.docx',
+            ],
+            $r['candidates']
+        );
+    }
+
+    public function test_company_employer_art_nick_uses_art_template(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            true,
+            'employerart',
+            'EmployerART_1 - Administrative Review Tribunal',
+            false
+        );
+        $this->assertSame('company_art', $r['rule']);
+        $this->assertSame('Service_Agreement_ART.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_administrative_review_tribunal_title_uses_art_template(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            true,
+            'gn',
+            'Administrative Review Tribunal',
+            false
+        );
+        $this->assertSame('company_art', $r['rule']);
+        $this->assertSame('Service_Agreement_ART.docx', $r['candidates'][0]);
+    }
+
+    public function test_company_nomination_takes_priority_over_art_title_marker(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            true,
+            'de',
+            'Employer Nomination Scheme — Administrative Review Tribunal',
+            false
+        );
+        $this->assertSame('company_nomination', $r['rule']);
+        $this->assertSame('Service_Agreement_company_nomination.docx', $r['candidates'][0]);
     }
 
     public function test_job_ready_path_takes_priority_over_conflict_subclass_in_title(): void
