@@ -157,6 +157,76 @@
     }
 
     /**
+     * Sanitize filename for multipart upload (WAF-safe).
+     * Mirrors EmailUploadController::sanitizeFilename — apostrophes and other
+     * special chars in Content-Disposition can trigger mod_security 403 blocks.
+     */
+    function sanitizeUploadFilename(filename) {
+        if (!filename || typeof filename !== 'string') {
+            return 'email_' + Date.now() + '.msg';
+        }
+
+        const lastDot = filename.lastIndexOf('.');
+        const extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+        const nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+
+        let sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+
+        if (!sanitizedName) {
+            sanitizedName = 'email_' + Date.now();
+        }
+
+        let sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+
+        if (sanitizedFilename.length > 255) {
+            const maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+            if (maxNameLength > 0) {
+                sanitizedName = sanitizedName.slice(0, maxNameLength);
+                sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+            } else {
+                sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+            }
+        }
+
+        return sanitizedFilename;
+    }
+
+    /**
+     * Map HTTP 403 response body to a user-facing message (Laravel JSON vs WAF HTML vs CSRF).
+     */
+    function messageFor403Response(errorText) {
+        const trimmed = (errorText || '').trim();
+        let parsed = null;
+
+        if (trimmed.startsWith('{')) {
+            try {
+                parsed = JSON.parse(trimmed);
+            } catch (e) {
+                parsed = null;
+            }
+        }
+
+        if (parsed && typeof parsed.message === 'string' && parsed.message.trim() !== '') {
+            return parsed.message.trim();
+        }
+
+        const isHtml = /<html[\s>]/i.test(trimmed) || /<!DOCTYPE/i.test(trimmed);
+
+        if (isHtml || (trimmed.includes('Forbidden') && !parsed)) {
+            console.error('Upload blocked by server security filter (likely WAF/mod_security)', trimmed.substring(0, 200));
+            return 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes (\') and try again, or contact support if it persists.';
+        }
+
+        if (/csrf token mismatch/i.test(trimmed) || (/csrf/i.test(trimmed) && !isHtml)) {
+            console.error('CSRF token error - page may need to be refreshed');
+            return 'Security token expired. Please refresh the page and try again.';
+        }
+
+        return 'Access denied. You may not have permission to upload emails for this client. Refresh the page and try again if your session may have expired.';
+    }
+
+    /**
      * Show notification message
      */
     function showNotification(message, type = 'info') {
@@ -587,9 +657,13 @@
         try {
             const formData = new FormData();
             
-            // Add files
+            // Add files (sanitized names avoid WAF/mod_security blocks on apostrophes etc.)
             files.forEach(file => {
-                formData.append('email_files[]', file);
+                const safeName = sanitizeUploadFilename(file.name);
+                if (safeName !== file.name) {
+                    console.log('Sanitized upload filename:', file.name, '->', safeName);
+                }
+                formData.append('email_files[]', file, safeName);
             });
 
             // Add required fields based on current mail type (inbox or sent)
@@ -632,11 +706,7 @@
                 
                 // Handle specific error codes with user-friendly messages
                 if (response.status === 403) {
-                    if (errorText.includes('CSRF') || errorText.includes('Forbidden')) {
-                        console.error('CSRF token error - page may need to be refreshed');
-                        throw new Error('Session expired or security token invalid. Please refresh the page and try again.');
-                    }
-                    throw new Error('Access denied. You may not have permission to upload emails, or your session has expired. Please refresh the page and try again.');
+                    throw new Error(messageFor403Response(errorText));
                 } else if (response.status === 419) {
                     // Laravel's CSRF token mismatch status code
                     console.error('CSRF token mismatch - page needs refresh');
@@ -666,7 +736,7 @@
                 
                 // Check for common HTML error pages
                 if (errorText.includes('403 Forbidden') || errorText.includes('Forbidden')) {
-                    throw new Error('Access denied. Your session may have expired. Please refresh the page and try again.');
+                    throw new Error(messageFor403Response(errorText));
                 } else if (errorText.includes('419') || errorText.includes('CSRF')) {
                     throw new Error('Security token expired. Please refresh the page and try again.');
                 }

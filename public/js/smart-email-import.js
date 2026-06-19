@@ -39,6 +39,34 @@
 
     let selectedFiles = [];
 
+    /**
+     * Sanitize filename for multipart upload (WAF-safe). Matches emails.js / backend logic.
+     */
+    function sanitizeUploadFilename(filename) {
+        if (!filename || typeof filename !== 'string') {
+            return 'email_' + Date.now() + '.msg';
+        }
+        const lastDot = filename.lastIndexOf('.');
+        const extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+        const nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+        let sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+        if (!sanitizedName) {
+            sanitizedName = 'email_' + Date.now();
+        }
+        let sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+        if (sanitizedFilename.length > 255) {
+            const maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+            if (maxNameLength > 0) {
+                sanitizedName = sanitizedName.slice(0, maxNameLength);
+                sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+            } else {
+                sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+            }
+        }
+        return sanitizedFilename;
+    }
+
     // -------------------------------------------------------------------------
     // File selection / drag & drop
     // -------------------------------------------------------------------------
@@ -121,7 +149,10 @@
 
         const formData = new FormData();
         formData.append('_token', cfg.csrfToken);
-        selectedFiles.forEach(f => formData.append('email_files[]', f));
+        selectedFiles.forEach(f => {
+            const safeName = sanitizeUploadFilename(f.name);
+            formData.append('email_files[]', f, safeName);
+        });
 
         try {
             const resp = await fetch(cfg.analyzeUrl, {
@@ -130,6 +161,25 @@
                 body: formData,
                 credentials: 'same-origin',
             });
+
+            if (resp.status === 403) {
+                const errorText = await resp.text();
+                const isHtml = /<html[\s>]/i.test(errorText) || /<!DOCTYPE/i.test(errorText);
+                let msg = 'Analyze failed: access denied.';
+                if (isHtml || errorText.includes('Forbidden')) {
+                    msg = 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes and try again.';
+                } else {
+                    try {
+                        const data = JSON.parse(errorText);
+                        if (data.message) {
+                            msg = 'Analyze failed: ' + data.message;
+                        }
+                    } catch (e) { /* use default */ }
+                }
+                alert(msg);
+                return;
+            }
+
             const data = await resp.json();
 
             if (!resp.ok || !data.success) {

@@ -15,6 +15,67 @@ function mmUtf8ToBase64(str) {
 	}
 }
 
+/** Sanitize .msg upload filename for multipart POST (WAF-safe; matches backend EmailUploadController). */
+function mmSanitizeEmailUploadFilename(filename) {
+	if (!filename || typeof filename !== 'string') {
+		return 'email_' + Date.now() + '.msg';
+	}
+	var lastDot = filename.lastIndexOf('.');
+	var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+	var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+	var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+	sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+	if (!sanitizedName) {
+		sanitizedName = 'email_' + Date.now();
+	}
+	var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+	if (sanitizedFilename.length > 255) {
+		var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+		if (maxNameLength > 0) {
+			sanitizedName = sanitizedName.slice(0, maxNameLength);
+			sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+		} else {
+			sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+		}
+	}
+	return sanitizedFilename;
+}
+
+/** Rebuild FormData for email upload forms with WAF-safe filenames. */
+function mmBuildEmailUploadFormData(form) {
+	var formData = new FormData(form);
+	var fileInput = form.querySelector('input[name="email_files[]"]');
+	if (!fileInput || !fileInput.files || !fileInput.files.length) {
+		return formData;
+	}
+	var rebuilt = new FormData();
+	formData.forEach(function(value, key) {
+		if (key !== 'email_files[]') {
+			rebuilt.append(key, value);
+		}
+	});
+	Array.from(fileInput.files).forEach(function(file) {
+		rebuilt.append('email_files[]', file, mmSanitizeEmailUploadFilename(file.name));
+	});
+	return rebuilt;
+}
+
+/** User-facing message for email upload 403 (Laravel JSON vs WAF HTML). */
+function mmEmailUpload403Message(xhr) {
+	if (!xhr || xhr.status !== 403) {
+		return null;
+	}
+	var responseText = xhr.responseText || '';
+	var isHtml = /<html[\s>]/i.test(responseText) || /<!DOCTYPE/i.test(responseText);
+	if (isHtml || (responseText.indexOf('Forbidden') !== -1 && !(xhr.responseJSON && xhr.responseJSON.message))) {
+		return 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes and try again.';
+	}
+	if (xhr.responseJSON && xhr.responseJSON.message) {
+		return xhr.responseJSON.message;
+	}
+	return 'Access denied. You may not have permission to upload emails for this client.';
+}
+
 /** Apply WAF-safe encoding to compose-email FormData before POST /sendmail. */
 function mmGenerateInvoiceSubmissionToken() {
 	return 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
@@ -623,7 +684,7 @@ function customValidate(formName, savetype = '')
 					else if(formName == 'uploadAndFetchMail'){
 						var client_id = $('#uploadAndFetchMail input[name="client_id"]').val();
 						var myform = document.getElementById('uploadAndFetchMail');
-                        var fd = new FormData(myform);
+                        var fd = mmBuildEmailUploadFormData(myform);
 						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
@@ -649,7 +710,9 @@ function customValidate(formName, savetype = '')
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors(errors);
                                 } else {
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
+                                    var msg403 = mmEmailUpload403Message(xhr);
+                                    var errMsg = msg403 || 'An unexpected error occurred. Please try again.';
+                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + errMsg + '</span>');
                                 }
                             }
 						});
@@ -659,7 +722,7 @@ function customValidate(formName, savetype = '')
                     else if(formName == 'uploadSentAndFetchMail'){
 						var client_id = $('#uploadSentAndFetchMail input[name="client_id"]').val();
 						var myform = document.getElementById('uploadSentAndFetchMail');
-                        var fd = new FormData(myform);
+                        var fd = mmBuildEmailUploadFormData(myform);
 						$.ajax({
 							type:'post',
 							url:$("form[name="+formName+"]").attr('action'),
@@ -685,7 +748,9 @@ function customValidate(formName, savetype = '')
                                     let errors = xhr.responseJSON.errors;
                                     displayValidationErrors2(errors);
                                 } else {
-                                    $('.custom-error-msg').html('<span class="alert alert-danger">An unexpected error occurred. Please try again.</span>');
+                                    var msg403 = mmEmailUpload403Message(xhr);
+                                    var errMsg = msg403 || 'An unexpected error occurred. Please try again.';
+                                    $('.custom-error-msg').html('<span class="alert alert-danger">' + errMsg + '</span>');
                                 }
                             }
 						});

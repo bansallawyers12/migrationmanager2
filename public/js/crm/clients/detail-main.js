@@ -3950,10 +3950,77 @@ success: function(response) {
         });
 
         // Handle uploadAndFetchMail form submission via AJAX
+        function sanitizeEmailUploadFilename(filename) {
+            if (!filename || typeof filename !== 'string') {
+                return 'email_' + Date.now() + '.msg';
+            }
+            var lastDot = filename.lastIndexOf('.');
+            var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+            var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+            var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+            sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+            if (!sanitizedName) {
+                sanitizedName = 'email_' + Date.now();
+            }
+            var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+            if (sanitizedFilename.length > 255) {
+                var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+                if (maxNameLength > 0) {
+                    sanitizedName = sanitizedName.slice(0, maxNameLength);
+                    sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+                } else {
+                    sanitizedFilename = 'email_' + Date.now() + (extension ? '.' + extension : '');
+                }
+            }
+            return sanitizedFilename;
+        }
+
+        function buildEmailUploadFormData(form) {
+            var formData = new FormData(form);
+            var fileInput = form.querySelector('input[name="email_files[]"]');
+            if (!fileInput || !fileInput.files || !fileInput.files.length) {
+                return formData;
+            }
+            var rebuilt = new FormData();
+            formData.forEach(function(value, key) {
+                if (key !== 'email_files[]') {
+                    rebuilt.append(key, value);
+                }
+            });
+            Array.from(fileInput.files).forEach(function(file) {
+                rebuilt.append('email_files[]', file, sanitizeEmailUploadFilename(file.name));
+            });
+            return rebuilt;
+        }
+
+        function resolveEmailUploadAjaxError(xhr) {
+            var errorMessage = 'An unexpected error occurred. Please try again.';
+            if (xhr.status === 403) {
+                var responseText = xhr.responseText || '';
+                var isHtml = /<html[\s>]/i.test(responseText) || /<!DOCTYPE/i.test(responseText);
+                if (isHtml || (responseText.indexOf('Forbidden') !== -1 && !(xhr.responseJSON && xhr.responseJSON.message))) {
+                    return 'The server blocked this upload (security filter). Rename files to remove special characters such as apostrophes and try again.';
+                }
+            }
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                var errors = xhr.responseJSON.errors;
+                var errorHtml = '<span class="alert alert-danger">';
+                for (var field in errors) {
+                    errorHtml += errors[field][0] + '<br>';
+                }
+                errorHtml += '</span>';
+                return errorHtml;
+            }
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                return xhr.responseJSON.message;
+            }
+            return errorMessage;
+        }
+
         $(document).on('submit', '#uploadAndFetchMail', function(e) {
             e.preventDefault();
             
-            var formData = new FormData(this);
+            var formData = buildEmailUploadFormData(this);
             $('.popuploader').show();
             $('.custom-error-msg').html('');
             
@@ -3978,20 +4045,11 @@ success: function(response) {
                 },
                 error: function(xhr) {
                     $('.popuploader').hide();
-                    var errorMessage = 'An unexpected error occurred. Please try again.';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        var errorHtml = '<span class="alert alert-danger">';
-                        for (var field in errors) {
-                            errorHtml += errors[field][0] + '<br>';
-                        }
-                        errorHtml += '</span>';
-                        $('.custom-error-msg').html(errorHtml);
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + xhr.responseJSON.message + '</span>');
+                    var resolved = resolveEmailUploadAjaxError(xhr);
+                    if (typeof resolved === 'string' && resolved.indexOf('<span') === 0) {
+                        $('.custom-error-msg').html(resolved);
                     } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + resolved + '</span>');
                     }
                 }
             });
@@ -4001,7 +4059,7 @@ success: function(response) {
         $(document).on('submit', '#uploadSentAndFetchMail', function(e) {
             e.preventDefault();
             
-            var formData = new FormData(this);
+            var formData = buildEmailUploadFormData(this);
             $('.popuploader').show();
             $('.custom-error-msg').html('');
             
@@ -4026,20 +4084,11 @@ success: function(response) {
                 },
                 error: function(xhr) {
                     $('.popuploader').hide();
-                    var errorMessage = 'An unexpected error occurred. Please try again.';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        var errorHtml = '<span class="alert alert-danger">';
-                        for (var field in errors) {
-                            errorHtml += errors[field][0] + '<br>';
-                        }
-                        errorHtml += '</span>';
-                        $('.custom-error-msg').html(errorHtml);
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + xhr.responseJSON.message + '</span>');
+                    var resolved = resolveEmailUploadAjaxError(xhr);
+                    if (typeof resolved === 'string' && resolved.indexOf('<span') === 0) {
+                        $('.custom-error-msg').html(resolved);
                     } else {
-                        $('.custom-error-msg').html('<span class="alert alert-danger">' + errorMessage + '</span>');
+                        $('.custom-error-msg').html('<span class="alert alert-danger">' + resolved + '</span>');
                     }
                 }
             });
