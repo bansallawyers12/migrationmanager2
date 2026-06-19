@@ -35,6 +35,15 @@ class MatterController extends Controller
                 $query->where('title', 'LIKE', '%' . $title . '%');
             }
         }
+        if ($request->filled('client')) {
+            if ($request->input('client') === 'company') {
+                $query->where('is_for_company', true);
+            } elseif ($request->input('client') === 'personal') {
+                $query->where(function ($q) {
+                    $q->where('is_for_company', false)->orWhereNull('is_for_company');
+                });
+            }
+        }
         $lists	= $query->sortable(['id' => 'desc'])->paginate(20);
         return view('AdminConsole.features.matter.index', compact(['lists', 'totalData']));
     }

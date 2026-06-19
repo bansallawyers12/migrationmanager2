@@ -165,13 +165,23 @@
                             <div class="filter_panel"><h4>Search</h4>
                                 <form action="{{route('adminconsole.features.matter.index')}}" method="get">
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label for="title" class="col-form-label" style="color:#495057 !important; font-weight: 500 !important;">Matter Name</label>
                                                 <input type="text" name="title" value="{{ old('title', Request::get('title')) }}" class="form-control" data-valid="" autocomplete="off" placeholder="Select Matter" id="title">
                                             </div>
                                         </div>
-                                        <div class="col-md-6" style="margin-top:35px;">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="client" class="col-form-label" style="color:#495057 !important; font-weight: 500 !important;">Client</label>
+                                                <select name="client" id="client" class="form-control">
+                                                    <option value="">All</option>
+                                                    <option value="personal" {{ old('client', Request::get('client')) === 'personal' ? 'selected' : '' }}>Personal</option>
+                                                    <option value="company" {{ old('client', Request::get('client')) === 'company' ? 'selected' : '' }}>Company</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4" style="margin-top:35px;">
                                             <button type="submit" class="btn btn-primary btn-theme-lg">Search</button>
                                             <a class="btn btn-info" href="{{route('adminconsole.features.matter.index')}}">Reset</a>
                                         </div>
@@ -184,6 +194,7 @@
 								<thead>
 									<tr>
 										<th>Matter Name</th>
+										<th>Client</th>
 										<th></th>
 									</tr>
 								</thead>
@@ -193,6 +204,7 @@
 								@foreach (@$lists as $list)
 									<tr id="id_{{@$list->id}}">
 										<td>{{ @$list->title == "" ? config('constants.empty') : Str::limit(@$list->title, '50', '...') }}</td>
+										<td>{{ $list->isForCompany() ? 'Company' : 'Personal' }}</td>
 										<td>
 											<div class="dropdown d-inline">
 												<button class="btn btn-primary dropdown-toggle matter-action-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action</button>
@@ -222,7 +234,7 @@
 								@else
 								<tbody>
 									<tr>
-										<td style="text-align:center;" colspan="7">
+										<td style="text-align:center;" colspan="3">
 											No Record found
 										</td>
 									</tr>
