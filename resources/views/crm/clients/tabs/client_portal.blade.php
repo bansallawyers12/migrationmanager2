@@ -1662,13 +1662,14 @@
 }
 
 .workflow-stage-active {
-    background-color: #cfe2ff;
-    border-color: #9ec5fe;
+    background-color: #d4edda;
+    border-color: #28a745;
+    border-width: 2px;
 }
 
 .workflow-stage-active .stage-name {
-    color: #084298;
-    font-weight: 600;
+    color: #155724;
+    font-weight: 700;
 }
 
 .workflow-stage-pending {
