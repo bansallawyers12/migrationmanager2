@@ -3866,81 +3866,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(ensureBackButtonVisible, 100);
     setTimeout(ensureBackButtonVisible, 500);
 
-    // Back to Previous Stage — handled by workflow-tab.js (partial tab refresh, no full page reload)
-
-    // Proceed to Next Stage button handler
-    const nextStageBtn = document.getElementById('proceed-to-next-stage');
-    if (nextStageBtn) {
-        nextStageBtn.addEventListener('click', function() {
-            const matterId = this.getAttribute('data-matter-id');
-            const nextStageName = (this.getAttribute('data-next-stage-name') || '').trim();
-            if (!matterId) {
-                alert('Error: Matter ID not found');
-                return;
-            }
-
-            // If next stage is "Decision Received", show outcome modal first
-            if (nextStageName && nextStageName.toLowerCase() === 'decision received') {
-                document.getElementById('decision-received-matter-id').value = matterId;
-                document.getElementById('decision-outcome').value = '';
-                document.getElementById('decision-note').value = '';
-                const outcomeErr = document.querySelector('.decision-outcome-error strong');
-                const noteErr = document.querySelector('.decision-note-error strong');
-                if (outcomeErr) outcomeErr.textContent = '';
-                if (noteErr) noteErr.textContent = '';
-                $('#decision-received-modal').modal('show');
-                return;
-            }
-            
-            if (confirm('Are you sure you want to proceed to the next stage?')) {
-                clientPortalProceedToNextStage(matterId, null, null);
-            }
-        });
-    }
-
-    // Client Portal: Proceed to next stage (shared helper)
-    function clientPortalProceedToNextStage(matterId, decisionOutcome, decisionNote) {
-        const btn = document.getElementById('proceed-to-next-stage');
-        const originalText = btn ? btn.innerHTML : '';
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; }
-
-        const payload = { matter_id: matterId, source: 'client_portal' };
-        if (decisionOutcome) payload.decision_outcome = decisionOutcome;
-        if (decisionNote) payload.decision_note = decisionNote;
-
-        fetch('{{ route("clients.matter.update-next-stage") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status) {
-                alert(data.message || 'Matter has been successfully moved to the next stage.');
-                window.location.reload();
-            } else {
-                alert(data.message || 'Failed to move to next stage. Please try again.');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                    if (data.is_last_stage) {
-                        btn.disabled = true;
-                        btn.classList.add('disabled');
-                    }
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the stage. Please try again.');
-            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
-        });
-    }
-
-    // Decision Received modal: Submit (shared - does the API call directly)
+    // Back to Previous Stage and Proceed to Next Stage — handled by workflow-tab.js (partial tab refresh, no full page reload)
     $(document).on('click', '#decision-received-submit', function() {
         const outcome = document.getElementById('decision-outcome')?.value;
         const note = document.getElementById('decision-note')?.value;
@@ -3983,6 +3909,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const activeTab = document.querySelector('.client-nav-button.active')?.getAttribute('data-tab');
                 if (activeTab === 'workflow' && typeof window.handleWorkflowStageUpdateSuccess === 'function') {
                     window.handleWorkflowStageUpdateSuccess(data.message || 'Matter has been successfully moved to the next stage.');
+                } else if (activeTab === 'client_portal' && typeof window.handleClientPortalStageUpdateSuccess === 'function') {
+                    window.handleClientPortalStageUpdateSuccess(data.message || 'Matter has been successfully moved to the next stage.');
                 } else {
                     alert(data.message || 'Matter has been successfully moved to the next stage.');
                     window.location.reload();

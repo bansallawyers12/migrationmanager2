@@ -96,6 +96,86 @@
         });
     }
 
+    function refreshSidebarMatterStatus() {
+        return fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            },
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                return;
+            }
+            return response.text();
+        })
+        .then(function(html) {
+            if (!html) {
+                return;
+            }
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var newBadge = doc.querySelector('.matter-status-badge');
+            var currentBadge = document.querySelector('.matter-status-badge');
+            if (newBadge && currentBadge) {
+                currentBadge.innerHTML = newBadge.innerHTML;
+            }
+        })
+        .catch(function(err) {
+            console.warn('[WorkflowTab] Sidebar status refresh skipped', err);
+        });
+    }
+
+    function bindClientPortalSubTabDelegation() {
+        if (bindClientPortalSubTabDelegation.initialized) {
+            return;
+        }
+        bindClientPortalSubTabDelegation.initialized = true;
+
+        document.addEventListener('click', function(e) {
+            var tabLink = e.target.closest('.client-portal-tab-link');
+            if (!tabLink) {
+                return;
+            }
+
+            var portalTab = document.getElementById('client_portal-tab');
+            if (!portalTab || !portalTab.contains(tabLink)) {
+                return;
+            }
+
+            e.preventDefault();
+
+            var tabItem = tabLink.closest('.client-portal-tab-item');
+            if (!tabItem) {
+                return;
+            }
+
+            var targetTab = tabItem.getAttribute('data-tab');
+            portalTab.querySelectorAll('.client-portal-tab-item').forEach(function(item) {
+                item.classList.remove('active');
+            });
+            portalTab.querySelectorAll('.client-portal-tab-pane').forEach(function(pane) {
+                pane.classList.remove('active');
+            });
+            tabItem.classList.add('active');
+
+            var targetPane = document.getElementById(targetTab + '-tab');
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
+        });
+    }
+
+    function refreshClientPortalTab() {
+        return refreshTabPane('#client_portal-tab').then(function() {
+            ensureStageNavBackButtonVisible();
+            bindClientPortalSubTabDelegation();
+            return refreshSidebarMatterStatus();
+        }).then(function() {
+            refreshActivityFeedIfVisible();
+        });
+    }
+
     function refreshWorkflowTab() {
         return refreshTabPane('#workflow-tab').then(function() {
             ensureStageNavBackButtonVisible();
@@ -113,6 +193,16 @@
         });
     }
 
+    function onClientPortalStageUpdateSuccess(message) {
+        if (message) {
+            alert(message);
+        }
+        return refreshClientPortalTab().catch(function(err) {
+            console.error('[WorkflowTab] Client portal partial refresh failed, falling back to full reload', err);
+            window.location.reload();
+        });
+    }
+
     function onBackToPreviousStageSuccess(btn, message) {
         var activeTab = getActiveTabId();
         if (message) {
@@ -126,7 +216,13 @@
             });
         }
 
-        // Client Portal tab relies on inline handlers; keep full reload there
+        if (activeTab === 'client_portal' || btn.id === 'back-to-previous-stage') {
+            return refreshClientPortalTab().catch(function(err) {
+                console.error('[WorkflowTab] Client portal partial refresh after back failed, falling back to full reload', err);
+                window.location.reload();
+            });
+        }
+
         window.location.reload();
     }
 
@@ -230,6 +326,7 @@
         }
 
         var btn = btnEl || document.getElementById('workflow-tab-proceed-to-next-stage');
+        var isClientPortal = btn && btn.id === 'proceed-to-next-stage';
         var orig = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
@@ -237,6 +334,9 @@
         }
 
         var payload = { matter_id: matterId };
+        if (isClientPortal) {
+            payload.source = 'client_portal';
+        }
         if (decisionOutcome) payload.decision_outcome = decisionOutcome;
         if (decisionNote) payload.decision_note = decisionNote;
 
@@ -252,7 +352,12 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.status) {
-                onWorkflowTabSuccess(data.message || 'Matter has been successfully moved to the next stage.');
+                var successMessage = data.message || 'Matter has been successfully moved to the next stage.';
+                if (isClientPortal) {
+                    onClientPortalStageUpdateSuccess(successMessage);
+                } else {
+                    onWorkflowTabSuccess(successMessage);
+                }
             } else {
                 alert(data.message || 'Failed to move to next stage.');
                 if (btn) {
@@ -313,6 +418,35 @@
         });
 
         document.addEventListener('click', function(e) {
+            var clientPortalNextBtn = e.target.closest('#proceed-to-next-stage');
+            if (clientPortalNextBtn) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                var cpMatterId = clientPortalNextBtn.getAttribute('data-matter-id');
+                var cpNextStageName = (clientPortalNextBtn.getAttribute('data-next-stage-name') || '').trim();
+                if (!cpMatterId) {
+                    alert('Error: Matter ID not found');
+                    return;
+                }
+
+                if (cpNextStageName && cpNextStageName.toLowerCase() === 'decision received') {
+                    document.getElementById('decision-received-matter-id').value = cpMatterId;
+                    document.getElementById('decision-outcome').value = '';
+                    document.getElementById('decision-note').value = '';
+                    var cpOutcomeErr = document.querySelector('.decision-outcome-error strong');
+                    var cpNoteErr = document.querySelector('.decision-note-error strong');
+                    if (cpOutcomeErr) cpOutcomeErr.textContent = '';
+                    if (cpNoteErr) cpNoteErr.textContent = '';
+                    $('#decision-received-modal').modal('show');
+                    return;
+                }
+
+                if (!confirm('Are you sure you want to proceed to the next stage?')) return;
+                doProceedToNextStage(cpMatterId, null, null, clientPortalNextBtn);
+                return;
+            }
+
             var nextBtn = e.target.closest('#workflow-tab-proceed-to-next-stage');
             if (nextBtn) {
                 e.preventDefault();
@@ -537,17 +671,21 @@
     }
 
     window.refreshWorkflowTab = refreshWorkflowTab;
+    window.refreshClientPortalTab = refreshClientPortalTab;
     window.handleWorkflowStageUpdateSuccess = onWorkflowTabSuccess;
+    window.handleClientPortalStageUpdateSuccess = onClientPortalStageUpdateSuccess;
     window.workflowTabDoProceedToNextStage = doProceedToNextStage;
     window.ensureStageNavBackButtonVisible = ensureStageNavBackButtonVisible;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             bindWorkflowTabHandlers();
+            bindClientPortalSubTabDelegation();
             ensureStageNavBackButtonVisible();
         });
     } else {
         bindWorkflowTabHandlers();
+        bindClientPortalSubTabDelegation();
         ensureStageNavBackButtonVisible();
     }
 })();
