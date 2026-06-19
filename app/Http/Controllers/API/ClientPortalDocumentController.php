@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Support\DocumentStoredFilename;
+use App\Support\DocumentFilenameRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -586,10 +587,10 @@ class ClientPortalDocumentController extends Controller
 
             // Validate file name
             $fileName = $file->getClientOriginalName();
-            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
+            if (!DocumentFilenameRules::isAllowed($fileName)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.'
+                    'message' => DocumentFilenameRules::validationMessage()
                 ], 422);
             }
 

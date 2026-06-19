@@ -15,6 +15,54 @@ function mmUtf8ToBase64(str) {
 	}
 }
 
+/** Allowed document upload filename pattern (personal, visa, education tabs). */
+var MM_DOCUMENT_FILENAME_REGEX = /^[a-zA-Z0-9_\-\.\s\$\(\),&+']+$/;
+
+function mmIsAllowedDocumentFilename(filename) {
+	return !!(filename && MM_DOCUMENT_FILENAME_REGEX.test(filename));
+}
+
+function mmDocumentFilenameValidationMessage() {
+	return "File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), apostrophes ('), and plus signs (+). Please rename the file and try again.";
+}
+
+/** Sanitize document upload filename for multipart POST (WAF-safe). */
+function mmSanitizeDocumentUploadFilename(filename) {
+	if (!filename || typeof filename !== 'string') {
+		return 'document_' + Date.now();
+	}
+	var lastDot = filename.lastIndexOf('.');
+	var extension = lastDot >= 0 ? filename.slice(lastDot + 1) : '';
+	var nameWithoutExt = lastDot >= 0 ? filename.slice(0, lastDot) : filename;
+	var sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+	sanitizedName = sanitizedName.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+	if (!sanitizedName) {
+		sanitizedName = 'document_' + Date.now();
+	}
+	var sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+	if (sanitizedFilename.length > 255) {
+		var maxNameLength = 255 - extension.length - (extension ? 1 : 0);
+		if (maxNameLength > 0) {
+			sanitizedName = sanitizedName.slice(0, maxNameLength);
+			sanitizedFilename = extension ? sanitizedName + '.' + extension : sanitizedName;
+		} else {
+			sanitizedFilename = 'document_' + Date.now() + (extension ? '.' + extension : '');
+		}
+	}
+	return sanitizedFilename;
+}
+
+/** Replace document_upload in FormData with WAF-safe multipart filename. */
+function mmSetDocumentUploadFile(formData, file) {
+	if (!formData || !file) {
+		return;
+	}
+	try {
+		formData.delete('document_upload');
+	} catch (e) { /* ignore */ }
+	formData.set('document_upload', file, mmSanitizeDocumentUploadFilename(file.name));
+}
+
 /** Sanitize .msg upload filename for multipart POST (WAF-safe; matches backend EmailUploadController). */
 function mmSanitizeEmailUploadFilename(filename) {
 	if (!filename || typeof filename !== 'string') {

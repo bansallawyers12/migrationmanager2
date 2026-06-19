@@ -14,6 +14,33 @@
     }
     window.safeParseJsonResponse = safeParseJsonResponse;
 
+    function clientDetailDocFilenameMessage() {
+        return (typeof mmDocumentFilenameValidationMessage === 'function')
+            ? mmDocumentFilenameValidationMessage()
+            : "File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), apostrophes ('), and plus signs (+). Please rename the file and try again.";
+    }
+
+    function clientDetailIsAllowedDocumentFilename(name) {
+        if (typeof mmIsAllowedDocumentFilename === 'function') {
+            return mmIsAllowedDocumentFilename(name);
+        }
+        return /^[a-zA-Z0-9_\-\.\s\$\(\),&+']+$/.test(name || '');
+    }
+
+    function clientDetailApplyWafSafeDocumentUpload(formData, file) {
+        if (typeof mmSetDocumentUploadFile === 'function') {
+            mmSetDocumentUploadFile(formData, file);
+            return;
+        }
+        try {
+            formData.delete('document_upload');
+        } catch (e) { /* ignore */ }
+        var safeName = (typeof mmSanitizeDocumentUploadFilename === 'function')
+            ? mmSanitizeDocumentUploadFilename(file.name)
+            : String(file.name).replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        formData.set('document_upload', file, safeName);
+    }
+
     /** Build escaped HTML anchor for service agreement signing links in compose templates. */
     window.mmBuildServiceAgreementSignLink = function(url) {
         if (!url) {
@@ -8035,21 +8062,13 @@ success: function(response) {
 
             var formData = new FormData($form[0]);
 
-
-
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-
-            if (!validNameRegex.test(file.name)) {
-
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
-
+            if (!clientDetailIsAllowedDocumentFilename(file.name)) {
+                alert(clientDetailDocFilenameMessage());
                 $(this).val('');
-
                 return false;
-
             }
 
-
+            clientDetailApplyWafSafeDocumentUpload(formData, file);
 
             // Show immediate feedback that upload is starting
 
@@ -8321,17 +8340,16 @@ success: function(response) {
             var form = $('#' + formId);
             
             // Validate filename
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-            if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+            if (!clientDetailIsAllowedDocumentFilename(file.name)) {
+                alert(clientDetailDocFilenameMessage());
                 return false;
             }
             
             // Create FormData with all form fields
             var formData = new FormData(form[0]);
             
-            // Override the file input with dragged file
-            formData.set('document_upload', file);
+            // Override the file input with dragged file (WAF-safe multipart name)
+            clientDetailApplyWafSafeDocumentUpload(formData, file);
             
             // Visual feedback
             dragZone.addClass('uploading');
@@ -8403,17 +8421,16 @@ success: function(response) {
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             
             // Validate filename
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-            if (!validNameRegex.test(file.name)) {
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+            if (!clientDetailIsAllowedDocumentFilename(file.name)) {
+                alert(clientDetailDocFilenameMessage());
                 return false;
             }
             
             // Create FormData with all form fields
             var formData = new FormData(form[0]);
             
-            // Override the file input with dragged file
-            formData.set('document_upload', file);
+            // Override the file input with dragged file (WAF-safe multipart name)
+            clientDetailApplyWafSafeDocumentUpload(formData, file);
             
             // Add extra data
             formData.append('visa_doc_cat', visa_doc_cat);
@@ -8608,27 +8625,13 @@ success: function(response) {
 
 
 
-            var fileName = fileInput.name;  //alert(fileName);
+            var fileName = fileInput.name;
 
-
-
-            // Allowed: letters, numbers, dash, underscore, space, dot, dollar sign
-
-            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-
-
-
-            if (!validNameRegex.test(fileName)) {
-
-                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
-
-                $(this).val(''); // Clear the file input
-
+            if (!clientDetailIsAllowedDocumentFilename(fileName)) {
+                alert(clientDetailDocFilenameMessage());
+                $(this).val('');
                 return false;
-
             }
-
-
 
             var fileidL1 = $(this).attr("data-fileid");
 
@@ -8659,14 +8662,12 @@ success: function(response) {
             var contextMenuFn = laneDocType === 'nomination' ? 'showNominationFileContextMenu' : 'showVisaFileContextMenu';
             var formData = new FormData($form[0]);
 
+            clientDetailApplyWafSafeDocumentUpload(formData, fileInput);
+
             // Append extra data manually
-
             formData.append('visa_doc_cat', visa_doc_cat);
-
             
-
             // Clear the file input after creating FormData to allow next upload
-
             $(this).val('');
 
             

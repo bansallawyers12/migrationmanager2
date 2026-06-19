@@ -23,6 +23,7 @@ use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
 use App\Support\DocumentStoredFilename;
+use App\Support\DocumentFilenameRules;
 use App\Support\StaffClientVisibility;
 use Illuminate\Http\JsonResponse;
 use mikehaertl\pdftk\Pdf;
@@ -381,8 +382,8 @@ class ClientDocumentsController extends Controller
                 $size = $file->getSize();
                 $fileName = $file->getClientOriginalName();
     
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
-                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.';
+                if (!DocumentFilenameRules::isAllowed($fileName)) {
+                    $response['message'] = DocumentFilenameRules::validationMessage();
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
@@ -1029,8 +1030,8 @@ class ClientDocumentsController extends Controller
                 $fileName = $file->getClientOriginalName();
                 
                 // Allow only letters, numbers, underscores, dashes, spaces, dots, and dollar signs
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
-                    $response['message'] = 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.';
+                if (!DocumentFilenameRules::isAllowed($fileName)) {
+                    $response['message'] = DocumentFilenameRules::validationMessage();
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
@@ -3215,7 +3216,7 @@ class ClientDocumentsController extends Controller
                     }
                     
                     // Validate filename
-                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
+                    if (!DocumentFilenameRules::isAllowed($fileName)) {
                         $errors[] = "File '{$fileName}' has invalid characters in name";
                         continue;
                     }
@@ -3405,7 +3406,7 @@ class ClientDocumentsController extends Controller
                     }
                     
                     // Validate filename
-                    if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $fileName)) {
+                    if (!DocumentFilenameRules::isAllowed($fileName)) {
                         $errors[] = "File '{$fileName}' has invalid characters in name";
                         continue;
                     }

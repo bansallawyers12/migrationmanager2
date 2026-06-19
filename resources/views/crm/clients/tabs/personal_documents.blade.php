@@ -465,15 +465,18 @@
                                 }
                                 
                                 // Validate filename
-                                var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-                                if (!validNameRegex.test(file.name)) {
-                                    alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+                                if (typeof mmIsAllowedDocumentFilename === 'function' ? !mmIsAllowedDocumentFilename(file.name) : !/^[a-zA-Z0-9_\-\.\s\$\(\),&+']+$/.test(file.name)) {
+                                    alert(typeof mmDocumentFilenameValidationMessage === 'function' ? mmDocumentFilenameValidationMessage() : "File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), apostrophes ('), and plus signs (+). Please rename the file and try again.");
                                     return false;
                                 }
                                 
                                 // Create FormData and upload
                                 var formData = new FormData(form[0]);
-                                formData.set('document_upload', file);
+                                if (typeof mmSetDocumentUploadFile === 'function') {
+                                    mmSetDocumentUploadFile(formData, file);
+                                } else {
+                                    formData.set('document_upload', file);
+                                }
                                 
                                 $zone.addClass('uploading');
                                 $('.custom-error-msg').html('<span class="alert alert-info"><i class="fa fa-clock-o"></i> Uploading document...</span>');
@@ -650,17 +653,20 @@
                             }
                             
                             // Validate filename
-                            var validNameRegex = /^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/;
-                            if (!validNameRegex.test(file.name)) {
-                                alert("File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.");
+                            if (typeof mmIsAllowedDocumentFilename === 'function' ? !mmIsAllowedDocumentFilename(file.name) : !/^[a-zA-Z0-9_\-\.\s\$\(\),&+']+$/.test(file.name)) {
+                                alert(typeof mmDocumentFilenameValidationMessage === 'function' ? mmDocumentFilenameValidationMessage() : "File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), apostrophes ('), and plus signs (+). Please rename the file and try again.");
                                 return false;
                             }
                             
                             // Create FormData with all form fields
                             var formData = new FormData(form[0]);
                             
-                            // Override the file input with dragged file
-                            formData.set('document_upload', file);
+                            // Override the file input with dragged file (WAF-safe multipart name)
+                            if (typeof mmSetDocumentUploadFile === 'function') {
+                                mmSetDocumentUploadFile(formData, file);
+                            } else {
+                                formData.set('document_upload', file);
+                            }
                             
                             // Visual feedback
                             $zone.addClass('uploading');

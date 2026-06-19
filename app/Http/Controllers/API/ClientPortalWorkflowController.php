@@ -9,6 +9,7 @@ use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Services\ClientPortalActionNoteService;
 use App\Support\DocumentStoredFilename;
+use App\Support\DocumentFilenameRules;
 use App\Models\Notification;
 use App\Models\Staff;
 use Illuminate\Http\Request;
@@ -640,10 +641,10 @@ class ClientPortalWorkflowController extends Controller
 
             // Validate file name characters
             $originalName = $file->getClientOriginalName();
-            if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $originalName)) {
+            if (!DocumentFilenameRules::isAllowed($originalName)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'File name can only contain letters, numbers, dashes (-), underscores (_), spaces, dots (.), dollar signs ($), parentheses (( )), commas (,), ampersands (&), and plus signs (+). Please rename the file and try again.'
+                    'message' => DocumentFilenameRules::validationMessage()
                 ], 422);
             }
 
@@ -818,11 +819,11 @@ class ClientPortalWorkflowController extends Controller
 
                 // Validate file name
                 $originalName = $file->getClientOriginalName();
-                if (!preg_match('/^[a-zA-Z0-9_\-\.\s\$\(\),&+]+$/', $originalName)) {
+                if (!DocumentFilenameRules::isAllowed($originalName)) {
                     $errors[] = [
                         'index'   => $index,
                         'file'    => $originalName,
-                        'message' => 'Invalid file name characters. Only letters, numbers, dashes, underscores, spaces, dots, dollar signs, parentheses, commas, ampersands, and plus signs are allowed.'
+                        'message' => DocumentFilenameRules::validationMessage()
                     ];
                     continue;
                 }
