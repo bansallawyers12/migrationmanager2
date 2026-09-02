@@ -52,7 +52,7 @@ class VisaExpireReminderEmail extends Command
         ]);
         $array['email_log_id'] = $log->id;
 
-		$q = Mail::mailer('sendgrid')->to($explodeTo);
+		$q = Mail::mailer()->to($explodeTo);
 		if(!empty($cc)){
 			$q->cc($cc);
 		}

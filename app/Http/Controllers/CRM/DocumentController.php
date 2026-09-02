@@ -1585,7 +1585,7 @@ class DocumentController extends Controller
                     }
 
                     try {
-                        Mail::mailer('sendgrid')->send(
+                        Mail::mailer()->send(
                             'emails.sign_agreement_document_email',
                             [
                                 'signingUrl' => $signingUrl,
@@ -1723,7 +1723,7 @@ class DocumentController extends Controller
                     }
 
                     try {
-                        Mail::mailer('sendgrid')->send(
+                        Mail::mailer()->send(
                             'emails.sign_document_email',
                             [
                                 'signingUrl' => $signingUrl,

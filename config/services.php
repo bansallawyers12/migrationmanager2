@@ -26,20 +26,47 @@ return [
     ],
 
     'ses' => [
-        'key' => env('AWS_ACCESS_KEY_ID'),
-        'secret' => env('AWS_SECRET_ACCESS_KEY'),
-        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+        'key' => env('AWS_ACCESS_KEY_ID_SES', env('AWS_ACCESS_KEY_ID')),
+        'secret' => env('AWS_SECRET_ACCESS_KEY_SES', env('AWS_SECRET_ACCESS_KEY')),
+        'region' => env('AWS_DEFAULT_REGION_SES', env('SES_REGION', env('AWS_DEFAULT_REGION', 'ap-southeast-2'))),
+        'options' => array_filter([
+            'ConfigurationSetName' => env('SES_CONFIGURATION_SET') ?: null,
+        ]),
     ],
 
+    /*
+    | CRM outbound (AWS SES, Zoho failover). From dropdown + send validation.
+    | SES_SENDERS: comma-separated verified @bansalimmigration.com.au addresses.
+    */
+    'ses_crm' => [
+        'senders' => env('SES_SENDERS', env('MAIL_FROM_ADDRESS', '')),
+        'from_email' => env('SES_FROM_EMAIL', env('MAIL_FROM_ADDRESS', '')),
+        'from_allowed_domains' => env('SES_FROM_ALLOWED_DOMAINS', env('SENDGRID_FROM_ALLOWED_DOMAINS', 'bansalimmigration.com.au')),
+        'signature_from_email' => env('SIGNATURE_FROM_EMAIL', env('MAIL_INFO_ADDRESS', 'info@bansalimmigration.com.au')),
+        'webhook_token' => env('SES_WEBHOOK_TOKEN'),
+    ],
+
+    /*
+    | Zoho SMTP failover. From must be this mailbox (or an alias of it).
+    */
+    'zoho' => [
+        'from' => [
+            'address' => env('ZOHO_MAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'info@bansalimmigration.com.au')),
+            'name' => env('ZOHO_MAIL_FROM_NAME', env('MAIL_FROM_NAME', 'Bansal Immigration')),
+        ],
+    ],
+
+    /*
+    | Legacy SendGrid webhook URL only (outbound mail no longer uses SendGrid).
+    | from_allowed_domains kept so older config/tests still resolve.
+    */
     'sendgrid' => [
         'api_key' => env('SENDGRID_API_KEY'),
         'base_url' => env('SENDGRID_BASE_URL', 'https://api.sendgrid.com'),
-        'from_email' => env('SENDGRID_FROM_EMAIL', ''),
-        'senders' => env('SENDGRID_SENDERS', ''),
-        /* Optional shared secret for Event Webhook URL (?token=...) */
+        'from_email' => env('SES_FROM_EMAIL', env('SENDGRID_FROM_EMAIL', '')),
+        'senders' => env('SES_SENDERS', env('SENDGRID_SENDERS', '')),
         'webhook_token' => env('SENDGRID_WEBHOOK_TOKEN'),
-        /* Compose From dropdown + send validation: comma-separated domains (no @). * = allow all verified SendGrid senders */
-        'from_allowed_domains' => env('SENDGRID_FROM_ALLOWED_DOMAINS', 'bansalimmigration.com.au'),
+        'from_allowed_domains' => env('SES_FROM_ALLOWED_DOMAINS', env('SENDGRID_FROM_ALLOWED_DOMAINS', 'bansalimmigration.com.au')),
     ],
 
     /*
@@ -258,7 +285,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configuration for Firebase Cloud Messaging push notifications (HTTP v1 API)
-    | 
+    |
     | To set up:
     | 1. Go to Firebase Console > Project Settings > Cloud Messaging
     | 2. Click "Manage Service Accounts"

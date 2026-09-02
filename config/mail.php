@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'sendgrid'),
+    'default' => env('MAIL_MAILER', 'failover'),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,19 +37,41 @@ return [
 
     'mailers' => [
 
-        'sendgrid' => [
+        'ses' => [
+            'transport' => 'ses',
+        ],
+
+        'zoho' => [
             'transport' => 'smtp',
-            'host' => 'smtp.sendgrid.net',
-            'port' => 587,
-            'username' => 'apikey',
-            'password' => env('SENDGRID_API_KEY'),
-            'encryption' => 'tls',
+            'host' => env('ZOHO_MAIL_HOST', 'smtp.zoho.com'),
+            'port' => (int) env('ZOHO_MAIL_PORT', 587),
+            'username' => env('ZOHO_MAIL_USERNAME'),
+            'password' => env('ZOHO_MAIL_PASSWORD'),
+            'encryption' => env('ZOHO_MAIL_ENCRYPTION', 'tls'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
-        'ses' => [
-            'transport' => 'ses',
+        'failover' => [
+            'transport' => 'failover',
+            'mailers' => [
+                'ses',
+                'zoho',
+            ],
+            'retry_after' => 60,
+        ],
+
+        /*
+         * Deprecated name kept so queued jobs that still address "sendgrid"
+         * keep sending via SES → Zoho instead of a missing mailer.
+         */
+        'sendgrid' => [
+            'transport' => 'failover',
+            'mailers' => [
+                'ses',
+                'zoho',
+            ],
+            'retry_after' => 60,
         ],
 
         'resend' => [
@@ -74,7 +96,7 @@ return [
             'transport' => 'roundrobin',
             'mailers' => [
                 'ses',
-                'sendgrid',
+                'zoho',
             ],
         ],
 
@@ -108,7 +130,7 @@ return [
     */
 
     'noreply' => [
-        'address' => env('NOREPLY_MAIL_FROM_ADDRESS', 'noreply@bansalimmigration.com.au'),
+        'address' => env('NOREPLY_MAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'info@bansalimmigration.com.au')),
     ],
 
     /*

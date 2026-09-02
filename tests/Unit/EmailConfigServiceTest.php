@@ -2,18 +2,19 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
 use App\Models\Email;
 use App\Services\EmailConfigService;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
 class EmailConfigServiceTest extends TestCase
 {
-
     protected EmailConfigService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new EmailConfigService();
+        $this->service = new EmailConfigService;
     }
 
     /** @test */
@@ -22,7 +23,7 @@ class EmailConfigServiceTest extends TestCase
         Email::factory()->create([
             'email' => 'test@example.com',
             'display_name' => 'Test Sender',
-            'status' => true
+            'status' => true,
         ]);
 
         $config = $this->service->forAccount('test@example.com');
@@ -54,7 +55,7 @@ class EmailConfigServiceTest extends TestCase
     {
         Email::factory()->create([
             'email' => 'inactive@example.com',
-            'status' => false // Inactive
+            'status' => false, // Inactive
         ]);
 
         $this->expectException(\Exception::class);
@@ -67,15 +68,15 @@ class EmailConfigServiceTest extends TestCase
     {
         Email::factory()->create([
             'email' => 'active1@example.com',
-            'status' => true
+            'status' => true,
         ]);
         Email::factory()->create([
             'email' => 'active2@example.com',
-            'status' => true
+            'status' => true,
         ]);
         Email::factory()->create([
             'email' => 'inactive@example.com',
-            'status' => false
+            'status' => false,
         ]);
 
         $accounts = $this->service->getActiveAccounts();
@@ -91,12 +92,12 @@ class EmailConfigServiceTest extends TestCase
         Email::factory()->create([
             'id' => 1,
             'email' => 'first@example.com',
-            'status' => true
+            'status' => true,
         ]);
         Email::factory()->create([
             'id' => 2,
             'email' => 'second@example.com',
-            'status' => true
+            'status' => true,
         ]);
 
         $config = $this->service->getDefaultAccount();
@@ -110,31 +111,29 @@ class EmailConfigServiceTest extends TestCase
     {
         Email::factory()->create([
             'email' => 'inactive@example.com',
-            'status' => false
+            'status' => false,
         ]);
 
-        // Clear environment variables
-        putenv('MAIL_FROM_ADDRESS');
+        config(['mail.from.address' => null, 'mail.from.name' => null]);
 
         $config = $this->service->getDefaultAccount();
 
         $this->assertNull($config);
     }
 
-    /** @test */
+    #[Test]
     public function it_falls_back_to_environment_config_when_no_active_accounts()
     {
-        putenv('MAIL_FROM_ADDRESS=env@example.com');
-        putenv('MAIL_FROM_NAME=Environment Sender');
+        config([
+            'mail.from.address' => 'env@example.com',
+            'mail.from.name' => 'Environment Sender',
+        ]);
 
         $config = $this->service->getDefaultAccount();
 
         $this->assertNotNull($config);
         $this->assertEquals('env@example.com', $config['from_address']);
         $this->assertEquals('Environment Sender', $config['from_name']);
-
-        putenv('MAIL_FROM_ADDRESS');
-        putenv('MAIL_FROM_NAME');
     }
 
     /** @test */
@@ -144,7 +143,7 @@ class EmailConfigServiceTest extends TestCase
             'email' => 'test@example.com',
             'display_name' => 'Test User',
             'email_signature' => '<p>Signature</p>',
-            'status' => true
+            'status' => true,
         ]);
 
         $config = $this->service->forAccountById($email->id);
@@ -159,19 +158,18 @@ class EmailConfigServiceTest extends TestCase
         $this->assertEquals('<p>Signature</p>', $config['email_signature']);
     }
 
-    /** @test */
+    #[Test]
     public function get_default_account_falls_back_to_mail_from_address_env_var()
     {
-        putenv('MAIL_FROM_ADDRESS=fallback@example.com');
-        putenv('MAIL_FROM_NAME=Fallback Sender');
+        config([
+            'mail.from.address' => 'fallback@example.com',
+            'mail.from.name' => 'Fallback Sender',
+        ]);
 
         $config = $this->service->getDefaultAccount();
 
         $this->assertNotNull($config);
         $this->assertEquals('fallback@example.com', $config['from_address']);
         $this->assertEquals('Fallback Sender', $config['from_name']);
-
-        putenv('MAIL_FROM_ADDRESS');
-        putenv('MAIL_FROM_NAME');
     }
 }

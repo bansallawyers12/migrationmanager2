@@ -131,7 +131,7 @@ class SystemEmailLogService
         $log = $this->createPending($meta);
 
         try {
-            Mail::mailer('sendgrid')
+            Mail::mailer()
                 ->to($to)
                 ->send($this->applyTrackingToMailable($mailable, $log->id));
         } catch (\Throwable $e) {

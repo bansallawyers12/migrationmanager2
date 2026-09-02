@@ -1,7 +1,7 @@
-{{-- Populate Compose Email From dropdowns with SendGrid verified senders --}}
+{{-- Populate Compose Email From dropdowns with SES / Admin Console identities --}}
 <script>
 (function() {
-	var sendersUrl = '{{ route("crm.sendgrid.senders") }}';
+	var sendersUrl = '{{ route("crm.ses.senders") }}';
 	var cachedData = null;
 	var cachedError = false;
 	var fetchPromise = null;
@@ -22,7 +22,7 @@
 		var previous = (select.value || '').trim();
 
 		if (cachedError) {
-			select.innerHTML = '<option value="">SendGrid unavailable – check SENDGRID_API_KEY</option>';
+			select.innerHTML = '<option value="">Could not load senders — check SES / Admin Console Emails</option>';
 			select.setAttribute('data-sendgrid-from-loaded', '1');
 			return;
 		}
@@ -47,7 +47,7 @@
 			fallback.textContent = defaultFrom;
 			select.appendChild(fallback);
 		} else {
-			select.innerHTML = '<option value="">No SendGrid senders found</option>';
+			select.innerHTML = '<option value="">No verified senders found</option>';
 		}
 
 		select.setAttribute('data-sendgrid-from-loaded', '1');

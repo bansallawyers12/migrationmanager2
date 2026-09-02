@@ -153,6 +153,7 @@ Route::post('/clients/sms/send', [SmsSendController::class, 'send'])->name('clie
 Route::get('/get-compose-defaults', [CRMUtilityController::class, 'getComposeDefaults'])->name('clients.getComposeDefaults');
 Route::get('/get-compose-option-lists', [CRMUtilityController::class, 'getComposeOptionLists'])->name('clients.getComposeOptionLists');
 Route::get('/get-checkin-option-lists', [CRMUtilityController::class, 'getCheckinOptionLists'])->name('clients.getCheckinOptionLists');
+Route::get('/crm/ses-senders', [SendGridSendersController::class, 'senders'])->name('crm.ses.senders');
 Route::get('/crm/sendgrid-senders', [SendGridSendersController::class, 'senders'])->name('crm.sendgrid.senders');
 Route::post('/sendmail', [CRMUtilityController::class, 'sendmail'])->name('clients.sendmail');
 

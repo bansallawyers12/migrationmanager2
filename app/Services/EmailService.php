@@ -39,7 +39,7 @@ class EmailService
             $fromName = $emailConfig?->display_name ?? config('mail.from.name');
 
             // Send the email
-            Mail::mailer('sendgrid')->send($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc, $emailLogId) {
+            Mail::mailer()->send($view, $data, function (Message $message) use ($to, $subject, $fromAddress, $fromName, $attachments, $cc, $emailLogId) {
                 $message->to($to)
                     ->subject($subject)
                     ->from($fromAddress, $fromName);

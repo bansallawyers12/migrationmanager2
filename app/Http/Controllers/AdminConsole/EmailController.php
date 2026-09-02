@@ -6,12 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 use App\Models\Admin;
 use App\Models\Email;
 use App\Models\Staff;
+use App\Services\SesSenderService;
 
 use Auth;
 
@@ -88,40 +87,13 @@ class EmailController extends Controller
 	}
 
 	/**
-	 * Fetch verified senders from SendGrid.
+	 * From identities for Admin Console: emails table + SES_SENDERS env (not SendGrid).
+	 *
+	 * @return list<array{email: string, name: string, nickname?: string}>
 	 */
 	private function getVerifiedSenders(): array
 	{
-		$apiKey = config('services.sendgrid.api_key');
-		$baseUrl = rtrim(config('services.sendgrid.base_url', 'https://api.sendgrid.com'), '/');
-		$senders = [];
-
-		if (empty($apiKey)) {
-			Log::warning('SendGrid senders: SENDGRID_API_KEY is not configured.');
-			return [];
-		}
-
-		try {
-			$response = Http::withHeaders([
-				'Authorization' => 'Bearer ' . $apiKey,
-			])->timeout(10)->get($baseUrl . '/v3/verified_senders');
-
-			if ($response->successful()) {
-				$data = $response->json();
-				foreach (($data['results'] ?? []) as $sender) {
-					if (!empty($sender['from_email']) && (isset($sender['verified']) ? $sender['verified'] : true)) {
-						$senders[] = [
-							'email' => $sender['from_email'],
-							'name' => $sender['from_name'] ?? $sender['nickname'] ?? $sender['from_email'],
-						];
-					}
-				}
-			}
-		} catch (\Exception $exception) {
-			Log::error('Failed to fetch SendGrid verified senders: ' . $exception->getMessage());
-		}
-
-		return collect($senders)->unique('email')->values()->toArray();
+		return app(SesSenderService::class)->getComposeSenders();
 	}
 
 	public function create(Request $request)

@@ -6417,7 +6417,7 @@ public function getInvoiceAmount(Request $request)
                 'Invoice-' . $invoiceNo . '.pdf'
             );
 
-            Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::mailer()->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
@@ -6562,7 +6562,7 @@ public function getInvoiceAmount(Request $request)
                 'Receipt-' . $receiptNo . '.pdf'
             );
 
-            Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::mailer()->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;
@@ -6715,7 +6715,7 @@ public function getInvoiceAmount(Request $request)
                 'Office-Receipt-' . $receiptNo . '.pdf'
             );
 
-            Mail::mailer('sendgrid')->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
+            Mail::mailer()->to($clientEmail)->queue(new \App\Mail\InvoiceEmailManager($invoiceArray));
 
             // Log activity
             $objs = new ActivitiesLog;

@@ -5,13 +5,14 @@ namespace App\Support;
 /**
  * Restricts CRM "From" addresses to configured domain suffixes (compose dropdown + send validation).
  *
- * Config: services.sendgrid.from_allowed_domains — string: comma-separated hostnames (no @), or "*"
- * for no filter. Array values are treated as a list of hostnames (empty array disables the filter).
- * Other non-string scalar config falls back to bansalimmigration.com.au only.
+ * Config: services.ses_crm.from_allowed_domains (falls back to services.sendgrid.from_allowed_domains).
+ * String: comma-separated hostnames (no @), or "*" for no filter. Array values are treated as a list
+ * of hostnames (empty array disables the filter). Other non-string scalar config falls back to
+ * bansalimmigration.com.au only.
  *
- * Note: An explicit empty .env value for SENDGRID_FROM_ALLOWED_DOMAINS resolves to the string ""
- * (not the config default). That is treated as "use bansalimmigration.com.au" so the allowlist is
- * not accidentally disabled.
+ * Note: An explicit empty .env value for SES_FROM_ALLOWED_DOMAINS / SENDGRID_FROM_ALLOWED_DOMAINS
+ * resolves to the string "" (not the config default). That is treated as "use bansalimmigration.com.au"
+ * so the allowlist is not accidentally disabled.
  */
 final class SendGridFromAllowedDomains
 {
@@ -22,7 +23,7 @@ final class SendGridFromAllowedDomains
      */
     public static function domains(): array
     {
-        $raw = config('services.sendgrid.from_allowed_domains', self::FALLBACK_DOMAIN);
+        $raw = config('services.ses_crm.from_allowed_domains', config('services.sendgrid.from_allowed_domains', self::FALLBACK_DOMAIN));
 
         if (is_array($raw)) {
             return array_values(array_filter(array_map(static function ($part) {

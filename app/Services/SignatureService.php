@@ -159,7 +159,7 @@ class SignatureService
                 'user_id' => Auth::guard('admin')->id(),
             ]);
 
-            Mail::mailer('sendgrid')->send($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments, $log, $systemEmailLog) {
+            Mail::mailer()->send($template, $templateData, function (Message $mail) use ($signer, $subject, $from, $attachments, $log, $systemEmailLog) {
                 $mail->to($signer->email, $signer->name)
                     ->subject($subject)
                     ->from($from['from_address'], $from['from_name']);
@@ -295,7 +295,7 @@ class SignatureService
                 'user_id' => Auth::guard('admin')->id(),
             ]);
 
-            Mail::mailer('sendgrid')->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from, $log, $systemEmailLog) {
+            Mail::mailer()->send('emails.signature.reminder', $templateData, function (Message $mail) use ($signer, $from, $log, $systemEmailLog) {
                 $mail->to($signer->email, $signer->name)
                     ->subject('Reminder: Please Sign Your Document - Bansal Migration')
                     ->from($from['from_address'], $from['from_name']);

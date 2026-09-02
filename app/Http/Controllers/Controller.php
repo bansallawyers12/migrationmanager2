@@ -133,7 +133,7 @@ class Controller extends BaseController
 		$explodeTo = explode(';', $to);//for multiple and single to
 
 		try {
-			Mail::mailer('sendgrid')
+			Mail::mailer()
 				->to($explodeTo)
 				->send(new CommonMail($emailContent, $subject, $sender, $sendername, []));
 
@@ -150,7 +150,7 @@ class Controller extends BaseController
 
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
-			$q = Mail::mailer('sendgrid')->to($explodeTo);
+			$q = Mail::mailer()->to($explodeTo);
 			if(!empty($cc)){
 				$q->cc($cc);
 			}
@@ -184,7 +184,7 @@ class Controller extends BaseController
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new InvoiceEmailManager($invoicearray));
+			Mail::mailer()->to($explodeTo)->queue(new InvoiceEmailManager($invoicearray));
 			
 			return true;
 		} catch (\Exception $e) {
@@ -215,7 +215,7 @@ class Controller extends BaseController
 			$invoicearray['subject'] = $subject;
 			$invoicearray['from'] = $sender;
 			$invoicearray['content'] = $emailContent;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
+			Mail::mailer()->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
 			
 			return true;
 		} catch (\Exception $e) {
@@ -230,7 +230,7 @@ class Controller extends BaseController
 		try {
 			$explodeTo = explode(';', $to);//for multiple and single to
 			$invoicearray['from'] = $sender;
-			Mail::mailer('sendgrid')->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
+			Mail::mailer()->to($explodeTo)->queue(new MultipleattachmentEmailManager($invoicearray));
 			
 			return true;
 		} catch (\Exception $e) {

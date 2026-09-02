@@ -54,7 +54,7 @@ class ClientDetailVerificationService
         $url = route('public.client-detail-verification.show', ['token' => $plainToken]);
 
         try {
-            Mail::mailer('sendgrid')->to($email)->send(new ClientDetailVerificationMail(
+            Mail::mailer()->to($email)->send(new ClientDetailVerificationMail(
                 (string) $client->first_name,
                 $url,
             ));

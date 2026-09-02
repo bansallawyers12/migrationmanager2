@@ -815,7 +815,7 @@ class ClientPortalAppointmentController extends BaseController
                         'meeting_type' => $appointment->meeting_type,
                         'admin_notes' => $appointment->admin_notes ?? null,
                     ];
-                    Mail::mailer('sendgrid')->to($clientEmail)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    Mail::mailer()->to($clientEmail)->send(new AppointmentDetailedConfirmation($emailDetails));
                     $appointment->update([
                         'confirmation_email_sent' => true,
                         'confirmation_email_sent_at' => now(),
@@ -1195,7 +1195,7 @@ class ClientPortalAppointmentController extends BaseController
                         'meeting_type' => $appointment->meeting_type,
                         'admin_notes' => $appointment->admin_notes ?? null,
                     ];
-                    Mail::mailer('sendgrid')->to($clientEmail)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    Mail::mailer()->to($clientEmail)->send(new AppointmentDetailedConfirmation($emailDetails));
                     $appointment->update([
                         'confirmation_email_sent' => true,
                         'confirmation_email_sent_at' => now(),
@@ -2415,7 +2415,7 @@ class ClientPortalAppointmentController extends BaseController
                         'meeting_type' => $appointment->meeting_type,
                         'admin_notes' => $appointment->admin_notes ?? null,
                     ];
-                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    Mail::mailer()->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
                     $appointment->update([
                         'confirmation_email_sent' => true,
                         'confirmation_email_sent_at' => now(),
@@ -2667,7 +2667,7 @@ class ClientPortalAppointmentController extends BaseController
                         'meeting_type' => $appointment->meeting_type,
                         'admin_notes' => $appointment->admin_notes ?? null,
                     ];
-                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    Mail::mailer()->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
                     $appointment->update([
                         'confirmation_email_sent' => true,
                         'confirmation_email_sent_at' => now(),
@@ -2798,7 +2798,7 @@ class ClientPortalAppointmentController extends BaseController
                         'meeting_type' => $appointment->meeting_type,
                         'admin_notes' => $appointment->admin_notes ?? null,
                     ];
-                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    Mail::mailer()->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
                     $appointment->update([
                         'confirmation_email_sent' => true,
                         'confirmation_email_sent_at' => now(),
@@ -2926,7 +2926,7 @@ class ClientPortalAppointmentController extends BaseController
                         'meeting_type' => $appointment->meeting_type,
                         'admin_notes' => $appointment->admin_notes ?? null,
                     ];
-                    Mail::mailer('sendgrid')->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
+                    Mail::mailer()->to($appointment->client_email)->send(new AppointmentDetailedConfirmation($emailDetails));
                     $appointment->update([
                         'confirmation_email_sent' => true,
                         'confirmation_email_sent_at' => now(),
