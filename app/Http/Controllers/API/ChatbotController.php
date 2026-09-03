@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Validator;
 class ChatbotController extends BaseController
 {
     /**
-     * Proxy a user message to Anthropic Messages API (Claude), unless the scripted
-     * FAQ library resolves with high confidence — then the exact approved training text returns.
-     * Sends Bansal training prompt as `system` and optional prior turns as `conversation`.
+     * Proxy a user message to Google Gemini, unless the scripted FAQ library
+     * resolves with high confidence — then the exact approved training text returns.
+     *
+     * Response shape stays Claude-compatible (`content[].text`, `reply`) so the
+     * Flutter client portal keeps working without changes.
      */
     public function chat(Request $request, ChatbotKnowledgeMatcher $faqMatcher)
     {
@@ -43,7 +45,7 @@ class ChatbotController extends BaseController
 
         $scriptedMatch = $faqMatcher->resolve((string) $data['message']);
         if ($scriptedMatch !== null) {
-            $payload = $this->buildAnthropicCompatibleScriptedBody(
+            $payload = $this->buildCompatibleScriptedBody(
                 $scriptedMatch['answer'],
                 [
                     'source' => 'training_script_exact',
@@ -56,65 +58,61 @@ class ChatbotController extends BaseController
             return $this->sendResponse($payload, 'OK');
         }
 
-        $messages = $priorTurns;
-        $messages[] = ['role' => 'user', 'content' => $data['message']];
-
-        $systemPrompt = $this->loadSystemPrompt();
-
-        $apiKey = env('ANTHROPIC_API_KEY');
+        $apiKey = env('GEMINI_API_KEY') ?: env('GOOGLE_GEMINI_API_KEY');
         if ($apiKey === null || trim((string) $apiKey) === '') {
             return $this->sendError('Chat service is not configured.', [], 503);
         }
 
         $model = filter_var(config('chatbot.allow_client_model_override', false), FILTER_VALIDATE_BOOLEAN) && isset($data['model'])
             ? $data['model']
-            : (string) config('chatbot.default_model', 'claude-sonnet-4-6');
+            : (string) config('chatbot.default_model', 'gemini-3.6-flash');
 
         $requestedTokens = isset($data['max_tokens'])
             ? (int) $data['max_tokens']
             : (int) config('chatbot.max_tokens_default', 1024);
         $ceiling = (int) config('chatbot.max_tokens_ceiling', 2048);
-
         $maxTokens = max(1, min($requestedTokens, $ceiling));
 
-        $payload = [
-            'model' => $model,
-            'max_tokens' => $maxTokens,
-            'messages' => $messages,
-        ];
+        $messages = $priorTurns;
+        $messages[] = ['role' => 'user', 'content' => $data['message']];
 
-        if ($systemPrompt !== '') {
-            $payload['system'] = $systemPrompt;
-        }
+        $payload = $this->buildGeminiPayload($messages, $this->loadSystemPrompt(), $maxTokens);
+        $endpoint = sprintf(
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+            rawurlencode($model)
+        );
 
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'x-api-key' => $apiKey,
-                    'anthropic-version' => '2023-06-01',
+                    'x-goog-api-key' => trim((string) $apiKey),
                     'content-type' => 'application/json',
                 ])
-                ->post('https://api.anthropic.com/v1/messages', $payload);
+                ->post($endpoint, $payload);
         } catch (\Throwable $e) {
-            Log::error('Anthropic chat request failed', ['message' => $e->getMessage()]);
+            Log::error('Gemini chat request failed', ['message' => $e->getMessage()]);
 
             return $this->sendError('Unable to reach chat service.', [], 502);
         }
 
         if ($response->failed()) {
-            Log::warning('Anthropic API error', [
+            Log::warning('Gemini API error', [
                 'status' => $response->status(),
                 'body' => $response->body(),
+                'model' => $model,
             ]);
 
-            return $this->sendError('Claude API failed.', [
+            return $this->sendError('Gemini API failed.', [
                 'details' => $response->json() ?? $response->body(),
             ], 500);
         }
 
         $body = $response->json();
 
-        return $this->sendResponse($this->envelopeClaudePayload(is_array($body) ? $body : [], $model), 'OK');
+        return $this->sendResponse(
+            $this->envelopeGeminiPayload(is_array($body) ? $body : [], $model),
+            'OK'
+        );
     }
 
     private function loadSystemPrompt(): string
@@ -132,10 +130,46 @@ class ChatbotController extends BaseController
     }
 
     /**
+     * @param  array<int, array{role: string, content: string}>  $messages
+     * @return array<string, mixed>
+     */
+    private function buildGeminiPayload(array $messages, string $systemPrompt, int $maxTokens): array
+    {
+        $contents = [];
+        foreach ($messages as $turn) {
+            $role = ($turn['role'] ?? '') === 'assistant' ? 'model' : 'user';
+            $contents[] = [
+                'role' => $role,
+                'parts' => [
+                    ['text' => (string) ($turn['content'] ?? '')],
+                ],
+            ];
+        }
+
+        $payload = [
+            'contents' => $contents,
+            'generationConfig' => [
+                'maxOutputTokens' => $maxTokens,
+                'temperature' => 0.4,
+            ],
+        ];
+
+        if ($systemPrompt !== '') {
+            $payload['system_instruction'] = [
+                'parts' => [
+                    ['text' => $systemPrompt],
+                ],
+            ];
+        }
+
+        return $payload;
+    }
+
+    /**
      * @param  array<string, mixed>  $meta  chatbot_meta (source-specific fields)
      * @return array<string, mixed>
      */
-    private function buildAnthropicCompatibleScriptedBody(string $assistantText, array $meta): array
+    private function buildCompatibleScriptedBody(string $assistantText, array $meta): array
     {
         return [
             'id' => 'chatbotfaq_'.($meta['matched_faq_id'] ?? uniqid('', true)),
@@ -159,47 +193,64 @@ class ChatbotController extends BaseController
     }
 
     /**
-     * @param  array<string, mixed>  $anthropicPayload
+     * Normalize Gemini generateContent JSON into the existing app response shape.
+     *
+     * @param  array<string, mixed>  $geminiBody
      * @return array<string, mixed>
      */
-    private function envelopeClaudePayload(array $anthropicPayload, string $resolvedModel): array
+    private function envelopeGeminiPayload(array $geminiBody, string $resolvedModel): array
     {
-        $assistantText = $this->assistantTextFromAnthropicBody($anthropicPayload);
+        $assistantText = $this->assistantTextFromGeminiBody($geminiBody);
+        $usage = is_array($geminiBody['usageMetadata'] ?? null) ? $geminiBody['usageMetadata'] : [];
 
-        $anthropicPayload['reply'] = $assistantText;
-
-        $anthropicPayload['chatbot_meta'] = [
-            'source' => 'claude',
+        return [
+            'id' => 'gemini_'.uniqid('', true),
+            'type' => 'message',
+            'role' => 'assistant',
             'model' => $resolvedModel,
+            'content' => [
+                ['type' => 'text', 'text' => $assistantText],
+            ],
+            'stop_reason' => 'end_turn',
+            'usage' => [
+                'input_tokens' => (int) ($usage['promptTokenCount'] ?? 0),
+                'output_tokens' => (int) ($usage['candidatesTokenCount'] ?? 0),
+            ],
+            'reply' => $assistantText,
+            'chatbot_meta' => [
+                'source' => 'gemini',
+                'model' => $resolvedModel,
+            ],
         ];
-
-        return $anthropicPayload;
     }
 
     /**
      * @param  array<string, mixed>  $body
      */
-    private function assistantTextFromAnthropicBody(array $body): string
+    private function assistantTextFromGeminiBody(array $body): string
     {
-        $content = $body['content'] ?? [];
-        if (! is_array($content)) {
+        $candidates = $body['candidates'] ?? [];
+        if (! is_array($candidates) || $candidates === []) {
             return '';
         }
 
-        $parts = [];
-        foreach ($content as $block) {
-            if (! is_array($block)) {
-                continue;
-            }
-            if (($block['type'] ?? '') !== 'text') {
-                continue;
-            }
-
-            $t = isset($block['text']) ? (string) $block['text'] : '';
-            $parts[] = trim($t);
+        $parts = $candidates[0]['content']['parts'] ?? [];
+        if (! is_array($parts)) {
+            return '';
         }
 
-        return trim(implode("\n", array_filter($parts)));
+        $texts = [];
+        foreach ($parts as $part) {
+            if (! is_array($part)) {
+                continue;
+            }
+            if (! isset($part['text'])) {
+                continue;
+            }
+            $texts[] = trim((string) $part['text']);
+        }
+
+        return trim(implode("\n", array_filter($texts)));
     }
 
     /**
