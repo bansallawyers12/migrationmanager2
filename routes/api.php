@@ -374,7 +374,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/appointments/{id}/status', [ClientPortalAppointmentController::class, 'updateAppointmentStatus']);
     Route::post('/appointments/update-appointment', [ClientPortalAppointmentController::class, 'updateAppointment']);
 
-    // Chatbot (Anthropic Claude — server uses ANTHROPIC_API_KEY)
+    // Chatbot (Google Gemini Flash — server uses GEMINI_API_KEY)
     Route::post('/chatbot', [ChatbotController::class, 'chat']);
     
 });

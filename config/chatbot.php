@@ -4,11 +4,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Bansal Immigration — client portal chatbot (Anthropic Claude)
+    | Bansal Immigration — client portal chatbot (Google Gemini)
     |--------------------------------------------------------------------------
     |
     | System prompt content should align with internal training docs.
     | Override the file path via CHATBOT_SYSTEM_PROMPT_PATH (.env) if needed.
+    |
+    | Requires GEMINI_API_KEY (or GOOGLE_GEMINI_API_KEY) in .env.
     |
     */
 
@@ -26,15 +28,15 @@ return [
     |
     */
 
-    /** Minimum matcher confidence [0–100] before skipping Claude and returning scripted text */
+    /** Minimum matcher confidence [0–100] before skipping Gemini and returning scripted text */
     'faq_match_threshold' => (float) env('CHATBOT_FAQ_THRESHOLD', 76),
 
     /*
     | LLM safeguards (prevent client abuse of upstream pricing / output size).
     */
 
-    /** Override request `model` unless allow_client_model_override is true */
-    'default_model' => env('CHATBOT_DEFAULT_MODEL', 'claude-sonnet-4-6'),
+    /** Default generative model — Gemini 2.0 Flash retired; use current Flash */
+    'default_model' => env('CHATBOT_DEFAULT_MODEL', 'gemini-3.6-flash'),
 
     'allow_client_model_override' => filter_var(env('CHATBOT_ALLOW_CLIENT_MODEL', false), FILTER_VALIDATE_BOOL),
 
