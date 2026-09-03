@@ -36,4 +36,18 @@ class ClientDetailVerificationUiTest extends TestCase
         $this->assertStringContainsString('title="Confirmed"', $html);
         $this->assertStringNotContainsString('data-change-request', $html);
     }
+
+    #[Test]
+    public function verify_link_script_confirms_then_sends_sms_without_touching_other_actions(): void
+    {
+        $js = file_get_contents(base_path('public/js/crm/clients/verify-link.js'));
+        $this->assertNotFalse($js);
+        $this->assertStringContainsString("on('click', '.send-verify-link'", $js);
+        $this->assertStringContainsString('Send verification SMS?', $js);
+        $this->assertStringContainsString("confirmButtonText: 'Yes'", $js);
+        $this->assertStringContainsString('sendVerificationSms', $js);
+        $this->assertStringNotContainsString('.send-sms-btn', $js);
+        $this->assertStringNotContainsString('#create_appoint', $js);
+        $this->assertStringNotContainsString('clients.verifyDetails', $js);
+    }
 }

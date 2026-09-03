@@ -196,6 +196,10 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString('lazy-modals.js', $detail);
         Assert::assertStringContainsString('js/crm/clients/utils/flatpickr-helpers.js', $detail);
         Assert::assertStringContainsString('personaldetails-tab.js', $detail);
+        Assert::assertStringContainsString('verify-link.js', $detail);
+        Assert::assertStringContainsString('class="send-verify-link"', $detail);
+        Assert::assertStringContainsString('class="send-sms-btn"', $detail);
+        Assert::assertStringContainsString('data-bs-target="#create_appoint"', $detail);
         Assert::assertStringNotContainsString('js/tinymce/js/tinymce/tinymce.min.js', $detail);
         Assert::assertStringContainsString('ensureComposeOptionListsLoaded', $detail);
         Assert::assertStringContainsString('getComposeOptionLists', $detail);

@@ -219,4 +219,17 @@ final class ClientDetailVerificationFields
 
         return ['ok' => true];
     }
+
+    public static function smsText(string $firstName, string $verificationUrl): string
+    {
+        $name = trim($firstName) !== '' ? trim($firstName) : 'there';
+
+        return 'Hi '.$name.', Bansal Immigration Consultants requests you to verify your Personal & Visa details currently recorded on your file.'
+            ."\n\n"
+            .'Please review and confirm or request any corrections using the secure link below:'
+            ."\n\n"
+            .$verificationUrl
+            ."\n\n"
+            .'It should only take 1–2 minutes. Please do not forward this personalised link to anyone else.';
+    }
 }

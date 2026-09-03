@@ -10,11 +10,13 @@ use App\Models\ClientDetailVerification;
 use App\Models\ClientDetailVerificationField;
 use App\Models\Staff;
 use App\Services\ClientDetailVerificationService;
+use App\Services\Sms\UnifiedSmsManager;
 use App\Support\ClientDetailVerificationFields;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -62,6 +64,21 @@ class ClientDetailVerificationTest extends TestCase
     public function sending_a_new_link_invalidates_an_unused_previous_link(): void
     {
         Mail::fake();
+        $this->mock(UnifiedSmsManager::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('sendSms')
+                ->once()
+                ->withArgs(function (string $to, string $message, string $type, array $context): bool {
+                    return $to === '+610412345678'
+                        && $type === 'notification'
+                        && str_contains($message, 'Hi Vipul, Bansal Immigration Consultants requests you to verify your Personal & Visa details currently recorded on your file.')
+                        && str_contains($message, 'Please review and confirm or request any corrections using the secure link below:')
+                        && str_contains($message, 'It should only take 1–2 minutes. Please do not forward this personalised link to anyone else.')
+                        && str_contains($message, '/verify-details/')
+                        && ($context['client_id'] ?? null) === $this->client->id;
+                })
+                ->andReturn(['success' => true]);
+        });
+
         $service = app(ClientDetailVerificationService::class);
 
         $first = $this->createOpenVerification('old-token-old-token-old-token-old-token-old-tok');
@@ -70,11 +87,31 @@ class ClientDetailVerificationTest extends TestCase
         $result = $service->sendLink($this->client, $this->staff->id);
 
         $this->assertTrue($result['success']);
+        $this->assertStringContainsString('+610412345678', $result['message']);
         $this->assertNotNull($first->fresh()->invalidated_at);
         $this->assertFalse($first->fresh()->isUsable());
-        Mail::assertSent(ClientDetailVerificationMail::class, function (ClientDetailVerificationMail $mail): bool {
-            return $mail->hasTo('vipul.primary@example.com') && $mail->firstName === 'Vipul';
+        Mail::assertNothingSent();
+        Mail::assertNotSent(ClientDetailVerificationMail::class);
+    }
+
+    #[Test]
+    public function sending_a_link_requires_a_primary_phone_and_does_not_send_sms_or_email(): void
+    {
+        Mail::fake();
+        $this->mock(UnifiedSmsManager::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('sendSms')->never();
         });
+
+        $this->client->forceFill([
+            'phone' => '',
+            'country_code' => '',
+        ])->save();
+
+        $result = app(ClientDetailVerificationService::class)->sendLink($this->client, $this->staff->id);
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('This client has no primary phone number.', $result['message']);
+        Mail::assertNothingSent();
     }
 
     #[Test]

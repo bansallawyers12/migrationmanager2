@@ -70,4 +70,18 @@ class ClientDetailVerificationFieldsTest extends TestCase
         $this->assertSame('Onshore - Australia', ClientDetailVerificationFields::locationFromCountry('Australia'));
         $this->assertSame('Offshore - Outside Australia', ClientDetailVerificationFields::locationFromCountry('India'));
     }
+
+    #[Test]
+    public function sms_text_uses_the_requested_copy_and_link_only(): void
+    {
+        $url = 'https://example.test/verify-details/abc123abc123abc123abc123abc123ab';
+        $text = ClientDetailVerificationFields::smsText('Vipul', $url);
+
+        $this->assertSame(
+            "Hi Vipul, Bansal Immigration Consultants requests you to verify your Personal & Visa details currently recorded on your file.\n\nPlease review and confirm or request any corrections using the secure link below:\n\n{$url}\n\nIt should only take 1–2 minutes. Please do not forward this personalised link to anyone else.",
+            $text
+        );
+        $this->assertStringNotContainsString('Bansal Immigration Team', $text);
+        $this->assertStringNotContainsString('Open verification form', $text);
+    }
 }

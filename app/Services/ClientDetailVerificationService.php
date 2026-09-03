@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Helpers\PhoneValidationHelper;
-use App\Mail\ClientDetailVerificationMail;
 use App\Models\Admin;
 use App\Models\ClientAddress;
 use App\Models\ClientContact;
@@ -13,31 +12,34 @@ use App\Models\ClientEmail;
 use App\Models\ClientPassportInformation;
 use App\Models\ClientVisaCountry;
 use App\Models\Matter;
+use App\Services\Sms\UnifiedSmsManager;
 use App\Support\ClientDetailVerificationFields;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class ClientDetailVerificationService
 {
+    public function __construct(private UnifiedSmsManager $smsManager) {}
+
     /**
      * @return array{success: bool, message: string}
      */
     public function sendLink(Admin $client, ?int $sentBy = null): array
     {
-        $email = trim((string) ($client->email ?? ''));
-        if ($email === '') {
+        $phone = trim((string) ($client->country_code ?? '')).trim((string) ($client->phone ?? ''));
+        if ($phone === '') {
             return [
                 'success' => false,
-                'message' => 'This client has no primary email address.',
+                'message' => 'This client has no primary phone number.',
             ];
         }
 
         $plainToken = ClientDetailVerification::generateToken();
         $snapshot = $this->snapshotFor($client);
+        $email = trim((string) ($client->email ?? ''));
 
         $verification = DB::transaction(function () use ($client, $sentBy, $email, $plainToken, $snapshot): ClientDetailVerification {
             $this->invalidateUnusedForClient((int) $client->id);
@@ -52,14 +54,15 @@ class ClientDetailVerificationService
         });
 
         $url = route('public.client-detail-verification.show', ['token' => $plainToken]);
+        $message = ClientDetailVerificationFields::smsText((string) $client->first_name, $url);
 
         try {
-            Mail::mailer()->to($email)->send(new ClientDetailVerificationMail(
-                (string) $client->first_name,
-                $url,
-            ));
+            $result = $this->smsManager->sendSms($phone, $message, 'notification', [
+                'client_id' => (int) $client->id,
+                'sender_id' => $sentBy,
+            ]);
         } catch (\Throwable $e) {
-            Log::error('Failed to send client detail verification email', [
+            Log::error('Failed to send client detail verification SMS', [
                 'client_id' => $client->id,
                 'verification_id' => $verification->id,
                 'error' => $e->getMessage(),
@@ -69,13 +72,22 @@ class ClientDetailVerificationService
 
             return [
                 'success' => false,
-                'message' => 'Failed to send the verification email. Please try again.',
+                'message' => 'Failed to send the verification SMS. Please try again.',
+            ];
+        }
+
+        if (! ($result['success'] ?? false)) {
+            $verification->update(['invalidated_at' => now()]);
+
+            return [
+                'success' => false,
+                'message' => (string) ($result['message'] ?? 'Failed to send the verification SMS. Please try again.'),
             ];
         }
 
         return [
             'success' => true,
-            'message' => 'Verification link sent to '.$email,
+            'message' => 'Verification link sent to '.$phone,
         ];
     }
 
