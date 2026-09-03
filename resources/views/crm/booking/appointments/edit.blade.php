@@ -121,6 +121,8 @@
                                             11 => 'Family Visas (Parent Visa, Partner Visa, Child Visa)',
                                             12 => 'Citizenship',
                                             8 => 'Anyone who is outside Australia',
+                                            13 => 'Ajay Bansal',
+                                            14 => 'Arun Bansal',
                                         ];
                                         $noeDisplay = $appointment->noe_id ? ($noeMap[$appointment->noe_id] ?? 'N/A') : 'N/A';
                                     @endphp

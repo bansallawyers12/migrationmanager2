@@ -26,8 +26,8 @@ class AppointmentActivityDescription
         10 => 'Employer Sponsored Visas: 494, 482, 186, DAMA',
         11 => 'Family Visas (Parent Visa, Partner Visa, Child Visa)',
         12 => 'Citizenship',
-        13 => 'Ajay',
-        14 => 'Arun',
+        13 => 'Ajay Bansal',
+        14 => 'Arun Bansal',
     ];
 
     public static function activitySubject(?int $serviceId): string

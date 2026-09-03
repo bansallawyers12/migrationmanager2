@@ -244,7 +244,7 @@ class ConsultantAssignmentServiceMelbournePunjabiTest extends TestCase
             'inperson_address' => 2,
             'service_id' => 2,
             'specific_service' => 'consultation',
-            'service_type' => 'Ajay',
+            'service_type' => 'Ajay Bansal',
         ]));
     }
 
@@ -256,7 +256,43 @@ class ConsultantAssignmentServiceMelbournePunjabiTest extends TestCase
             'inperson_address' => 2,
             'service_id' => 1,
             'specific_service' => 'paid-consultation',
+            'service_type' => 'Arun Bansal',
+        ]));
+    }
+
+    public function test_melbourne_ajay_service_type_without_noe_id_still_goes_ajay_calendar(): void
+    {
+        $this->assertSame('ajay', $this->calendarType([
+            'location' => 'melbourne',
+            'inperson_address' => 2,
+            'service_id' => 2,
+            'specific_service' => 'consultation',
+            'service_type' => 'Ajay',
+        ]));
+        $this->assertSame('ajay', $this->calendarType([
+            'location' => 'melbourne',
+            'inperson_address' => 2,
+            'service_id' => 2,
+            'specific_service' => 'consultation',
+            'service_type' => 'Ajay Bansal',
+        ]));
+    }
+
+    public function test_melbourne_arun_service_type_without_noe_id_still_goes_arun_calendar(): void
+    {
+        $this->assertSame('arun', $this->calendarType([
+            'location' => 'melbourne',
+            'inperson_address' => 2,
+            'service_id' => 1,
+            'specific_service' => 'paid-consultation',
             'service_type' => 'Arun',
+        ]));
+        $this->assertSame('arun', $this->calendarType([
+            'location' => 'melbourne',
+            'inperson_address' => 2,
+            'service_id' => 1,
+            'specific_service' => 'paid-consultation',
+            'service_type' => 'Arun Bansal',
         ]));
     }
 

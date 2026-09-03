@@ -228,14 +228,14 @@ class BansalSchedulingServiceTypeTest extends TestCase
     {
         $this->assertSame('ajay', BansalSchedulingServiceType::fromEnquiryItem(13, 'melbourne'));
         $this->assertSame('ajay', BansalSchedulingServiceType::bansalEnquiryTypeForApi(13, 'melbourne', 'ajay'));
-        $this->assertSame('ajay', BansalSchedulingServiceType::bansalServiceTypeForApi(13, 'Ajay'));
+        $this->assertSame('ajay', BansalSchedulingServiceType::bansalServiceTypeForApi(13, 'Ajay Bansal'));
     }
 
     public function test_melbourne_crm_only_arun_uses_arun_calendar_slug_and_enquiry_type(): void
     {
         $this->assertSame('arun', BansalSchedulingServiceType::fromEnquiryItem(14, 'melbourne'));
         $this->assertSame('arun', BansalSchedulingServiceType::bansalEnquiryTypeForApi(14, 'melbourne', 'arun'));
-        $this->assertSame('arun', BansalSchedulingServiceType::bansalServiceTypeForApi(14, 'Arun'));
+        $this->assertSame('arun', BansalSchedulingServiceType::bansalServiceTypeForApi(14, 'Arun Bansal'));
     }
 
     public function test_crm_only_noe_ids(): void

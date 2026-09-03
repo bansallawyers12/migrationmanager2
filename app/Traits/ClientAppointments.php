@@ -226,8 +226,8 @@ trait ClientAppointments
                 10 => ['service_type' => 'Employer Sponsored Visas: 494, 482, 186, DAMA', 'enquiry_type' => 'employer_sponsored'],
                 11 => ['service_type' => 'Family Visas (Parent Visa, Partner Visa, Child Visa)', 'enquiry_type' => 'family_visas'],
                 12 => ['service_type' => 'Citizenship', 'enquiry_type' => 'citizenship'],
-                13 => ['service_type' => 'Ajay', 'enquiry_type' => 'ajay'],
-                14 => ['service_type' => 'Arun', 'enquiry_type' => 'arun'],
+                13 => ['service_type' => 'Ajay Bansal', 'enquiry_type' => 'ajay'],
+                14 => ['service_type' => 'Arun Bansal', 'enquiry_type' => 'arun'],
             ];
             $serviceTypeMapping = $noeToServiceType[$requestData['noe_id']] ?? ['service_type' => 'Other', 'enquiry_type' => 'pr_complex']; // Default to pr_complex
 

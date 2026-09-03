@@ -70,7 +70,7 @@ class AppointmentActivityDescriptionTest extends TestCase
             'service_type' => null,
         ]);
 
-        $this->assertSame('Ajay', AppointmentActivityDescription::categoryLabel($ajay));
-        $this->assertSame('Arun', AppointmentActivityDescription::categoryLabel($arun));
+        $this->assertSame('Ajay Bansal', AppointmentActivityDescription::categoryLabel($ajay));
+        $this->assertSame('Arun Bansal', AppointmentActivityDescription::categoryLabel($arun));
     }
 }

@@ -283,6 +283,8 @@ class ConsultantAssignmentService
             str_contains($s, 'outside australia') || str_contains($s, 'india') || str_contains($s, 'international') || str_contains($s, 'europe') || str_contains($s, 'canada') => 8,
             (str_contains($s, 'eoi') || str_contains($s, 'roi')) && ! str_contains($s, 'employer') => 9,
             str_contains($s, 'employer sponsored') || str_contains($s, '494') || str_contains($s, '482') || str_contains($s, '186') || str_contains($s, 'dama') => 10,
+            str_contains($s, 'ajay') => 13,
+            str_contains($s, 'arun') => 14,
             default => null,
         };
     }
