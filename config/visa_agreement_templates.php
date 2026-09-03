@@ -22,9 +22,9 @@ return [
     'skill_assessment' => 'Service_Agreement_Skill_Assessment.docx',
 
     /*
-    | Skill assessment template: matter nick_name (exact, case-insensitive) or title substring.
+    | Skill assessment template: current matter nick_name (exact, case-insensitive) or title substring.
     | Covers named assessing authorities (APC, AASW, Physiotherapy Council), Occupation Suggestion,
-    | plus generic skill assessment.
+    | plus generic skill assessment. Client occupation (e.g. VETASSESS) is not used.
     */
     'skill_assessment_matter_nick_names' => [
         'skillassessment',

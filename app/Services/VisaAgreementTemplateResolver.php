@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Admin;
-use App\Models\ClientOccupation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -42,15 +41,7 @@ class VisaAgreementTemplateResolver
         $nick = $row->nick_name;
         $title = (string) ($row->title ?? '');
 
-        $hasVetassess = ClientOccupation::query()
-            ->where('client_id', $client->id)
-            ->where(function ($q): void {
-                $q->where('list', 'ilike', '%vetassess%')
-                    ->orWhere('skill_assessment', 'ilike', '%vetassess%');
-            })
-            ->exists();
-
-        $decision = $this->determineCandidates($client->isCompany(), $nick, $title, $hasVetassess);
+        $decision = $this->determineCandidates($client->isCompany(), $nick, $title);
 
         return [
             'candidates' => $decision['candidates'],
@@ -62,13 +53,15 @@ class VisaAgreementTemplateResolver
     }
 
     /**
+     * @param  bool  $hasVetassessOccupation  Unused. Kept so existing callers keep working.
+     *                                        Client occupation must not choose the skill-assessment template.
      * @return array{candidates: list<string>, rule: string}
      */
     public function determineCandidates(
         bool $isCompany,
         ?string $matterNickName,
         string $matterTitle,
-        bool $hasVetassessOccupation
+        bool $hasVetassessOccupation = false
     ): array {
         $cfg = config('visa_agreement_templates', []);
         $nick = $matterNickName !== null ? strtolower(trim((string) $matterNickName)) : '';
@@ -144,8 +137,6 @@ class VisaAgreementTemplateResolver
             ];
         }
 
-        // Job Ready must win over client-wide VETASSESS occupation so JRP matters
-        // always use Service_Agreement_Job_Ready.docx regardless of occupation data.
         if ($this->matchesJobReadyMatter($nick, $titleLower)) {
             return [
                 'candidates' => $this->uniqueFilenames(array_merge(
@@ -159,7 +150,7 @@ class VisaAgreementTemplateResolver
             ];
         }
 
-        if ($this->matchesSkillAssessmentOnly($nick, $titleLower, $hasVetassessOccupation)) {
+        if ($this->matchesSkillAssessmentOnly($nick, $titleLower)) {
             return [
                 'candidates' => $this->uniqueFilenames(array_merge(
                     [
@@ -331,12 +322,8 @@ class VisaAgreementTemplateResolver
         return str_contains($titleLower, 'provisional skills assessment');
     }
 
-    private function matchesSkillAssessmentOnly(string $nick, string $titleLower, bool $hasVetassessOccupation): bool
+    private function matchesSkillAssessmentOnly(string $nick, string $titleLower): bool
     {
-        if ($hasVetassessOccupation) {
-            return true;
-        }
-
         foreach (config('visa_agreement_templates.skill_assessment_matter_nick_names', [
             'skillassessment',
             'skillassment',

@@ -100,9 +100,33 @@ class VisaAgreementTemplateResolverTest extends TestCase
         $this->assertSame('Service_Agreement_general.docx', end($r['candidates']));
     }
 
-    public function test_vetassess_signal_triggers_skill_path(): void
+    public function test_vetassess_occupation_alone_does_not_select_skill_template(): void
     {
         $r = $this->resolver->determineCandidates(false, 'gn', 'General', true);
+        $this->assertSame('general', $r['rule']);
+        $this->assertSame(['Service_Agreement_general.docx'], $r['candidates']);
+    }
+
+    public function test_vetassess_occupation_does_not_override_485_visa_matter(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            false,
+            '485PS_1',
+            '485 - Temporary Graduate - Post-Study Work',
+            true
+        );
+        $this->assertSame('general', $r['rule']);
+        $this->assertSame(['Service_Agreement_general.docx'], $r['candidates']);
+    }
+
+    public function test_skill_assessment_matter_still_uses_skill_template_with_vetassess_occupation(): void
+    {
+        $r = $this->resolver->determineCandidates(
+            false,
+            'skillassessment',
+            'Skill Assessment Vetassess',
+            true
+        );
         $this->assertSame('skill_assessment', $r['rule']);
         $this->assertSame('Service_Agreement_Skill_Assessment.docx', $r['candidates'][0]);
     }
