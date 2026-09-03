@@ -12,7 +12,7 @@ class VisaAgreementTemplateResolverTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->resolver = new VisaAgreementTemplateResolver();
+        $this->resolver = new VisaAgreementTemplateResolver;
     }
 
     public function test_company_client_without_nomination_or_sponsorship_hints_uses_general_template(): void
@@ -282,7 +282,8 @@ class VisaAgreementTemplateResolverTest extends TestCase
     {
         $r = $this->resolver->determineCandidates(false, 'gn', 'Temporary activity subclass 408', false);
         $this->assertSame('subclass_408', $r['rule']);
-        $this->assertSame('Service_Agreement_408.docx', $r['candidates'][0]);
+        $this->assertSame('Service_Agreement_408_applicant.docx', $r['candidates'][0]);
+        $this->assertContains('Service_Agreement_408.docx', $r['candidates']);
     }
 
     public function test_psa_nick_selects_psa_template_before_skill_assessment(): void

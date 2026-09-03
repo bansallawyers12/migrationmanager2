@@ -14,13 +14,13 @@ class VisaAgreementServiceTypeRowPatcherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->patcher = new VisaAgreementServiceTypeRowPatcher();
+        $this->patcher = new VisaAgreementServiceTypeRowPatcher;
     }
 
     #[DataProvider('serviceTypeRowTemplateProvider')]
     public function test_patches_category_subclass_row_with_right_tab(string $templateFile): void
     {
-        $path = storage_path('app/templates/' . $templateFile);
+        $path = storage_path('app/templates/'.$templateFile);
         if (! is_file($path)) {
             $this->markTestSkipped("{$templateFile} not present in storage/app/templates");
         }
@@ -66,6 +66,7 @@ class VisaAgreementServiceTypeRowPatcherTest extends TestCase
         $this->assertTrue(VisaAgreementServiceTypeRowPatcher::supportsTemplate('Service_Agreement_general.docx'));
         $this->assertTrue(VisaAgreementServiceTypeRowPatcher::supportsTemplate('Service_Agreement_parents.docx'));
         $this->assertTrue(VisaAgreementServiceTypeRowPatcher::supportsTemplate('Service_Agreement_408.docx'));
+        $this->assertTrue(VisaAgreementServiceTypeRowPatcher::supportsTemplate('Service_Agreement_408_applicant.docx'));
         $this->assertFalse(VisaAgreementServiceTypeRowPatcher::supportsTemplate('agreement_template.docx'));
     }
 
@@ -88,6 +89,7 @@ class VisaAgreementServiceTypeRowPatcherTest extends TestCase
             'general' => ['Service_Agreement_general.docx'],
             'parents' => ['Service_Agreement_parents.docx'],
             '408' => ['Service_Agreement_408.docx'],
+            '408_applicant' => ['Service_Agreement_408_applicant.docx'],
             'art' => ['Service_Agreement_ART.docx'],
             'citizenship' => ['Service_Agreement_citizenship.docx'],
             'eoi_roi' => ['Service_Agreement_EOI_ROI.docx'],
@@ -99,7 +101,7 @@ class VisaAgreementServiceTypeRowPatcherTest extends TestCase
 
     private function readDocumentXml(string $docxPath): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $this->assertTrue($zip->open($docxPath));
         $xml = $zip->getFromName('word/document.xml');
         $zip->close();

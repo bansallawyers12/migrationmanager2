@@ -14,13 +14,13 @@ class VisaAgreementAmountTablePatcherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->patcher = new VisaAgreementAmountTablePatcher();
+        $this->patcher = new VisaAgreementAmountTablePatcher;
     }
 
     #[DataProvider('supportedTemplateProvider')]
     public function test_patches_fee_and_charge_amount_cells_to_right_alignment(string $templateFile): void
     {
-        $path = storage_path('app/templates/' . $templateFile);
+        $path = storage_path('app/templates/'.$templateFile);
         if (! is_file($path)) {
             $this->markTestSkipped("{$templateFile} not present in storage/app/templates");
         }
@@ -44,9 +44,9 @@ class VisaAgreementAmountTablePatcherTest extends TestCase
     public function test_does_not_patch_client_detail_merge_fields(): void
     {
         $xml = '<w:document><w:body><w:tbl><w:tr>'
-            . '<w:tc><w:p><w:r><w:t>Name</w:t></w:r></w:p></w:tc>'
-            . '<w:tc><w:p><w:r><w:t>${ApplicantDOB}</w:t></w:r></w:p></w:tc>'
-            . '</w:tr></w:tbl></w:body></w:document>';
+            .'<w:tc><w:p><w:r><w:t>Name</w:t></w:r></w:p></w:tc>'
+            .'<w:tc><w:p><w:r><w:t>${ApplicantDOB}</w:t></w:r></w:p></w:tc>'
+            .'</w:tr></w:tbl></w:body></w:document>';
 
         $result = $this->patcher->patchDocumentXml($xml);
 
@@ -75,6 +75,7 @@ class VisaAgreementAmountTablePatcherTest extends TestCase
         $this->assertFalse(VisaAgreementAmountTablePatcher::supportsTemplate('Service_Agreement_Job_Ready.docx'));
         $this->assertTrue(VisaAgreementAmountTablePatcher::supportsTemplate('Service_Agreement_general.docx'));
         $this->assertTrue(VisaAgreementAmountTablePatcher::supportsTemplate('Service_Agreement_PSA.docx'));
+        $this->assertTrue(VisaAgreementAmountTablePatcher::supportsTemplate('Service_Agreement_408_applicant.docx'));
     }
 
     /**
@@ -87,6 +88,7 @@ class VisaAgreementAmountTablePatcherTest extends TestCase
             'psa' => ['Service_Agreement_PSA.docx'],
             'skill_assessment' => ['Service_Agreement_Skill_Assessment.docx'],
             '408' => ['Service_Agreement_408.docx'],
+            '408_applicant' => ['Service_Agreement_408_applicant.docx'],
             'art' => ['Service_Agreement_ART.docx'],
             'citizenship' => ['Service_Agreement_citizenship.docx'],
             'eoi_roi' => ['Service_Agreement_EOI_ROI.docx'],
@@ -98,7 +100,7 @@ class VisaAgreementAmountTablePatcherTest extends TestCase
 
     private function readDocumentXml(string $docxPath): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $this->assertTrue($zip->open($docxPath));
         $xml = $zip->getFromName('word/document.xml');
         $zip->close();
@@ -146,7 +148,7 @@ class VisaAgreementAmountTablePatcherTest extends TestCase
                     }
 
                     $index++;
-                    $stats['amount_' . $index] = $this->amountCellStats($cell);
+                    $stats['amount_'.$index] = $this->amountCellStats($cell);
                 }
             }
         }

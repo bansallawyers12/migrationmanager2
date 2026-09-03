@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\CRM\ClientsController;
+use App\Services\VisaAgreementTemplateResolver;
+
 /**
  * Visa service agreement DOCX templates (storage/app/templates).
  *
- * Resolution order is implemented in {@see \App\Services\VisaAgreementTemplateResolver}.
+ * Resolution order is implemented in {@see VisaAgreementTemplateResolver}.
  *
  * Primary templates (current product): use these filenames when present.
  * Legacy_* / fallback_skill_template keys extend specialist chains when newer files are missing.
@@ -11,7 +14,7 @@
 return [
     /**
      * Default general service agreement (also the usual tail after specialist templates).
-     * {@see \App\Http\Controllers\CRM\ClientsController::generateagreement} still falls back to
+     * {@see ClientsController::generateagreement} still falls back to
      * agreement_template.docx on disk when no candidate file exists.
      */
     'default' => 'Service_Agreement_general.docx',
@@ -43,7 +46,7 @@ return [
 
     'job_ready' => 'Service_Agreement_Job_Ready.docx',
 
-    'subclass_408' => 'Service_Agreement_408.docx',
+    'subclass_408' => 'Service_Agreement_408_applicant.docx',
 
     'art' => 'Service_Agreement_ART.docx',
 
@@ -105,6 +108,9 @@ return [
 
     /** @deprecated Retained for backward compatibility */
     'legacy_art' => 'agreement_template-ART.docx',
+
+    /** @deprecated Previous 408 filename; used when the applicant template is missing */
+    'legacy_subclass_408' => 'Service_Agreement_408.docx',
 
     /*
     | Parent / contributory parent subclasses (parents template).

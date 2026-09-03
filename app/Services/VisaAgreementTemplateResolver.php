@@ -31,7 +31,7 @@ class VisaAgreementTemplateResolver
             ->select('matters.nick_name', 'matters.title')
             ->first();
 
-        if (!$row) {
+        if (! $row) {
             return [
                 'candidates' => [$default],
                 'matter_nick_name' => null,
@@ -124,7 +124,10 @@ class VisaAgreementTemplateResolver
         if ($this->matchesSubclass408($titleLower)) {
             return [
                 'candidates' => $this->uniqueFilenames(array_merge(
-                    [$cfg['subclass_408'] ?? ''],
+                    [
+                        $cfg['subclass_408'] ?? '',
+                        $cfg['legacy_subclass_408'] ?? '',
+                    ],
                     $this->standardNonCompanyTail($cfg)
                 )),
                 'rule' => 'subclass_408',
