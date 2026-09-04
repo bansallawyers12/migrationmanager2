@@ -1,19 +1,13 @@
 <?php
+
 namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
-
-use App\Models\Admin;
 use App\Models\Email;
 use App\Models\Staff;
 use App\Services\SesSenderService;
-
-use Auth;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class EmailController extends Controller
 {
@@ -30,166 +24,191 @@ class EmailController extends Controller
     /**
      * All Vendors.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-	public function index(Request $request)
-	{
-		//check authorization start
+    public function index(Request $request)
+    {
+        $senders = $this->getVerifiedSenders();
+        $emailRows = Email::query()->orderBy('id')->get();
+        $metadataByEmail = $emailRows->keyBy(fn (Email $row): string => strtolower(trim((string) $row->email)));
+        $staffNames = Staff::where('status', 1)
+            ->get()
+            ->keyBy('id')
+            ->map(function ($staff) {
+                return trim(($staff->first_name ?? '').' '.($staff->last_name ?? ''));
+            });
 
-			/* if($check)
-			{
-				return Redirect::to('/dashboard')->with('error',config('constants.unauthorized'));
-			} */
-		//check authorization end
+        $listed = [];
+        $lists = [];
 
-		$senders = $this->getVerifiedSenders();
-		$senderEmails = array_values(array_unique(array_filter(array_map(function ($sender) {
-			return $sender['email'] ?? null;
-		}, $senders))));
+        foreach ($senders as $sender) {
+            $email = strtolower(trim((string) ($sender['email'] ?? '')));
+            if ($email === '') {
+                continue;
+            }
+            $metadata = $metadataByEmail->get($email);
+            $lists[] = $this->presentEmailRow($email, (string) ($sender['name'] ?? ''), $metadata, $staffNames);
+            $listed[$email] = true;
+        }
 
-		$metadataByEmail = Email::whereIn('email', $senderEmails)
-			->get()
-			->keyBy('email');
-		$staffNames = Staff::where('status', 1)
-			->get()
-			->keyBy('id')
-			->map(function ($staff) {
-				return trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
-			});
+        foreach ($emailRows as $row) {
+            $email = strtolower(trim((string) $row->email));
+            if ($email === '' || isset($listed[$email])) {
+                continue;
+            }
+            $lists[] = $this->presentEmailRow($email, '', $row, $staffNames);
+        }
 
-		$lists = array_map(function ($sender) use ($metadataByEmail, $staffNames) {
-			$email = $sender['email'] ?? '';
-			$metadata = $metadataByEmail->get($email);
-			$userNames = [];
+        $totalData = count($lists);
 
-			$userIds = json_decode($metadata->user_id ?? '[]', true);
-			foreach ((array) $userIds as $userId) {
-				$name = $staffNames->get((int) $userId);
-				if (!empty($name)) {
-					$userNames[] = $name;
-				}
-			}
+        return view('AdminConsole.features.emails.index', compact(['lists', 'totalData']));
+    }
 
-			return (object) [
-				'email' => $email,
-				'display_name' => $metadata->display_name ?? ($sender['name'] ?? ''),
-				'email_signature' => $metadata->email_signature ?? '',
-				'status' => isset($metadata->status) ? (int) $metadata->status : 0,
-				'user_sharing' => implode(', ', $userNames),
-			];
-		}, $senders);
+    /**
+     * From identities for Admin Console: emails table + SES_SENDERS env (not SendGrid).
+     *
+     * @return list<array{email: string, name: string, nickname?: string}>
+     */
+    private function getVerifiedSenders(): array
+    {
+        return app(SesSenderService::class)->getComposeSenders();
+    }
 
-		$totalData = count($lists);
+    /**
+     * @param  Collection<int|string, string>  $staffNames
+     */
+    private function presentEmailRow(string $email, string $senderName, ?Email $metadata, Collection $staffNames): object
+    {
+        $userNames = [];
+        $userIds = json_decode($metadata->user_id ?? '[]', true);
+        foreach ((array) $userIds as $userId) {
+            $name = $staffNames->get((int) $userId);
+            if (! empty($name)) {
+                $userNames[] = $name;
+            }
+        }
 
-		return view('AdminConsole.features.emails.index', compact(['lists', 'totalData']));
+        return (object) [
+            'id' => $metadata->id ?? null,
+            'email' => $metadata->email ?? $email,
+            'display_name' => $metadata->display_name ?? $senderName,
+            'email_signature' => $metadata->email_signature ?? '',
+            'status' => isset($metadata->status) ? (int) $metadata->status : 0,
+            'user_sharing' => implode(', ', $userNames),
+        ];
+    }
 
-		//return view('AdminConsole\.features\.producttype.index');
-	}
+    public function create(Request $request)
+    {
+        return view('AdminConsole.features.emails.create');
+    }
 
-	/**
-	 * From identities for Admin Console: emails table + SES_SENDERS env (not SendGrid).
-	 *
-	 * @return list<array{email: string, name: string, nickname?: string}>
-	 */
-	private function getVerifiedSenders(): array
-	{
-		return app(SesSenderService::class)->getComposeSenders();
-	}
+    public function store(Request $request)
+    {
+        if ($request->isMethod('post')) {
+            $this->validate($request, [
+                'email' => 'required|email|max:255|unique:emails',
+                'display_name' => 'nullable|max:255',
+                'password' => 'nullable|string|max:255',
+                'smtp_host' => 'nullable|string|max:255',
+                'smtp_port' => 'nullable|integer|min:1|max:65535',
+                'smtp_encryption' => 'nullable|in:tls,ssl,starttls',
+            ]);
 
-	public function create(Request $request)
-	{
-		//check authorization end
-		//return view('AdminConsole\.system\.users\.create',compact(['usertype']));
+            $requestData = $request->all();
+            $obj = new Email;
+            $obj->email = @$requestData['email'];
+            $obj->email_signature = @$requestData['email_signature'];
+            $obj->display_name = @$requestData['display_name'];
+            $obj->status = @$requestData['status'];
+            $obj->user_id = json_encode(@$requestData['users']);
+            $this->applyOptionalMailboxCredentials($obj, $request);
+            $saved = $obj->save();
 
-		return view('AdminConsole.features.emails.create');
-	}
+            if (! $saved) {
+                return redirect()->back()->with('error', config('constants.server_error'));
+            }
 
-	public function store(Request $request)
-	{
-		//check authorization end
-		if ($request->isMethod('post'))
-		{
-			$this->validate($request, ['email' => 'required|max:255|unique:emails']);
+            return redirect()->route('adminconsole.features.emails.index')->with('success', 'Email Added Successfully');
+        }
 
-			$requestData = 	$request->all();
-            $obj		 = 	new Email;
-			$obj->email	 =	@$requestData['email'];
-			$obj->email_signature	=	@$requestData['email_signature'];
-			$obj->display_name	=	@$requestData['display_name'];
-			$obj->status	=	@$requestData['status'];
-			$obj->user_id	=	json_encode(@$requestData['users']);
-            $saved			=	$obj->save();
+        return view('AdminConsole.features.emails.create');
+    }
 
-			if(!$saved)
-			{
-				return redirect()->back()->with('error', config('constants.server_error'));
-			}
-			else
-			{
-				return redirect()->route('adminconsole.features.emails.index')->with('success', 'Email Added Successfully');
-			}
-		}
+    /**
+     * Show the form for editing the specified email.
+     */
+    public function edit($id)
+    {
+        if (isset($id) && ! empty($id)) {
+            $id = $this->decodeString($id);
+            if (Email::where('id', '=', $id)->exists()) {
+                $fetchedData = Email::find($id);
 
-		return view('AdminConsole.features.emails.create');
-	}
+                return view('AdminConsole.features.emails.edit', compact(['fetchedData']));
+            } else {
+                return redirect()->route('adminconsole.features.emails.index')->with('error', 'Email Not Exist');
+            }
+        } else {
+            return redirect()->route('adminconsole.features.emails.index')->with('error', config('constants.unauthorized'));
+        }
+    }
 
-	/**
-	 * Show the form for editing the specified email.
-	 */
-	public function edit($id)
-	{
-		//check authorization end
+    /**
+     * Update the specified email in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        $this->validate($request, [
+            'email' => 'required|email|max:255|unique:emails,email,'.$id,
+            'display_name' => 'nullable|max:255',
+            'password' => 'nullable|string|max:255',
+            'smtp_host' => 'nullable|string|max:255',
+            'smtp_port' => 'nullable|integer|min:1|max:65535',
+            'smtp_encryption' => 'nullable|in:tls,ssl,starttls',
+        ]);
 
-		if(isset($id) && !empty($id))
-		{
-			$id = $this->decodeString($id);
-			if(Email::where('id', '=', $id)->exists())
-			{
-				$fetchedData = Email::find($id);
-				return view('AdminConsole.features.emails.edit', compact(['fetchedData']));
-			}
-			else
-			{
-				return redirect()->route('adminconsole.features.emails.index')->with('error', 'Email Not Exist');
-			}
-		}
-		else
-		{
-			return redirect()->route('adminconsole.features.emails.index')->with('error', config('constants.unauthorized'));
-		}
-	}
+        $requestData = $request->all();
 
-	/**
-	 * Update the specified email in storage.
-	 */
-	public function update(Request $request, $id)
-	{
-		//check authorization end
+        $obj = Email::find($id);
+        if (! $obj) {
+            return redirect()->route('adminconsole.features.emails.index')->with('error', 'Email Not Found');
+        }
 
-		$requestData = $request->all();
-		$this->validate($request, ['email' => 'required|max:255|unique:emails,email,'.$id]);
-		
-		$obj = Email::find($id);
-		if (!$obj) {
-			return redirect()->route('adminconsole.features.emails.index')->with('error', 'Email Not Found');
-		}
-		
-		$obj->email = @$requestData['email'];
-		$obj->email_signature = @$requestData['email_signature'];
-		$obj->display_name = @$requestData['display_name'];
-		$obj->status = @$requestData['status'];
-		$obj->user_id = json_encode(@$requestData['users']);
-		$saved = $obj->save();
+        $obj->email = @$requestData['email'];
+        $obj->email_signature = @$requestData['email_signature'];
+        $obj->display_name = @$requestData['display_name'];
+        $obj->status = @$requestData['status'];
+        $obj->user_id = json_encode(@$requestData['users']);
+        $this->applyOptionalMailboxCredentials($obj, $request);
+        $saved = $obj->save();
 
-		if(!$saved)
-		{
-			return redirect()->back()->with('error', config('constants.server_error'));
-		}
-		else
-		{
-			return redirect()->route('adminconsole.features.emails.index')->with('success', 'Email Updated Successfully');
-		}
-	}
+        if (! $saved) {
+            return redirect()->back()->with('error', config('constants.server_error'));
+        }
+
+        return redirect()->route('adminconsole.features.emails.index')->with('success', 'Email Updated Successfully');
+    }
+
+    /**
+     * Store Zoho mailbox credentials when provided. Empty password on edit keeps the current value.
+     */
+    private function applyOptionalMailboxCredentials(Email $email, Request $request): void
+    {
+        if ($request->filled('password')) {
+            $email->password = (string) $request->input('password');
+        }
+
+        if ($request->filled('smtp_host')) {
+            $email->smtp_host = (string) $request->input('smtp_host');
+        }
+
+        if ($request->filled('smtp_port')) {
+            $email->smtp_port = (int) $request->input('smtp_port');
+        }
+
+        if ($request->filled('smtp_encryption')) {
+            $email->smtp_encryption = (string) $request->input('smtp_encryption');
+        }
+    }
 }
-
-

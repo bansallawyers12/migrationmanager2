@@ -48,6 +48,18 @@
 												</div>
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
+														<label for="password">Zoho Password</label>
+														<input type="password" name="password" id="password" value="" class="form-control" autocomplete="new-password" placeholder="Leave blank to keep the current password">
+														<small class="form-text text-muted">Leave blank to keep the current password. Enter a new value only when you want to change it.</small>
+														@if ($errors->has('password'))
+															<span class="custom-error" role="alert">
+																<strong>{{ @$errors->first('password') }}</strong>
+															</span>
+														@endif
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
 														<label for="status">Status</label><br>
 														<label ><input <?php if(@$fetchedData->status == 1){ echo 'checked'; } ?> type="checkbox" name="status" value="1"> Enable This Feature</label>
 													</div>
@@ -72,7 +84,10 @@
 														<select data-valid="required" multiple class="form-control mm-select" name="users[]">
 															<option value="">Select User</option>
 															<?php
-															$userids = json_decode($fetchedData->user_id);
+															$userids = json_decode($fetchedData->user_id, true);
+															if (! is_array($userids)) {
+																$userids = [];
+															}
 																$users = \App\Models\Staff::where('status', 1)->orderBy('first_name')->get();
 																foreach($users as $user){
 																	?>

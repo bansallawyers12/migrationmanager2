@@ -7,8 +7,8 @@
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
-			<form action="{{url('adminconsole/features/emails/store')}}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">
-    			<input type="hidden" name="_token" value="{{ csrf_token() }}">
+			<form action="{{ route('adminconsole.features.emails.store') }}" name="add-emails" autocomplete="off" enctype="multipart/form-data" method="POST">
+    			@csrf
 
 			
 			<div class="row">
@@ -38,11 +38,23 @@
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
 														<label for="email">Email Id <span class="span_req">*</span></label>
-														<input type="text" name="email" value="" class="form-control" data-valid="required" autocomplete="off" placeholder="">
+														<input type="text" name="email" value="{{ old('email') }}" class="form-control" data-valid="required" autocomplete="off" placeholder="">
 
 														@if ($errors->has('email'))
 															<span class="custom-error" role="alert">
 																<strong>{{ @$errors->first('email') }}</strong>
+															</span>
+														@endif
+													</div>
+												</div>
+												<div class="col-12 col-md-12 col-lg-12">
+													<div class="form-group">
+														<label for="password">Zoho Password</label>
+														<input type="password" name="password" id="password" value="" class="form-control" autocomplete="new-password" placeholder="Mailbox password for Zoho SMTP">
+														<small class="form-text text-muted">Optional. Used to send as this From address via Zoho until SES is enabled. Leave blank to add the address only.</small>
+														@if ($errors->has('password'))
+															<span class="custom-error" role="alert">
+																<strong>{{ @$errors->first('password') }}</strong>
 															</span>
 														@endif
 													</div>
@@ -56,7 +68,7 @@
 												<div class="col-12 col-md-12 col-lg-12">
 													<div class="form-group">
 														<label for="display_name">Display Name</label>
-														<input type="text" name="display_name" value="" class="form-control" data-valid="" autocomplete="off" placeholder="">
+														<input type="text" name="display_name" value="{{ old('display_name') }}" class="form-control" data-valid="" autocomplete="off" placeholder="">
 
 														@if ($errors->has('display_name'))
 															<span class="custom-error" role="alert">
