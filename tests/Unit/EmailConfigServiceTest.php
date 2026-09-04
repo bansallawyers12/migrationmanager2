@@ -2,8 +2,13 @@
 
 namespace Tests\Unit;
 
+use App\Models\Branch;
 use App\Models\Email;
+use App\Models\Matter;
 use App\Services\EmailConfigService;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -14,6 +19,9 @@ class EmailConfigServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->createSchema();
+        Email::query()->delete();
+        DB::table('client_matters')->delete();
         $this->service = new EmailConfigService;
     }
 
@@ -171,5 +179,178 @@ class EmailConfigServiceTest extends TestCase
         $this->assertNotNull($config);
         $this->assertEquals('fallback@example.com', $config['from_address']);
         $this->assertEquals('Fallback Sender', $config['from_name']);
+    }
+
+    #[Test]
+    public function get_eoi_send_context_keeps_admin_sender_for_melbourne(): void
+    {
+        config(['mail.default' => 'failover']);
+
+        Email::query()->create([
+            'email' => 'admin@bansalimmigration.com.au',
+            'display_name' => 'Admin Sender',
+            'status' => true,
+            'password' => 'admin-secret',
+        ]);
+        Email::query()->create([
+            'email' => 'Adelaide@bansalimmigration.com.au',
+            'display_name' => 'Adelaide Office',
+            'status' => true,
+            'password' => 'adelaide-secret',
+            'smtp_host' => 'smtp.zoho.com',
+            'smtp_port' => 587,
+            'smtp_encryption' => 'tls',
+        ]);
+
+        $this->createEoiMatter(2608774, 'MELBOURNE');
+
+        $context = $this->service->getEoiSendContext(2608774);
+
+        $this->assertSame('admin@bansalimmigration.com.au', $context['from']['from_address']);
+        $this->assertNull($context['mailer']);
+        $this->assertSame(['ses', 'zoho'], config('mail.mailers.failover.mailers'));
+    }
+
+    #[Test]
+    public function get_eoi_send_context_uses_adelaide_mailbox_failover(): void
+    {
+        config(['mail.default' => 'failover']);
+
+        Email::query()->create([
+            'email' => 'admin@bansalimmigration.com.au',
+            'display_name' => 'Admin Sender',
+            'status' => true,
+            'password' => 'admin-secret',
+        ]);
+        Email::query()->create([
+            'email' => 'Adelaide@bansalimmigration.com.au',
+            'display_name' => 'Adelaide Office',
+            'status' => true,
+            'password' => 'adelaide-secret',
+            'smtp_host' => 'smtp.zoho.com',
+            'smtp_port' => 587,
+            'smtp_encryption' => 'tls',
+        ]);
+
+        $this->createEoiMatter(2608773, 'ADELAIDE');
+
+        $context = $this->service->getEoiSendContext(2608773);
+
+        $this->assertSame('Adelaide@bansalimmigration.com.au', $context['from']['from_address']);
+        $this->assertNotNull($context['mailer']);
+        $this->assertNotSame('failover', $context['mailer']);
+
+        $chain = config("mail.mailers.{$context['mailer']}.mailers");
+        $this->assertSame('ses', $chain[0]);
+        $this->assertSame('Adelaide@bansalimmigration.com.au', config("mail.mailers.{$chain[1]}.username"));
+        $this->assertSame('adelaide-secret', config("mail.mailers.{$chain[1]}.password"));
+        $this->assertSame(['ses', 'zoho'], config('mail.mailers.failover.mailers'));
+    }
+
+    #[Test]
+    public function get_eoi_from_account_is_unchanged_without_client(): void
+    {
+        Email::query()->create([
+            'email' => 'admin@bansalimmigration.com.au',
+            'display_name' => 'Admin Sender',
+            'status' => true,
+        ]);
+
+        $config = $this->service->getEoiFromAccount();
+
+        $this->assertSame('admin@bansalimmigration.com.au', $config['from_address']);
+    }
+
+    private function createEoiMatter(int $clientId, string $officeName): int
+    {
+        $office = Branch::query()->create(['office_name' => $officeName]);
+        $eoiType = Matter::query()->firstOrCreate(
+            ['nick_name' => 'eoi'],
+            ['title' => 'Expression Of Interest']
+        );
+
+        return (int) DB::table('client_matters')->insertGetId([
+            'client_id' => $clientId,
+            'office_id' => $office->id,
+            'sel_matter_id' => $eoiType->id,
+            'matter_status' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function createSchema(): void
+    {
+        if (! Schema::hasTable('emails')) {
+            Schema::create('emails', function (Blueprint $table) {
+                $table->id();
+                $table->string('email')->nullable();
+                $table->string('display_name')->nullable();
+                $table->boolean('status')->default(true);
+                $table->text('email_signature')->nullable();
+                $table->string('password')->nullable();
+                $table->string('smtp_host')->nullable();
+                $table->unsignedInteger('smtp_port')->nullable();
+                $table->string('smtp_encryption')->nullable();
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->timestamps();
+            });
+        } else {
+            foreach (['password', 'smtp_host', 'smtp_encryption'] as $column) {
+                if (! Schema::hasColumn('emails', $column)) {
+                    Schema::table('emails', function (Blueprint $table) use ($column) {
+                        $table->string($column)->nullable();
+                    });
+                }
+            }
+            if (! Schema::hasColumn('emails', 'smtp_port')) {
+                Schema::table('emails', function (Blueprint $table) {
+                    $table->unsignedInteger('smtp_port')->nullable();
+                });
+            }
+        }
+
+        if (! Schema::hasTable('branches')) {
+            Schema::create('branches', function (Blueprint $table) {
+                $table->id();
+                $table->string('office_name')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (! Schema::hasTable('matters')) {
+            Schema::create('matters', function (Blueprint $table) {
+                $table->id();
+                $table->string('title')->nullable();
+                $table->string('nick_name')->nullable();
+                $table->timestamps();
+            });
+        } elseif (! Schema::hasColumn('matters', 'nick_name')) {
+            Schema::table('matters', function (Blueprint $table) {
+                $table->string('nick_name')->nullable();
+            });
+        }
+
+        if (! Schema::hasTable('client_matters')) {
+            Schema::create('client_matters', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('client_id')->nullable();
+                $table->unsignedBigInteger('office_id')->nullable();
+                $table->unsignedBigInteger('sel_matter_id')->nullable();
+                $table->unsignedTinyInteger('matter_status')->nullable();
+                $table->timestamps();
+            });
+        } else {
+            if (! Schema::hasColumn('client_matters', 'office_id')) {
+                Schema::table('client_matters', function (Blueprint $table) {
+                    $table->unsignedBigInteger('office_id')->nullable();
+                });
+            }
+            if (! Schema::hasColumn('client_matters', 'sel_matter_id')) {
+                Schema::table('client_matters', function (Blueprint $table) {
+                    $table->unsignedBigInteger('sel_matter_id')->nullable();
+                });
+            }
+        }
     }
 }

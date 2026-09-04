@@ -659,7 +659,8 @@ class EoiRoiSheetController extends Controller
             $attachmentLabels = $attachmentsData['labels'];
             $attachments = $attachmentsData['attachments'];
 
-            $eoiFromConfig = $this->emailConfigService->getEoiFromAccount();
+            $eoiSend = $this->emailConfigService->getEoiSendContext($eoi->client_id);
+            $eoiFromConfig = $eoiSend['from'];
             $mail = new EoiConfirmationMail(
                 $eoi,
                 $eoi->client,
@@ -682,7 +683,7 @@ class EoiRoiSheetController extends Controller
                 'subject'   => $mail->customSubject ?? ('Please Confirm Your EOI Details - ' . $eoi->EOI_number),
                 'client_id' => $eoi->client_id,
                 'user_id'   => auth('admin')->id(),
-            ], $mail, $eoi->client->email);
+            ], $mail, $eoi->client->email, $eoiSend['mailer']);
 
             // Log activity
             $this->logActivity(

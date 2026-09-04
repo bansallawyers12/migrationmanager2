@@ -122,7 +122,7 @@ class SystemEmailLogService
      *     type?: ?string,
      * }  $meta
      */
-    public function logAndSendMailable(array $meta, Mailable $mailable, mixed $to): void
+    public function logAndSendMailable(array $meta, Mailable $mailable, mixed $to, ?string $mailer = null): void
     {
         $meta['to_mail'] = is_string($meta['to_mail'] ?? null)
             ? $meta['to_mail']
@@ -131,7 +131,7 @@ class SystemEmailLogService
         $log = $this->createPending($meta);
 
         try {
-            Mail::mailer()
+            Mail::mailer($mailer)
                 ->to($to)
                 ->send($this->applyTrackingToMailable($mailable, $log->id));
         } catch (\Throwable $e) {

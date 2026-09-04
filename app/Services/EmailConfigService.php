@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\ClientMatter;
 use App\Models\Email;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Service for resolving email sender configuration.
@@ -184,6 +186,82 @@ class EmailConfigService
         }
 
         return null;
+    }
+
+    /**
+     * Resolve EOI From + mailer. Adelaide EOI matters use adelaide@ with SES →
+     * that mailbox's Zoho SMTP. All other clients keep getEoiFromAccount().
+     *
+     * @return array{from: array{from_address: string, from_name: string, email_signature?: string}|null, mailer: string|null}
+     */
+    public function getEoiSendContext(?int $clientId = null): array
+    {
+        if ($clientId !== null) {
+            try {
+                if ($this->latestActiveEoiMatterIsAdelaide($clientId)) {
+                    return $this->adelaideEoiSendContext();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Failed to resolve Adelaide EOI send context; using default EOI sender', [
+                    'client_id' => $clientId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return [
+            'from' => $this->getEoiFromAccount(),
+            'mailer' => null,
+        ];
+    }
+
+    /**
+     * @return array{from: array{from_address: string, from_name: string, email_signature?: string}, mailer: string|null}
+     */
+    protected function adelaideEoiSendContext(): array
+    {
+        $adelaideEmail = (string) config('services.eoi.adelaide_from_email', 'Adelaide@bansalimmigration.com.au');
+        $account = Email::query()
+            ->where('status', true)
+            ->whereRaw('LOWER(email) = ?', [Str::lower($adelaideEmail)])
+            ->first();
+
+        if ($account) {
+            return [
+                'from' => $this->buildConfig($account),
+                'mailer' => app(EmailService::class)->composeMailerName($account),
+            ];
+        }
+
+        return [
+            'from' => [
+                'from_address' => $adelaideEmail,
+                'from_name' => config('mail.from.name', 'Bansal Migration'),
+                'email_signature' => '',
+            ],
+            'mailer' => null,
+        ];
+    }
+
+    protected function latestActiveEoiMatterIsAdelaide(int $clientId): bool
+    {
+        $matter = ClientMatter::query()
+            ->with('office:id,office_name')
+            ->where('client_id', $clientId)
+            ->where('matter_status', 1)
+            ->whereHas('matter', static function ($query): void {
+                $query->where(function ($q): void {
+                    $q->whereRaw("LOWER(COALESCE(nick_name, '')) = 'eoi'")
+                        ->orWhereRaw("LOWER(COALESCE(title, '')) LIKE '%eoi%'")
+                        ->orWhereRaw("LOWER(COALESCE(title, '')) LIKE '%expression of interest%'");
+                });
+            })
+            ->orderByDesc('id')
+            ->first();
+
+        $officeName = $matter?->office?->office_name;
+
+        return is_string($officeName) && Str::contains(Str::lower($officeName), 'adelaide');
     }
 
     /**

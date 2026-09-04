@@ -468,7 +468,8 @@ class ClientEoiRoiController extends Controller
             // Use custom body if provided, otherwise use default view
             $body = $request->input('body');
 
-            $eoiFromConfig = $this->emailConfigService->getEoiFromAccount();
+            $eoiSend = $this->emailConfigService->getEoiSendContext($client->id);
+            $eoiFromConfig = $eoiSend['from'];
             $mail = new EoiConfirmationMail(
                 $eoiReference,
                 $client,
@@ -494,7 +495,7 @@ class ClientEoiRoiController extends Controller
                 'message'   => $body,
                 'client_id' => $client->id,
                 'user_id'   => auth('admin')->id(),
-            ], $mail, $client->email);
+            ], $mail, $client->email, $eoiSend['mailer']);
 
             // Log activity
             $action = $isResend ? 'Resent' : 'Sent';
