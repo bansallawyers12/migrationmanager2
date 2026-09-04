@@ -14,6 +14,8 @@ return [
     |
     */
 
+    'api_key' => env('GEMINI_API_KEY') ?: env('GOOGLE_GEMINI_API_KEY'),
+
     'system_prompt_path' => env('CHATBOT_SYSTEM_PROMPT_PATH', resource_path('prompts/bansal_immigration_chatbot_system.txt')),
 
     /*

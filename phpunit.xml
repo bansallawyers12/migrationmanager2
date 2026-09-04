@@ -27,6 +27,10 @@
     <!-- Force isolated sqlite — never reuse .env Postgres. RefreshDatabase is banned in TestCase. -->
     <env name="DB_CONNECTION" value="sqlite" force="true"/>
     <env name="DB_DATABASE" value=":memory:" force="true"/>
+    <!-- Never hit a live LLM from tests, even if a machine .env has keys. -->
+    <env name="GEMINI_API_KEY" value="" force="true"/>
+    <env name="GOOGLE_GEMINI_API_KEY" value="" force="true"/>
+    <env name="ANTHROPIC_API_KEY" value="" force="true"/>
   </php>
   <source>
     <include>

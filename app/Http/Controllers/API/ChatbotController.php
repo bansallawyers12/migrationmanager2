@@ -58,7 +58,7 @@ class ChatbotController extends BaseController
             return $this->sendResponse($payload, 'OK');
         }
 
-        $apiKey = env('GEMINI_API_KEY') ?: env('GOOGLE_GEMINI_API_KEY');
+        $apiKey = config('chatbot.api_key');
         if ($apiKey === null || trim((string) $apiKey) === '') {
             return $this->sendError('Chat service is not configured.', [], 503);
         }
