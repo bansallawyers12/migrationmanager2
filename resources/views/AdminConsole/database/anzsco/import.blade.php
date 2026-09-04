@@ -256,6 +256,17 @@
 
 @push('scripts')
 <script>
+function anzscoNotify(message, type) {
+    type = type || 'info';
+    if (typeof toastr !== 'undefined' && typeof toastr[type] === 'function') {
+        toastr[type](message);
+        return;
+    }
+    if (type === 'error' || type === 'warning') {
+        alert(message);
+    }
+}
+
 $(document).ready(function() {
     // Update file input label
     $('.custom-file-input').on('change', function() {
@@ -319,25 +330,24 @@ $(document).ready(function() {
                 
                 // Success message
                 if (response.success) {
-                    toastr.success('Import completed successfully!');
+                    anzscoNotify('Import completed successfully!', 'success');
                 } else {
-                    toastr.warning('Import completed with errors');
+                    anzscoNotify('Import completed with errors', 'warning');
                 }
             },
             error: function(xhr) {
                 $('#progressContainer').hide();
                 $('#importBtn').prop('disabled', false);
                 
-                if (xhr.status === 422) {
-                    var errors = xhr.responseJSON.errors;
-                    $.each(errors, function(key, value) {
-                        toastr.error(value[0]);
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function(key, value) {
+                        anzscoNotify(value[0], 'error');
                     });
                 } else {
                     var message = xhr.responseJSON && xhr.responseJSON.message 
                         ? xhr.responseJSON.message 
                         : 'Error processing import';
-                    toastr.error(message);
+                    anzscoNotify(message, 'error');
                 }
             }
         });

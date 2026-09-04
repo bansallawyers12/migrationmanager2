@@ -31,7 +31,7 @@
                 </div>
                 
                 <form id="occupationForm" method="POST" 
-                      action="{{ isset($occupation) ? route('adminconsole.database.anzsco.edit', $occupation->id) : route('adminconsole.database.anzsco.store') }}">
+                      action="{{ isset($occupation) ? route('adminconsole.database.anzsco.update', $occupation->id) : route('adminconsole.database.anzsco.store') }}">
                     @csrf
                     @if(isset($occupation))
                         @method('PUT')
@@ -211,36 +211,43 @@
 
 @push('scripts')
 <script>
+function anzscoNotify(message, type) {
+    type = type || 'info';
+    if (typeof toastr !== 'undefined' && typeof toastr[type] === 'function') {
+        toastr[type](message);
+        return;
+    }
+    if (type === 'error' || type === 'warning') {
+        alert(message);
+    }
+}
+
 $(document).ready(function() {
     $('#occupationForm').on('submit', function(e) {
         e.preventDefault();
         
         var form = $(this);
         var url = form.attr('action');
-        var method = form.find('input[name="_method"]').val() || 'POST';
         
         $.ajax({
             url: url,
-            type: method,
+            type: 'POST',
             data: form.serialize(),
             success: function(response) {
                 if (response.success) {
-                    toastr.success(response.message);
-                    setTimeout(function() {
-                        window.location.href = '{{ route("adminconsole.database.anzsco.index") }}';
-                    }, 1500);
+                    anzscoNotify(response.message, 'success');
+                    window.location.href = '{{ route("adminconsole.database.anzsco.index") }}';
                 } else {
-                    toastr.error(response.message || 'Error saving occupation');
+                    anzscoNotify(response.message || 'Error saving occupation', 'error');
                 }
             },
             error: function(xhr) {
-                if (xhr.status === 422) {
-                    var errors = xhr.responseJSON.errors;
-                    $.each(errors, function(key, value) {
-                        toastr.error(value[0]);
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function(key, value) {
+                        anzscoNotify(value[0], 'error');
                     });
                 } else {
-                    toastr.error('Error saving occupation');
+                    anzscoNotify('Error saving occupation', 'error');
                 }
             }
         });

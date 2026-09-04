@@ -251,5 +251,8 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::put('/anzsco/{id}', [AnzscoOccupationController::class, 'update'])->name('anzsco.update');
         Route::get('/anzsco/import', [AnzscoOccupationController::class, 'importPage'])->name('anzsco.import');
         Route::post('/anzsco/import', [AnzscoOccupationController::class, 'import'])->name('anzsco.import.store');
+        Route::get('/anzsco/download-template', [AnzscoOccupationController::class, 'downloadTemplate'])->name('anzsco.download-template');
+        Route::delete('/anzsco/{id}', [AnzscoOccupationController::class, 'destroy'])->name('anzsco.destroy');
+        Route::post('/anzsco/{id}/toggle-status', [AnzscoOccupationController::class, 'toggleStatus'])->name('anzsco.toggle-status');
     });
 });

@@ -515,3 +515,18 @@ body, .card, .table, .form-control, .btn, label, .badge {
     color: #fff !important;
 }
 
+/* Action icons: Lucide SVGs use currentColor; keep them visible on colored buttons */
+#anzscoTable .btn-group-sm .btn {
+    color: #fff !important;
+}
+
+#anzscoTable .btn-group-sm .btn svg.lucide,
+#anzscoTable .btn-group-sm .btn i[data-lucide] {
+    width: 14px;
+    height: 14px;
+    color: #fff !important;
+    stroke: currentColor;
+    display: inline-block;
+    vertical-align: middle;
+}
+

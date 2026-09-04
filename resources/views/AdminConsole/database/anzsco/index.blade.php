@@ -97,7 +97,20 @@
 
 @push('scripts')
 <script>
+function anzscoNotify(message, type) {
+    type = type || 'info';
+    if (typeof toastr !== 'undefined' && typeof toastr[type] === 'function') {
+        toastr[type](message);
+        return;
+    }
+    if (type === 'error' || type === 'warning') {
+        alert(message);
+    }
+}
+
 $(document).ready(function() {
+    var anzscoBaseUrl = @json(url('/adminconsole/database/anzsco'));
+
     // Initialize DataTable
     var table = $('#anzscoTable').DataTable({
         processing: true,
@@ -121,7 +134,18 @@ $(document).ready(function() {
         ],
         order: [[0, 'asc']],
         pageLength: 25,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        drawCallback: function() {
+            if (typeof refreshLucideIcons === 'function') {
+                refreshLucideIcons(document.getElementById('anzscoTable'));
+                return;
+            }
+            window.addEventListener('load', function() {
+                if (typeof refreshLucideIcons === 'function') {
+                    refreshLucideIcons(document.getElementById('anzscoTable'));
+                }
+            }, { once: true });
+        }
     });
 
     // Filter handlers
@@ -142,21 +166,21 @@ $(document).ready(function() {
         var isActive = checkbox.is(':checked');
 
         $.ajax({
-            url: '/adminconsole/anzsco/' + id + '/toggle-status',
+            url: anzscoBaseUrl + '/' + id + '/toggle-status',
             type: 'POST',
             data: {
                 _token: '{{ csrf_token() }}'
             },
             success: function(response) {
                 if (response.success) {
-                    toastr.success(response.message);
+                    anzscoNotify(response.message, 'success');
                 } else {
-                    toastr.error(response.message);
+                    anzscoNotify(response.message, 'error');
                     checkbox.prop('checked', !isActive);
                 }
             },
             error: function() {
-                toastr.error('Error updating status');
+                anzscoNotify('Error updating status', 'error');
                 checkbox.prop('checked', !isActive);
             }
         });
@@ -170,21 +194,22 @@ $(document).ready(function() {
 
         if (confirm('Are you sure you want to delete "' + title + '"?')) {
             $.ajax({
-                url: '/adminconsole/anzsco/' + id,
-                type: 'DELETE',
+                url: anzscoBaseUrl + '/' + id,
+                type: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}'
+                    _token: '{{ csrf_token() }}',
+                    _method: 'DELETE'
                 },
                 success: function(response) {
                     if (response.success) {
-                        toastr.success(response.message);
+                        anzscoNotify(response.message, 'success');
                         table.draw();
                     } else {
-                        toastr.error(response.message);
+                        anzscoNotify(response.message, 'error');
                     }
                 },
                 error: function() {
-                    toastr.error('Error deleting occupation');
+                    anzscoNotify('Error deleting occupation', 'error');
                 }
             });
         }
