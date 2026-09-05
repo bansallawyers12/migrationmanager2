@@ -432,6 +432,17 @@ class Document extends Model
     }
 
     /**
+     * Filename for the original (unsigned) upload. Never appends _signed.
+     */
+    public function getOriginalDownloadFilename(): string
+    {
+        $name = str_replace(['"', "\r", "\n", '\\', '/'], '', $this->getFilenameWithExtensionForDisplay());
+        $name = trim($name);
+
+        return $name !== '' ? mb_substr($name, 0, 220) : ((string) $this->id . '.pdf');
+    }
+
+    /**
      * Filename for signed PDF downloads (Content-Disposition).
      * Signed artifacts are always PDF; use .pdf even when filetype stores a MIME type (e.g. application/pdf).
      */

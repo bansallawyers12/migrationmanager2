@@ -14,6 +14,7 @@ use App\Models\EmailLog;
 use App\Models\SignatureActivity;
 use App\Models\Signer;
 use App\Models\UploadChecklist;
+use App\Services\OriginalDocumentPathResolver;
 use App\Services\PythonService;
 use App\Services\SignatureService;
 use App\Services\SignedDocumentS3PathResolver;
@@ -2454,6 +2455,96 @@ class DocumentController extends Controller
 
             abort(500, 'Error generating download link');
         }
+    }
+
+    /**
+     * Download the original unsigned upload. Read-only: does not use signed_doc_link.
+     */
+    public function downloadOriginal($id)
+    {
+        try {
+            $document = Document::findOrFail($id);
+            $this->authorizeDocumentAssociatedAccess($document);
+
+            if (trim((string) ($document->myfile ?? '')) === '' && trim((string) ($document->myfile_key ?? '')) === '') {
+                abort(404, 'Original document file not found');
+            }
+
+            $filename = str_replace('"', "'", $document->getOriginalDownloadFilename());
+            $location = OriginalDocumentPathResolver::locateOriginalPdfFile($document);
+
+            if ($location === null) {
+                Log::error('Original document file not found', [
+                    'document_id' => $id,
+                    'myfile' => $document->myfile,
+                ]);
+                abort(404, 'Original document file not found');
+            }
+
+            $contentType = $this->originalDownloadContentType($document);
+
+            if ($location['disk'] === 'local') {
+                return response()->download($location['path'], $filename, [
+                    'Content-Type' => $contentType,
+                ]);
+            }
+
+            /** @var FilesystemAdapter $disk */
+            $disk = Storage::disk('s3');
+            $s3Key = $location['key'];
+
+            try {
+                $tempUrl = $disk->temporaryUrl(
+                    $s3Key,
+                    now()->addMinutes(5),
+                    ['ResponseContentDisposition' => 'attachment; filename="'.$filename.'"']
+                );
+
+                Log::info('S3 temporary URL generated for original download', [
+                    'document_id' => $id,
+                    's3_key' => $s3Key,
+                ]);
+
+                return redirect($tempUrl);
+            } catch (\Throwable $e) {
+                Log::warning('S3 temporaryUrl failed, streaming original file through app', [
+                    'document_id' => $id,
+                    's3_key' => $s3Key,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return response($disk->get($s3Key), 200, [
+                    'Content-Type' => $contentType,
+                    'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+                    'Content-Length' => $disk->size($s3Key),
+                    'Cache-Control' => 'private, no-cache',
+                ]);
+            }
+        } catch (ModelNotFoundException $e) {
+            throw $e;
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Error downloading original document', [
+                'document_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            abort(500, 'Error generating download link');
+        }
+    }
+
+    private function originalDownloadContentType(Document $document): string
+    {
+        return match ($document->getPreviewFileExtension()) {
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            default => 'application/octet-stream',
+        };
     }
 
     /**

@@ -184,6 +184,9 @@ Route::get('/documents/{id}/preview-signed', [AdminDocumentController::class, 'p
 Route::get('/admin/documents/{id}/download-signed', [AdminDocumentController::class, 'downloadSigned'])
     ->name('documents.download.signed');
 
+Route::get('/admin/documents/{id}/download-original', [AdminDocumentController::class, 'downloadOriginal'])
+    ->name('documents.download.original');
+
 Route::get('/admin/documents/{id}/download-signed-and-thankyou', [AdminDocumentController::class, 'downloadSignedAndThankyou'])
     ->name('documents.download_and_thankyou');
 

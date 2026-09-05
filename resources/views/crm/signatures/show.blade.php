@@ -890,7 +890,14 @@
 
                 <div class="info-row">
                     <span class="info-label">File Name</span>
-                    <span class="info-value">{{ $document->file_name }}</span>
+                    <span class="info-value">
+                        {{ $document->file_name }}
+                        @if($document->myfile)
+                            <a href="{{ route('documents.download.original', $document->id) }}" class="btn btn-sm btn-secondary" style="margin-left: 8px;">
+                                @icon('fa-download') Download Original
+                            </a>
+                        @endif
+                    </span>
                 </div>
 
                 <div class="info-row">
@@ -1033,6 +1040,12 @@
                 </h3>
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
+                    @if($document->myfile)
+                    <a href="{{ route('documents.download.original', $document->id) }}" class="btn btn-secondary btn-block">
+                        @icon('fa-download') Download Original
+                    </a>
+                    @endif
+
                     @if($document->status === 'signed')
                     <a href="{{ route('documents.download.signed', $document->id) }}" class="btn btn-success btn-block">
                         @icon('fa-download') Download
