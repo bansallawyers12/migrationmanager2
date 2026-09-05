@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\AdminConsole;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use App\Models\DocumentChecklist;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 
 class DocumentChecklistController extends Controller
@@ -23,13 +23,25 @@ class DocumentChecklistController extends Controller
     /**
      * Display a listing of the matters.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index(Request $request)
     {
-        $query = DocumentChecklist::where('status',1);
-        $totalData = $query->count(); // for all data
+        $name = trim((string) $request->input('name', ''));
+        $docType = (string) $request->input('doc_type', '');
+
+        $query = DocumentChecklist::query()
+            ->where('status', 1)
+            ->when($name !== '', function ($query) use ($name) {
+                $query->where('name', 'like', '%'.$name.'%');
+            })
+            ->when(in_array($docType, ['1', '2', '3'], true), function ($query) use ($docType) {
+                $query->where('doc_type', $docType);
+            });
+
+        $totalData = $query->count();
         $lists = $query->sortable(['id' => 'desc'])->paginate(100);
+
         return view('AdminConsole.features.documentchecklist.index', compact(['lists', 'totalData']));
     }
 
@@ -40,16 +52,15 @@ class DocumentChecklistController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->isMethod('post'))
-        {
+        if ($request->isMethod('post')) {
             // Validation rules with unique check for nick_name and optional fields
             $this->validate($request, [
-                'name' => ['required','max:255',
+                'name' => ['required', 'max:255',
                     Rule::unique('portal_document_checklists')->where(function ($query) {
                         return $query->where('doc_type', request('doc_type'));
-                    })
+                    }),
                 ],
-                'doc_type' => 'required'
+                'doc_type' => 'required',
             ]);
 
             $requestData = $request->all();
@@ -58,12 +69,13 @@ class DocumentChecklistController extends Controller
             $obj->doc_type = $requestData['doc_type'];
             $obj->status = 1; // Set default status to 1 (active)
             $saved = $obj->save();
-            if (!$saved) {
+            if (! $saved) {
                 return redirect()->back()->with('error', config('constants.server_error'));
             } else {
                 return redirect()->route('adminconsole.features.documentchecklist.index')->with('success', 'Checklist Added Successfully');
             }
         }
+
         return view('AdminConsole.features.documentchecklist.create');
     }
 
@@ -72,10 +84,11 @@ class DocumentChecklistController extends Controller
      */
     public function edit($id)
     {
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ! empty($id)) {
             $id = $this->decodeString($id);
             if (DocumentChecklist::where('id', '=', $id)->exists()) {
                 $fetchedData = DocumentChecklist::find($id);
+
                 return view('AdminConsole.features.documentchecklist.edit', compact(['fetchedData']));
             } else {
                 return redirect()->route('adminconsole.features.documentchecklist.index')->with('error', 'Checklist Not Exist');
@@ -98,24 +111,22 @@ class DocumentChecklistController extends Controller
                 'max:255',
                 Rule::unique('portal_document_checklists')->where(function ($query) use ($request) {
                     return $query->where('doc_type', $request->doc_type);
-                })->ignore($id)
-            ]
+                })->ignore($id),
+            ],
         ]);
 
         $obj = DocumentChecklist::find($id);
-        if (!$obj) {
+        if (! $obj) {
             return redirect()->route('adminconsole.features.documentchecklist.index')->with('error', 'Checklist Not Found');
         }
-        
+
         $obj->name = $requestData['name'];
         $obj->doc_type = $requestData['doc_type'];
         $saved = $obj->save();
-        if (!$saved) {
+        if (! $saved) {
             return redirect()->back()->with('error', config('constants.server_error'));
         } else {
             return redirect()->route('adminconsole.features.documentchecklist.index')->with('success', 'Checklist Updated Successfully');
         }
     }
 }
-
-

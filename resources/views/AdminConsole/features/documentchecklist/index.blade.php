@@ -84,6 +84,37 @@
 							</div>
 						</div>
 						<div class="card-body">
+							<div class="row mb-3">
+								<div class="col-12">
+									<form method="GET" action="{{ route('adminconsole.features.documentchecklist.index') }}">
+										<div class="row">
+											<div class="col-md-4">
+												<div class="form-group">
+													<label for="checklist_name_filter">Checklist Name</label>
+													<input type="text" name="name" id="checklist_name_filter" class="form-control" value="{{ request('name') }}" placeholder="Search by name" autocomplete="off">
+												</div>
+											</div>
+											<div class="col-md-4">
+												<div class="form-group">
+													<label for="doc_type_filter">Document Type</label>
+													<select name="doc_type" id="doc_type_filter" class="form-control">
+														<option value="">All Types</option>
+														<option value="1" {{ (string) request('doc_type') === '1' ? 'selected' : '' }}>Personal</option>
+														<option value="2" {{ (string) request('doc_type') === '2' ? 'selected' : '' }}>Visa</option>
+														<option value="3" {{ (string) request('doc_type') === '3' ? 'selected' : '' }}>Nomination</option>
+													</select>
+												</div>
+											</div>
+											<div class="col-md-4">
+												<div class="form-group" style="margin-top: 30px;">
+													<button type="submit" class="btn btn-primary">Filter</button>
+													<a href="{{ route('adminconsole.features.documentchecklist.index') }}" class="btn btn-info">Reset</a>
+												</div>
+											</div>
+										</div>
+									</form>
+								</div>
+							</div>
 							<div class="table-responsive common_table">
 								<table class="table text_wrap">
 								<thead>
