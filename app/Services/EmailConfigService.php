@@ -167,19 +167,7 @@ class EmailConfigService
      */
     public function getEoiFromAccount(): ?array
     {
-        $preferredEmail = config('services.eoi.from_email', 'admin@bansalimmigration.com.au');
-
-        // Try exact match first (from config/env)
-        $emailConfig = Email::where('status', true)
-            ->where('email', $preferredEmail)
-            ->first();
-
-        // If not found, try pattern: admin@bansalimmigration% (any domain)
-        if (! $emailConfig) {
-            $emailConfig = Email::where('status', true)
-                ->where('email', 'like', 'admin@bansalimmigration%')
-                ->first();
-        }
+        $emailConfig = $this->findDefaultEoiMailbox();
 
         if ($emailConfig) {
             return $this->buildConfig($emailConfig);
@@ -189,8 +177,8 @@ class EmailConfigService
     }
 
     /**
-     * Resolve EOI From + mailer. Adelaide EOI matters use adelaide@ with SES →
-     * that mailbox's Zoho SMTP. All other clients keep getEoiFromAccount().
+     * Resolve EOI From + mailer. Adelaide uses adelaide@; Melbourne/other offices
+     * use admin@. Both try SES first, then that mailbox's Zoho SMTP from emails.
      *
      * @return array{from: array{from_address: string, from_name: string, email_signature?: string}|null, mailer: string|null}
      */
@@ -209,10 +197,7 @@ class EmailConfigService
             }
         }
 
-        return [
-            'from' => $this->getEoiFromAccount(),
-            'mailer' => null,
-        ];
+        return $this->defaultEoiSendContext();
     }
 
     /**
@@ -241,6 +226,43 @@ class EmailConfigService
             ],
             'mailer' => null,
         ];
+    }
+
+    /**
+     * @return array{from: array{from_address: string, from_name: string, email_signature?: string}|null, mailer: string|null}
+     */
+    protected function defaultEoiSendContext(): array
+    {
+        $account = $this->findDefaultEoiMailbox();
+
+        if ($account) {
+            return [
+                'from' => $this->buildConfig($account),
+                'mailer' => app(EmailService::class)->composeMailerName($account),
+            ];
+        }
+
+        return [
+            'from' => $this->getEoiFromAccount(),
+            'mailer' => null,
+        ];
+    }
+
+    protected function findDefaultEoiMailbox(): ?Email
+    {
+        $preferredEmail = config('services.eoi.from_email', 'admin@bansalimmigration.com.au');
+
+        $emailConfig = Email::where('status', true)
+            ->where('email', $preferredEmail)
+            ->first();
+
+        if (! $emailConfig) {
+            $emailConfig = Email::where('status', true)
+                ->where('email', 'like', 'admin@bansalimmigration%')
+                ->first();
+        }
+
+        return $emailConfig;
     }
 
     protected function latestActiveEoiMatterIsAdelaide(int $clientId): bool

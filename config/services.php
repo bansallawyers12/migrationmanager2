@@ -272,7 +272,8 @@ return [
     | From address for EOI/ROI confirmation emails. Lookup order:
     | 1. Adelaide EOI-matter office: EOI_ADELAIDE_FROM_EMAIL (SES, then that
     |    mailbox's Zoho SMTP from the emails table)
-    | 2. EOI_FROM_EMAIL in .env (exact match in emails table)
+    | 2. Other offices (e.g. Melbourne): EOI_FROM_EMAIL / admin@ (SES, then that
+    |    mailbox's Zoho SMTP from the emails table)
     | 3. First active email in DB matching admin@bansalimmigration%
     |
     */

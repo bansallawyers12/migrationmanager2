@@ -207,7 +207,13 @@ class EmailConfigServiceTest extends TestCase
         $context = $this->service->getEoiSendContext(2608774);
 
         $this->assertSame('admin@bansalimmigration.com.au', $context['from']['from_address']);
-        $this->assertNull($context['mailer']);
+        $this->assertNotNull($context['mailer']);
+        $this->assertNotSame('failover', $context['mailer']);
+
+        $chain = config("mail.mailers.{$context['mailer']}.mailers");
+        $this->assertSame('ses', $chain[0]);
+        $this->assertSame('admin@bansalimmigration.com.au', config("mail.mailers.{$chain[1]}.username"));
+        $this->assertSame('admin-secret', config("mail.mailers.{$chain[1]}.password"));
         $this->assertSame(['ses', 'zoho'], config('mail.mailers.failover.mailers'));
     }
 
