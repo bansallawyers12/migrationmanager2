@@ -2,33 +2,40 @@
 
 namespace App\Http\Controllers\CRM;
 
+use App\Helpers\IconHelper;
 use App\Http\Controllers\Controller;
-use App\Models\BookingAppointment;
-use App\Models\AppointmentConsultant;
-use App\Models\Admin;
-use App\Models\ClientMatter;
-use App\Models\AppointmentSyncLog;
 use App\Models\ActivitiesLog;
+use App\Models\Admin;
+use App\Models\AppointmentConsultant;
+use App\Models\AppointmentSyncLog;
+use App\Models\BookingAppointment;
+use App\Models\ClientMatter;
 use App\Services\BansalAppointmentSync\AppointmentSyncService;
 use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\BansalAppointmentSync\BansalAppointmentRecoveryService;
+use App\Services\BansalAppointmentSync\NotificationService;
+use App\Services\BookingAppointmentManualPaymentService;
+use App\Support\BansalSchedulingServiceType;
 use App\Support\BookingAppointmentStatus;
+use App\Support\StaffClientVisibility;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Exception;
-use Carbon\Carbon;
-use App\Support\BansalSchedulingServiceType;
-use App\Support\StaffClientVisibility;
-use App\Helpers\IconHelper;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class BookingAppointmentsController extends Controller
 {
     protected AppointmentSyncService $syncService;
+
     protected BansalApiClient $bansalApiClient;
+
     protected BansalAppointmentRecoveryService $recoveryService;
 
     public function __construct(
@@ -54,54 +61,54 @@ class BookingAppointmentsController extends Controller
     {
         $query = BookingAppointment::with(['client', 'consultant']);
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($query);
-        
+
         // Apply filters
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        
+
         if ($request->filled('consultant_id')) {
             $query->where('consultant_id', $request->consultant_id);
         }
-        
+
         if ($request->filled('date_from')) {
             $query->whereDate('appointment_datetime', '>=', $request->date_from);
         }
-        
+
         if ($request->filled('date_to')) {
             $query->whereDate('appointment_datetime', '<=', $request->date_to);
         }
-        
+
         // Search in Client Reference, Description, and Email
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $searchTermLower = strtolower($searchTerm);
-            $query->where(function($q) use ($searchTerm, $searchTermLower) {
+            $query->where(function ($q) use ($searchTermLower) {
                 // Search in enquiry_details
-                $q->whereRaw('LOWER(enquiry_details) LIKE ?', ['%' . $searchTermLower . '%'])
+                $q->whereRaw('LOWER(enquiry_details) LIKE ?', ['%'.$searchTermLower.'%'])
                   // Search in appointment client email (includes guests without linked client)
-                  ->orWhereRaw('LOWER(client_email) LIKE ?', ['%' . $searchTermLower . '%'])
+                    ->orWhereRaw('LOWER(client_email) LIKE ?', ['%'.$searchTermLower.'%'])
                   // Search in client_unique_matter_no via ClientMatter
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
-                      $subQuery->select('client_id')
-                               ->from('client_matters')
-                               ->whereRaw('LOWER(client_unique_matter_no) LIKE ?', ['%' . $searchTermLower . '%']);
-                  })
+                    ->orWhereIn('client_id', function ($subQuery) use ($searchTermLower) {
+                        $subQuery->select('client_id')
+                            ->from('client_matters')
+                            ->whereRaw('LOWER(client_unique_matter_no) LIKE ?', ['%'.$searchTermLower.'%']);
+                    })
                   // Search in admins.client_id column
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
-                      $subQuery->select('id')
-                               ->from('admins')
-                               ->whereRaw('LOWER(client_id) LIKE ?', ['%' . $searchTermLower . '%']);
-                  })
+                    ->orWhereIn('client_id', function ($subQuery) use ($searchTermLower) {
+                        $subQuery->select('id')
+                            ->from('admins')
+                            ->whereRaw('LOWER(client_id) LIKE ?', ['%'.$searchTermLower.'%']);
+                    })
                   // Search in linked client profile email
-                  ->orWhereIn('client_id', function($subQuery) use ($searchTermLower) {
-                      $subQuery->select('id')
-                               ->from('admins')
-                               ->whereRaw('LOWER(email) LIKE ?', ['%' . $searchTermLower . '%']);
-                  });
+                    ->orWhereIn('client_id', function ($subQuery) use ($searchTermLower) {
+                        $subQuery->select('id')
+                            ->from('admins')
+                            ->whereRaw('LOWER(email) LIKE ?', ['%'.$searchTermLower.'%']);
+                    });
             });
         }
-        
+
         // Paginate appointments ordered by ID (descending - newest first)
         // Preserve filter parameters in pagination links
         $appointments = $query->orderByDesc('id')
@@ -121,14 +128,14 @@ class BookingAppointmentsController extends Controller
                 ->pluck('client_unique_matter_no', 'client_id')
                 ->toArray();
         }
-        
+
         // List filter: all active consultants; labels use crm_display_label (e.g. Employer Sponsored Calendar, not personal names)
         $calendarOrder = ['paid' => 1, 'jrp' => 2, 'education' => 3, 'tourist' => 4, 'adelaide' => 5, 'adelaide_education' => 6, 'ajay' => 7, 'arun' => 8];
         $consultants = AppointmentConsultant::active()
             ->get()
             ->sortBy(fn ($c) => $calendarOrder[$c->calendar_type] ?? 99)
             ->values();
-        
+
         $statsBase = BookingAppointment::query();
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($statsBase);
 
@@ -141,7 +148,7 @@ class BookingAppointmentsController extends Controller
             'today' => (clone $statsBase)->whereDate('appointment_datetime', today())->count(),
             'total' => (clone $statsBase)->count(),
         ];
-        
+
         return view('crm.booking.appointments.index', compact('appointments', 'consultants', 'stats', 'clientMatterRefs'));
     }
 
@@ -155,7 +162,7 @@ class BookingAppointmentsController extends Controller
 
         // Filter by calendar type (consultant type)
         if ($request->filled('type')) {
-            $query->whereHas('consultant', function($q) use ($request) {
+            $query->whereHas('consultant', function ($q) use ($request) {
                 $q->where('calendar_type', $request->type);
             });
         }
@@ -185,12 +192,12 @@ class BookingAppointmentsController extends Controller
             // Use explicit timezone-aware comparison to ensure accuracy
             $currentDateTime = Carbon::now(config('app.timezone'));
             $startOfToday = Carbon::today(config('app.timezone'));
-            
+
             // Show appointments from start of today onwards (includes all of today + future)
             $query->where('appointment_datetime', '>=', $startOfToday);
-            
+
             $appointments = $query->get();
-            
+
             // Debug logging to verify filter is working
             Log::info('Calendar API Request - Showing Today and Future Appointments', [
                 'type' => $request->get('type'),
@@ -200,24 +207,24 @@ class BookingAppointmentsController extends Controller
                 'current_datetime' => $currentDateTime->toDateTimeString(),
                 'timezone' => $startOfToday->timezone->getName(),
                 'appointments_count_after_filter' => $appointments->count(),
-                'sample_appointment_dates' => $appointments->take(5)->map(function($apt) use ($startOfToday, $currentDateTime) {
+                'sample_appointment_dates' => $appointments->take(5)->map(function ($apt) use ($currentDateTime) {
                     return [
                         'id' => $apt->id,
                         'datetime' => $apt->appointment_datetime->toDateTimeString(),
                         'is_today' => $apt->appointment_datetime->isToday(),
                         'is_future' => $apt->appointment_datetime->gt($currentDateTime),
-                        'days_from_now' => $apt->appointment_datetime->diffInDays($currentDateTime, false)
+                        'days_from_now' => $apt->appointment_datetime->diffInDays($currentDateTime, false),
                     ];
-                })->toArray()
+                })->toArray(),
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $appointments->map(function ($appointment) {
-                    $encodedClientId = $appointment->client_id 
-                        ? base64_encode(convert_uuencode($appointment->client_id)) 
+                    $encodedClientId = $appointment->client_id
+                        ? base64_encode(convert_uuencode($appointment->client_id))
                         : null;
-                    
+
                     return [
                         'id' => $appointment->id,
                         'client_id' => $appointment->client_id,
@@ -241,7 +248,7 @@ class BookingAppointmentsController extends Controller
                             'calendar_type' => $appointment->consultant->calendar_type,
                         ] : null,
                     ];
-                })
+                }),
             ]);
         }
 
@@ -252,40 +259,42 @@ class BookingAppointmentsController extends Controller
             ->addColumn('client_info', function ($appointment) {
                 if ($appointment->client_id) {
                     $clientLink = route('clients.detail', base64_encode(convert_uuencode($appointment->client_id)));
-                    
-                    return '<a href="' . $clientLink . '" target="_blank">' . 
-                           '<strong>' . e($appointment->client_name) . '</strong><br>' .
-                           '<small>' . e($appointment->client_email) . '</small>' .
+
+                    return '<a href="'.$clientLink.'" target="_blank">'.
+                           '<strong>'.e($appointment->client_name).'</strong><br>'.
+                           '<small>'.e($appointment->client_email).'</small>'.
                            '</a>';
                 }
-                
-                return '<strong>' . e($appointment->client_name) . '</strong><br>' .
-                       '<small>' . e($appointment->client_email) . '</small>';
+
+                return '<strong>'.e($appointment->client_name).'</strong><br>'.
+                       '<small>'.e($appointment->client_email).'</small>';
             })
             ->addColumn('appointment_info', function ($appointment) {
-                return '<strong>' . $appointment->appointment_datetime->format('d/m/Y') . '</strong><br>' .
-                       '<small>' . ($appointment->timeslot_full ?? $appointment->appointment_datetime->format('h:i A')) . '</small>';
+                return '<strong>'.$appointment->appointment_datetime->format('d/m/Y').'</strong><br>'.
+                       '<small>'.($appointment->timeslot_full ?? $appointment->appointment_datetime->format('h:i A')).'</small>';
             })
             ->addColumn('consultant_info', function ($appointment) {
-                return $appointment->consultant 
-                    ? '<span class="badge badge-info">' . e($appointment->consultant->crm_display_label) . '</span>'
+                return $appointment->consultant
+                    ? '<span class="badge badge-info">'.e($appointment->consultant->crm_display_label).'</span>'
                     : '<span class="badge badge-secondary">Unassigned</span>';
             })
             ->addColumn('status_badge', function ($appointment) {
                 $color = $appointment->status_badge;
                 $label = $appointment->status_label;
-                return '<span class="badge badge-' . $color . '">' . $label . '</span>';
+
+                return '<span class="badge badge-'.$color.'">'.$label.'</span>';
             })
             ->addColumn('payment_info', function ($appointment) {
                 if ($appointment->is_paid) {
-                    return '<span class="badge badge-success">Paid</span><br>' .
-                           '<small>$' . number_format($appointment->final_amount, 2) . '</small>';
+                    return '<span class="badge badge-success">Paid</span><br>'.
+                           '<small>$'.number_format($appointment->final_amount, 2).'</small>';
                 }
+
                 return '<span class="badge badge-secondary">Free</span>';
             })
             ->addColumn('actions', function ($appointment) {
-                return '<a href="' . route('booking.appointments.show', $appointment->id) . '" class="btn btn-sm btn-primary">' .
-                       IconHelper::fromLegacy('fas fa-eye') . ' View' .
+                return '<a href="'.route('booking.appointments.show', $appointment->id).'" class="btn btn-sm btn-primary">'.
+                       IconHelper::fromLegacy('fas fa-eye').' View'.
                        '</a>';
             })
             ->rawColumns(['client_info', 'appointment_info', 'consultant_info', 'status_badge', 'payment_info', 'actions'])
@@ -307,7 +316,7 @@ class BookingAppointmentsController extends Controller
                 ->orderByDesc('id')
                 ->first();
         }
-        
+
         return view('crm.booking.appointments.show', compact('appointment', 'consultants', 'latestClientMatter'));
     }
 
@@ -318,6 +327,7 @@ class BookingAppointmentsController extends Controller
     {
         $appointment = BookingAppointment::with(['client', 'consultant'])->findOrFail($id);
         $this->assertBookingAppointmentAccess($appointment);
+
         return view('crm.booking.appointments.edit', compact('appointment'));
     }
 
@@ -327,8 +337,8 @@ class BookingAppointmentsController extends Controller
     public function calendar($type)
     {
         $validTypes = ['paid', 'jrp', 'education', 'tourist', 'adelaide', 'adelaide_education', 'ajay', 'arun'];
-        
-        if (!in_array($type, $validTypes)) {
+
+        if (! in_array($type, $validTypes)) {
             abort(404);
         }
 
@@ -343,7 +353,7 @@ class BookingAppointmentsController extends Controller
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($appointmentsQuery);
         $appointments = $appointmentsQuery->get();
 
-        $calendarTitle = match($type) {
+        $calendarTitle = match ($type) {
             'paid' => 'Employer Sponsored Calendar',
             'jrp' => 'JRP/Skill Assessment',
             'education' => 'Education/Student Visa',
@@ -393,7 +403,7 @@ class BookingAppointmentsController extends Controller
 
         $request->validate([
             'status' => 'required|'.BookingAppointmentStatus::validationRule(),
-            'cancellation_reason' => 'required_if:status,cancelled|nullable|string'
+            'cancellation_reason' => 'required_if:status,cancelled|nullable|string',
         ]);
 
         $oldStatus = $appointment->status;
@@ -467,8 +477,8 @@ class BookingAppointmentsController extends Controller
             $activityLog->client_id = $appointment->client_id;
             $activityLog->created_by = Auth::id();
             $activityLog->subject = 'Booking appointment status updated';
-            $activityLog->description = '<p><strong>Status changed:</strong> ' . e(BookingAppointmentStatus::label((string) $oldStatus)) . ' → ' . e(BookingAppointmentStatus::label((string) $request->status)) . '</p>' .
-                                       ($request->cancellation_reason ? '<p><strong>Reason:</strong> ' . e($request->cancellation_reason) . '</p>' : '');
+            $activityLog->description = '<p><strong>Status changed:</strong> '.e(BookingAppointmentStatus::label((string) $oldStatus)).' → '.e(BookingAppointmentStatus::label((string) $request->status)).'</p>'.
+                                       ($request->cancellation_reason ? '<p><strong>Reason:</strong> '.e($request->cancellation_reason).'</p>' : '');
             $activityLog->task_status = 0;
             $activityLog->pin = 0;
             $activityLog->save();
@@ -477,7 +487,7 @@ class BookingAppointmentsController extends Controller
         // Send cancellation confirmation email to client if requested
         if ($request->status === 'cancelled' && $request->boolean('send_cancellation_confirmation')) {
             try {
-                $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                $notificationService = app(NotificationService::class);
                 $notificationService->sendCancellationConfirmationEmail(
                     $appointment->fresh(),
                     $request->cancellation_reason
@@ -493,13 +503,54 @@ class BookingAppointmentsController extends Controller
         }
 
         $message = $syncError
-            ? 'Status updated locally. Sync with website failed: ' . $syncError
+            ? 'Status updated locally. Sync with website failed: '.$syncError
             : 'Status updated successfully';
 
         return response()->json([
             'success' => true,
             'message' => $message,
-            'sync_error' => $syncError
+            'sync_error' => $syncError,
+        ]);
+    }
+
+    /**
+     * Mark a Free booking as Paid after offline payment.
+     */
+    public function markManualPayment(BookingAppointmentManualPaymentService $manualPaymentService, $id)
+    {
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
+
+        $result = $manualPaymentService->markPaidOffline($appointment);
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 422);
+        }
+
+        $appointment = $appointment->fresh() ?? $appointment;
+
+        if ($appointment->client_id) {
+            $activityLog = new ActivitiesLog;
+            $activityLog->client_id = $appointment->client_id;
+            $activityLog->created_by = Auth::id();
+            $activityLog->subject = 'Booking appointment payment marked paid';
+            $activityLog->description = '<p><strong>Payment:</strong> Free → Paid (received manually, $150)</p>';
+            $activityLog->task_status = 0;
+            $activityLog->pin = 0;
+            $activityLog->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+            'sync_error' => $result['sync_error'],
+            'is_paid' => true,
+            'status' => $appointment->status,
+            'amount' => (float) $appointment->amount,
+            'final_amount' => (float) $appointment->final_amount,
         ]);
     }
 
@@ -544,7 +595,7 @@ class BookingAppointmentsController extends Controller
 
             $oldConsultantId = $appointment->consultant_id;
             $appointment->consultant_id = $request->consultant_id;
-            
+
             // Only set assigned_by_admin_id if user is authenticated and exists
             $adminId = Auth::id();
             if ($adminId) {
@@ -556,7 +607,7 @@ class BookingAppointmentsController extends Controller
                 // If admin doesn't exist, leave it as null (column is nullable)
             }
             // If Auth::id() is null, leave assigned_by_admin_id as null (column is nullable)
-            
+
             $appointment->save();
 
             // Log activity using existing codebase pattern (only if client exists)
@@ -566,7 +617,7 @@ class BookingAppointmentsController extends Controller
                 $activityLog->client_id = $appointment->client_id;
                 $activityLog->created_by = Auth::id();
                 $activityLog->subject = 'Booking appointment consultant reassigned';
-                $activityLog->description = '<p><strong>Consultant assigned:</strong> ' . ($consultant ? e($consultant->crm_display_label) : 'N/A') . '</p>';
+                $activityLog->description = '<p><strong>Consultant assigned:</strong> '.($consultant ? e($consultant->crm_display_label) : 'N/A').'</p>';
                 $activityLog->task_status = 0;
                 $activityLog->pin = 0;
                 $activityLog->save();
@@ -574,29 +625,29 @@ class BookingAppointmentsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Consultant assigned successfully'
+                'message' => 'Consultant assigned successfully',
             ]);
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
+
+        } catch (ValidationException $e) {
             // Return JSON for validation errors
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
-            
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+        } catch (ModelNotFoundException $e) {
             // Return JSON for not found errors
             return response()->json([
                 'success' => false,
-                'message' => 'Appointment not found'
+                'message' => 'Appointment not found',
             ], 404);
-            
-        } catch (\Illuminate\Database\QueryException $e) {
+
+        } catch (QueryException $e) {
             // Log database-specific errors with more details
             $errorCode = $e->getCode();
             $errorMessage = $e->getMessage();
-            
+
             Log::error('Database error updating consultant', [
                 'appointment_id' => $id,
                 'error_code' => $errorCode,
@@ -604,50 +655,50 @@ class BookingAppointmentsController extends Controller
                 'sql_state' => $e->errorInfo[0] ?? null,
                 'sql_code' => $e->errorInfo[1] ?? null,
                 'sql_message' => $e->errorInfo[2] ?? null,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Check for specific database errors
             if (strpos($errorMessage, 'assigned_by_admin_id') !== false) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error: assigned_by_admin_id column issue. Please check database schema.'
+                    'message' => 'Error: assigned_by_admin_id column issue. Please check database schema.',
                 ], 500);
             }
-            
+
             if (strpos($errorMessage, 'foreign key constraint') !== false || strpos($errorMessage, 'a foreign key constraint fails') !== false) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Foreign key constraint violation. The admin user may not exist in the system.'
+                    'message' => 'Foreign key constraint violation. The admin user may not exist in the system.',
                 ], 500);
             }
-            
+
             if (strpos($errorMessage, "doesn't exist") !== false || strpos($errorMessage, 'Unknown column') !== false) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Database column missing. Please run migrations on production server.'
+                    'message' => 'Database column missing. Please run migrations on production server.',
                 ], 500);
             }
-            
+
             // Return JSON for any other database errors
             return response()->json([
                 'success' => false,
-                'message' => 'Database error occurred while updating consultant. Please check server logs.'
+                'message' => 'Database error occurred while updating consultant. Please check server logs.',
             ], 500);
-            
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             // Log the error
             Log::error('Error updating consultant', [
                 'appointment_id' => $id,
                 'error' => $e->getMessage(),
                 'error_code' => $e->getCode(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Return JSON for any other errors
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating consultant. Please try again.'
+                'message' => 'An error occurred while updating consultant. Please try again.',
             ], 500);
         }
     }
@@ -662,14 +713,14 @@ class BookingAppointmentsController extends Controller
             $this->assertBookingAppointmentAccess($appointment);
 
             $request->validate([
-                'meeting_type' => 'required|in:in_person,phone,video'
+                'meeting_type' => 'required|in:in_person,phone,video',
             ]);
 
             // Validate: Video meeting type is only allowed for paid appointments
-            if ($request->meeting_type === 'video' && !$appointment->is_paid) {
+            if ($request->meeting_type === 'video' && ! $appointment->is_paid) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Video meeting type is only available for paid appointments.'
+                    'message' => 'Video meeting type is only available for paid appointments.',
                 ], 422);
             }
 
@@ -681,12 +732,12 @@ class BookingAppointmentsController extends Controller
             if ($appointment->client_id) {
                 $oldDisplay = ucfirst(str_replace('_', ' ', $oldMeetingType));
                 $newDisplay = ucfirst(str_replace('_', ' ', $request->meeting_type));
-                
+
                 $activityLog = new ActivitiesLog;
                 $activityLog->client_id = $appointment->client_id;
                 $activityLog->created_by = Auth::id();
                 $activityLog->subject = 'Booking appointment meeting type updated';
-                $activityLog->description = '<p><strong>Meeting type changed:</strong> ' . $oldDisplay . ' → ' . $newDisplay . '</p>';
+                $activityLog->description = '<p><strong>Meeting type changed:</strong> '.$oldDisplay.' → '.$newDisplay.'</p>';
                 $activityLog->task_status = 0;
                 $activityLog->pin = 0;
                 $activityLog->save();
@@ -695,32 +746,32 @@ class BookingAppointmentsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Meeting type updated successfully',
-                'meeting_type' => $appointment->meeting_type
+                'meeting_type' => $appointment->meeting_type,
             ]);
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
+
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
-            
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Appointment not found'
+                'message' => 'Appointment not found',
             ], 404);
-            
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             Log::error('Error updating meeting type', [
                 'appointment_id' => $id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating meeting type. Please try again.'
+                'message' => 'An error occurred while updating meeting type. Please try again.',
             ], 500);
         }
     }
@@ -729,7 +780,7 @@ class BookingAppointmentsController extends Controller
      * Update appointment date and time.
      */
     public function update(Request $request, $id)
-    {  
+    {
         $appointment = BookingAppointment::findOrFail($id);
         $this->assertBookingAppointmentAccess($appointment);
 
@@ -743,18 +794,18 @@ class BookingAppointmentsController extends Controller
         ]);
 
         // Validate: Video meeting type is only allowed for paid appointments
-        if ($request->meeting_type === 'video' && !$appointment->is_paid) {
+        if ($request->meeting_type === 'video' && ! $appointment->is_paid) {
             return $this->handleUpdateError($request, 'Video meeting type is only available for paid appointments.', 422);
         }
 
         $oldDatetime = $appointment->appointment_datetime;
         $oldMeetingType = $appointment->meeting_type;
         $oldPreferredLanguage = $appointment->preferred_language ?? 'English';
-        
+
         try {
             $newDatetime = Carbon::createFromFormat(
                 'Y-m-d H:i',
-                $request->appointment_date . ' ' . $request->appointment_time,
+                $request->appointment_date.' '.$request->appointment_time,
                 config('app.timezone')
             );
         } catch (Exception $e) {
@@ -762,11 +813,11 @@ class BookingAppointmentsController extends Controller
         }
 
         // Check if anything has changed
-        $datetimeChanged = !$oldDatetime || !$oldDatetime->equalTo($newDatetime);
+        $datetimeChanged = ! $oldDatetime || ! $oldDatetime->equalTo($newDatetime);
         $meetingTypeChanged = $oldMeetingType !== $request->meeting_type;
         $preferredLanguageChanged = $oldPreferredLanguage !== $request->preferred_language;
-        
-        if (!$datetimeChanged && !$meetingTypeChanged && !$preferredLanguageChanged) {
+
+        if (! $datetimeChanged && ! $meetingTypeChanged && ! $preferredLanguageChanged) {
             $message = 'No changes detected. Appointment details remain unchanged.';
 
             if ($request->expectsJson()) {
@@ -790,7 +841,7 @@ class BookingAppointmentsController extends Controller
                 ->exists();
 
             if ($slotTaken) {
-                $conflictMsg = 'The time slot ' . $newDatetime->format('d M Y \a\t h:i A') . ' is already booked for this consultant. Please select a different date or time.';
+                $conflictMsg = 'The time slot '.$newDatetime->format('d M Y \a\t h:i A').' is already booked for this consultant. Please select a different date or time.';
 
                 if ($request->expectsJson()) {
                     return response()->json([
@@ -808,11 +859,11 @@ class BookingAppointmentsController extends Controller
             $appointment->appointment_datetime = $newDatetime;
             $appointment->timeslot_full = $newDatetime->format('h:i A');
         }
-        
+
         if ($meetingTypeChanged) {
             $appointment->meeting_type = $request->meeting_type;
         }
-        
+
         if ($preferredLanguageChanged) {
             $appointment->preferred_language = $request->preferred_language;
         }
@@ -822,7 +873,7 @@ class BookingAppointmentsController extends Controller
         $apiSynced = false;
         $newBansalAppointmentId = null;
 
-        if (($datetimeChanged || $meetingTypeChanged || $preferredLanguageChanged) && !empty($appointment->bansal_appointment_id)) {
+        if (($datetimeChanged || $meetingTypeChanged || $preferredLanguageChanged) && ! empty($appointment->bansal_appointment_id)) {
             $apiDate = $datetimeChanged ? $request->appointment_date : $appointment->appointment_datetime->format('Y-m-d');
             $apiTime = $datetimeChanged ? $request->appointment_time : $appointment->appointment_datetime->format('H:i');
             $apiMeetingType = $meetingTypeChanged ? $request->meeting_type : ($appointment->meeting_type ?? 'in_person');
@@ -858,7 +909,7 @@ class BookingAppointmentsController extends Controller
                 $appointment->sync_error = null;
             }
         }
-        
+
         $appointment->save();
 
         // Log activity if client exists
@@ -870,7 +921,7 @@ class BookingAppointmentsController extends Controller
             $activityLog->pin = 0;
 
             $descriptionParts = [];
-            
+
             if ($datetimeChanged) {
                 $from = $oldDatetime ? $oldDatetime->format('d M Y, h:i A') : 'N/A';
                 $to = $newDatetime->format('d M Y, h:i A');
@@ -880,7 +931,7 @@ class BookingAppointmentsController extends Controller
                     e($to)
                 );
             }
-            
+
             if ($meetingTypeChanged) {
                 $oldDisplay = ucfirst(str_replace('_', ' ', $oldMeetingType));
                 $newDisplay = ucfirst(str_replace('_', ' ', $request->meeting_type));
@@ -890,7 +941,7 @@ class BookingAppointmentsController extends Controller
                     e($newDisplay)
                 );
             }
-            
+
             if ($preferredLanguageChanged) {
                 $descriptionParts[] = sprintf(
                     '<p><strong>Preferred language changed:</strong> %s → %s</p>',
@@ -899,7 +950,7 @@ class BookingAppointmentsController extends Controller
                 );
             }
 
-            if (!empty($descriptionParts)) {
+            if (! empty($descriptionParts)) {
                 $activityLog->subject = 'Booking appointment updated';
                 $activityLog->description = implode('', $descriptionParts);
                 $activityLog->save();
@@ -907,11 +958,11 @@ class BookingAppointmentsController extends Controller
         }
 
         // Send reschedule confirmation email to client when datetime changed
-        if ($datetimeChanged && !empty($appointment->client_email)) {
+        if ($datetimeChanged && ! empty($appointment->client_email)) {
             try {
-                $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
+                $notificationService = app(NotificationService::class);
                 $notificationService->sendRescheduleEmail($appointment, $oldDatetime);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::warning('Failed to send reschedule email', [
                     'appointment_id' => $appointment->id,
                     'error' => $e->getMessage(),
@@ -930,12 +981,12 @@ class BookingAppointmentsController extends Controller
         if ($preferredLanguageChanged) {
             $messageParts[] = 'preferred language';
         }
-        
-        $message = 'Appointment ' . implode(', ', $messageParts) . ' updated successfully.';
-        
+
+        $message = 'Appointment '.implode(', ', $messageParts).' updated successfully.';
+
         // Add warning if API sync failed
         if ($syncError) {
-            $message .= ' However, sync with website failed: ' . $syncError;
+            $message .= ' However, sync with website failed: '.$syncError;
         } elseif ($newBansalAppointmentId) {
             $message .= ' Note: A new appointment was created on the website (previous appointment ID was invalid).';
         }
@@ -962,22 +1013,22 @@ class BookingAppointmentsController extends Controller
             // Use updated values from appointment object (already updated locally but not saved yet)
             // Map meeting_type from database format to API format
             $currentMeetingType = $meetingTypeChanged ? $request->meeting_type : ($appointment->meeting_type ?? 'in_person');
-            $meetingTypeForApi = match($currentMeetingType) {
+            $meetingTypeForApi = match ($currentMeetingType) {
                 'video' => 'video-call',
                 'in_person' => 'in-person',
                 'phone' => 'phone',
                 default => 'in-person'
             };
-            
+
             // Get updated datetime
             $appointmentDatetime = $datetimeChanged ? $appointment->appointment_datetime : $appointment->appointment_datetime;
-            
+
             // Get updated preferred language
             $currentPreferredLanguage = $preferredLanguageChanged ? $request->preferred_language : ($appointment->preferred_language ?? 'English');
-            
+
             // Determine specific_service from enquiry_type or service_type
             $specificService = $this->determineSpecificService($appointment);
-            
+
             // Build payload for createAppointment API
             $payload = [
                 'full_name' => $appointment->client_name,
@@ -1007,9 +1058,9 @@ class BookingAppointmentsController extends Controller
                 'payment_status' => $appointment->payment_status ?? ($appointment->is_paid ? 'pending' : null),
                 'slot_overwrite' => 0,
             ];
-            
+
             $apiResponse = $this->bansalApiClient->createAppointment($payload);
-            
+
             if ($apiResponse['success'] ?? false) {
                 // Extract new bansal_appointment_id from response
                 if (isset($apiResponse['data']['id'])) {
@@ -1020,16 +1071,16 @@ class BookingAppointmentsController extends Controller
                     return (int) $apiResponse['appointment_id'];
                 }
             }
-            
+
             Log::warning('Bansal API createAppointment returned success but no appointment ID', [
                 'appointment_id' => $appointment->id,
                 'response' => $apiResponse,
             ]);
-            
+
             return null;
         } catch (Exception $e) {
             $errorMessage = $e->getMessage();
-            
+
             // Log as WARNING instead of ERROR since this is expected in some cases
             // (e.g., when time slot is not available)
             Log::warning('Failed to create appointment via API', [
@@ -1038,12 +1089,12 @@ class BookingAppointmentsController extends Controller
                 'appointment_date' => $appointment->appointment_datetime->format('Y-m-d'),
                 'appointment_time' => $appointment->appointment_datetime->format('H:i'),
             ]);
-            
+
             // Re-throw the exception so it can be handled by the caller
             throw $e;
         }
     }
-    
+
     /**
      * Determine specific_service for API based on appointment data
      */
@@ -1052,7 +1103,7 @@ class BookingAppointmentsController extends Controller
         // If enquiry_type exists, try to map it
         if ($appointment->enquiry_type) {
             $enquiryType = strtolower($appointment->enquiry_type);
-            
+
             // Map common enquiry types to specific_service
             if (strpos($enquiryType, 'overseas') !== false || $enquiryType === 'international') {
                 return 'overseas-enquiry';
@@ -1062,12 +1113,12 @@ class BookingAppointmentsController extends Controller
                 return 'consultation';
             }
         }
-        
+
         // Fallback based on is_paid
         if ($appointment->is_paid) {
             return 'paid-consultation';
         }
-        
+
         return 'consultation';
     }
 
@@ -1125,17 +1176,17 @@ class BookingAppointmentsController extends Controller
         $this->assertBookingAppointmentAccess($appointment);
 
         $request->validate([
-            'note' => 'required|string|max:2000'
+            'note' => 'required|string|max:2000',
         ]);
 
         $timestamp = now()->format('Y-m-d H:i');
-        $adminName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
-        $newNote = "[{$timestamp} - {$adminName}]\n" . $request->note;
+        $adminName = Auth::user()->first_name.' '.Auth::user()->last_name;
+        $newNote = "[{$timestamp} - {$adminName}]\n".$request->note;
 
-        $appointment->admin_notes = $appointment->admin_notes 
-            ? $appointment->admin_notes . "\n\n" . $newNote
+        $appointment->admin_notes = $appointment->admin_notes
+            ? $appointment->admin_notes."\n\n".$newNote
             : $newNote;
-        
+
         $appointment->save();
 
         // Log activity using existing codebase pattern
@@ -1144,7 +1195,7 @@ class BookingAppointmentsController extends Controller
             $activityLog->client_id = $appointment->client_id;
             $activityLog->created_by = Auth::id();
             $activityLog->subject = 'Note added to booking appointment';
-            $activityLog->description = '<p>' . e($request->note) . '</p>';
+            $activityLog->description = '<p>'.e($request->note).'</p>';
             $activityLog->task_status = 0;
             $activityLog->pin = 0;
             $activityLog->save();
@@ -1153,7 +1204,7 @@ class BookingAppointmentsController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Note added successfully',
-            'notes' => $appointment->admin_notes
+            'notes' => $appointment->admin_notes,
         ]);
     }
 
@@ -1164,42 +1215,42 @@ class BookingAppointmentsController extends Controller
     {
         // Get sync logs with pagination
         $syncLogs = AppointmentSyncLog::orderBy('created_at', 'desc')->paginate(20);
-        
+
         // Get last successful sync
         $lastSync = AppointmentSyncLog::where('status', 'success')
             ->latest('created_at')
             ->first();
-        
+
         // Determine system status
         $lastLog = AppointmentSyncLog::latest('created_at')->first();
         $systemStatus = [
             'status' => 'success',
-            'message' => 'All systems operational'
+            'message' => 'All systems operational',
         ];
-        
+
         if ($lastLog) {
             if ($lastLog->status === 'failed') {
                 $systemStatus = [
                     'status' => 'error',
-                    'message' => 'Last sync failed: ' . ($lastLog->error_message ?? 'Unknown error')
+                    'message' => 'Last sync failed: '.($lastLog->error_message ?? 'Unknown error'),
                 ];
             } elseif ($lastLog->status === 'running') {
                 $systemStatus = [
                     'status' => 'running',
-                    'message' => 'Sync currently in progress'
+                    'message' => 'Sync currently in progress',
                 ];
             }
         }
-        
+
         // Calculate next sync time (every 10 minutes)
         $nextSync = $lastSync ? $lastSync->created_at->addMinutes(10)->diffForHumans() : 'Within 10 minutes';
-        
+
         // Calculate statistics
         $totalSyncs = AppointmentSyncLog::where('status', 'success')->count();
         $failedSyncs = AppointmentSyncLog::where('status', 'failed')->count();
         $totalAttempts = $totalSyncs + $failedSyncs;
         $successRate = $totalAttempts > 0 ? round(($totalSyncs / $totalAttempts) * 100) : 100;
-        
+
         $syncStatsApptBase = BookingAppointment::query();
         StaffClientVisibility::restrictBookingAppointmentEloquentQuery($syncStatsApptBase);
 
@@ -1219,10 +1270,10 @@ class BookingAppointmentsController extends Controller
     public function manualSync(Request $request)
     {
         // Check authorization using Gate
-        if (!Gate::allows('trigger-manual-sync')) {
+        if (! Gate::allows('trigger-manual-sync')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access'
+                'message' => 'Unauthorized access',
             ], 403);
         }
 
@@ -1235,12 +1286,12 @@ class BookingAppointmentsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Sync completed successfully',
-                'stats' => $stats
+                'stats' => $stats,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sync failed: ' . $e->getMessage()
+                'message' => 'Sync failed: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1290,7 +1341,7 @@ class BookingAppointmentsController extends Controller
                 ] : null,
                 'synced_from_bansal_at' => $appointment->synced_from_bansal_at?->format('d/m/Y h:i A'),
                 'updated_at' => $appointment->updated_at?->format('d/m/Y h:i A'),
-            ]
+            ],
         ]);
     }
 
@@ -1302,8 +1353,8 @@ class BookingAppointmentsController extends Controller
         $appointment = BookingAppointment::findOrFail($id);
         $this->assertBookingAppointmentAccess($appointment);
 
-        $notificationService = app(\App\Services\BansalAppointmentSync\NotificationService::class);
-        
+        $notificationService = app(NotificationService::class);
+
         $validated = $request->validate([
             'type' => 'nullable|in:email,sms,both',
         ]);
@@ -1311,7 +1362,7 @@ class BookingAppointmentsController extends Controller
 
         $results = [
             'email' => null,
-            'sms' => null
+            'sms' => null,
         ];
 
         if (in_array($type, ['email', 'both'], true)) {
@@ -1327,7 +1378,7 @@ class BookingAppointmentsController extends Controller
         return response()->json([
             'success' => $success,
             'message' => $success ? 'Reminder sent successfully' : 'Failed to send reminder',
-            'results' => $results
+            'results' => $results,
         ]);
     }
 
@@ -1355,7 +1406,7 @@ class BookingAppointmentsController extends Controller
 
         return response()->json([
             'success' => true,
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 
@@ -1383,16 +1434,16 @@ class BookingAppointmentsController extends Controller
 
         $appointments = $query->orderBy('appointment_datetime', 'desc')->get();
 
-        $filename = 'booking_appointments_' . now()->format('Y-m-d_His') . '.csv';
-        
+        $filename = 'booking_appointments_'.now()->format('Y-m-d_His').'.csv';
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function() use ($appointments) {
+        $callback = function () use ($appointments) {
             $file = fopen('php://output', 'w');
-            
+
             // Headers
             fputcsv($file, [
                 'ID',
@@ -1408,7 +1459,7 @@ class BookingAppointmentsController extends Controller
                 'Status',
                 'Payment Status',
                 'Amount',
-                'Synced At'
+                'Synced At',
             ]);
 
             // Data
@@ -1427,7 +1478,7 @@ class BookingAppointmentsController extends Controller
                     $apt->status,
                     $apt->is_paid ? 'Paid' : 'Free',
                     $apt->is_paid ? $apt->final_amount : '0.00',
-                    $apt->synced_from_bansal_at?->format('d/m/Y h:i A')
+                    $apt->synced_from_bansal_at?->format('d/m/Y h:i A'),
                 ]);
             }
 
@@ -1449,13 +1500,13 @@ class BookingAppointmentsController extends Controller
         ]);
 
         $updated = 0;
-        
+
         foreach ($request->appointment_ids as $id) {
             $appointment = BookingAppointment::find($id);
             if ($appointment) {
                 $this->assertBookingAppointmentAccess($appointment);
                 $appointment->status = $request->status;
-                
+
                 if ($request->status === 'confirmed') {
                     $appointment->confirmed_at = now();
                 } elseif ($request->status === 'completed') {
@@ -1463,7 +1514,7 @@ class BookingAppointmentsController extends Controller
                 } elseif ($request->status === 'cancelled') {
                     $appointment->cancelled_at = now();
                 }
-                
+
                 $appointment->save();
                 $updated++;
             }
@@ -1471,7 +1522,7 @@ class BookingAppointmentsController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Updated {$updated} appointments"
+            'message' => "Updated {$updated} appointments",
         ]);
     }
 
@@ -1493,4 +1544,3 @@ class BookingAppointmentsController extends Controller
         return $melbourneYmd >= '2026-04-23' && $melbourneYmd <= '2026-05-03';
     }
 }
-

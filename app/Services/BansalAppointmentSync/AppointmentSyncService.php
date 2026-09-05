@@ -387,7 +387,11 @@ class AppointmentSyncService
             if (! array_key_exists($amountField, $appointmentData) || $appointmentData[$amountField] === null) {
                 continue;
             }
-            if (! $isPaid && (float) $appointmentData[$amountField] == 0.0 && (float) $appointment->{$amountField} > 0) {
+            if (
+                (! $isPaid || $appointment->payment_method === 'manual')
+                && (float) $appointmentData[$amountField] == 0.0
+                && (float) $appointment->{$amountField} > 0
+            ) {
                 continue;
             }
             if ((string) $appointment->{$amountField} !== (string) $appointmentData[$amountField]) {

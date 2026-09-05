@@ -481,8 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <p><strong>Preferred Language:</strong> ${props.preferred_language ? props.preferred_language.charAt(0).toUpperCase() + props.preferred_language.slice(1).toLowerCase() : 'English'}</p>
                             <p><strong>Consultant:</strong> ${props.consultant}</p>
                             <p><strong>Status:</strong> <span class="badge badge-${getStatusClass(props.status)}" id="statusBadge">${props.status.toUpperCase()}</span></p>
-                            <p><strong>Payment:</strong> <span class="badge badge-${props.is_paid ? 'success' : 'secondary'}">${props.payment_status}</span></p>
-                            ${props.is_paid ? `<p><strong>Amount:</strong> $${props.final_amount ? parseFloat(props.final_amount).toFixed(2) : '0.00'}</p>` : ''}
+                            <p><strong>Payment:</strong> <span class="badge badge-${props.is_paid ? 'primary' : 'secondary'}" id="paymentBadge">${props.payment_status}</span></p>
                         </div>
                     </div>
                     
@@ -548,6 +547,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateAppointmentStatus(${event.id}, 'no_show')">
                                     @icon('fa-user-times') Mark as No Show
                                 </button>
+                                ${!props.is_paid || !props.final_amount || parseFloat(props.final_amount) <= 0 ? `
+                                <button type="button" class="btn btn-sm btn-outline-success" id="manualPaymentActions-${event.id}" onclick="markAppointmentManualPayment(${event.id})">
+                                    @icon('fa-hand-holding-usd') Mark as Manual payment received
+                                </button>
+                                ` : ''}
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -675,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const classes = {
             'pending': 'warning',
             'awaiting_confirmation': 'warning',
-            'paid': 'info',
+            'paid': 'primary',
             'confirmed': 'success',
             'completed': 'info',
             'cancelled': 'danger',
@@ -701,6 +705,103 @@ document.addEventListener('DOMContentLoaded', function() {
     // Global functions for modal actions
     // Pending cancellation data (used when showing cancellation modal)
     let pendingCancellationData = null;
+
+    function applyManualPaymentUi(appointmentId, paidAmount) {
+        var statusBadge = document.getElementById('statusBadge');
+        if (statusBadge) {
+            statusBadge.textContent = 'PAID';
+            statusBadge.className = 'badge badge-primary';
+        }
+
+        var paymentBadge = document.getElementById('paymentBadge');
+        if (paymentBadge) {
+            paymentBadge.textContent = 'Paid';
+            paymentBadge.className = 'badge badge-primary';
+        }
+
+        var actions = document.getElementById('manualPaymentActions-' + appointmentId);
+        if (actions) {
+            actions.remove();
+        }
+    }
+
+    function applyManualPaymentCalendarEvent(appointmentId, paidAmount) {
+        var calEvent = calendar.getEventById(String(appointmentId)) || calendar.getEventById(appointmentId);
+        if (!calEvent) {
+            return;
+        }
+
+        calEvent.setProp('backgroundColor', '#007bff');
+        calEvent.setProp('borderColor', '#007bff');
+        calEvent.setProp('textColor', '#fff');
+        calEvent.setProp('classNames', ['event-paid']);
+        calEvent.setExtendedProp('status', 'paid');
+        calEvent.setExtendedProp('is_paid', true);
+        calEvent.setExtendedProp('payment_status', 'Paid');
+        calEvent.setExtendedProp('final_amount', paidAmount);
+
+        if (calEvent.el) {
+            calEvent.el.style.setProperty('background-color', '#007bff', 'important');
+            calEvent.el.style.setProperty('border-color', '#007bff', 'important');
+            calEvent.el.style.setProperty('color', '#fff', 'important');
+        }
+    }
+
+    window.markAppointmentManualPayment = function(appointmentId) {
+        if (!confirm('Do you want to manually update (Payment received manually) the payment type from Free to Paid?')) {
+            return;
+        }
+
+        const button = event && event.target ? event.target.closest('button') : null;
+        const originalText = button ? button.innerHTML : '';
+        if (button) {
+            button.innerHTML = (typeof crmIconLegacy === 'function' ? crmIconLegacy('fas fa-spinner fa-spin') : '<i class="fas fa-spinner fa-spin"></i>') + ' Updating...';
+            button.disabled = true;
+        }
+
+        fetch(`/booking/appointments/${appointmentId}/manual-payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({})
+        })
+        .then(async function(response) {
+            var ct = response.headers.get('content-type') || '';
+            var data = {};
+            if (ct.indexOf('application/json') !== -1) {
+                try { data = await response.json(); } catch (e) { data = {}; }
+            }
+            if (!response.ok) {
+                var msg = data.message || data.error || ('Request failed (HTTP ' + response.status + ')');
+                showAlert('danger', 'Failed to update payment: ' + msg);
+                return;
+            }
+            if (data.success === true) {
+                var paidAmount = (data.final_amount != null ? data.final_amount : 150);
+                applyManualPaymentUi(appointmentId, paidAmount);
+                applyManualPaymentCalendarEvent(appointmentId, paidAmount);
+                calendar.refetchEvents();
+                showAlert('success', data.message || 'Payment type updated from Free to Paid.');
+            } else {
+                showAlert('danger', 'Failed to update payment: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(function(error) {
+            console.error('Error updating payment:', error);
+            showAlert('danger', 'Failed to update payment. Please try again.');
+        })
+        .finally(function() {
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        });
+    };
 
     window.updateAppointmentStatus = function(appointmentId, newStatus) {
         // For cancellation, show custom modal with reason and email checkbox
