@@ -2345,7 +2345,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 const div = document.createElement('div');
                 div.className = 'doc-placeholder';
-                div.innerHTML = '@icon('fa-file-alt')<span>' + (file.name || 'Document') + '</span>';
+                div.innerHTML = (typeof crmI === 'function' ? crmI('fa-file-alt') : '') + '<span>' + (file.name || 'Document') + '</span>';
                 docPreviewContent.appendChild(div);
             }
         }
@@ -3417,7 +3417,10 @@ $(document).ready(function () {
 </script>
 
 <script>
-// Documents Tab: Load documents when a checklist row is clicked
+function cpDocIcon(name, options) {
+    return (typeof window.crmI === 'function') ? window.crmI(name, options || {}) : '';
+}
+
 $(document).on('click', '.cp-doc-checklist-row', function () {
     var checklistId   = $(this).data('checklist-id');
     var checklistName = $(this).data('checklist-name');
@@ -3430,7 +3433,7 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
     $('#cp-checklist-placeholder').hide();
     $('#cp-checklist-documents-content').show();
     $('#cp-checklist-selected-name').text(checklistName);
-    $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center">@icon('fa-spinner', ['spin' => true]) Loading...</td></tr>');
+    $('#cp-checklist-documents-tbody').html('<tr><td colspan="4" class="text-center">' + cpDocIcon('fa-spinner', { spin: true }) + ' Loading...</td></tr>');
 
     $.ajax({
         url: '/api/client-portal/checklist-documents',
@@ -3456,11 +3459,11 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
 
                     // Row 2 buttons — no spacers; show only what's relevant for each status
                     var approveBtn = (doc.cp_doc_status != 1)   // hide when already Approved
-                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + doc.id + '" title="Approve">@icon('fa-check-circle')</a>'
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + doc.id + '" title="Approve">' + cpDocIcon('fa-check-circle') + '</a>'
                         : '';
 
                     var rejectBtn = (doc.cp_doc_status != 2)    // hide when already Rejected
-                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + doc.id + '" title="Reject">@icon('fa-times-circle')</a>'
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + doc.id + '" title="Reject">' + cpDocIcon('fa-times-circle') + '</a>'
                         : '';
 
                     var fileUrl     = doc.myfile || '';
@@ -3469,10 +3472,10 @@ $(document).on('click', '.cp-doc-checklist-row', function () {
                         ? '<a href="' + fileUrl + '" target="_blank" title="Click to preview" style="color:inherit;text-decoration:underline;cursor:pointer;">' + fileNameDisplay + '</a>'
                         : fileNameDisplay;
 
-                    var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download">@icon('fa-download')</a>';
-                    var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete">@icon('fa-trash')</a>';
+                    var downloadBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-primary cp-download-doc-btn" data-document-id="' + doc.id + '" data-file-name="' + (doc.file_name || 'document') + '" title="Download">' + cpDocIcon('fa-download') + '</a>';
+                    var deleteBtn   = '<a href="javascript:void(0);" class="btn btn-sm btn-danger cp-delete-doc-btn" data-document-id="' + doc.id + '" data-list-id="' + checklistId + '" title="Delete">' + cpDocIcon('fa-trash') + '</a>';
                     var moveBtn     = (doc.cp_doc_status == 1)
-                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" data-list-id="' + checklistId + '" title="Move Document">@icon('fa-arrows-alt')</a>'
+                        ? '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + doc.id + '" data-matter-id="' + (matterId || '') + '" data-list-id="' + checklistId + '" title="Move Document">' + cpDocIcon('fa-arrows-alt') + '</a>'
                         : '';
 
                     html += '<tr data-matter-id="' + (matterId || '') + '">'
@@ -3557,8 +3560,8 @@ $(document).on('click', '.cp-approve-doc-btn', function () {
                 // Row 2: Approved → [Reject][Move]
                 var listId = $actionRow.closest('td').find('.cp-delete-doc-btn').data('list-id') || '';
                 $actionRow.html(
-                    '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject">@icon('fa-times-circle')</a>' +
-                    '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" data-list-id="' + listId + '" title="Move Document">@icon('fa-arrows-alt')</a>'
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-warning cp-reject-doc-btn" data-document-id="' + documentId + '" title="Reject">' + cpDocIcon('fa-times-circle') + '</a>' +
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-info cp-move-doc-btn" data-document-id="' + documentId + '" data-matter-id="' + matterId + '" data-list-id="' + listId + '" title="Move Document">' + cpDocIcon('fa-arrows-alt') + '</a>'
                 );
                 alert('Document has been approved successfully.');
             } else {
@@ -3589,7 +3592,7 @@ $(document).on('click', '.cp-reject-doc-btn', function () {
                 $btn.closest('tr').find('td:nth-child(3)').html('<span class="badge badge-danger" title="' + $('<div>').text(reason || 'No reason provided').html() + '" style="cursor:help;">Rejected</span>');
                 // Row 2: Rejected → [Approve] only (Move only shows when Approved)
                 $btn.closest('.action-row').html(
-                    '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve">@icon('fa-check-circle')</a>'
+                    '<a href="javascript:void(0);" class="btn btn-sm btn-success cp-approve-doc-btn" data-document-id="' + documentId + '" title="Approve">' + cpDocIcon('fa-check-circle') + '</a>'
                 );
             } else {
                 alert(response.message || 'Failed to reject document.');

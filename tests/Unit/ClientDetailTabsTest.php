@@ -832,6 +832,10 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString("'wfChecklistInteractive' => false", $portal);
         Assert::assertStringContainsString("'wfShowFooterAdvance' => false", $portal);
         Assert::assertStringNotContainsString('client-portal-activities-proceed-to-next-stage', $portal);
+        Assert::assertStringContainsString("cpDocIcon('fa-download')", $portal);
+        Assert::assertStringContainsString("cpDocIcon('fa-trash')", $portal);
+        Assert::assertStringContainsString("cpDocIcon('fa-check-circle')", $portal);
+        Assert::assertStringNotContainsString("title=\"Download\">@icon('fa-download')", $portal);
         Assert::assertStringContainsString('Add Portal Checklist', $portal);
         Assert::assertStringContainsString('createChecklistModalLabel', $portal);
         Assert::assertStringContainsString("$('#createChecklistModalLabel').text('Add Portal Checklist')", $portal);

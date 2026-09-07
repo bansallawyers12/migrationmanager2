@@ -1706,22 +1706,22 @@
     overflow: visible !important;
 }
 
-/* Action buttons container */
-.checklist-details-table tbody td:nth-child(5) .action-buttons {
+/* Action buttons container — Actions is column 4 (File, Uploaded, Status, Actions) */
+.checklist-details-table .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 4px;
     align-items: flex-start;
 }
 
-.checklist-details-table tbody td:nth-child(5) .action-buttons .action-row {
+.checklist-details-table .action-buttons .action-row {
     display: flex;
     gap: 4px;
     align-items: center;
     justify-content: flex-start;
 }
 
-.checklist-details-table tbody td:nth-child(5) .action-buttons .btn {
+.checklist-details-table .action-buttons .btn {
     padding: 4px 8px;
     min-width: 32px;
     width: 32px;
@@ -1736,19 +1736,23 @@
     flex: 0 0 32px;
 }
 
-.checklist-details-table tbody td:nth-child(5) .action-buttons .btn i {
+.checklist-details-table .action-buttons .btn i,
+.checklist-details-table .action-buttons .btn svg {
     margin: 0;
+    width: 14px;
+    height: 14px;
     font-size: 14px;
+    flex-shrink: 0;
 }
 
-.checklist-details-table tbody td:nth-child(5) .action-buttons .btn:hover {
+.checklist-details-table .action-buttons .btn:hover {
     opacity: 0.8;
     transform: scale(1.05);
     transition: all 0.2s ease;
     cursor: pointer;
 }
 
-.checklist-details-table tbody td:nth-child(5) .action-buttons .btn:focus {
+.checklist-details-table .action-buttons .btn:focus {
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
