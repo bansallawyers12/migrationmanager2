@@ -134,6 +134,98 @@
         }
     }
 
+    function clientPortalStylesheetHref(root, parsedDoc) {
+        var fromRoot = root && root.querySelector
+            ? root.querySelector('link[data-client-portal-css]')
+            : null;
+        if (fromRoot && fromRoot.getAttribute('href')) {
+            return fromRoot.getAttribute('href');
+        }
+        var fromParsed = parsedDoc && parsedDoc.querySelector
+            ? parsedDoc.querySelector('link[data-client-portal-css]')
+            : null;
+        if (fromParsed && fromParsed.getAttribute('href')) {
+            return fromParsed.getAttribute('href');
+        }
+        var urls = (window.ClientDetailConfig && window.ClientDetailConfig.urls) || {};
+        return urls.clientPortalCss || '';
+    }
+
+    /**
+     * Portal tab CSS lives in a file (not a sibling <style> after #client_portal-tab).
+     * Recreate the <link> in document.head because DOMParser + importNode often
+     * does not apply stylesheets from the parsed fragment.
+     */
+    function ensureClientPortalStylesheet(root, parsedDoc) {
+        if (document.head.querySelector('link[data-client-portal-css][href]')) {
+            return;
+        }
+        var href = clientPortalStylesheetHref(root, parsedDoc);
+        if (!href) {
+            return;
+        }
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.setAttribute('data-client-portal-css', '1');
+        document.head.appendChild(link);
+    }
+
+    /**
+     * Portal scripts/modals live outside #client_portal-tab in the fragment.
+     * Import them once so lazy open matches a full reload (messages, documents, move-doc).
+     */
+    function importClientPortalOrphanAssets(doc, afterEl) {
+        if (!doc || !doc.body || !afterEl || !afterEl.parentNode) {
+            return;
+        }
+
+        ensureClientPortalStylesheet(afterEl, doc);
+
+        var insertAfter = afterEl;
+        var scriptHosts = [];
+
+        Array.prototype.forEach.call(doc.body.children, function(child) {
+            if (child.id === 'client_portal-tab') {
+                return;
+            }
+            if (String(child.tagName).toLowerCase() === 'style') {
+                return;
+            }
+            if (String(child.tagName).toLowerCase() === 'link') {
+                return;
+            }
+
+            var imported = importTabFragment(child);
+            if (!imported) {
+                return;
+            }
+
+            if (imported.id) {
+                var existing = document.getElementById(imported.id);
+                if (existing && existing !== afterEl) {
+                    existing.replaceWith(imported);
+                    insertAfter = imported;
+                    scriptHosts.push(imported);
+                    return;
+                }
+            }
+
+            insertAfter.parentNode.insertBefore(imported, insertAfter.nextSibling);
+            insertAfter = imported;
+            scriptHosts.push(imported);
+        });
+
+        if (window.__clientPortalOrphanScriptsLoaded) {
+            return;
+        }
+
+        scriptHosts.forEach(function(host) {
+            activateInjectedScripts(host);
+        });
+        window.__clientPortalOrphanScriptsLoaded = true;
+    }
+
     function showWorkflowLazyError(message) {
         var tab = document.getElementById('workflow-tab');
         if (!tab) {
@@ -264,10 +356,16 @@
      * DOMContentLoaded already fired on the host page, so those listeners are invoked immediately.
      */
     function activateInjectedScripts(root) {
-        if (!root || !root.querySelectorAll) {
+        if (!root) {
             return;
         }
-        Array.prototype.slice.call(root.querySelectorAll('script')).forEach(function(oldScript) {
+        var scripts = [];
+        if (root.tagName && String(root.tagName).toLowerCase() === 'script') {
+            scripts = [root];
+        } else if (root.querySelectorAll) {
+            scripts = Array.prototype.slice.call(root.querySelectorAll('script'));
+        }
+        scripts.forEach(function(oldScript) {
             var scriptType = (oldScript.getAttribute('type') || '').toLowerCase();
             if (scriptType && scriptType !== 'text/javascript' && scriptType !== 'application/javascript') {
                 return;
@@ -332,6 +430,7 @@
             return Promise.resolve(currentTab);
         }
 
+        ensureClientPortalStylesheet(currentTab);
         currentTab.setAttribute('data-portal-loading', '1');
         var wasActive = currentTab.classList.contains('active');
 
@@ -371,7 +470,9 @@
                 newTab.classList.add('active');
             }
             currentTab.replaceWith(newTab);
+            ensureClientPortalStylesheet(newTab, doc);
             activateInjectedScripts(newTab);
+            importClientPortalOrphanAssets(doc, newTab);
             refreshWorkflowV2Icons(newTab);
             ensureStageNavBackButtonVisible();
             bindClientPortalSubTabDelegation();

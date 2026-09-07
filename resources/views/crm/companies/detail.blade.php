@@ -1374,6 +1374,7 @@ $(document).ready(function() {
             getInvoicesByMatter: '{{ URL::to("/get-invoices-by-matter") }}',
             loadMatterUpsert: '{{ URL::to("/client-portal/load-matter-upsert") }}',
             getClientPortalDetail: '{{ URL::to("/client-portal/detail") }}',
+            clientPortalCss: '{{ URL::asset("css/client-portal.css") }}',
             updateIntake: '{{ URL::to("/client-portal/updateintake") }}',
             updateExpectWin: '{{ URL::to("/client-portal/updateexpectwin") }}',
             updateDates: '{{ URL::to("/client-portal/updatedates") }}',

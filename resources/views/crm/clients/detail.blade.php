@@ -821,6 +821,7 @@ $(document).ready(function() {
             loadMatterUpsert: '{{ URL::to("/client-portal/load-matter-upsert") }}',
             getClientPortalDetail: '{{ URL::to("/client-portal/detail") }}',
             clientPortalTab: '{{ route("clients.detail.client-portal-tab", array_filter(["client_id" => $encodeId, "client_unique_matter_ref_no" => $id1 ?? null], static fn ($v) => $v !== null && $v !== "")) }}',
+            clientPortalCss: '{{ URL::asset("css/client-portal.css") }}',
             workflowTab: '{{ route("clients.detail.workflow-tab", array_filter(["client_id" => $encodeId, "client_unique_matter_ref_no" => $id1 ?? null], static fn ($v) => $v !== null && $v !== "")) }}',
             accountTab: '{{ route("clients.detail.account-tab", array_filter(["client_id" => $encodeId, "client_unique_matter_ref_no" => $id1 ?? null], static fn ($v) => $v !== null && $v !== "")) }}',
             checklistsTab: '{{ route("clients.detail.checklists-tab", array_filter(["client_id" => $encodeId, "client_unique_matter_ref_no" => $id1 ?? null], static fn ($v) => $v !== null && $v !== "")) }}',

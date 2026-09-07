@@ -388,6 +388,37 @@ class ClientDetailTabsTest extends TestCase
     }
 
     #[Test]
+    public function client_portal_tab_styles_load_from_a_stylesheet_on_lazy_inject(): void
+    {
+        $css = file_get_contents($this->projectPath('public/css/client-portal.css'));
+        Assert::assertNotFalse($css);
+        Assert::assertStringContainsString('.client-portal-tabs-nav', $css);
+        Assert::assertStringContainsString('list-style: none', $css);
+        Assert::assertStringContainsString('display: flex', $css);
+
+        $portal = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/client_portal.blade.php'));
+        Assert::assertNotFalse($portal);
+        Assert::assertStringContainsString('css/client-portal.css', $portal);
+        Assert::assertStringContainsString('data-client-portal-css', $portal);
+        Assert::assertStringNotContainsString('<style>', $portal);
+
+        $lazy = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/client_portal_lazy.blade.php'));
+        Assert::assertNotFalse($lazy);
+        Assert::assertStringNotContainsString('css/client-portal.css', $lazy);
+
+        $detail = file_get_contents($this->projectPath('resources/views/crm/clients/detail.blade.php'));
+        Assert::assertNotFalse($detail);
+        Assert::assertStringContainsString('clientPortalCss', $detail);
+
+        $js = file_get_contents($this->projectPath('public/js/crm/clients/workflow-tab.js'));
+        Assert::assertNotFalse($js);
+        Assert::assertStringContainsString('function ensureClientPortalStylesheet', $js);
+        Assert::assertStringContainsString('data-client-portal-css', $js);
+        Assert::assertStringContainsString('function importClientPortalOrphanAssets', $js);
+        Assert::assertStringContainsString('__clientPortalOrphanScriptsLoaded', $js);
+    }
+
+    #[Test]
     public function account_tab_script_reruns_invoice_and_ledger_init_after_inject(): void
     {
         $accountTabJs = file_get_contents($this->projectPath('public/js/crm/clients/account-tab.js'));
