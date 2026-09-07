@@ -844,6 +844,97 @@
             : 'All required items complete';
     }
 
+    function applyWorkflowV2PortalMapping(scope, stage) {
+        var block = scope.querySelector
+            ? scope.querySelector('#workflow-v2-portal-mapping')
+            : document.getElementById('workflow-v2-portal-mapping');
+        if (!block) {
+            return;
+        }
+
+        var mapping = stage && stage.portalMapping ? stage.portalMapping : null;
+        if (!mapping) {
+            block.style.display = 'none';
+            return;
+        }
+
+        block.style.display = '';
+
+        var crmEl = block.querySelector('[data-portal-map="crm"]');
+        if (crmEl) {
+            crmEl.textContent = 'CRM ' + (stage.index || '');
+        }
+
+        var cliEl = block.querySelector('[data-portal-map="cli"]');
+        if (cliEl) {
+            cliEl.textContent = mapping.client_label || '';
+        }
+
+        var chip = block.querySelector('[data-portal-map="chip"]');
+        if (chip) {
+            chip.textContent = mapping.tag_label || '';
+            chip.className = 'workflow-v2-portal-map-chip is-' + (mapping.tag || 'bansal');
+        }
+
+        var silentEl = block.querySelector('[data-portal-map="silent"]');
+        if (silentEl) {
+            if (mapping.silent) {
+                silentEl.removeAttribute('hidden');
+            } else {
+                silentEl.setAttribute('hidden', 'hidden');
+            }
+        }
+
+        var pctEl = block.querySelector('[data-portal-map="pct"]');
+        if (pctEl) {
+            pctEl.textContent = String(mapping.pct != null ? mapping.pct : 0) + '%';
+        }
+
+        var notif = block.querySelector('[data-portal-map="notif"]');
+        if (notif) {
+            notif.innerHTML = '';
+            if (mapping.silent || !mapping.notif_title) {
+                notif.classList.add('is-none');
+                notif.textContent = 'No notification — silent stage. The client app updates progress quietly or not at all.';
+            } else {
+                notif.classList.remove('is-none');
+                var titleEl = document.createElement('b');
+                titleEl.textContent = mapping.notif_title;
+                notif.appendChild(titleEl);
+                notif.appendChild(document.createTextNode(mapping.notif_body || ''));
+            }
+        }
+
+        var tasksEl = block.querySelector('[data-portal-map="tasks"]');
+        if (tasksEl) {
+            tasksEl.innerHTML = '';
+            var tasks = mapping.tasks || [];
+            if (!tasks.length) {
+                var empty = document.createElement('span');
+                empty.className = 'workflow-v2-portal-map-tasks-empty';
+                empty.textContent = 'None — nothing is required from the client at this stage.';
+                tasksEl.appendChild(empty);
+            } else {
+                tasks.forEach(function(task) {
+                    var pill = document.createElement('span');
+                    pill.className = 'workflow-v2-portal-task-pill is-' + (task.task_type || 'upload');
+                    pill.textContent = task.name || '';
+                    tasksEl.appendChild(pill);
+                });
+            }
+        }
+
+        var appNote = block.querySelector('[data-portal-map="app-note"]');
+        if (appNote) {
+            appNote.textContent = mapping.app_note || '';
+        }
+
+        var rule = block.querySelector('[data-portal-map="rule"]');
+        if (rule) {
+            rule.textContent = mapping.rule || '';
+        }
+    }
+
     function showWorkflowV2Stage(stageId, root) {
         var scope = root || document.getElementById('workflow-tab') || document;
         var data = parseWorkflowV2StagesData(scope);
@@ -885,6 +976,8 @@
         if (title) {
             title.textContent = stage.name || 'N/A';
         }
+
+        applyWorkflowV2PortalMapping(scope, stage);
 
         var display = stage.stageDisplay || {};
         var isCurrentStage = String(stage.id) === String(data.currentStageId);

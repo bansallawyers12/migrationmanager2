@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', 'Stage Checklists: ' . ($stage->name ?? ''))
+@section('title', 'Workflow Checklists: ' . ($stage->name ?? ''))
 
 @section('content')
 <div class="main-content">
@@ -15,7 +15,7 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Stage Checklists: {{ $stage->name }}</h4>
+							<h4>Workflow Checklists: {{ $stage->name }}</h4>
 							<div class="card-header-action">
 								<a href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) }}" class="btn btn-secondary">@icon('fa-arrow-left') Back to Stages</a>
 							</div>

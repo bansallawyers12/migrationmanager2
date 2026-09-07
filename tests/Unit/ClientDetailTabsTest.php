@@ -825,6 +825,8 @@ class ClientDetailTabsTest extends TestCase
         $portal = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/client_portal.blade.php'));
         Assert::assertNotFalse($portal);
         Assert::assertStringContainsString('staffAddedChecklistsOnly: true', $portal);
+        Assert::assertStringContainsString("'wfShowPortalMapping' => true", $portal);
+        Assert::assertStringContainsString("'wfShowStageDisplayMeta' => false", $portal);
         Assert::assertStringContainsString('Add Portal Checklist', $portal);
         Assert::assertStringContainsString('createChecklistModalLabel', $portal);
         Assert::assertStringContainsString("$('#createChecklistModalLabel').text('Add Portal Checklist')", $portal);
@@ -835,11 +837,23 @@ class ClientDetailTabsTest extends TestCase
         $workflow = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/partials/workflow-tab-body.blade.php'));
         Assert::assertNotFalse($workflow);
         Assert::assertStringNotContainsString('staffAddedChecklistsOnly: true', $workflow);
+        Assert::assertStringNotContainsString('wfShowPortalMapping', $workflow);
 
         $js = file_get_contents($this->projectPath('public/js/crm/clients/workflow-tab.js'));
         Assert::assertNotFalse($js);
         Assert::assertStringContainsString('function completeWorkflowChecklistItem', $js);
         Assert::assertStringContainsString("payload.source = 'client_portal'", $js);
+        Assert::assertStringContainsString('function applyWorkflowV2PortalMapping', $js);
+        Assert::assertStringContainsString('applyWorkflowV2PortalMapping(scope, stage)', $js);
+        Assert::assertStringContainsString('display.pending_from', $js);
+        Assert::assertStringContainsString('display.completion_rule', $js);
+        Assert::assertStringContainsString('display.file_note_section', $js);
+
+        $content = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/partials/workflow-v2-content.blade.php'));
+        Assert::assertNotFalse($content);
+        Assert::assertStringContainsString('id="workflow-v2-portal-mapping"', $content);
+        Assert::assertStringContainsString('$wfShowPortalMapping', $content);
+        Assert::assertStringContainsString('$wfShowStageDisplayMeta', $content);
     }
 
     private function projectPath(string $relative): string

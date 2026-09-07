@@ -135,6 +135,8 @@
                                                         'wfShowToolbar' => false,
                                                         'wfShowFooterAdvance' => true,
                                                         'wfChecklistInteractive' => true,
+                                                        'wfShowPortalMapping' => true,
+                                                        'wfShowStageDisplayMeta' => false,
                                                         'wfAdvanceButtonId' => 'client-portal-activities-proceed-to-next-stage',
                                                     ])
                                                 </div>
@@ -183,12 +185,15 @@
                                                                                                         ->where('cp_list_id', $checklist->id)
                                                                                                         ->where('type', 'workflow_checklist')
                                                                                                         ->count();
+                                                                                                    $taskType = \App\Enums\PortalTaskType::tryFrom((string) ($checklist->task_type ?? 'upload'))
+                                                                                                        ?? \App\Enums\PortalTaskType::Upload;
                                                                                                 @endphp
                                                                                                 <tr class="checklist-row cursor-pointer cp-doc-checklist-row"
                                                                                                     data-checklist-id="{{ $checklist->id }}"
                                                                                                     data-checklist-name="{{ $checklist->cp_checklist_name ?? 'N/A' }}"
                                                                                                     data-stage-name="{{ $stage->name }}"
-                                                                                                    data-matter-id="{{ $selectedMatter->id }}">
+                                                                                                    data-matter-id="{{ $selectedMatter->id }}"
+                                                                                                    data-task-type="{{ $taskType->value }}">
                                                                                                     <td class="checklist-status">
                                                                                                         @if($uploadCount > 0)
                                                                                                             <span class="check">@icon('fa-check')</span>
@@ -196,7 +201,10 @@
                                                                                                             <span class="round"></span>
                                                                                                         @endif
                                                                                                     </td>
-                                                                                                    <td class="checklist-name">{{ $checklist->cp_checklist_name ?? 'N/A' }}</td>
+                                                                                                    <td class="checklist-name">
+                                                                                                        {{ $checklist->cp_checklist_name ?? 'N/A' }}
+                                                                                                        <span class="checklist-task-type is-{{ $taskType->value }}">{{ $taskType->label() }}</span>
+                                                                                                    </td>
                                                                                                     <td class="checklist-count">
                                                                                                         <div class="circular-box">
                                                                                                             <span>{{ $uploadCount }}</span>

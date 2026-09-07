@@ -9,14 +9,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Seeds cp_doc_checklists on a matter from workflow_stage_checklists templates.
+ * Seeds cp_doc_checklists on a matter from workflow_stage_checklists
+ * and workflow_stage_portal_tasklists templates.
  * Idempotent: skips items that already exist (same matter + stage + name).
  */
 class WorkflowStageChecklistSync
 {
     public static function ensureSeededForMatter($matter): void
     {
-        if (! Schema::hasTable('workflow_stage_checklists') || ! Schema::hasTable('cp_doc_checklists')) {
+        if (! Schema::hasTable('cp_doc_checklists')) {
             return;
         }
 
@@ -32,7 +33,97 @@ class WorkflowStageChecklistSync
             return;
         }
 
-        $templates = DB::table('workflow_stage_checklists')
+        if (Schema::hasTable('workflow_stage_checklists')) {
+            $templates = DB::table('workflow_stage_checklists')
+                ->where('workflow_id', $clientMatter->workflow_id)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+
+            if ($templates->isNotEmpty()) {
+                $stageIds = $templates->pluck('workflow_stage_id')->unique()->filter()->values()->all();
+                $stagesById = WorkflowStage::whereIn('id', $stageIds)->get()->keyBy('id');
+                $now = now();
+
+                foreach ($templates as $template) {
+                    $stage = $stagesById->get($template->workflow_stage_id);
+                    if (! $stage || empty($stage->name)) {
+                        continue;
+                    }
+
+                    $normalizedName = strtolower(trim((string) $template->name));
+                    if ($normalizedName === '') {
+                        continue;
+                    }
+
+                    $exists = DB::table('cp_doc_checklists')
+                        ->where('client_matter_id', $clientMatter->id)
+                        ->where('wf_stage', $stage->name)
+                        ->whereRaw('LOWER(TRIM(cp_checklist_name)) = ?', [$normalizedName])
+                        ->exists();
+
+                    if ($exists) {
+                        if (Schema::hasColumn('cp_doc_checklists', 'is_required')) {
+                            DB::table('cp_doc_checklists')
+                                ->where('client_matter_id', $clientMatter->id)
+                                ->where('wf_stage', $stage->name)
+                                ->whereRaw('LOWER(TRIM(cp_checklist_name)) = ?', [$normalizedName])
+                                ->update([
+                                    'is_required' => (int) (bool) $template->is_required,
+                                    'updated_at' => $now,
+                                ]);
+                        }
+
+                        continue;
+                    }
+
+                    $payload = [
+                        'user_id' => null,
+                        'client_matter_id' => $clientMatter->id,
+                        'client_id' => $clientMatter->client_id,
+                        'wf_stage' => $stage->name,
+                        'wf_stage_id' => $stage->id,
+                        'cp_checklist_name' => trim($template->name),
+                        'description' => $template->description,
+                        'allow_client' => (int) ($template->allow_client ?? 1),
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
+                    if (Schema::hasColumn('cp_doc_checklists', 'is_required')) {
+                        $payload['is_required'] = (int) (bool) $template->is_required;
+                    }
+
+                    DB::table('cp_doc_checklists')->insert($payload);
+                }
+            }
+        }
+
+        self::seedPortalTasklistsForMatter($clientMatter);
+    }
+
+    /**
+     * Copy client-portal tasklist templates onto a matter (idempotent).
+     */
+    public static function seedPortalTasklistsForMatter($matter): void
+    {
+        if (! Schema::hasTable('workflow_stage_portal_tasklists') || ! Schema::hasTable('cp_doc_checklists')) {
+            return;
+        }
+
+        if ($matter instanceof ClientMatter) {
+            $clientMatter = $matter;
+        } elseif (is_numeric($matter)) {
+            $clientMatter = ClientMatter::find((int) $matter);
+        } else {
+            return;
+        }
+
+        if (! $clientMatter || empty($clientMatter->workflow_id) || empty($clientMatter->id)) {
+            return;
+        }
+
+        $templates = DB::table('workflow_stage_portal_tasklists')
             ->where('workflow_id', $clientMatter->workflow_id)
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -45,6 +136,8 @@ class WorkflowStageChecklistSync
         $stageIds = $templates->pluck('workflow_stage_id')->unique()->filter()->values()->all();
         $stagesById = WorkflowStage::whereIn('id', $stageIds)->get()->keyBy('id');
         $now = now();
+        $hasTaskType = Schema::hasColumn('cp_doc_checklists', 'task_type');
+        $hasRequired = Schema::hasColumn('cp_doc_checklists', 'is_required');
 
         foreach ($templates as $template) {
             $stage = $stagesById->get($template->workflow_stage_id);
@@ -64,16 +157,19 @@ class WorkflowStageChecklistSync
                 ->exists();
 
             if ($exists) {
-                if (Schema::hasColumn('cp_doc_checklists', 'is_required')) {
-                    DB::table('cp_doc_checklists')
-                        ->where('client_matter_id', $clientMatter->id)
-                        ->where('wf_stage', $stage->name)
-                        ->whereRaw('LOWER(TRIM(cp_checklist_name)) = ?', [$normalizedName])
-                        ->update([
-                            'is_required' => (int) (bool) $template->is_required,
-                            'updated_at' => $now,
-                        ]);
+                $update = ['updated_at' => $now];
+                if ($hasRequired) {
+                    $update['is_required'] = (int) (bool) $template->is_required;
                 }
+                if ($hasTaskType) {
+                    $update['task_type'] = (string) ($template->task_type ?: 'upload');
+                }
+                DB::table('cp_doc_checklists')
+                    ->where('client_matter_id', $clientMatter->id)
+                    ->where('wf_stage', $stage->name)
+                    ->whereRaw('LOWER(TRIM(cp_checklist_name)) = ?', [$normalizedName])
+                    ->whereNull('user_id')
+                    ->update($update);
 
                 continue;
             }
@@ -91,8 +187,11 @@ class WorkflowStageChecklistSync
                 'updated_at' => $now,
             ];
 
-            if (Schema::hasColumn('cp_doc_checklists', 'is_required')) {
+            if ($hasRequired) {
                 $payload['is_required'] = (int) (bool) $template->is_required;
+            }
+            if ($hasTaskType) {
+                $payload['task_type'] = (string) ($template->task_type ?: 'upload');
             }
 
             DB::table('cp_doc_checklists')->insert($payload);
@@ -112,6 +211,33 @@ class WorkflowStageChecklistSync
 
         $grouped = [];
         $rows = DB::table('workflow_stage_checklists')
+            ->where('workflow_id', $workflowId)
+            ->get(['workflow_stage_id', 'name']);
+
+        foreach ($rows as $row) {
+            $stageId = (int) $row->workflow_stage_id;
+            if ($stageId <= 0) {
+                continue;
+            }
+            $grouped[$stageId][] = (string) $row->name;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Client portal tasklist template names keyed by workflow_stage_id.
+     *
+     * @return array<int, list<string>>
+     */
+    public static function portalTaskNamesByStageId(int $workflowId): array
+    {
+        if ($workflowId <= 0 || ! Schema::hasTable('workflow_stage_portal_tasklists')) {
+            return [];
+        }
+
+        $grouped = [];
+        $rows = DB::table('workflow_stage_portal_tasklists')
             ->where('workflow_id', $workflowId)
             ->get(['workflow_stage_id', 'name']);
 

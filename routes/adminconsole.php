@@ -80,6 +80,11 @@ Route::prefix('adminconsole')->name('adminconsole.')->middleware(['auth:admin', 
         Route::put('/workflow/stage-checklists/{id}', [WorkflowController::class, 'updateStageChecklist'])->name('workflow.updateStageChecklist');
         Route::post('/workflow/{workflowId}/sync-checklists', [WorkflowController::class, 'syncWorkflowChecklists'])->name('workflow.syncChecklists');
         Route::delete('/workflow/stage-checklists/{id}', [WorkflowController::class, 'destroyStageChecklist'])->name('workflow.destroyStageChecklist');
+        Route::get('/workflow/{workflowId}/stage/{stageId}/portal-tasklists', [WorkflowController::class, 'stagePortalTasklists'])->name('workflow.stagePortalTasklists');
+        Route::post('/workflow/stage-portal-tasklists', [WorkflowController::class, 'storeStagePortalTasklist'])->name('workflow.storeStagePortalTasklist');
+        Route::put('/workflow/stage-portal-tasklists/{id}', [WorkflowController::class, 'updateStagePortalTasklist'])->name('workflow.updateStagePortalTasklist');
+        Route::post('/workflow/{workflowId}/sync-portal-tasklists', [WorkflowController::class, 'syncWorkflowPortalTasklists'])->name('workflow.syncPortalTasklists');
+        Route::delete('/workflow/stage-portal-tasklists/{id}', [WorkflowController::class, 'destroyStagePortalTasklist'])->name('workflow.destroyStagePortalTasklist');
 
         // Email routes
         Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');

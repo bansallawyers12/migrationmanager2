@@ -1,15 +1,19 @@
 <?php
+
 namespace App\Http\Controllers\AdminConsole;
 
+use App\Enums\PortalTaskType;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-
+use App\Models\ClientMatter;
 use App\Models\Workflow;
 use App\Models\WorkflowStage;
 use App\Models\WorkflowStageChecklist;
-use App\Models\ClientMatter;
+use App\Models\WorkflowStagePortalTasklist;
 use App\Support\WorkflowStageChecklistSync;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class WorkflowController extends Controller
 {
@@ -25,6 +29,7 @@ class WorkflowController extends Controller
     {
         $query = Workflow::with(['matter', 'stages'])->where('status', 1);
         $lists = $query->orderBy('name')->paginate(config('constants.limit', 20));
+
         return view('AdminConsole.features.workflow.workflows-index', compact('lists'));
     }
 
@@ -47,7 +52,7 @@ class WorkflowController extends Controller
         ]);
         $wf = null;
         DB::transaction(function () use ($request, &$wf) {
-            $wf = new Workflow();
+            $wf = new Workflow;
             $wf->name = $request->name;
             $wf->matter_id = $request->matter_id ?: null;
             $wf->status = 1;
@@ -69,7 +74,7 @@ class WorkflowController extends Controller
             }
 
             foreach ($defaultStages as $i => $stageName) {
-                $stage = new WorkflowStage();
+                $stage = new WorkflowStage;
                 $stage->name = $stageName;
                 $stage->workflow_id = $wf->id;
                 $stage->sort_order = $i + 1;
@@ -77,7 +82,7 @@ class WorkflowController extends Controller
             }
         });
 
-        if (!$wf || !$wf->id) {
+        if (! $wf || ! $wf->id) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow could not be created. Please try again.');
         }
 
@@ -93,9 +98,10 @@ class WorkflowController extends Controller
     {
         $id = $this->decodeString($id);
         $workflow = Workflow::find($id);
-        if (!$workflow) {
+        if (! $workflow) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
         }
+
         return view('AdminConsole.features.workflow.workflow-edit', compact('workflow'));
     }
 
@@ -106,7 +112,7 @@ class WorkflowController extends Controller
     {
         $id = $this->decodeString($id);
         $workflow = Workflow::find($id);
-        if (!$workflow) {
+        if (! $workflow) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
         }
         $this->validate($request, [
@@ -116,6 +122,7 @@ class WorkflowController extends Controller
         $workflow->name = $request->name;
         $workflow->matter_id = $request->matter_id ?: null;
         $workflow->save();
+
         return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Updated Successfully');
     }
 
@@ -126,7 +133,7 @@ class WorkflowController extends Controller
     {
         $id = $this->decodeString($id);
         $workflow = Workflow::find($id);
-        if (!$workflow) {
+        if (! $workflow) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
         }
         $lists = WorkflowStage::where('workflow_id', $workflow->id)
@@ -143,7 +150,7 @@ class WorkflowController extends Controller
             ->pluck('cnt', 'workflow_stage_id');
 
         $checklistCounts = [];
-        if (\Illuminate\Support\Facades\Schema::hasTable('workflow_stage_checklists') && $stageIds) {
+        if (Schema::hasTable('workflow_stage_checklists') && $stageIds) {
             $checklistCounts = WorkflowStageChecklist::where('workflow_id', $workflow->id)
                 ->whereIn('workflow_stage_id', $stageIds)
                 ->selectRaw('workflow_stage_id, COUNT(*) as cnt')
@@ -151,7 +158,16 @@ class WorkflowController extends Controller
                 ->pluck('cnt', 'workflow_stage_id');
         }
 
-        return view('AdminConsole.features.workflow.stages-index', compact('workflow', 'lists', 'matterCounts', 'checklistCounts'));
+        $portalTasklistCounts = [];
+        if (Schema::hasTable('workflow_stage_portal_tasklists') && $stageIds) {
+            $portalTasklistCounts = WorkflowStagePortalTasklist::where('workflow_id', $workflow->id)
+                ->whereIn('workflow_stage_id', $stageIds)
+                ->selectRaw('workflow_stage_id, COUNT(*) as cnt')
+                ->groupBy('workflow_stage_id')
+                ->pluck('cnt', 'workflow_stage_id');
+        }
+
+        return view('AdminConsole.features.workflow.stages-index', compact('workflow', 'lists', 'matterCounts', 'checklistCounts', 'portalTasklistCounts'));
     }
 
     /**
@@ -162,7 +178,7 @@ class WorkflowController extends Controller
     {
         $workflowId = $this->decodeString($workflowId);
         $workflow = Workflow::find($workflowId);
-        if (!$workflow) {
+        if (! $workflow) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
         }
         $insertAfterStage = null;
@@ -174,6 +190,7 @@ class WorkflowController extends Controller
                     ->first();
             }
         }
+
         return view('AdminConsole.features.workflow.create', compact('workflow', 'insertAfterStage'));
     }
 
@@ -190,7 +207,7 @@ class WorkflowController extends Controller
             'after_stage_id' => 'nullable|integer|exists:workflow_stages,id',
         ]);
         $workflowId = $request->workflow_id;
-        if (!$workflowId) {
+        if (! $workflowId) {
             $general = Workflow::where('name', 'General')->first();
             $workflowId = $general ? $general->id : null;
         }
@@ -198,13 +215,13 @@ class WorkflowController extends Controller
         $protectedFlags = $request->input('is_protected', []);
         $afterStageId = $request->input('after_stage_id');
 
-        if ($afterStageId && !$workflowId) {
+        if ($afterStageId && ! $workflowId) {
             return redirect()->back()->withInput()->with('error', 'Cannot insert after a stage without a workflow context.');
         }
 
         if ($afterStageId) {
             $afterStage = WorkflowStage::where('id', $afterStageId)->first();
-            if (!$afterStage || (int) $afterStage->workflow_id !== (int) $workflowId) {
+            if (! $afterStage || (int) $afterStage->workflow_id !== (int) $workflowId) {
                 return redirect()->back()->withInput()->with('error', 'Invalid “insert after” stage for this workflow.');
             }
         }
@@ -227,14 +244,15 @@ class WorkflowController extends Controller
                 }
                 $pos = 0;
                 foreach ($stages as $i => $stageName) {
-                    $o = new WorkflowStage();
+                    $o = new WorkflowStage;
                     $o->name = $stageName;
                     $o->workflow_id = $workflowId;
                     $o->sort_order = $effectiveAfter + 1 + $pos;
-                    $o->is_protected = !empty($protectedFlags[$i]);
+                    $o->is_protected = ! empty($protectedFlags[$i]);
                     $o->save();
                     $pos++;
                 }
+
                 return;
             }
 
@@ -246,11 +264,11 @@ class WorkflowController extends Controller
             }
             $maxSortOrder = (int) ($sortQuery->max('sort_order') ?? $sortQuery->max('id') ?? 0);
             foreach ($stages as $i => $stageName) {
-                $o = new WorkflowStage();
+                $o = new WorkflowStage;
                 $o->name = $stageName;
                 $o->workflow_id = $workflowId;
                 $o->sort_order = ++$maxSortOrder;
-                $o->is_protected = !empty($protectedFlags[$i]);
+                $o->is_protected = ! empty($protectedFlags[$i]);
                 $o->save();
             }
         });
@@ -259,9 +277,11 @@ class WorkflowController extends Controller
             $msg = $afterStageId
                 ? 'Stage(s) inserted after the selected stage.'
                 : 'Workflow Stages Added Successfully';
+
             return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflowId)))
                 ->with('success', $msg);
         }
+
         return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Stages Added Successfully');
     }
 
@@ -272,10 +292,11 @@ class WorkflowController extends Controller
     {
         $id = $this->decodeString($id);
         $fetchedData = WorkflowStage::with('workflow')->find($id);
-        if (!$fetchedData) {
+        if (! $fetchedData) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow Stage Not Found');
         }
         $workflow = $fetchedData->workflow;
+
         return view('AdminConsole.features.workflow.edit', compact('fetchedData', 'workflow'));
     }
 
@@ -286,7 +307,7 @@ class WorkflowController extends Controller
     {
         $id = $this->decodeString($id);
         $stage = WorkflowStage::with('workflow')->find($id);
-        if (!$stage) {
+        if (! $stage) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow Stage Not Found');
         }
         $this->validate($request, [
@@ -300,6 +321,7 @@ class WorkflowController extends Controller
                 return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id)))
                     ->with('error', 'This workflow stage is protected and cannot be renamed.');
             }
+
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'This workflow stage is protected and cannot be renamed.');
         }
         $wasProtected = (bool) $stage->is_protected;
@@ -311,6 +333,7 @@ class WorkflowController extends Controller
                     return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id)))
                         ->with('error', 'Protected stages cannot be renamed. Uncheck Protected first.');
                 }
+
                 return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Protected stages cannot be renamed. Uncheck Protected first.');
             }
         } else {
@@ -322,6 +345,7 @@ class WorkflowController extends Controller
             return redirect()->route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id)))
                 ->with('success', 'Workflow Stage Updated Successfully');
         }
+
         return redirect()->route('adminconsole.features.workflow.index')->with('success', 'Workflow Stage Updated Successfully');
     }
 
@@ -336,7 +360,7 @@ class WorkflowController extends Controller
         $workflow = Workflow::find($workflowId);
         $stage = WorkflowStage::where('id', $stageId)->where('workflow_id', $workflowId)->first();
 
-        if (!$workflow || !$stage) {
+        if (! $workflow || ! $stage) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow stage not found');
         }
 
@@ -367,7 +391,7 @@ class WorkflowController extends Controller
         $stageId = (int) $request->workflow_stage_id;
 
         $stage = WorkflowStage::where('id', $stageId)->where('workflow_id', $workflowId)->first();
-        if (!$stage) {
+        if (! $stage) {
             return redirect()->back()->withInput()->with('error', 'Invalid stage for this workflow.');
         }
 
@@ -401,13 +425,13 @@ class WorkflowController extends Controller
         $workflowId = $this->decodeString($workflowId);
         $workflow = Workflow::find($workflowId);
 
-        if (!$workflow) {
+        if (! $workflow) {
             return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
         }
 
         WorkflowStageChecklistSync::ensureSeededForWorkflow((int) $workflowId);
 
-        return redirect()->back()->with('success', 'Checklists applied to all existing matters using "' . $workflow->name . '".');
+        return redirect()->back()->with('success', 'Checklists applied to all existing matters using "'.$workflow->name.'".');
     }
 
     /**
@@ -418,7 +442,7 @@ class WorkflowController extends Controller
         $id = $this->decodeString($id);
         $item = WorkflowStageChecklist::find($id);
 
-        if (!$item) {
+        if (! $item) {
             return redirect()->back()->with('error', 'Checklist not found.');
         }
 
@@ -451,7 +475,7 @@ class WorkflowController extends Controller
         $id = $this->decodeString($id);
         $item = WorkflowStageChecklist::find($id);
 
-        if (!$item) {
+        if (! $item) {
             return redirect()->back()->with('error', 'Checklist template not found.');
         }
 
@@ -465,5 +489,153 @@ class WorkflowController extends Controller
                 base64_encode(convert_uuencode($stageId)),
             ])
             ->with('success', 'Checklist template removed. Existing client checklists are not affected.');
+    }
+
+    /**
+     * Manage client portal tasklists for a workflow stage.
+     */
+    public function stagePortalTasklists($workflowId, $stageId)
+    {
+        $workflowId = $this->decodeString($workflowId);
+        $stageId = $this->decodeString($stageId);
+
+        $workflow = Workflow::find($workflowId);
+        $stage = WorkflowStage::where('id', $stageId)->where('workflow_id', $workflowId)->first();
+
+        if (! $workflow || ! $stage) {
+            return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow stage not found');
+        }
+
+        $tasklists = WorkflowStagePortalTasklist::where('workflow_id', $workflowId)
+            ->where('workflow_stage_id', $stageId)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $taskTypes = PortalTaskType::cases();
+
+        return view('AdminConsole.features.workflow.stage-portal-tasklists-index', compact('workflow', 'stage', 'tasklists', 'taskTypes'));
+    }
+
+    /**
+     * Store a client portal tasklist template on a workflow stage.
+     */
+    public function storeStagePortalTasklist(Request $request)
+    {
+        $this->validate($request, [
+            'workflow_id' => 'required|integer|exists:workflows,id',
+            'workflow_stage_id' => 'required|integer|exists:workflow_stages,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'task_type' => ['required', Rule::enum(PortalTaskType::class)],
+            'allow_client' => 'nullable|boolean',
+            'is_required' => 'nullable|boolean',
+        ]);
+
+        $workflowId = (int) $request->workflow_id;
+        $stageId = (int) $request->workflow_stage_id;
+
+        $stage = WorkflowStage::where('id', $stageId)->where('workflow_id', $workflowId)->first();
+        if (! $stage) {
+            return redirect()->back()->withInput()->with('error', 'Invalid stage for this workflow.');
+        }
+
+        $maxSort = (int) WorkflowStagePortalTasklist::where('workflow_stage_id', $stageId)->max('sort_order');
+
+        WorkflowStagePortalTasklist::create([
+            'workflow_id' => $workflowId,
+            'workflow_stage_id' => $stageId,
+            'name' => trim($request->name),
+            'description' => $request->description ? trim($request->description) : null,
+            'task_type' => $request->task_type,
+            'allow_client' => $request->has('allow_client'),
+            'is_required' => $request->has('is_required'),
+            'sort_order' => $maxSort + 1,
+        ]);
+
+        WorkflowStageChecklistSync::ensureSeededForWorkflow($workflowId);
+
+        return redirect()
+            ->route('adminconsole.features.workflow.stagePortalTasklists', [
+                base64_encode(convert_uuencode($workflowId)),
+                base64_encode(convert_uuencode($stageId)),
+            ])
+            ->with('success', 'Client portal task added and applied to all matters using this workflow.');
+    }
+
+    /**
+     * Push all portal tasklist templates to every matter on this workflow.
+     */
+    public function syncWorkflowPortalTasklists($workflowId)
+    {
+        $workflowId = $this->decodeString($workflowId);
+        $workflow = Workflow::find($workflowId);
+
+        if (! $workflow) {
+            return redirect()->route('adminconsole.features.workflow.index')->with('error', 'Workflow not found');
+        }
+
+        WorkflowStageChecklistSync::ensureSeededForWorkflow((int) $workflowId);
+
+        return redirect()->back()->with('success', 'Client portal tasks applied to all existing matters using "'.$workflow->name.'".');
+    }
+
+    /**
+     * Update a client portal tasklist template.
+     */
+    public function updateStagePortalTasklist(Request $request, $id)
+    {
+        $id = $this->decodeString($id);
+        $item = WorkflowStagePortalTasklist::find($id);
+
+        if (! $item) {
+            return redirect()->back()->with('error', 'Client portal task not found.');
+        }
+
+        $this->validate($request, [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'task_type' => ['required', Rule::enum(PortalTaskType::class)],
+            'allow_client' => 'nullable|boolean',
+            'is_required' => 'nullable|boolean',
+        ]);
+
+        $item->name = trim($request->name);
+        $item->description = $request->description ? trim($request->description) : null;
+        $item->task_type = $request->task_type;
+        $item->allow_client = $request->has('allow_client');
+        $item->is_required = $request->has('is_required');
+        $item->save();
+
+        return redirect()
+            ->route('adminconsole.features.workflow.stagePortalTasklists', [
+                base64_encode(convert_uuencode($item->workflow_id)),
+                base64_encode(convert_uuencode($item->workflow_stage_id)),
+            ])
+            ->with('success', 'Client portal task updated. Use "Apply all client portal tasks to existing matters" to sync changes to clients.');
+    }
+
+    /**
+     * Delete a client portal tasklist template.
+     */
+    public function destroyStagePortalTasklist($id)
+    {
+        $id = $this->decodeString($id);
+        $item = WorkflowStagePortalTasklist::find($id);
+
+        if (! $item) {
+            return redirect()->back()->with('error', 'Client portal task template not found.');
+        }
+
+        $workflowId = $item->workflow_id;
+        $stageId = $item->workflow_stage_id;
+        $item->delete();
+
+        return redirect()
+            ->route('adminconsole.features.workflow.stagePortalTasklists', [
+                base64_encode(convert_uuencode($workflowId)),
+                base64_encode(convert_uuencode($stageId)),
+            ])
+            ->with('success', 'Client portal task template removed. Existing client tasks are not affected.');
     }
 }

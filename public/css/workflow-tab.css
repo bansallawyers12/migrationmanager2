@@ -1073,6 +1073,177 @@
     justify-content: flex-start;
 }
 
+.workflow-v2--client-portal-activities .workflow-v2-portal-mapping {
+    margin: 0 0 18px;
+    padding: 14px 16px 16px;
+    border: 1px solid var(--wf-border);
+    border-radius: var(--wf-radius);
+    background: #f8fafc;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-arrow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-bottom: 14px;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-box {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 8px;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-box.is-crm {
+    background: var(--wf-navy);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-box.is-cli {
+    background: var(--wf-blue-soft);
+    color: var(--wf-blue);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-arr {
+    color: var(--wf-muted);
+    font-size: 1rem;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-chip.is-action {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-chip.is-bansal {
+    background: var(--wf-blue-soft);
+    color: var(--wf-blue);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-chip.is-dept {
+    background: #fff;
+    color: var(--wf-navy-light);
+    border: 1px solid var(--wf-border);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-chip.is-done {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-silent {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wf-muted);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-kv {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 10px 16px;
+    margin: 0;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-kv dt {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--wf-muted);
+    padding-top: 2px;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-kv dd {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--wf-navy-light);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-notif {
+    background: #fff;
+    border-left: 3px solid var(--wf-blue);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    font-size: 0.81rem;
+    color: var(--wf-navy-light);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-notif b {
+    display: block;
+    color: var(--wf-navy);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-notif.is-none {
+    border-left-color: var(--wf-border);
+    color: var(--wf-muted);
+    font-style: italic;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-tasks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-tasks-empty {
+    font-size: 0.81rem;
+    color: var(--wf-muted);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-task-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    background: #fff;
+    border: 1px solid var(--wf-border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: var(--wf-navy-light);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-task-pill.is-sign {
+    border-color: #fdba74;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-task-pill.is-pay {
+    border-color: #86efac;
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-rule {
+    margin: 14px 0 0;
+    padding-top: 12px;
+    border-top: 1px dashed var(--wf-border);
+    font-size: 0.75rem;
+    color: var(--wf-muted);
+}
+
+.workflow-v2--client-portal-activities .workflow-v2-portal-map-rule strong {
+    color: var(--wf-navy-light);
+}
+
+@media (max-width: 720px) {
+    .workflow-v2--client-portal-activities .workflow-v2-portal-map-kv {
+        grid-template-columns: 1fr;
+        gap: 4px 0;
+    }
+}
+
 /* Empty state */
 .workflow-v2-empty {
     padding: 40px 20px;

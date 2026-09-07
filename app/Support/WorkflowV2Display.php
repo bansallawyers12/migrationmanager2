@@ -22,6 +22,9 @@ class WorkflowV2Display
         $templateNamesByStageId = [];
         if ($staffAddedChecklistsOnly && $matter && ! empty($matter->workflow_id)) {
             $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
+            foreach (WorkflowStageChecklistSync::portalTaskNamesByStageId((int) $matter->workflow_id) as $stageId => $names) {
+                $templateNamesByStageId[$stageId] = array_merge($templateNamesByStageId[$stageId] ?? [], $names);
+            }
         }
 
         $matterName = '';
@@ -66,7 +69,19 @@ class WorkflowV2Display
             .($client->last_name ?? '')
         );
 
-        $stagesPayload = self::buildStagesPayload($matter, $allStages, $currentStageId, $staffAddedChecklistsOnly, $templateNamesByStageId);
+        $portalTasksByStageId = [];
+        if ($staffAddedChecklistsOnly && $matter && ! empty($matter->workflow_id)) {
+            $portalTasksByStageId = self::portalTasksByStageId((int) $matter->workflow_id);
+        }
+
+        $stagesPayload = self::buildStagesPayload(
+            $matter,
+            $allStages,
+            $currentStageId,
+            $staffAddedChecklistsOnly,
+            $templateNamesByStageId,
+            $portalTasksByStageId
+        );
 
         $resolvedViewStageId = $viewStageId ?: $currentStageId;
         $viewStage = $resolvedViewStageId ? $allStages->firstWhere('id', $resolvedViewStageId) : null;
@@ -82,6 +97,9 @@ class WorkflowV2Display
             : 0;
 
         $viewStageDisplay = $viewStageName ? self::stageDisplayMeta($viewStageName) : null;
+        $portalMapping = ($staffAddedChecklistsOnly && $viewStage)
+            ? self::portalMappingForStage($viewStageName, $portalTasksByStageId[(int) $viewStage->id] ?? [])
+            : null;
         $viewChecklist = ($matter && $viewStage)
             ? self::checklistForStage($matter, (int) $viewStage->id, $viewStageName, $staffAddedChecklistsOnly, $templateNamesByStageId)
             : ['rows' => [], 'outstanding' => 0];
@@ -163,7 +181,8 @@ class WorkflowV2Display
             'viewStageName',
             'activeChecklistIndex',
             'currentStageOutstanding',
-            'fileNoteBody'
+            'fileNoteBody',
+            'portalMapping'
         ), [
             'clientId' => $client->client_id ?? '',
             'viewStageId' => $resolvedViewStageId,
@@ -174,8 +193,9 @@ class WorkflowV2Display
      * Per-stage data for client-side stage switching.
      *
      * @param  array<int, list<string>>  $templateNamesByStageId
+     * @param  array<int, list<array{name: string, task_type: string, description: ?string}>>  $portalTasksByStageId
      */
-    public static function buildStagesPayload(?object $matter, $allStages, ?int $currentStageId, bool $staffAddedChecklistsOnly = false, array $templateNamesByStageId = []): array
+    public static function buildStagesPayload(?object $matter, $allStages, ?int $currentStageId, bool $staffAddedChecklistsOnly = false, array $templateNamesByStageId = [], array $portalTasksByStageId = []): array
     {
         $payload = [];
         $currentStageRow = $currentStageId ? $allStages->firstWhere('id', $currentStageId) : null;
@@ -193,7 +213,7 @@ class WorkflowV2Display
                 ? self::checklistForStage($matter, (int) $stage->id, $stageName, $staffAddedChecklistsOnly, $templateNamesByStageId)
                 : ['rows' => [], 'outstanding' => 0];
 
-            $payload[] = [
+            $row = [
                 'id' => (int) $stage->id,
                 'index' => $stageIndex + 1,
                 'name' => $stageName,
@@ -214,6 +234,15 @@ class WorkflowV2Display
                     ? self::fileNoteBodyForStage($matter, (int) $stage->id)
                     : '',
             ];
+
+            if ($staffAddedChecklistsOnly) {
+                $row['portalMapping'] = self::portalMappingForStage(
+                    $stageName,
+                    $portalTasksByStageId[(int) $stage->id] ?? []
+                );
+            }
+
+            $payload[] = $row;
         }
 
         return $payload;
@@ -234,6 +263,116 @@ class WorkflowV2Display
         }
 
         return null;
+    }
+
+    /**
+     * Client Portal Activities mapping copy, keyed by CRM stage name.
+     *
+     * @return array{client_label: string, tag: string, pct: int, silent: bool, notif_title: ?string, notif_body: ?string, app_note: string, rule: string}|null
+     */
+    public static function portalMappingMeta(?string $stageName): ?array
+    {
+        if (! $stageName) {
+            return null;
+        }
+
+        $maps = config('workflow.portal_stage_mapping', []);
+        $stageNameKey = strtolower(trim($stageName));
+        foreach ($maps as $key => $meta) {
+            if (strtolower(trim((string) $key)) === $stageNameKey) {
+                return $meta;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Mapping payload for Activities stage clicks. Null when the CRM stage has no mapping.
+     *
+     * @param  list<array{name?: string, task_type?: string, description?: string|null}>  $tasks
+     * @return array{client_label: string, tag: string, tag_label: string, pct: int, silent: bool, notif_title: ?string, notif_body: ?string, app_note: string, rule: string, tasks: list<array{name: string, task_type: string, description: ?string}>}|null
+     */
+    public static function portalMappingForStage(?string $stageName, array $tasks = []): ?array
+    {
+        $meta = self::portalMappingMeta($stageName);
+        if (! $meta) {
+            return null;
+        }
+
+        $tag = (string) ($meta['tag'] ?? 'bansal');
+        $labels = [
+            'action' => 'Action required',
+            'bansal' => 'With Bansal',
+            'dept' => 'With Immigration',
+            'done' => 'Complete',
+        ];
+
+        $normalizedTasks = [];
+        foreach ($tasks as $task) {
+            $name = trim((string) ($task['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $normalizedTasks[] = [
+                'name' => $name,
+                'task_type' => (string) ($task['task_type'] ?? 'upload'),
+                'description' => isset($task['description']) && $task['description'] !== ''
+                    ? (string) $task['description']
+                    : null,
+            ];
+        }
+
+        $silent = ! empty($meta['silent']);
+
+        return [
+            'client_label' => (string) ($meta['client_label'] ?? ''),
+            'tag' => $tag,
+            'tag_label' => $labels[$tag] ?? 'With Bansal',
+            'pct' => (int) ($meta['pct'] ?? 0),
+            'silent' => $silent,
+            'notif_title' => $silent ? null : ($meta['notif_title'] ?? null),
+            'notif_body' => $silent ? null : ($meta['notif_body'] ?? null),
+            'app_note' => (string) ($meta['app_note'] ?? ''),
+            'rule' => (string) ($meta['rule'] ?? ''),
+            'tasks' => $normalizedTasks,
+        ];
+    }
+
+    /**
+     * Portal tasklist templates for a workflow, grouped by stage id.
+     *
+     * @return array<int, list<array{name: string, task_type: string, description: ?string}>>
+     */
+    public static function portalTasksByStageId(int $workflowId): array
+    {
+        if ($workflowId <= 0 || ! Schema::hasTable('workflow_stage_portal_tasklists')) {
+            return [];
+        }
+
+        $hasTaskType = Schema::hasColumn('workflow_stage_portal_tasklists', 'task_type');
+        $grouped = [];
+        $rows = DB::table('workflow_stage_portal_tasklists')
+            ->where('workflow_id', $workflowId)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($rows as $row) {
+            $stageId = (int) $row->workflow_stage_id;
+            if ($stageId <= 0) {
+                continue;
+            }
+            $grouped[$stageId][] = [
+                'name' => (string) $row->name,
+                'task_type' => $hasTaskType ? (string) ($row->task_type ?? 'upload') : 'upload',
+                'description' => isset($row->description) && $row->description !== ''
+                    ? (string) $row->description
+                    : null,
+            ];
+        }
+
+        return $grouped;
     }
 
     /**
@@ -262,12 +401,20 @@ class WorkflowV2Display
         if ($staffAddedChecklistsOnly) {
             if ($templateNamesByStageId === [] && ! empty($matter->workflow_id)) {
                 $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
+                foreach (WorkflowStageChecklistSync::portalTaskNamesByStageId((int) $matter->workflow_id) as $hideStageId => $names) {
+                    $templateNamesByStageId[$hideStageId] = array_merge($templateNamesByStageId[$hideStageId] ?? [], $names);
+                }
             }
 
             $cpChecklists = WorkflowStageChecklistSync::forPortalDocumentsTab(
                 $cpChecklists,
                 $templateNamesByStageId[$stageId] ?? []
             );
+        } elseif (! empty($matter->workflow_id)) {
+            $portalTaskNames = WorkflowStageChecklistSync::portalTaskNamesByStageId((int) $matter->workflow_id)[$stageId] ?? [];
+            if ($portalTaskNames !== []) {
+                $cpChecklists = WorkflowStageChecklistSync::forPortalDocumentsTab($cpChecklists, $portalTaskNames);
+            }
         }
 
         foreach ($cpChecklists as $cpItem) {

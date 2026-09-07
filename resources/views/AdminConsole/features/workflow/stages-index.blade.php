@@ -5,23 +5,24 @@
 <style>
 	/* Stacked compact actions — avoids dropdown clipping / side-by-side overflow in narrow cells */
 	.workflow-stages-table td.workflow-stage-actions-col {
-		white-space: normal !important;
+		white-space: nowrap !important;
 		vertical-align: middle;
 		width: 1%;
-		min-width: 7rem;
 	}
 	.workflow-stage-cell-actions {
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
+		display: inline-flex;
+		flex-wrap: nowrap;
+		align-items: center;
 		gap: 0.25rem;
 	}
 	.workflow-stage-cell-actions .btn {
-		font-size: 0.75rem;
-		padding: 0.2rem 0.45rem;
-		line-height: 1.25;
-		white-space: nowrap;
-		text-align: center;
+		width: 2rem;
+		height: 2rem;
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
 	}
 	.workflow-stage-protected-lock {
 		display: inline-flex;
@@ -67,7 +68,8 @@
 										<tr>
 											<th>Stage</th>
 											<th>Total Matters</th>
-											<th>Checklists</th>
+											<th>Workflow Checklists</th>
+											<th>Portal Tasklists</th>
 											<th class="text-nowrap">Actions</th>
 										</tr>
 									</thead>
@@ -76,25 +78,30 @@
 									@foreach ($lists as $list)
 									<?php $countmatters = $matterCounts[$list->id] ?? 0; ?>
 									<?php $checklistCount = $checklistCounts[$list->id] ?? 0; ?>
+									<?php $portalTasklistCount = $portalTasklistCounts[$list->id] ?? 0; ?>
 									<?php $stageFrozen = $list->isFrozen(); ?>
 									<tr>
 										<td>
 											{{ $list->name ?: config('constants.empty', '—') }}
 											@if($stageFrozen)
-											@include('AdminConsole.features.workflow.partials.protected-lock')
+												@include('AdminConsole.features.workflow.partials.protected-lock')
 											@endif
 										</td>
 										<td>{{ $countmatters }}</td>
 										<td>{{ $checklistCount }}</td>
+										<td>{{ $portalTasklistCount }}</td>
 										<td class="workflow-stage-actions-col">
 											<div class="workflow-stage-cell-actions">
-												<a class="btn btn-sm btn-success" href="{{ route('adminconsole.features.workflow.stageChecklists', [base64_encode(convert_uuencode($workflow->id)), base64_encode(convert_uuencode($list->id))]) }}" title="Manage default checklists for this stage">@icon('fa-tasks') Checklists</a>
-												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}" title="{{ $stageFrozen ? 'View (protected — name cannot be changed)' : 'Edit stage name' }}">@icon('fa-edit') Edit</a>
-												<a class="btn btn-sm btn-info" href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}?after={{ rawurlencode(base64_encode(convert_uuencode($list->id))) }}" title="Insert a new stage immediately after this one">@icon('fa-plus') Add After</a>
+												<a class="btn btn-sm btn-success" href="{{ route('adminconsole.features.workflow.stageChecklists', [base64_encode(convert_uuencode($workflow->id)), base64_encode(convert_uuencode($list->id))]) }}" data-bs-toggle="tooltip" title="Workflow Checklists" aria-label="Workflow Checklists">@icon('fa-tasks')</a>
+												<a class="btn btn-sm btn-warning" href="{{ route('adminconsole.features.workflow.stagePortalTasklists', [base64_encode(convert_uuencode($workflow->id)), base64_encode(convert_uuencode($list->id))]) }}" data-bs-toggle="tooltip" title="Portal Tasklists" aria-label="Portal Tasklists">@icon('fa-mobile-alt')</a>
+												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.edit', base64_encode(convert_uuencode($list->id))) }}" data-bs-toggle="tooltip" title="{{ $stageFrozen ? 'View (protected — name cannot be changed)' : 'Edit' }}" aria-label="{{ $stageFrozen ? 'View stage' : 'Edit' }}">@icon('fa-edit')</a>
+												<a class="btn btn-sm btn-info" href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}?after={{ rawurlencode(base64_encode(convert_uuencode($list->id))) }}" data-bs-toggle="tooltip" title="Add After" aria-label="Add After">@icon('fa-plus')</a>
 												@if($stageFrozen)
-												<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Protected stages cannot be deleted">@icon('fa-trash') Delete</button>
+												<span data-bs-toggle="tooltip" title="Protected stages cannot be deleted">
+													<button type="button" class="btn btn-sm btn-outline-secondary" disabled aria-label="Delete">@icon('fa-trash')</button>
+												</span>
 												@else
-												<a class="btn btn-sm btn-outline-danger" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')">@icon('fa-trash') Delete</a>
+												<a class="btn btn-sm btn-outline-danger" href="javascript:;" onclick="deleteAction({{ $list->id }}, 'workflow_stages')" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">@icon('fa-trash')</a>
 												@endif
 											</div>
 										</td>
@@ -103,7 +110,7 @@
 									</tbody>
 									@else
 									<tbody>
-										<tr><td colspan="4" class="text-center">No stages. <a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}">Add stage</a>.</td></tr>
+										<tr><td colspan="5" class="text-center">No stages. <a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}">Add stage</a>.</td></tr>
 									</tbody>
 									@endif
 								</table>
@@ -115,4 +122,16 @@
 		</div>
 	</section>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+		document.querySelectorAll('.workflow-stage-cell-actions [data-bs-toggle="tooltip"]').forEach(function (el) {
+			new bootstrap.Tooltip(el);
+		});
+	}
+});
+</script>
 @endsection

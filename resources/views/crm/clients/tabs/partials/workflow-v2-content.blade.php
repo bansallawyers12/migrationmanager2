@@ -5,6 +5,9 @@
     $wfShowFooterAdvance = $wfShowFooterAdvance ?? true;
     $wfShowPortalIdentity = $wfShowPortalIdentity ?? false;
     $wfChecklistInteractive = $wfChecklistInteractive ?? false;
+    $wfShowPortalMapping = $wfShowPortalMapping ?? false;
+    $wfShowStageDisplayMeta = $wfShowStageDisplayMeta ?? true;
+    $portalMapping = $portalMapping ?? null;
     $wfAdvanceButtonId = $wfAdvanceButtonId ?? 'workflow-tab-proceed-to-next-stage';
     $wfBackButtonId = $wfBackButtonId ?? 'workflow-tab-back-to-previous-stage';
     $wfReopenButtonId = $wfReopenButtonId ?? 'workflow-tab-reopen';
@@ -231,6 +234,61 @@
                 </div>
                 <h2 class="workflow-v2-panel-title" id="workflow-v2-panel-title">{{ $viewStageName ?? 'N/A' }}</h2>
 
+                @if(!empty($wfShowPortalMapping))
+                    @php
+                        $wfPortalMapTag = $portalMapping['tag'] ?? 'bansal';
+                        $wfPortalMapSilent = !empty($portalMapping['silent']);
+                        $wfPortalMapHasNotif = !$wfPortalMapSilent && !empty($portalMapping['notif_title']);
+                        $wfPortalMapTasks = $portalMapping['tasks'] ?? [];
+                    @endphp
+                    <div id="workflow-v2-portal-mapping"
+                        class="workflow-v2-portal-mapping"
+                        style="{{ empty($portalMapping) ? 'display:none;' : '' }}">
+                        <div class="workflow-v2-portal-map-arrow">
+                            <span class="workflow-v2-portal-map-box is-crm" data-portal-map="crm">CRM {{ $viewStageIndex }}</span>
+                            <span class="workflow-v2-portal-map-arr" aria-hidden="true">&rarr;</span>
+                            <span class="workflow-v2-portal-map-box is-cli" data-portal-map="cli">{{ $portalMapping['client_label'] ?? '' }}</span>
+                            <span class="workflow-v2-portal-map-chip is-{{ $wfPortalMapTag }}" data-portal-map="chip">{{ $portalMapping['tag_label'] ?? '' }}</span>
+                            @if($wfPortalMapSilent)
+                                <span class="workflow-v2-portal-map-silent" data-portal-map="silent">Silent</span>
+                            @else
+                                <span class="workflow-v2-portal-map-silent" data-portal-map="silent" hidden>Silent</span>
+                            @endif
+                        </div>
+                        <dl class="workflow-v2-portal-map-kv">
+                            <dt>Client progress</dt>
+                            <dd><strong data-portal-map="pct">{{ (int) ($portalMapping['pct'] ?? 0) }}%</strong></dd>
+                            <dt>Push notification</dt>
+                            <dd>
+                                <div class="workflow-v2-portal-map-notif {{ $wfPortalMapHasNotif ? '' : 'is-none' }}" data-portal-map="notif">
+                                    @if($wfPortalMapHasNotif)
+                                        <b>{{ $portalMapping['notif_title'] }}</b>{{ $portalMapping['notif_body'] ?? '' }}
+                                    @else
+                                        No notification — silent stage. The client app updates progress quietly or not at all.
+                                    @endif
+                                </div>
+                            </dd>
+                            <dt>Client tasks created</dt>
+                            <dd class="workflow-v2-portal-map-tasks" data-portal-map="tasks">
+                                @if(count($wfPortalMapTasks) > 0)
+                                    @foreach($wfPortalMapTasks as $wfPortalTask)
+                                        <span class="workflow-v2-portal-task-pill is-{{ $wfPortalTask['task_type'] ?? 'upload' }}">{{ $wfPortalTask['name'] }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="workflow-v2-portal-map-tasks-empty">None — nothing is required from the client at this stage.</span>
+                                @endif
+                            </dd>
+                            <dt>App behaviour</dt>
+                            <dd data-portal-map="app-note">{{ $portalMapping['app_note'] ?? '' }}</dd>
+                        </dl>
+                        <p class="workflow-v2-portal-map-rule">
+                            <strong>Transition rule:</strong>
+                            <span data-portal-map="rule">{{ $portalMapping['rule'] ?? '' }}</span>
+                        </p>
+                    </div>
+                @endif
+
+                @if(!empty($wfShowStageDisplayMeta))
                 <div id="workflow-v2-panel-badges" class="workflow-v2-badges"
                     style="{{ ($stageDisplay && !empty($stageDisplay['pending_from'])) ? '' : 'display:none;' }}">
                     @if($stageDisplay && !empty($stageDisplay['pending_from']))
@@ -246,6 +304,7 @@
                         <strong>Completion rule:</strong> <span id="workflow-v2-completion-rule-text">{{ $stageDisplay['completion_rule'] }}</span>
                     @endif
                 </div>
+                @endif
 
                 <h3 class="workflow-v2-section-label">Checklist</h3>
                 <div id="workflow-v2-checklist-container"
