@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\ClientMatter;
 use App\Models\WorkflowStage;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -15,7 +16,7 @@ class WorkflowStageChecklistSync
 {
     public static function ensureSeededForMatter($matter): void
     {
-        if (!Schema::hasTable('workflow_stage_checklists') || !Schema::hasTable('cp_doc_checklists')) {
+        if (! Schema::hasTable('workflow_stage_checklists') || ! Schema::hasTable('cp_doc_checklists')) {
             return;
         }
 
@@ -27,7 +28,7 @@ class WorkflowStageChecklistSync
             return;
         }
 
-        if (!$clientMatter || empty($clientMatter->workflow_id) || empty($clientMatter->id)) {
+        if (! $clientMatter || empty($clientMatter->workflow_id) || empty($clientMatter->id)) {
             return;
         }
 
@@ -47,7 +48,7 @@ class WorkflowStageChecklistSync
 
         foreach ($templates as $template) {
             $stage = $stagesById->get($template->workflow_stage_id);
-            if (!$stage || empty($stage->name)) {
+            if (! $stage || empty($stage->name)) {
                 continue;
             }
 
@@ -73,6 +74,7 @@ class WorkflowStageChecklistSync
                             'updated_at' => $now,
                         ]);
                 }
+
                 continue;
             }
 
@@ -95,6 +97,63 @@ class WorkflowStageChecklistSync
 
             DB::table('cp_doc_checklists')->insert($payload);
         }
+    }
+
+    /**
+     * Workflow template names keyed by workflow_stage_id.
+     *
+     * @return array<int, list<string>>
+     */
+    public static function templateNamesByStageId(int $workflowId): array
+    {
+        if ($workflowId <= 0 || ! Schema::hasTable('workflow_stage_checklists')) {
+            return [];
+        }
+
+        $grouped = [];
+        $rows = DB::table('workflow_stage_checklists')
+            ->where('workflow_id', $workflowId)
+            ->get(['workflow_stage_id', 'name']);
+
+        foreach ($rows as $row) {
+            $stageId = (int) $row->workflow_stage_id;
+            if ($stageId <= 0) {
+                continue;
+            }
+            $grouped[$stageId][] = (string) $row->name;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Client Portal Documents and Activities list staff-added checklists only.
+     * Auto-seeded template copies (null user_id + matching workflow template name) stay on the Workflow tab.
+     *
+     * @param  iterable<int, object>  $checklists
+     * @param  list<string>  $templateNames
+     * @return Collection<int, object>
+     */
+    public static function forPortalDocumentsTab($checklists, array $templateNames): Collection
+    {
+        $lookup = [];
+        foreach ($templateNames as $name) {
+            $normalized = strtolower(trim((string) $name));
+            if ($normalized !== '') {
+                $lookup[$normalized] = true;
+            }
+        }
+
+        return collect($checklists)->filter(function ($item) use ($lookup) {
+            $userId = $item->user_id ?? null;
+            if ($userId !== null && $userId !== '') {
+                return true;
+            }
+
+            $name = strtolower(trim((string) ($item->cp_checklist_name ?? '')));
+
+            return $name === '' || ! isset($lookup[$name]);
+        })->values();
     }
 
     /**

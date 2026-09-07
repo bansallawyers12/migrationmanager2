@@ -10,11 +10,18 @@ class WorkflowV2Display
 {
     /**
      * Build shared view data for the workflow v2 UI (Workflow tab + Client Portal Activities).
+     *
+     * @param  bool  $staffAddedChecklistsOnly  Client Portal Activities: show only staff-added cp_doc_checklists rows.
      */
-    public static function build(?object $matter, object $client, $allStages, ?int $viewStageId = null): array
+    public static function build(?object $matter, object $client, $allStages, ?int $viewStageId = null, bool $staffAddedChecklistsOnly = false): array
     {
         if ($matter) {
             WorkflowStageChecklistSync::ensureSeededForMatter($matter);
+        }
+
+        $templateNamesByStageId = [];
+        if ($staffAddedChecklistsOnly && $matter && ! empty($matter->workflow_id)) {
+            $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
         }
 
         $matterName = '';
@@ -59,7 +66,7 @@ class WorkflowV2Display
             .($client->last_name ?? '')
         );
 
-        $stagesPayload = self::buildStagesPayload($matter, $allStages, $currentStageId);
+        $stagesPayload = self::buildStagesPayload($matter, $allStages, $currentStageId, $staffAddedChecklistsOnly, $templateNamesByStageId);
 
         $resolvedViewStageId = $viewStageId ?: $currentStageId;
         $viewStage = $resolvedViewStageId ? $allStages->firstWhere('id', $resolvedViewStageId) : null;
@@ -76,7 +83,7 @@ class WorkflowV2Display
 
         $viewStageDisplay = $viewStageName ? self::stageDisplayMeta($viewStageName) : null;
         $viewChecklist = ($matter && $viewStage)
-            ? self::checklistForStage($matter, (int) $viewStage->id, $viewStageName)
+            ? self::checklistForStage($matter, (int) $viewStage->id, $viewStageName, $staffAddedChecklistsOnly, $templateNamesByStageId)
             : ['rows' => [], 'outstanding' => 0];
 
         $checklistRows = $viewChecklist['rows'];
@@ -113,7 +120,9 @@ class WorkflowV2Display
             $currentStageChecklist = self::checklistForStage(
                 $matter,
                 (int) $currentStageRow->id,
-                $currentStageName
+                $currentStageName,
+                $staffAddedChecklistsOnly,
+                $templateNamesByStageId
             );
             $currentStageOutstanding = (int) ($currentStageChecklist['outstanding'] ?? 0);
         }
@@ -163,8 +172,10 @@ class WorkflowV2Display
 
     /**
      * Per-stage data for client-side stage switching.
+     *
+     * @param  array<int, list<string>>  $templateNamesByStageId
      */
-    public static function buildStagesPayload(?object $matter, $allStages, ?int $currentStageId): array
+    public static function buildStagesPayload(?object $matter, $allStages, ?int $currentStageId, bool $staffAddedChecklistsOnly = false, array $templateNamesByStageId = []): array
     {
         $payload = [];
         $currentStageRow = $currentStageId ? $allStages->firstWhere('id', $currentStageId) : null;
@@ -179,7 +190,7 @@ class WorkflowV2Display
             $stageName = $stage->name;
             $stageDisplay = self::stageDisplayMeta($stageName);
             $checklist = ($matter && $stageName)
-                ? self::checklistForStage($matter, (int) $stage->id, $stageName)
+                ? self::checklistForStage($matter, (int) $stage->id, $stageName, $staffAddedChecklistsOnly, $templateNamesByStageId)
                 : ['rows' => [], 'outstanding' => 0];
 
             $payload[] = [
@@ -228,9 +239,10 @@ class WorkflowV2Display
     /**
      * Resolve checklist rows for a matter + stage (cp_doc_checklists, admin templates, config fallback).
      *
+     * @param  array<int, list<string>>  $templateNamesByStageId
      * @return array{rows: array<int, array{id: int|null, label: string, required: bool, done: bool}>, outstanding: int}
      */
-    public static function checklistForStage(?object $matter, int $stageId, ?string $stageName): array
+    public static function checklistForStage(?object $matter, int $stageId, ?string $stageName, bool $staffAddedChecklistsOnly = false, array $templateNamesByStageId = []): array
     {
         $rows = [];
         $outstanding = 0;
@@ -246,6 +258,17 @@ class WorkflowV2Display
             ->where('wf_stage', $stageName)
             ->orderBy('id', 'asc')
             ->get();
+
+        if ($staffAddedChecklistsOnly) {
+            if ($templateNamesByStageId === [] && ! empty($matter->workflow_id)) {
+                $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
+            }
+
+            $cpChecklists = WorkflowStageChecklistSync::forPortalDocumentsTab(
+                $cpChecklists,
+                $templateNamesByStageId[$stageId] ?? []
+            );
+        }
 
         foreach ($cpChecklists as $cpItem) {
             $label = trim((string) ($cpItem->cp_checklist_name ?? 'Checklist item'));
@@ -269,6 +292,10 @@ class WorkflowV2Display
             if ($itemRequired && ! $isDone) {
                 $outstanding++;
             }
+        }
+
+        if ($staffAddedChecklistsOnly) {
+            return ['rows' => $rows, 'outstanding' => $outstanding];
         }
 
         if (Schema::hasTable('workflow_stage_checklists') && ! empty($matter->workflow_id)) {
@@ -362,7 +389,7 @@ class WorkflowV2Display
     /**
      * Outstanding required checklist count for the matter's current workflow stage.
      */
-    public static function outstandingRequiredForCurrentStage(?object $matter): int
+    public static function outstandingRequiredForCurrentStage(?object $matter, bool $staffAddedChecklistsOnly = false): int
     {
         if (! $matter || empty($matter->workflow_stage_id)) {
             return 0;
@@ -373,7 +400,7 @@ class WorkflowV2Display
             return 0;
         }
 
-        $checklist = self::checklistForStage($matter, (int) $stage->id, $stage->name);
+        $checklist = self::checklistForStage($matter, (int) $stage->id, $stage->name, $staffAddedChecklistsOnly);
 
         return (int) ($checklist['outstanding'] ?? 0);
     }

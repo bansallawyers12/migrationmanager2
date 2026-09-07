@@ -819,6 +819,29 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringNotContainsString("$('#agreementDropZone').on('drop'", $detailMain);
     }
 
+    #[Test]
+    public function client_portal_activities_uses_staff_added_checklists_only(): void
+    {
+        $portal = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/client_portal.blade.php'));
+        Assert::assertNotFalse($portal);
+        Assert::assertStringContainsString('staffAddedChecklistsOnly: true', $portal);
+        Assert::assertStringContainsString('Add Portal Checklist', $portal);
+        Assert::assertStringContainsString('createChecklistModalLabel', $portal);
+        Assert::assertStringContainsString("$('#createChecklistModalLabel').text('Add Portal Checklist')", $portal);
+        Assert::assertStringContainsString('id="create_checklist_submit_btn" class="btn btn-primary">Add Portal Checklist</button>', $portal);
+        Assert::assertStringContainsString("$('#create_checklist_submit_btn').prop('disabled', false).text('Add Portal Checklist')", $portal);
+        Assert::assertStringNotContainsString('Add New Checklist', $portal);
+
+        $workflow = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/partials/workflow-tab-body.blade.php'));
+        Assert::assertNotFalse($workflow);
+        Assert::assertStringNotContainsString('staffAddedChecklistsOnly: true', $workflow);
+
+        $js = file_get_contents($this->projectPath('public/js/crm/clients/workflow-tab.js'));
+        Assert::assertNotFalse($js);
+        Assert::assertStringContainsString('function completeWorkflowChecklistItem', $js);
+        Assert::assertStringContainsString("payload.source = 'client_portal'", $js);
+    }
+
     private function projectPath(string $relative): string
     {
         return dirname(__DIR__, 2).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relative);

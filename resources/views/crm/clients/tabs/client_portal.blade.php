@@ -27,6 +27,7 @@
             $currentStageName = null;
             $allWorkflowStages = collect();
             $cpActivitiesWf = null;
+            $portalDocumentsTemplateNamesByStageId = [];
 
             if ($portalIsActive) {
                 $validTabNames = ['personaldetails', 'activityfeed', 'noteterm', 'personaldocuments', 'visadocuments', 'eoiroi', 'emails', 'formgenerations', 'formgenerationsl', 'client_portal', 'workflow', 'checklists'];
@@ -72,7 +73,15 @@
 
                 if ($selectedMatter) {
                     \App\Support\WorkflowStageChecklistSync::ensureSeededForMatter($selectedMatter->id);
-                    $cpActivitiesWf = \App\Support\WorkflowV2Display::build($selectedMatter, $fetchedData, $allWorkflowStages);
+                    $cpActivitiesWf = \App\Support\WorkflowV2Display::build(
+                        $selectedMatter,
+                        $fetchedData,
+                        $allWorkflowStages,
+                        staffAddedChecklistsOnly: true
+                    );
+                    if (! empty($selectedMatter->workflow_id)) {
+                        $portalDocumentsTemplateNamesByStageId = \App\Support\WorkflowStageChecklistSync::templateNamesByStageId((int) $selectedMatter->workflow_id);
+                    }
                 }
             }
         @endphp
@@ -148,11 +157,14 @@
                                                                     @foreach($allWorkflowStages as $stage)
                                                                         @php
                                                                             $isActiveStage = ($currentWorkflowStageId && $currentWorkflowStageId == $stage->id);
-                                                                            $stageChecklists = DB::table('cp_doc_checklists')
-                                                                                ->where('client_matter_id', $selectedMatter->id)
-                                                                                ->where('wf_stage', $stage->name)
-                                                                                ->orderBy('id', 'asc')
-                                                                                ->get();
+                                                                            $stageChecklists = \App\Support\WorkflowStageChecklistSync::forPortalDocumentsTab(
+                                                                                DB::table('cp_doc_checklists')
+                                                                                    ->where('client_matter_id', $selectedMatter->id)
+                                                                                    ->where('wf_stage', $stage->name)
+                                                                                    ->orderBy('id', 'asc')
+                                                                                    ->get(),
+                                                                                $portalDocumentsTemplateNamesByStageId[$stage->id] ?? []
+                                                                            );
                                                                         @endphp
                                                                         <li class="stage-checklist-item {{ $isActiveStage ? 'active' : '' }}"
                                                                             data-stage-name="{{ $stage->name }}">
@@ -201,7 +213,7 @@
                                                                                class="add-checklist-link openchecklist"
                                                                                data-matter-id="{{ $selectedMatter->id }}"
                                                                                data-wf-stage="{{ $stage->name }}">
-                                                                                @icon('fa-plus') Add New Checklist
+                                                                                @icon('fa-plus') Add Portal Checklist
                                                                             </a>
                                                                         </li>
                                                                     @endforeach
@@ -2449,7 +2461,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="createChecklistModalLabel">Add New Checklist</h5>
+                <h5 class="modal-title" id="createChecklistModalLabel">Add Portal Checklist</h5>
                 <button type="button" class="close" id="create_checklist_close_btn" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -2483,7 +2495,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" id="create_checklist_submit_btn" class="btn btn-primary">Add Checklist</button>
+                <button type="button" id="create_checklist_submit_btn" class="btn btn-primary">Add Portal Checklist</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -2493,7 +2505,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 $(document).ready(function () {
 
-    // Open "Add New Checklist" modal when clicking any .openchecklist link
+    // Open "Add Portal Checklist" modal when clicking any .openchecklist link
     $(document).on('click', '.openchecklist', function (e) {
         e.stopPropagation(); // prevent triggering checklist-row click
         var matterId = $(this).data('matter-id');
@@ -2508,6 +2520,7 @@ $(document).ready(function () {
         $('#cp_allow_client').prop('checked', true);
         $('#cp_is_required').prop('checked', true);
 
+        $('#createChecklistModalLabel').text('Add Portal Checklist');
         $('#create_checklist').modal('show');
     });
 
@@ -2522,10 +2535,10 @@ $(document).ready(function () {
         $('#cp_checklist_description').val('');
         $('#cp_allow_client').prop('checked', true);
         $('#cp_is_required').prop('checked', true);
-        $('#create_checklist_submit_btn').prop('disabled', false).text('Add Checklist');
+        $('#create_checklist_submit_btn').prop('disabled', false).text('Add Portal Checklist');
     });
 
-    // Submit: Add New Checklist
+    // Submit: Add Portal Checklist
     $(document).on('click', '#create_checklist_submit_btn', function (e) {
         e.preventDefault();
 
@@ -2563,7 +2576,7 @@ $(document).ready(function () {
                 source: 'client_portal'
             },
             success: function (response) {
-                $btn.prop('disabled', false).text('Add Checklist');
+                $btn.prop('disabled', false).text('Add Portal Checklist');
 
                 if (response.success) {
                     $('#create_checklist').modal('hide');
@@ -2611,7 +2624,7 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr) {
-                $btn.prop('disabled', false).text('Add Checklist');
+                $btn.prop('disabled', false).text('Add Portal Checklist');
                 var msg = 'Failed to add checklist.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;

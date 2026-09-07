@@ -3740,9 +3740,10 @@ class ClientPortalController extends Controller
 				], 400);
 			}
 
-			// Block advance until all required checklist items for the current stage are done
-			// (Workflow tab and Client Portal Activities share the same sequential checklist rules)
-			$outstandingRequired = \App\Support\WorkflowV2Display::outstandingRequiredForCurrentStage($clientMatter);
+			// Block advance until required checklist items for the current stage are done.
+			// Workflow tab counts every required item; Client Portal Activities counts staff-added items only.
+			$staffAddedOnly = $request->input('source') === 'client_portal';
+			$outstandingRequired = \App\Support\WorkflowV2Display::outstandingRequiredForCurrentStage($clientMatter, $staffAddedOnly);
 			if ($outstandingRequired > 0) {
 				return response()->json([
 					'status' => false,
@@ -5164,11 +5165,14 @@ class ClientPortalController extends Controller
 			], 422);
 		}
 
+		$staffAddedOnly = $request->input('source') === 'client_portal';
+
 		if (\App\Support\WorkflowV2Display::checklistItemIsDone($checklistItem)) {
 			$checklist = \App\Support\WorkflowV2Display::checklistForStage(
 				$clientMatter,
 				(int) $currentStage->id,
-				$currentStageName
+				$currentStageName,
+				$staffAddedOnly
 			);
 
 			return response()->json([
@@ -5197,7 +5201,8 @@ class ClientPortalController extends Controller
 		$checklist = \App\Support\WorkflowV2Display::checklistForStage(
 			$clientMatter,
 			(int) $currentStage->id,
-			$currentStageName
+			$currentStageName,
+			$staffAddedOnly
 		);
 
 		return response()->json([

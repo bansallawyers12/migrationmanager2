@@ -1075,6 +1075,17 @@
         checkbox.disabled = true;
         checkbox.checked = true;
 
+        var payload = {
+            matter_id: matterId,
+            checklist_id: checklistId
+        };
+        var portalRoot = (root && root.id === 'client_portal-tab')
+            ? root
+            : (checkbox.closest ? checkbox.closest('#client_portal-tab') : null);
+        if (portalRoot || getActiveTabId() === 'client_portal') {
+            payload.source = 'client_portal';
+        }
+
         fetch(urls.completeWorkflowChecklist, {
             method: 'POST',
             headers: {
@@ -1082,10 +1093,7 @@
                 'X-CSRF-TOKEN': csrfToken(),
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                matter_id: matterId,
-                checklist_id: checklistId
-            })
+            body: JSON.stringify(payload)
         })
         .then(function(r) {
             return r.json().then(function(data) {
