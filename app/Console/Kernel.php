@@ -23,6 +23,7 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\CleanUtf8Data',
         '\App\Console\Commands\BackfillEoiRoiData',
         '\App\Console\Commands\BackfillEoiAmendmentActions',
+        '\App\Console\Commands\BackfillCpDocChecklistPortalSource',
         // '\App\Console\Commands\VisaExpireReminderEmail',
 
         // Appointment Sync System Commands

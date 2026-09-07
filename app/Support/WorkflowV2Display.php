@@ -412,9 +412,7 @@ class WorkflowV2Display
             );
         } elseif (! empty($matter->workflow_id)) {
             $portalTaskNames = WorkflowStageChecklistSync::portalTaskNamesByStageId((int) $matter->workflow_id)[$stageId] ?? [];
-            if ($portalTaskNames !== []) {
-                $cpChecklists = WorkflowStageChecklistSync::forPortalDocumentsTab($cpChecklists, $portalTaskNames);
-            }
+            $cpChecklists = WorkflowStageChecklistSync::forWorkflowTabChecklists($cpChecklists, $portalTaskNames);
         }
 
         foreach ($cpChecklists as $cpItem) {

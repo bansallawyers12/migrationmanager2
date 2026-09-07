@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Enums\ChecklistSource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -5006,6 +5007,9 @@ class ClientPortalController extends Controller
 			];
 			if (Schema::hasColumn('cp_doc_checklists', 'is_required')) {
 				$insertPayload['is_required'] = $isRequired;
+			}
+			if (Schema::hasColumn('cp_doc_checklists', 'source')) {
+				$insertPayload['source'] = ChecklistSource::Portal->value;
 			}
 			$newId = DB::table('cp_doc_checklists')->insertGetId($insertPayload);
 			$inserted[] = DB::table('cp_doc_checklists')->where('id', $newId)->first();

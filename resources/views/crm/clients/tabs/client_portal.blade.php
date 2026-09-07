@@ -159,7 +159,7 @@
                                                                     @foreach($allWorkflowStages as $stage)
                                                                         @php
                                                                             $isActiveStage = ($currentWorkflowStageId && $currentWorkflowStageId == $stage->id);
-                                                                            $stageChecklists = \App\Support\WorkflowStageChecklistSync::forPortalDocumentsTab(
+                                                                            $stageChecklists = \App\Support\WorkflowStageChecklistSync::forClientPortalDocuments(
                                                                                 DB::table('cp_doc_checklists')
                                                                                     ->where('client_matter_id', $selectedMatter->id)
                                                                                     ->where('wf_stage', $stage->name)

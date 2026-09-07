@@ -12,6 +12,7 @@ use App\Support\DocumentStoredFilename;
 use App\Support\DocumentFilenameRules;
 use App\Models\Notification;
 use App\Models\Staff;
+use App\Support\WorkflowStageChecklistSync;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -75,11 +76,13 @@ class ClientPortalWorkflowController extends Controller
                     $allowedChecklist = [];
                     
                     if (!is_null($clientMatterId)) {
-                        $checklistItems = DB::table('cp_doc_checklists')
-                            ->where('client_matter_id', $clientMatterId)
-                            ->where('client_id', $clientId)
-                            ->where('wf_stage', $stage->name)
-                            ->where('allow_client', 1)
+                        $checklistItems = WorkflowStageChecklistSync::constrainToPortalSource(
+                            DB::table('cp_doc_checklists')
+                                ->where('client_matter_id', $clientMatterId)
+                                ->where('client_id', $clientId)
+                                ->where('wf_stage', $stage->name)
+                                ->where('allow_client', 1)
+                        )
                             ->select('id', 'cp_checklist_name')
                             ->orderBy('id', 'asc')
                             ->get();
@@ -390,7 +393,7 @@ class ClientPortalWorkflowController extends Controller
      * Get Allowed Checklist for a Client Matter
      * GET /api/workflow/allowed-checklist
      *
-     * Returns all checklist items where allow_client = 1 for a given client matter,
+     * Returns portal checklist items (source = portal, allow_client = 1) for a given client matter,
      * optionally filtered by workflow stage ID or a single checklist item ID.
      *
      * Query params:
@@ -435,11 +438,13 @@ class ClientPortalWorkflowController extends Controller
                 ], 404);
             }
 
-            // Fetch allowed checklist items, optionally filtered by stage
-            $query = DB::table('cp_doc_checklists')
-                ->where('client_matter_id', $clientMatterId)
-                ->where('client_id', $clientId)
-                ->where('allow_client', 1);
+            // Fetch allowed portal checklist items, optionally filtered by stage
+            $query = WorkflowStageChecklistSync::constrainToPortalSource(
+                DB::table('cp_doc_checklists')
+                    ->where('client_matter_id', $clientMatterId)
+                    ->where('client_id', $clientId)
+                    ->where('allow_client', 1)
+            );
 
             if ($stageId) {
                 $query->where('wf_stage_id', $stageId);
@@ -624,13 +629,14 @@ class ClientPortalWorkflowController extends Controller
                 ], 404);
             }
 
-            // Verify checklist item belongs to this matter and is allowed
-            $checklistItem = DB::table('cp_doc_checklists')
-                ->where('id', $allowedChecklistId)
-                ->where('client_matter_id', $clientMatterId)
-                ->where('client_id', $clientId)
-                ->where('allow_client', 1)
-                ->first();
+            // Verify checklist item belongs to this matter and is a portal task
+            $checklistItem = WorkflowStageChecklistSync::constrainToPortalSource(
+                DB::table('cp_doc_checklists')
+                    ->where('id', $allowedChecklistId)
+                    ->where('client_matter_id', $clientMatterId)
+                    ->where('client_id', $clientId)
+                    ->where('allow_client', 1)
+            )->first();
 
             if (!$checklistItem) { 
                 return response()->json([
@@ -828,13 +834,14 @@ class ClientPortalWorkflowController extends Controller
                     continue;
                 }
 
-                // Verify checklist item belongs to this matter and is allowed
-                $checklistItem = DB::table('cp_doc_checklists')
-                    ->where('id', $allowedChecklistId)
-                    ->where('client_matter_id', $clientMatterId)
-                    ->where('client_id', $clientId)
-                    ->where('allow_client', 1)
-                    ->first();
+                // Verify checklist item belongs to this matter and is a portal task
+                $checklistItem = WorkflowStageChecklistSync::constrainToPortalSource(
+                    DB::table('cp_doc_checklists')
+                        ->where('id', $allowedChecklistId)
+                        ->where('client_matter_id', $clientMatterId)
+                        ->where('client_id', $clientId)
+                        ->where('allow_client', 1)
+                )->first();
 
                 if (!$checklistItem) {
                     $errors[] = [

@@ -2,9 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Enums\ChecklistSource;
 use App\Enums\PortalTaskType;
 use App\Support\WorkflowPortalTasklistDefaults;
 use App\Support\WorkflowStageChecklistSync;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -48,6 +50,31 @@ class WorkflowPortalTasklistTest extends TestCase
     }
 
     #[Test]
+    public function checklist_source_defaults_to_workflow_and_portal_is_explicit(): void
+    {
+        Assert::assertSame('workflow', ChecklistSource::Workflow->value);
+        Assert::assertSame('portal', ChecklistSource::Portal->value);
+        Assert::assertSame(['workflow', 'portal'], ChecklistSource::values());
+    }
+
+    #[Test]
+    public function backfill_portal_source_is_noop_when_tables_are_missing(): void
+    {
+        Assert::assertSame(0, WorkflowStageChecklistSync::backfillPortalSource());
+        Assert::assertSame(0, WorkflowStageChecklistSync::backfillPortalSource(9671));
+    }
+
+    #[Test]
+    public function constrain_to_portal_source_is_noop_when_column_is_missing(): void
+    {
+        $query = DB::table('cp_doc_checklists');
+        $constrained = WorkflowStageChecklistSync::constrainToPortalSource($query);
+
+        Assert::assertSame($query, $constrained);
+        Assert::assertStringNotContainsString('source', $constrained->toSql());
+    }
+
+    #[Test]
     public function documents_tab_shows_portal_defaults_but_hides_staff_templates(): void
     {
         $rows = collect([
@@ -71,6 +98,66 @@ class WorkflowPortalTasklistTest extends TestCase
             'Service agreement',
         ]);
         Assert::assertSame([1, 3], $onWorkflow->pluck('id')->all());
+    }
+
+    #[Test]
+    public function client_portal_documents_uses_source_portal_and_keeps_staff_added_rows(): void
+    {
+        $rows = collect([
+            (object) ['id' => 1, 'user_id' => null, 'source' => 'workflow', 'cp_checklist_name' => 'Initial assessment recorded'],
+            (object) ['id' => 2, 'user_id' => null, 'source' => 'portal', 'cp_checklist_name' => 'Service agreement'],
+            (object) ['id' => 3, 'user_id' => 9, 'source' => 'workflow', 'cp_checklist_name' => 'test55'],
+        ]);
+
+        $visible = WorkflowStageChecklistSync::forClientPortalDocuments($rows, [], true);
+
+        Assert::assertSame([2, 3], $visible->pluck('id')->all());
+    }
+
+    #[Test]
+    public function client_portal_documents_falls_back_to_name_filter_without_source_column(): void
+    {
+        $rows = collect([
+            (object) ['id' => 1, 'user_id' => null, 'cp_checklist_name' => 'Initial assessment recorded'],
+            (object) ['id' => 2, 'user_id' => null, 'cp_checklist_name' => 'Service agreement'],
+        ]);
+
+        $visible = WorkflowStageChecklistSync::forClientPortalDocuments($rows, [
+            'Initial assessment recorded',
+        ], false);
+
+        Assert::assertSame([2], $visible->pluck('id')->all());
+    }
+
+    #[Test]
+    public function workflow_tab_keeps_workflow_source_and_hides_portal_source(): void
+    {
+        $rows = collect([
+            (object) ['id' => 1, 'user_id' => null, 'source' => 'workflow', 'cp_checklist_name' => 'Initial assessment recorded'],
+            (object) ['id' => 2, 'user_id' => null, 'source' => 'portal', 'cp_checklist_name' => 'Service agreement'],
+            (object) ['id' => 3, 'user_id' => 9, 'source' => 'workflow', 'cp_checklist_name' => 'test55'],
+            (object) ['id' => 4, 'user_id' => 4, 'source' => 'portal', 'cp_checklist_name' => 'Extra passport copy'],
+        ]);
+
+        $visible = WorkflowStageChecklistSync::forWorkflowTabChecklists($rows, ['Service agreement'], true);
+
+        Assert::assertSame([1, 3], $visible->pluck('id')->all());
+    }
+
+    #[Test]
+    public function workflow_tab_falls_back_to_hiding_portal_template_names(): void
+    {
+        $rows = collect([
+            (object) ['id' => 1, 'user_id' => null, 'cp_checklist_name' => 'Initial assessment recorded'],
+            (object) ['id' => 2, 'user_id' => null, 'cp_checklist_name' => 'Service agreement'],
+            (object) ['id' => 3, 'user_id' => 9, 'cp_checklist_name' => 'Service agreement'],
+        ]);
+
+        $visible = WorkflowStageChecklistSync::forWorkflowTabChecklists($rows, [
+            'Service agreement',
+        ], false);
+
+        Assert::assertSame([1, 3], $visible->pluck('id')->all());
     }
 
     #[Test]
