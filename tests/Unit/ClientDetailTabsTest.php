@@ -827,6 +827,9 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString('staffAddedChecklistsOnly: true', $portal);
         Assert::assertStringContainsString("'wfShowPortalMapping' => true", $portal);
         Assert::assertStringContainsString("'wfShowStageDisplayMeta' => false", $portal);
+        Assert::assertStringContainsString("'wfShowStaffStageTools' => false", $portal);
+        Assert::assertStringContainsString("'wfShowFooterAdvance' => false", $portal);
+        Assert::assertStringNotContainsString('client-portal-activities-proceed-to-next-stage', $portal);
         Assert::assertStringContainsString('Add Portal Checklist', $portal);
         Assert::assertStringContainsString('createChecklistModalLabel', $portal);
         Assert::assertStringContainsString("$('#createChecklistModalLabel').text('Add Portal Checklist')", $portal);
@@ -838,6 +841,8 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertNotFalse($workflow);
         Assert::assertStringNotContainsString('staffAddedChecklistsOnly: true', $workflow);
         Assert::assertStringNotContainsString('wfShowPortalMapping', $workflow);
+        Assert::assertStringNotContainsString('wfShowStaffStageTools', $workflow);
+        Assert::assertStringContainsString("'wfShowFooterAdvance' => true", $workflow);
 
         $js = file_get_contents($this->projectPath('public/js/crm/clients/workflow-tab.js'));
         Assert::assertNotFalse($js);
@@ -854,6 +859,7 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString('id="workflow-v2-portal-mapping"', $content);
         Assert::assertStringContainsString('$wfShowPortalMapping', $content);
         Assert::assertStringContainsString('$wfShowStageDisplayMeta', $content);
+        Assert::assertStringContainsString('$wfShowStaffStageTools', $content);
     }
 
     private function projectPath(string $relative): string

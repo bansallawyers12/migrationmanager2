@@ -133,11 +133,11 @@
                                                     @include('crm.clients.tabs.partials.workflow-v2-content', [
                                                         'wfShowHeader' => false,
                                                         'wfShowToolbar' => false,
-                                                        'wfShowFooterAdvance' => true,
+                                                        'wfShowFooterAdvance' => false,
                                                         'wfChecklistInteractive' => true,
                                                         'wfShowPortalMapping' => true,
                                                         'wfShowStageDisplayMeta' => false,
-                                                        'wfAdvanceButtonId' => 'client-portal-activities-proceed-to-next-stage',
+                                                        'wfShowStaffStageTools' => false,
                                                     ])
                                                 </div>
                                             @else

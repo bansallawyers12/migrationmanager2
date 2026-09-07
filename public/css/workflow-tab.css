@@ -1066,6 +1066,7 @@
 
 .workflow-v2--client-portal-activities .workflow-v2-footer {
     padding-top: 16px;
+    justify-content: flex-end;
 }
 
 .workflow-v2--client-portal-activities .workflow-v2-footer:only-child,

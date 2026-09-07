@@ -7,6 +7,7 @@
     $wfChecklistInteractive = $wfChecklistInteractive ?? false;
     $wfShowPortalMapping = $wfShowPortalMapping ?? false;
     $wfShowStageDisplayMeta = $wfShowStageDisplayMeta ?? true;
+    $wfShowStaffStageTools = $wfShowStaffStageTools ?? true;
     $portalMapping = $portalMapping ?? null;
     $wfAdvanceButtonId = $wfAdvanceButtonId ?? 'workflow-tab-proceed-to-next-stage';
     $wfBackButtonId = $wfBackButtonId ?? 'workflow-tab-back-to-previous-stage';
@@ -306,6 +307,7 @@
                 </div>
                 @endif
 
+                @if(!empty($wfShowStaffStageTools))
                 <h3 class="workflow-v2-section-label">Checklist</h3>
                 <div id="workflow-v2-checklist-container"
                     data-readonly="{{ (!$wfChecklistInteractive || !$wfViewIsCurrent) ? '1' : '0' }}">
@@ -361,8 +363,11 @@
                         {{ ($wfChecklistInteractive && ($wfViewIsPrevious || !$wfViewIsCurrent)) ? 'disabled' : '' }}></textarea>
                     <p class="workflow-v2-file-note-hint">Auto-stamped with user + timestamp when you advance to the next stage.</p>
                 </div>
+                @endif
 
+                @if(!empty($wfShowStaffStageTools) || ($wfShowFooterAdvance && !$isDiscontinued))
                 <div class="workflow-v2-footer">
+                    @if(!empty($wfShowStaffStageTools))
                     <div id="workflow-v2-footer-outstanding"
                         class="workflow-v2-outstanding {{ $outstandingRequired > 0 ? '' : 'is-clear' }}">
                         <span class="workflow-v2-outstanding-dot"></span>
@@ -374,6 +379,7 @@
                             @endif
                         </span>
                     </div>
+                    @endif
 
                     @if($wfShowFooterAdvance && !$isDiscontinued)
                         <button class="workflow-v2-advance-btn js-workflow-advance-btn"
@@ -388,6 +394,7 @@
                         </button>
                     @endif
                 </div>
+                @endif
             </main>
         </div>
 
