@@ -42,19 +42,21 @@
         visibility: visible !important;
     }
 
-    /* Always-visible workflow row actions (no hidden dropdown-only menu) */
+    /* Always-visible workflow row actions — icons only, label on hover */
     .workflows-index-actions {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
+        display: inline-flex;
+        flex-wrap: nowrap;
+        align-items: center;
         gap: 0.25rem;
-        min-width: 7.5rem;
     }
     .workflows-index-actions .btn {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        text-align: center;
-        white-space: nowrap;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
     }
 </style>
 @endsection
@@ -98,8 +100,8 @@
 										<td>{{ $wf->stages->count() }}</td>
 										<td>
 											<div class="workflows-index-actions">
-												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id))) }}">@icon('fa-list') Manage Stages</a>
-												<a class="btn btn-sm btn-secondary" href="{{ route('adminconsole.features.workflow.editWorkflow', base64_encode(convert_uuencode($wf->id))) }}">@icon('fa-edit') Edit Workflow</a>
+												<a class="btn btn-sm btn-primary" href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($wf->id))) }}" data-bs-toggle="tooltip" title="Manage Stages" aria-label="Manage Stages">@icon('fa-list')</a>
+												<a class="btn btn-sm btn-secondary" href="{{ route('adminconsole.features.workflow.editWorkflow', base64_encode(convert_uuencode($wf->id))) }}" data-bs-toggle="tooltip" title="Edit Workflow" aria-label="Edit Workflow">@icon('fa-edit')</a>
 											</div>
 										</td>
 									</tr>
@@ -119,4 +121,16 @@
 		</div>
 	</section>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+		document.querySelectorAll('.workflows-index-actions [data-bs-toggle="tooltip"]').forEach(function (el) {
+			new bootstrap.Tooltip(el);
+		});
+	}
+});
+</script>
 @endsection

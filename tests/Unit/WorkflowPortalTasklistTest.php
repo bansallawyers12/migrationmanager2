@@ -183,6 +183,21 @@ class WorkflowPortalTasklistTest extends TestCase
         Assert::assertStringContainsString("name('workflow.stagePortalTasklists')", $routes);
     }
 
+    #[Test]
+    public function admin_workflows_page_shows_icon_only_actions_with_hover_labels(): void
+    {
+        $index = file_get_contents($this->projectPath('resources/views/AdminConsole/features/workflow/workflows-index.blade.php'));
+        Assert::assertNotFalse($index);
+        Assert::assertStringContainsString('title="Manage Stages"', $index);
+        Assert::assertStringContainsString('title="Edit Workflow"', $index);
+        Assert::assertStringContainsString('data-bs-toggle="tooltip"', $index);
+        Assert::assertStringContainsString('aria-label="Manage Stages"', $index);
+        Assert::assertStringContainsString('@icon(\'fa-list\')</a>', $index);
+        Assert::assertStringContainsString('@icon(\'fa-edit\')</a>', $index);
+        Assert::assertStringNotContainsString('@icon(\'fa-list\') Manage Stages', $index);
+        Assert::assertStringNotContainsString('@icon(\'fa-edit\') Edit Workflow', $index);
+    }
+
     private function projectPath(string $relative): string
     {
         return dirname(__DIR__, 2).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relative);
