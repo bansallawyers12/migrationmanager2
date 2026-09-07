@@ -3742,7 +3742,8 @@ class ClientPortalController extends Controller
 			}
 
 			// Block advance until required checklist items for the current stage are done.
-			// Workflow tab counts every required item; Client Portal Activities counts staff-added items only.
+			// Workflow tab (no source) counts workflow items. Client Portal (source=client_portal)
+			// counts source=portal / portal_app items only — not staff workflow templates.
 			$staffAddedOnly = $request->input('source') === 'client_portal';
 			$outstandingRequired = \App\Support\WorkflowV2Display::outstandingRequiredForCurrentStage($clientMatter, $staffAddedOnly);
 			if ($outstandingRequired > 0) {
@@ -5169,6 +5170,7 @@ class ClientPortalController extends Controller
 			], 422);
 		}
 
+		// Client Portal completion refresh uses portal-source outstanding; Workflow tab omits source.
 		$staffAddedOnly = $request->input('source') === 'client_portal';
 
 		if (\App\Support\WorkflowV2Display::checklistItemIsDone($checklistItem)) {

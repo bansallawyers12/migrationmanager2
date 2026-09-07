@@ -802,20 +802,26 @@
             var itemId = item.id != null ? item.id : '';
             var isActive = interactive && !readOnly && !done && !!itemId;
             var disabled = !isActive;
+            var origin = item.origin ? String(item.origin) : '';
+            var originLabel = item.origin_label ? String(item.origin_label) : '';
             var itemClass = 'workflow-v2-checklist-item'
                 + (done ? ' is-done' : '')
-                + (disabled && !done ? ' is-locked-item' : '');
-
+                + (disabled && !done && !originLabel ? ' is-locked-item' : '');
             html += '<div class="' + itemClass + '"'
                 + ' data-checklist-id="' + escapeHtml(itemId) + '"'
                 + ' data-checklist-index="' + index + '"'
-                + ' data-required="' + (required ? '1' : '0') + '">'
+                + ' data-required="' + (required ? '1' : '0') + '"'
+                + (origin ? ' data-origin="' + escapeHtml(origin) + '"' : '') + '>'
                 + '<input type="checkbox" class="workflow-v2-checklist-checkbox"'
                 + (done ? ' checked' : '')
                 + (disabled ? ' disabled' : '')
                 + ' data-checklist-id="' + escapeHtml(itemId) + '"'
                 + ' aria-label="' + escapeHtml(item.label) + '">'
                 + '<span class="workflow-v2-checklist-label">' + escapeHtml(item.label) + '</span>';
+            if (originLabel) {
+                html += '<span class="workflow-v2-origin-badge is-' + escapeHtml(origin) + '">'
+                    + escapeHtml(originLabel) + '</span>';
+            }
             if (required) {
                 html += '<span class="workflow-v2-required-badge">Required</span>';
             }

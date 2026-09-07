@@ -54,7 +54,12 @@ class WorkflowPortalTasklistTest extends TestCase
     {
         Assert::assertSame('workflow', ChecklistSource::Workflow->value);
         Assert::assertSame('portal', ChecklistSource::Portal->value);
-        Assert::assertSame(['workflow', 'portal'], ChecklistSource::values());
+        Assert::assertSame('portal_app', ChecklistSource::PortalApp->value);
+        Assert::assertSame(['workflow', 'portal', 'portal_app'], ChecklistSource::values());
+        Assert::assertSame(['portal', 'portal_app'], ChecklistSource::portalValues());
+        Assert::assertSame('by Workflow', ChecklistSource::Workflow->activityLabel());
+        Assert::assertSame('by Portal', ChecklistSource::Portal->activityLabel());
+        Assert::assertSame('by Portal app', ChecklistSource::PortalApp->activityLabel());
     }
 
     #[Test]
@@ -107,11 +112,12 @@ class WorkflowPortalTasklistTest extends TestCase
             (object) ['id' => 1, 'user_id' => null, 'source' => 'workflow', 'cp_checklist_name' => 'Initial assessment recorded'],
             (object) ['id' => 2, 'user_id' => null, 'source' => 'portal', 'cp_checklist_name' => 'Service agreement'],
             (object) ['id' => 3, 'user_id' => 9, 'source' => 'workflow', 'cp_checklist_name' => 'test55'],
+            (object) ['id' => 4, 'user_id' => null, 'source' => 'portal_app', 'cp_checklist_name' => 'Passport bio page'],
         ]);
 
         $visible = WorkflowStageChecklistSync::forClientPortalDocuments($rows, [], true);
 
-        Assert::assertSame([2, 3], $visible->pluck('id')->all());
+        Assert::assertSame([2, 3, 4], $visible->pluck('id')->all());
     }
 
     #[Test]
@@ -137,6 +143,7 @@ class WorkflowPortalTasklistTest extends TestCase
             (object) ['id' => 2, 'user_id' => null, 'source' => 'portal', 'cp_checklist_name' => 'Service agreement'],
             (object) ['id' => 3, 'user_id' => 9, 'source' => 'workflow', 'cp_checklist_name' => 'test55'],
             (object) ['id' => 4, 'user_id' => 4, 'source' => 'portal', 'cp_checklist_name' => 'Extra passport copy'],
+            (object) ['id' => 5, 'user_id' => null, 'source' => 'portal_app', 'cp_checklist_name' => 'Passport bio page'],
         ]);
 
         $visible = WorkflowStageChecklistSync::forWorkflowTabChecklists($rows, ['Service agreement'], true);

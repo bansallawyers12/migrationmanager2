@@ -828,6 +828,8 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString("'wfShowPortalMapping' => true", $portal);
         Assert::assertStringContainsString("'wfShowStageDisplayMeta' => false", $portal);
         Assert::assertStringContainsString("'wfShowStaffStageTools' => false", $portal);
+        Assert::assertStringContainsString("'wfShowActivityOrigins' => true", $portal);
+        Assert::assertStringContainsString("'wfChecklistInteractive' => false", $portal);
         Assert::assertStringContainsString("'wfShowFooterAdvance' => false", $portal);
         Assert::assertStringNotContainsString('client-portal-activities-proceed-to-next-stage', $portal);
         Assert::assertStringContainsString('Add Portal Checklist', $portal);
@@ -850,6 +852,8 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString("payload.source = 'client_portal'", $js);
         Assert::assertStringContainsString('function applyWorkflowV2PortalMapping', $js);
         Assert::assertStringContainsString('applyWorkflowV2PortalMapping(scope, stage)', $js);
+        Assert::assertStringContainsString('origin_label', $js);
+        Assert::assertStringContainsString('workflow-v2-origin-badge', $js);
         Assert::assertStringContainsString('display.pending_from', $js);
         Assert::assertStringContainsString('display.completion_rule', $js);
         Assert::assertStringContainsString('display.file_note_section', $js);
@@ -860,6 +864,13 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString('$wfShowPortalMapping', $content);
         Assert::assertStringContainsString('$wfShowStageDisplayMeta', $content);
         Assert::assertStringContainsString('$wfShowStaffStageTools', $content);
+        Assert::assertStringContainsString('$wfShowActivityOrigins', $content);
+        Assert::assertStringContainsString('workflow-v2-origin-badge', $content);
+
+        $controller = file_get_contents($this->projectPath('app/Http/Controllers/CRM/ClientPortalController.php'));
+        Assert::assertNotFalse($controller);
+        Assert::assertStringContainsString('outstandingRequiredForCurrentStage($clientMatter, $staffAddedOnly)', $controller);
+        Assert::assertStringContainsString('counts source=portal / portal_app items only', $controller);
     }
 
     private function projectPath(string $relative): string

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\ChecklistSource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -11,7 +12,7 @@ class WorkflowV2Display
     /**
      * Build shared view data for the workflow v2 UI (Workflow tab + Client Portal Activities).
      *
-     * @param  bool  $staffAddedChecklistsOnly  Client Portal Activities: show only staff-added cp_doc_checklists rows.
+     * @param  bool  $staffAddedChecklistsOnly  Client Portal mode: portal/app rows plus staff-added labels; outstanding is source=portal.
      */
     public static function build(?object $matter, object $client, $allStages, ?int $viewStageId = null, bool $staffAddedChecklistsOnly = false): array
     {
@@ -22,9 +23,6 @@ class WorkflowV2Display
         $templateNamesByStageId = [];
         if ($staffAddedChecklistsOnly && $matter && ! empty($matter->workflow_id)) {
             $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
-            foreach (WorkflowStageChecklistSync::portalTaskNamesByStageId((int) $matter->workflow_id) as $stageId => $names) {
-                $templateNamesByStageId[$stageId] = array_merge($templateNamesByStageId[$stageId] ?? [], $names);
-            }
         }
 
         $matterName = '';
@@ -379,7 +377,7 @@ class WorkflowV2Display
      * Resolve checklist rows for a matter + stage (cp_doc_checklists, admin templates, config fallback).
      *
      * @param  array<int, list<string>>  $templateNamesByStageId
-     * @return array{rows: array<int, array{id: int|null, label: string, required: bool, done: bool}>, outstanding: int}
+     * @return array{rows: array<int, array{id: int|null, label: string, required: bool, done: bool, origin?: string, origin_label?: string}>, outstanding: int}
      */
     public static function checklistForStage(?object $matter, int $stageId, ?string $stageName, bool $staffAddedChecklistsOnly = false, array $templateNamesByStageId = []): array
     {
@@ -391,6 +389,7 @@ class WorkflowV2Display
         }
 
         $seenNames = [];
+        $hasSourceColumn = Schema::hasColumn('cp_doc_checklists', 'source');
 
         $cpChecklists = DB::table('cp_doc_checklists')
             ->where('client_matter_id', $matter->id)
@@ -398,15 +397,23 @@ class WorkflowV2Display
             ->orderBy('id', 'asc')
             ->get();
 
-        if ($staffAddedChecklistsOnly) {
-            if ($templateNamesByStageId === [] && ! empty($matter->workflow_id)) {
-                $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
-                foreach (WorkflowStageChecklistSync::portalTaskNamesByStageId((int) $matter->workflow_id) as $hideStageId => $names) {
-                    $templateNamesByStageId[$hideStageId] = array_merge($templateNamesByStageId[$hideStageId] ?? [], $names);
-                }
-            }
+        $clientUploadedListIds = [];
+        if ($staffAddedChecklistsOnly && ! empty($matter->client_id) && Schema::hasTable('documents')) {
+            $clientUploadedListIds = array_fill_keys(array_map(
+                'intval',
+                DB::table('documents')
+                    ->where('client_matter_id', $matter->id)
+                    ->where('type', 'workflow_checklist')
+                    ->where('user_id', $matter->client_id)
+                    ->whereNotNull('cp_list_id')
+                    ->pluck('cp_list_id')
+                    ->unique()
+                    ->all()
+            ), true);
+        }
 
-            $cpChecklists = WorkflowStageChecklistSync::forPortalDocumentsTab(
+        if ($staffAddedChecklistsOnly) {
+            $cpChecklists = WorkflowStageChecklistSync::forClientPortalDocuments(
                 $cpChecklists,
                 $templateNamesByStageId[$stageId] ?? []
             );
@@ -428,13 +435,24 @@ class WorkflowV2Display
                 ? (bool) $cpItem->is_required
                 : false;
 
-            $rows[] = [
+            $row = [
                 'id' => (int) $cpItem->id,
                 'label' => $label,
                 'required' => $itemRequired,
                 'done' => $isDone,
             ];
-            if ($itemRequired && ! $isDone) {
+
+            if ($staffAddedChecklistsOnly) {
+                $origin = WorkflowStageChecklistSync::activityOrigin(
+                    $cpItem,
+                    isset($clientUploadedListIds[(int) $cpItem->id])
+                );
+                $row['origin'] = $origin->value;
+                $row['origin_label'] = $origin->activityLabel();
+            }
+
+            $rows[] = $row;
+            if (self::countsTowardOutstanding($row, $staffAddedChecklistsOnly, $hasSourceColumn)) {
                 $outstanding++;
             }
         }
@@ -532,6 +550,26 @@ class WorkflowV2Display
     }
 
     /**
+     * Client Portal advance counts required portal/portal_app rows only.
+     * Workflow tab counts every required incomplete row.
+     *
+     * @param  array{required?: bool, done?: bool, origin?: string}  $row
+     */
+    public static function countsTowardOutstanding(array $row, bool $portalContext, ?bool $hasSourceColumn = null): bool
+    {
+        if (empty($row['required']) || ! empty($row['done'])) {
+            return false;
+        }
+
+        $hasSourceColumn ??= Schema::hasColumn('cp_doc_checklists', 'source');
+        if (! $portalContext || ! $hasSourceColumn) {
+            return true;
+        }
+
+        return in_array((string) ($row['origin'] ?? ''), ChecklistSource::portalValues(), true);
+    }
+
+    /**
      * Outstanding required checklist count for the matter's current workflow stage.
      */
     public static function outstandingRequiredForCurrentStage(?object $matter, bool $staffAddedChecklistsOnly = false): int
@@ -545,7 +583,18 @@ class WorkflowV2Display
             return 0;
         }
 
-        $checklist = self::checklistForStage($matter, (int) $stage->id, $stage->name, $staffAddedChecklistsOnly);
+        $templateNamesByStageId = [];
+        if ($staffAddedChecklistsOnly && ! empty($matter->workflow_id)) {
+            $templateNamesByStageId = WorkflowStageChecklistSync::templateNamesByStageId((int) $matter->workflow_id);
+        }
+
+        $checklist = self::checklistForStage(
+            $matter,
+            (int) $stage->id,
+            $stage->name,
+            $staffAddedChecklistsOnly,
+            $templateNamesByStageId
+        );
 
         return (int) ($checklist['outstanding'] ?? 0);
     }

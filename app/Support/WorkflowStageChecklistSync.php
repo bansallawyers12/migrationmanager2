@@ -307,11 +307,11 @@ class WorkflowStageChecklistSync
             return self::forPortalDocumentsTab($checklists, $templateNames);
         }
 
-        $portal = ChecklistSource::Portal->value;
+        $portalValues = ChecklistSource::portalValues();
 
-        return collect($checklists)->filter(function ($item) use ($portal) {
+        return collect($checklists)->filter(function ($item) use ($portalValues) {
             $source = strtolower(trim((string) ($item->source ?? '')));
-            if ($source === $portal) {
+            if (in_array($source, $portalValues, true)) {
                 return true;
             }
 
@@ -340,12 +340,12 @@ class WorkflowStageChecklistSync
             return self::forPortalDocumentsTab($checklists, $portalTaskNames);
         }
 
-        $portal = ChecklistSource::Portal->value;
+        $portalValues = ChecklistSource::portalValues();
 
-        return collect($checklists)->filter(function ($item) use ($portal) {
+        return collect($checklists)->filter(function ($item) use ($portalValues) {
             $source = strtolower(trim((string) ($item->source ?? ChecklistSource::Workflow->value)));
 
-            return $source !== $portal;
+            return ! in_array($source, $portalValues, true);
         })->values();
     }
 
@@ -414,6 +414,40 @@ class WorkflowStageChecklistSync
     }
 
     /**
+     * Where an Activities-tab row should be attributed.
+     * Client uploads from the mobile app are "by Portal app" even when the row was seeded as portal.
+     */
+    public static function activityOrigin(object $item, bool $uploadedByClient = false): ChecklistSource
+    {
+        if ($uploadedByClient) {
+            return ChecklistSource::PortalApp;
+        }
+
+        $raw = strtolower(trim((string) ($item->source ?? '')));
+        $source = ChecklistSource::tryFrom($raw);
+
+        return $source ?? ChecklistSource::Workflow;
+    }
+
+    /**
+     * Client uploads from the mobile app are attributed as portal_app.
+     */
+    public static function markUploadedFromPortalApp(int $checklistId): void
+    {
+        if ($checklistId <= 0 || ! Schema::hasColumn('cp_doc_checklists', 'source')) {
+            return;
+        }
+
+        DB::table('cp_doc_checklists')
+            ->where('id', $checklistId)
+            ->whereIn('source', ChecklistSource::portalValues())
+            ->update([
+                'source' => ChecklistSource::PortalApp->value,
+                'updated_at' => now(),
+            ]);
+    }
+
+    /**
      * Limit client-portal workflow APIs to portal-sourced checklists.
      *
      * @param  Builder  $query
@@ -422,7 +456,7 @@ class WorkflowStageChecklistSync
     public static function constrainToPortalSource($query)
     {
         if (Schema::hasColumn('cp_doc_checklists', 'source')) {
-            $query->where('source', ChecklistSource::Portal->value);
+            $query->whereIn('source', ChecklistSource::portalValues());
         }
 
         return $query;

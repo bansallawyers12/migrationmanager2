@@ -703,6 +703,8 @@ class ClientPortalWorkflowController extends Controller
                 'updated_at'      => now(),
             ]);
 
+            WorkflowStageChecklistSync::markUploadedFromPortalApp($allowedChecklistId);
+
             $this->markCpActionRequiresSeenForChecklistUpload($clientId, $clientMatterId, $allowedChecklistId);
 
             $this->notifyStaffAndCreateActionForChecklistUpload($clientId, $clientMatterId, [$checklistItem->cp_checklist_name ?? 'checklist']);
@@ -882,6 +884,8 @@ class ClientPortalWorkflowController extends Controller
                     'created_at'       => now(),
                     'updated_at'       => now(),
                 ]);
+
+                WorkflowStageChecklistSync::markUploadedFromPortalApp($allowedChecklistId);
 
                 $uploadedDocuments[] = [
                     'document_id'          => $documentId,

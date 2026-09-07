@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\ChecklistSource;
 use App\Support\WorkflowStageChecklistSync;
 use Tests\TestCase;
 
@@ -22,6 +23,38 @@ class WorkflowStageChecklistSyncTest extends TestCase
         ]);
 
         $this->assertSame([3, 4], $visible->pluck('id')->all());
+    }
+
+    public function test_activity_origin_uses_source_and_client_uploads_are_portal_app(): void
+    {
+        $this->assertSame(
+            ChecklistSource::Workflow,
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'workflow'])
+        );
+        $this->assertSame(
+            ChecklistSource::Portal,
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'portal'])
+        );
+        $this->assertSame(
+            ChecklistSource::PortalApp,
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'portal_app'])
+        );
+        $this->assertSame(
+            ChecklistSource::PortalApp,
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'portal'], true)
+        );
+        $this->assertSame(
+            'by Workflow',
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'workflow'])->activityLabel()
+        );
+        $this->assertSame(
+            'by Portal',
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'portal'])->activityLabel()
+        );
+        $this->assertSame(
+            'by Portal app',
+            WorkflowStageChecklistSync::activityOrigin((object) ['source' => 'portal'], true)->activityLabel()
+        );
     }
 
     public function test_portal_documents_keeps_staff_added_row_even_if_name_matches_template(): void

@@ -8,6 +8,7 @@
     $wfShowPortalMapping = $wfShowPortalMapping ?? false;
     $wfShowStageDisplayMeta = $wfShowStageDisplayMeta ?? true;
     $wfShowStaffStageTools = $wfShowStaffStageTools ?? true;
+    $wfShowActivityOrigins = $wfShowActivityOrigins ?? false;
     $portalMapping = $portalMapping ?? null;
     $wfAdvanceButtonId = $wfAdvanceButtonId ?? 'workflow-tab-proceed-to-next-stage';
     $wfBackButtonId = $wfBackButtonId ?? 'workflow-tab-back-to-previous-stage';
@@ -307,7 +308,7 @@
                 </div>
                 @endif
 
-                @if(!empty($wfShowStaffStageTools))
+                @if(!empty($wfShowStaffStageTools) || !empty($wfShowActivityOrigins))
                 <h3 class="workflow-v2-section-label">Checklist</h3>
                 <div id="workflow-v2-checklist-container"
                     data-readonly="{{ (!$wfChecklistInteractive || !$wfViewIsCurrent) ? '1' : '0' }}">
@@ -318,6 +319,8 @@
                                     $itemDone = !empty($checkItem['done']);
                                     $itemRequired = !empty($checkItem['required']);
                                     $itemId = $checkItem['id'] ?? null;
+                                    $itemOrigin = $checkItem['origin'] ?? '';
+                                    $itemOriginLabel = $checkItem['origin_label'] ?? '';
                                     // All incomplete items on the current stage are open (any order).
                                     $itemActive = $wfChecklistInteractive
                                         && $wfViewIsCurrent
@@ -325,10 +328,11 @@
                                         && !empty($itemId);
                                     $itemDisabled = !$itemActive;
                                 @endphp
-                                <div class="workflow-v2-checklist-item {{ $itemDone ? 'is-done' : '' }} {{ $itemDisabled && !$itemDone ? 'is-locked-item' : '' }}"
+                                <div class="workflow-v2-checklist-item {{ $itemDone ? 'is-done' : '' }} {{ $itemDisabled && !$itemDone && $itemOriginLabel === '' ? 'is-locked-item' : '' }}"
                                     data-checklist-id="{{ $itemId ?? '' }}"
                                     data-checklist-index="{{ $checkIndex }}"
-                                    data-required="{{ $itemRequired ? '1' : '0' }}">
+                                    data-required="{{ $itemRequired ? '1' : '0' }}"
+                                    @if($itemOrigin !== '') data-origin="{{ $itemOrigin }}" @endif>
                                     <input type="checkbox"
                                         class="workflow-v2-checklist-checkbox"
                                         {{ $itemDone ? 'checked' : '' }}
@@ -336,6 +340,9 @@
                                         data-checklist-id="{{ $itemId ?? '' }}"
                                         aria-label="{{ $checkItem['label'] }}">
                                     <span class="workflow-v2-checklist-label">{{ $checkItem['label'] }}</span>
+                                    @if($itemOriginLabel !== '')
+                                        <span class="workflow-v2-origin-badge is-{{ $itemOrigin }}">{{ $itemOriginLabel }}</span>
+                                    @endif
                                     @if($itemRequired)
                                         <span class="workflow-v2-required-badge">Required</span>
                                     @endif
@@ -349,7 +356,9 @@
                         </div>
                     @endif
                 </div>
+                @endif
 
+                @if(!empty($wfShowStaffStageTools))
                 <div id="workflow-v2-file-note-section" class="workflow-v2-file-note"
                     style="{{ ($stageDisplay && !empty($stageDisplay['file_note_section'])) ? '' : 'display:none;' }}">
                     <h3 class="workflow-v2-section-label">File Note (Record Keeping)</h3>

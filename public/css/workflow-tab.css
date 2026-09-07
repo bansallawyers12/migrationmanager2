@@ -774,6 +774,31 @@
     text-decoration: line-through;
 }
 
+.workflow-v2-origin-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.workflow-v2-origin-badge.is-workflow {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.workflow-v2-origin-badge.is-portal {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.workflow-v2-origin-badge.is-portal_app {
+    background: #ecfdf5;
+    color: #047857;
+}
+
 .workflow-v2-required-badge {
     font-size: 0.62rem;
     font-weight: 700;

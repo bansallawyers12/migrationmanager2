@@ -71,4 +71,38 @@ class WorkflowV2PortalMappingTest extends TestCase
         $this->assertSame('Service agreement', $activitiesPayload[0]['portalMapping']['tasks'][0]['name']);
         $this->assertSame('sign', $activitiesPayload[0]['portalMapping']['tasks'][0]['task_type']);
     }
+
+    #[Test]
+    public function client_portal_advance_counts_portal_source_not_staff_workflow_rows(): void
+    {
+        $portalIncomplete = [
+            'required' => true,
+            'done' => false,
+            'origin' => 'portal',
+        ];
+        $portalAppIncomplete = [
+            'required' => true,
+            'done' => false,
+            'origin' => 'portal_app',
+        ];
+        $workflowIncomplete = [
+            'required' => true,
+            'done' => false,
+            'origin' => 'workflow',
+        ];
+        $portalDone = [
+            'required' => true,
+            'done' => true,
+            'origin' => 'portal',
+        ];
+
+        $this->assertTrue(WorkflowV2Display::countsTowardOutstanding($portalIncomplete, true, true));
+        $this->assertTrue(WorkflowV2Display::countsTowardOutstanding($portalAppIncomplete, true, true));
+        $this->assertFalse(WorkflowV2Display::countsTowardOutstanding($workflowIncomplete, true, true));
+        $this->assertFalse(WorkflowV2Display::countsTowardOutstanding($portalDone, true, true));
+
+        $this->assertTrue(WorkflowV2Display::countsTowardOutstanding($workflowIncomplete, false, true));
+        $this->assertTrue(WorkflowV2Display::countsTowardOutstanding($portalIncomplete, false, true));
+        $this->assertTrue(WorkflowV2Display::countsTowardOutstanding($workflowIncomplete, true, false));
+    }
 }

@@ -134,10 +134,11 @@
                                                         'wfShowHeader' => false,
                                                         'wfShowToolbar' => false,
                                                         'wfShowFooterAdvance' => false,
-                                                        'wfChecklistInteractive' => true,
+                                                        'wfChecklistInteractive' => false,
                                                         'wfShowPortalMapping' => true,
                                                         'wfShowStageDisplayMeta' => false,
                                                         'wfShowStaffStageTools' => false,
+                                                        'wfShowActivityOrigins' => true,
                                                     ])
                                                 </div>
                                             @else
