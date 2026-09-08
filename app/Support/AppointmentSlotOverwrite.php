@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Carbon\Carbon;
+
 class AppointmentSlotOverwrite
 {
     /**
@@ -16,5 +18,26 @@ class AppointmentSlotOverwrite
         $checkbox = (int) ($input['slot_overwrite'] ?? 0);
 
         return ($hidden === 1 || $checkbox === 1) ? 1 : 0;
+    }
+
+    /**
+     * CRM calendar closed weekdays (JS Date.getDay() / Carbon: Sun=0 … Sat=6).
+     * Slot Overwrite may open Friday only; Saturday and Sunday stay closed.
+     *
+     * @param  list<int|string>  $weeks
+     * @return list<int>
+     */
+    public static function closedWeekdaysForCrmCalendar(array $weeks, int $slotOverwrite): array
+    {
+        $closedDays = array_values(array_map('intval', $weeks));
+
+        if ($slotOverwrite !== 1) {
+            return $closedDays;
+        }
+
+        return array_values(array_filter(
+            $closedDays,
+            static fn (int $day): bool => $day !== Carbon::FRIDAY
+        ));
     }
 }

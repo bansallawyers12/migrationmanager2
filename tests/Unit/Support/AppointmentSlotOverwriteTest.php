@@ -40,4 +40,28 @@ class AppointmentSlotOverwriteTest extends TestCase
             'slot_overwrite' => 'on',
         ]));
     }
+
+    #[Test]
+    public function it_keeps_friday_closed_when_overwrite_is_off(): void
+    {
+        $this->assertSame([0, 5, 6], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar([0, 5, 6], 0));
+    }
+
+    #[Test]
+    public function it_opens_friday_only_when_overwrite_is_on(): void
+    {
+        $this->assertSame([0, 6], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar([0, 5, 6], 1));
+    }
+
+    #[Test]
+    public function it_opens_friday_from_string_weekday_values_when_overwrite_is_on(): void
+    {
+        $this->assertSame([0, 6], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar(['0', '5', '6'], 1));
+    }
+
+    #[Test]
+    public function it_leaves_weeks_unchanged_when_friday_is_not_listed(): void
+    {
+        $this->assertSame([0], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar([0], 1));
+    }
 }
