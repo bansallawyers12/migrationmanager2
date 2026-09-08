@@ -24,11 +24,24 @@ class PublicAppointmentPaymentController extends Controller
 
     public function show(string $token): View
     {
+        $linkedAppointment = $this->paymentLinkService->findByPaymentToken($token);
+
+        if ($linkedAppointment && $this->paymentLinkService->paymentAlreadyCompleted($linkedAppointment)) {
+            return view('public.appointment-pay', [
+                'error' => AppointmentPaymentLinkService::ALREADY_PAID_MESSAGE,
+                'alreadyPaid' => true,
+                'appointment' => null,
+                'stripeKey' => null,
+                'token' => null,
+            ]);
+        }
+
         $appointment = $this->paymentLinkService->findPayableAppointment($token);
 
         if (! $appointment) {
             return view('public.appointment-pay', [
-                'error' => 'This payment link is invalid, expired, or payment has already been completed.',
+                'error' => AppointmentPaymentLinkService::INVALID_LINK_MESSAGE,
+                'alreadyPaid' => false,
                 'appointment' => null,
                 'stripeKey' => null,
                 'token' => null,
@@ -37,9 +50,17 @@ class PublicAppointmentPaymentController extends Controller
 
         return view('public.appointment-pay', [
             'error' => null,
+            'alreadyPaid' => false,
             'appointment' => $appointment,
             'appointmentDate' => AppointmentEmailFormatter::formatDate($appointment),
-            'appointmentTime' => AppointmentEmailFormatter::formatTimeRange($appointment),
+            'appointmentTime' => AppointmentEmailFormatter::formatStartTime(
+                $appointment->timeslot_full,
+                $appointment->appointment_datetime
+                    ? $appointment->appointment_datetime
+                        ->copy()
+                        ->timezone(AppointmentEmailFormatter::clientTimezone($appointment))
+                    : null
+            ),
             'stripeKey' => config('services.stripe.key'),
             'token' => $token,
             'amount' => (float) ($appointment->final_amount ?? $appointment->amount),

@@ -211,6 +211,10 @@ Route::controller(BookingAppointmentsController::class)
             ->name('appointments.manual-payment')
             ->whereNumber('id');
 
+        Route::post('/appointments/{id}/request-payment', 'requestPayment')
+            ->name('appointments.request-payment')
+            ->whereNumber('id');
+
         Route::post('/appointments/{id}/update-consultant', 'updateConsultant')
             ->name('appointments.update-consultant')
             ->whereNumber('id');

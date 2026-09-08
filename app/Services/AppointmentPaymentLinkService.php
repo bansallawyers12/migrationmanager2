@@ -10,11 +10,43 @@ class AppointmentPaymentLinkService
     /** Days until payment link expires (null token expiry = no expiry check). */
     public const TOKEN_TTL_DAYS = 90;
 
+    public const ALREADY_PAID_MESSAGE = 'Payment is already done. Thank you.';
+
+    public const INVALID_LINK_MESSAGE = 'This payment link is invalid, expired, or payment has already been completed.';
+
     public function requiresOnlinePayment(BookingAppointment $appointment): bool
     {
-        return (bool) $appointment->is_paid
-            && $appointment->payment_status !== 'completed'
-            && ! in_array($appointment->status, ['cancelled', 'completed'], true);
+        if (in_array($appointment->status, ['cancelled', 'completed'], true)) {
+            return false;
+        }
+
+        if ($appointment->payment_status === 'completed') {
+            return false;
+        }
+
+        if ((bool) $appointment->is_paid) {
+            return true;
+        }
+
+        $amount = (float) ($appointment->final_amount ?? $appointment->amount ?? 0);
+
+        return $amount > 0 && $appointment->payment_status === 'pending';
+    }
+
+    public function paymentAlreadyCompleted(BookingAppointment $appointment): bool
+    {
+        return $appointment->payment_status === 'completed'
+            || ((bool) $appointment->is_paid && $appointment->status === 'paid');
+    }
+
+    public function findByPaymentToken(string $token): ?BookingAppointment
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return null;
+        }
+
+        return BookingAppointment::where('payment_token', $token)->first();
     }
 
     public function ensurePaymentToken(BookingAppointment $appointment): BookingAppointment
@@ -45,12 +77,7 @@ class AppointmentPaymentLinkService
 
     public function findPayableAppointment(string $token): ?BookingAppointment
     {
-        $token = trim($token);
-        if ($token === '') {
-            return null;
-        }
-
-        $appointment = BookingAppointment::where('payment_token', $token)->first();
+        $appointment = $this->findByPaymentToken($token);
         if (! $appointment || ! $this->requiresOnlinePayment($appointment)) {
             return null;
         }

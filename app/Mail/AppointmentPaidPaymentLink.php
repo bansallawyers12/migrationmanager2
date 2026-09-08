@@ -2,18 +2,21 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\AttachesAppointmentLogo;
 use App\Mail\Concerns\UsesAppointmentMailFrom;
 use App\Models\BookingAppointment;
 use App\Support\AppointmentEmailFormatter;
+use App\Support\AppointmentMeetingTypeCopy;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class AppointmentPaidPaymentLink extends Mailable
 {
-    use Queueable, SerializesModels, UsesAppointmentMailFrom;
+    use AttachesAppointmentLogo, Queueable, SerializesModels, UsesAppointmentMailFrom;
 
     public function __construct(
         public BookingAppointment $appointment,
@@ -37,8 +40,16 @@ class AppointmentPaidPaymentLink extends Mailable
             with: [
                 'clientName' => $this->appointment->client_name ?? 'Valued Client',
                 'appointmentDate' => AppointmentEmailFormatter::formatDate($this->appointment),
-                'appointmentTime' => AppointmentEmailFormatter::formatTimeRange($this->appointment),
+                'appointmentTime' => AppointmentEmailFormatter::formatStartTime(
+                    $this->appointment->timeslot_full,
+                    $this->appointment->appointment_datetime
+                        ? $this->appointment->appointment_datetime
+                            ->copy()
+                            ->timezone(AppointmentEmailFormatter::clientTimezone($this->appointment))
+                        : null
+                ),
                 'locationAddress' => $this->getLocationAddress($location),
+                'meetingTypeLabel' => AppointmentMeetingTypeCopy::label($this->appointment->meeting_type),
                 'serviceType' => filled($this->appointment->service_type)
                     ? (string) $this->appointment->service_type
                     : 'N/A',
@@ -54,9 +65,12 @@ class AppointmentPaidPaymentLink extends Mailable
         );
     }
 
+    /**
+     * @return array<int, Attachment>
+     */
     public function attachments(): array
     {
-        return [];
+        return $this->appointmentLogoAttachments();
     }
 
     protected function getLocationAddress(string $location): string

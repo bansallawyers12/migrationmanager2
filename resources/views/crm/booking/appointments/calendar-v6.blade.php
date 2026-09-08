@@ -552,6 +552,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                     @icon('fa-hand-holding-usd') Mark as Manual payment received
                                 </button>
                                 ` : ''}
+                                ${!props.is_paid ? `
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="requestPaymentActions-${event.id}" onclick="requestAppointmentPayment(${event.id})">
+                                    @icon('fa-envelope') Request Payment From Client
+                                </button>
+                                ` : ''}
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -794,6 +799,58 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(function(error) {
             console.error('Error updating payment:', error);
             showAlert('danger', 'Failed to update payment. Please try again.');
+        })
+        .finally(function() {
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        });
+    };
+
+    window.requestAppointmentPayment = function(appointmentId) {
+        if (!confirm('Do you want to send a $150 payment request email to this client?')) {
+            return;
+        }
+
+        const button = event && event.target ? event.target.closest('button') : null;
+        const originalText = button ? button.innerHTML : '';
+        if (button) {
+            button.innerHTML = (typeof crmIconLegacy === 'function' ? crmIconLegacy('fas fa-spinner fa-spin') : '<i class="fas fa-spinner fa-spin"></i>') + ' Sending...';
+            button.disabled = true;
+        }
+
+        fetch(`/booking/appointments/${appointmentId}/request-payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({})
+        })
+        .then(async function(response) {
+            var ct = response.headers.get('content-type') || '';
+            var data = {};
+            if (ct.indexOf('application/json') !== -1) {
+                try { data = await response.json(); } catch (e) { data = {}; }
+            }
+            if (!response.ok) {
+                var msg = data.message || data.error || ('Request failed (HTTP ' + response.status + ')');
+                showAlert('danger', 'Failed to send payment request: ' + msg);
+                return;
+            }
+            if (data.success === true) {
+                showAlert('success', data.message || 'Payment request email sent to the client.');
+            } else {
+                showAlert('danger', 'Failed to send payment request: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(function(error) {
+            console.error('Error requesting payment:', error);
+            showAlert('danger', 'Failed to send payment request. Please try again.');
         })
         .finally(function() {
             if (button) {

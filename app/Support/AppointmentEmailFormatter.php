@@ -47,8 +47,7 @@ class AppointmentEmailFormatter
     }
 
     /**
-     * Start time only for client-facing confirmation / cancellation / reschedule emails.
-     * Leaves formatTimeRange() unchanged for payment pages and other range displays.
+     * Start time only for client-facing emails and the public payment page.
      */
     public static function formatStartTime(?string $timeslotFull, mixed $appointmentDatetime = null): string
     {

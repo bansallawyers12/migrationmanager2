@@ -37,7 +37,9 @@
     <p>Appointment Payment</p>
   </div>
   <div class="body">
-    @if($error)
+    @if($alreadyPaid ?? false)
+      <div class="msg success">{{ $error }}</div>
+    @elseif($error)
       <div class="msg error">{{ $error }}</div>
     @else
       <div class="msg info">Please complete payment to confirm your appointment.</div>

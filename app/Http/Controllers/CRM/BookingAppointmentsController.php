@@ -15,6 +15,7 @@ use App\Services\BansalAppointmentSync\BansalApiClient;
 use App\Services\BansalAppointmentSync\BansalAppointmentRecoveryService;
 use App\Services\BansalAppointmentSync\NotificationService;
 use App\Services\BookingAppointmentManualPaymentService;
+use App\Services\BookingAppointmentRequestPaymentService;
 use App\Support\BansalSchedulingServiceType;
 use App\Support\BookingAppointmentStatus;
 use App\Support\StaffClientVisibility;
@@ -551,6 +552,44 @@ class BookingAppointmentsController extends Controller
             'status' => $appointment->status,
             'amount' => (float) $appointment->amount,
             'final_amount' => (float) $appointment->final_amount,
+        ]);
+    }
+
+    /**
+     * Email a $150 Stripe payment link for a Free booking. Does not mark it Paid.
+     */
+    public function requestPayment(BookingAppointmentRequestPaymentService $requestPaymentService, $id)
+    {
+        $appointment = BookingAppointment::findOrFail($id);
+        $this->assertBookingAppointmentAccess($appointment);
+
+        $result = $requestPaymentService->sendPaymentRequest($appointment);
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 422);
+        }
+
+        $appointment = $appointment->fresh() ?? $appointment;
+
+        if ($appointment->client_id) {
+            $activityLog = new ActivitiesLog;
+            $activityLog->client_id = $appointment->client_id;
+            $activityLog->created_by = Auth::id();
+            $activityLog->subject = 'Booking appointment payment requested';
+            $activityLog->description = '<p><strong>Payment:</strong> $150 payment request email sent to client</p>';
+            $activityLog->task_status = 0;
+            $activityLog->pin = 0;
+            $activityLog->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'],
+            'is_paid' => false,
+            'status' => $appointment->status,
         ]);
     }
 
