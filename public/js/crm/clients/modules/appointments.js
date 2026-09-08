@@ -38,24 +38,6 @@
     }
 
     /**
-     * JS Date.getDay(): Sunday=0 … Saturday=6. Slot Overwrite may open Friday
-     * in CRM only; Saturday and Sunday stay closed.
-     */
-    function closedWeekdaysForCrmCalendar(weeks, slotOverwriteOn) {
-        var closedDays = (weeks || []).map(function (day) {
-            return parseInt(day, 10);
-        }).filter(function (day) {
-            return !isNaN(day);
-        });
-        if (slotOverwriteOn) {
-            closedDays = closedDays.filter(function (day) {
-                return day !== 5;
-            });
-        }
-        return closedDays;
-    }
-
-    /**
      * Bansal rejects same-day bookings. Use Melbourne's tomorrow, not the browser's,
      * so staff outside Australia cannot pick a Melbourne "today".
      */
@@ -326,10 +308,14 @@
 
                                 updateSelectedServiceDurationFromApi(duration);
 
-                                daysOfWeek = closedWeekdaysForCrmCalendar(
-                                    obj.weeks,
-                                    $('#slot_overwrite_hidden').val() == 1
-                                );
+                                daysOfWeek = obj.weeks;
+                                // Overwrite off: keep API closed days as-is (Fri/Sat/Sun stay grey).
+                                // Overwrite on: drop Friday only (JS getDay 5); Saturday and Sunday stay closed.
+                                if ($('#slot_overwrite_hidden').val() == 1 && Array.isArray(daysOfWeek)) {
+                                    daysOfWeek = daysOfWeek.filter(function (day) {
+                                        return parseInt(day, 10) !== 5;
+                                    });
+                                }
 
                                 starttime =  obj.start_time;
 

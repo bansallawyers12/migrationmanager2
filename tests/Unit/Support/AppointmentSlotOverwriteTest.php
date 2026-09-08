@@ -42,9 +42,15 @@ class AppointmentSlotOverwriteTest extends TestCase
     }
 
     #[Test]
-    public function it_keeps_friday_closed_when_overwrite_is_off(): void
+    public function it_keeps_friday_saturday_sunday_closed_when_overwrite_is_off(): void
     {
         $this->assertSame([0, 5, 6], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar([0, 5, 6], 0));
+    }
+
+    #[Test]
+    public function it_does_not_rewrite_weekday_values_when_overwrite_is_off(): void
+    {
+        $this->assertSame(['0', '5', '6'], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar(['0', '5', '6'], 0));
     }
 
     #[Test]
@@ -56,7 +62,7 @@ class AppointmentSlotOverwriteTest extends TestCase
     #[Test]
     public function it_opens_friday_from_string_weekday_values_when_overwrite_is_on(): void
     {
-        $this->assertSame([0, 6], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar(['0', '5', '6'], 1));
+        $this->assertSame(['0', '6'], AppointmentSlotOverwrite::closedWeekdaysForCrmCalendar(['0', '5', '6'], 1));
     }
 
     #[Test]

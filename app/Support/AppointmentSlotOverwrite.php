@@ -22,22 +22,20 @@ class AppointmentSlotOverwrite
 
     /**
      * CRM calendar closed weekdays (JS Date.getDay() / Carbon: Sun=0 … Sat=6).
-     * Slot Overwrite may open Friday only; Saturday and Sunday stay closed.
+     * Overwrite off leaves the list unchanged. Overwrite on drops Friday only.
      *
      * @param  list<int|string>  $weeks
-     * @return list<int>
+     * @return list<int|string>
      */
     public static function closedWeekdaysForCrmCalendar(array $weeks, int $slotOverwrite): array
     {
-        $closedDays = array_values(array_map('intval', $weeks));
-
         if ($slotOverwrite !== 1) {
-            return $closedDays;
+            return array_values($weeks);
         }
 
         return array_values(array_filter(
-            $closedDays,
-            static fn (int $day): bool => $day !== Carbon::FRIDAY
+            $weeks,
+            static fn (mixed $day): bool => (int) $day !== Carbon::FRIDAY
         ));
     }
 }
