@@ -253,6 +253,176 @@ class ClientDetailDocumentsTabTest extends TestCase
     }
 
     #[Test]
+    public function visa_bulk_resolve_prefers_empty_current_matter_then_legacy_null_matter(): void
+    {
+        $this->createDocumentsSchema();
+
+        $legacyEmpty = Document::query()->create([
+            'client_id' => 30,
+            'user_id' => 2,
+            'doc_type' => 'visa',
+            'type' => 'client',
+            'folder_name' => '5',
+            'checklist' => 'Payment Receipt',
+            'client_matter_id' => null,
+            'file_name' => null,
+        ]);
+        $currentEmpty = Document::query()->create([
+            'client_id' => 30,
+            'user_id' => 2,
+            'doc_type' => 'visa',
+            'type' => 'client',
+            'folder_name' => '5',
+            'checklist' => 'Payment Receipt',
+            'client_matter_id' => 8,
+            'file_name' => null,
+        ]);
+
+        $resolved = ClientDetailDocumentsTab::resolveFolderChecklistForBulk(
+            30,
+            2,
+            'visa',
+            '5',
+            'client',
+            ['type' => 'existing', 'name' => 'Payment Receipt'],
+            8
+        );
+
+        Assert::assertNotNull($resolved);
+        Assert::assertSame($currentEmpty->id, $resolved->id);
+        Assert::assertNotSame($legacyEmpty->id, $resolved->id);
+    }
+
+    #[Test]
+    public function visa_bulk_resolve_uses_empty_legacy_row_when_current_matter_has_none(): void
+    {
+        $this->createDocumentsSchema();
+
+        $legacyEmpty = Document::query()->create([
+            'client_id' => 31,
+            'user_id' => 2,
+            'doc_type' => 'visa',
+            'type' => 'client',
+            'folder_name' => '5',
+            'checklist' => 'Extension Letter',
+            'client_matter_id' => null,
+            'file_name' => null,
+        ]);
+
+        $resolved = ClientDetailDocumentsTab::resolveFolderChecklistForBulk(
+            31,
+            2,
+            'visa',
+            '5',
+            'client',
+            ['type' => 'existing', 'name' => 'Extension Letter'],
+            8
+        );
+
+        Assert::assertNotNull($resolved);
+        Assert::assertSame($legacyEmpty->id, $resolved->id);
+    }
+
+    #[Test]
+    public function visa_bulk_resolve_creates_on_current_matter_when_name_only_exists_elsewhere(): void
+    {
+        $this->createDocumentsSchema();
+
+        Document::query()->create([
+            'client_id' => 32,
+            'user_id' => 2,
+            'doc_type' => 'visa',
+            'type' => 'client',
+            'folder_name' => '5',
+            'checklist' => 'Payment Receipt',
+            'client_matter_id' => 99,
+            'file_name' => 'other.pdf',
+        ]);
+        Document::query()->create([
+            'client_id' => 32,
+            'user_id' => 2,
+            'doc_type' => 'personal',
+            'type' => 'client',
+            'folder_name' => '5',
+            'checklist' => 'Payment Receipt',
+            'client_matter_id' => 8,
+            'file_name' => null,
+        ]);
+
+        $resolved = ClientDetailDocumentsTab::resolveFolderChecklistForBulk(
+            32,
+            2,
+            'visa',
+            '5',
+            'client',
+            ['type' => 'existing', 'name' => 'Payment Receipt'],
+            8
+        );
+
+        Assert::assertNotNull($resolved);
+        Assert::assertSame('visa', $resolved->doc_type);
+        Assert::assertSame('Payment Receipt', $resolved->checklist);
+        Assert::assertSame(8, (int) $resolved->client_matter_id);
+        Assert::assertNull($resolved->file_name);
+        Assert::assertSame(3, Document::query()->where('client_id', 32)->count());
+    }
+
+    #[Test]
+    public function visa_bulk_resolve_creates_another_row_when_current_matter_slots_are_full(): void
+    {
+        $this->createDocumentsSchema();
+
+        $filled = Document::query()->create([
+            'client_id' => 33,
+            'user_id' => 2,
+            'doc_type' => 'visa',
+            'type' => 'client',
+            'folder_name' => '5',
+            'checklist' => 'Form 80',
+            'client_matter_id' => 8,
+            'file_name' => 'form80.pdf',
+        ]);
+
+        $resolved = ClientDetailDocumentsTab::resolveFolderChecklistForBulk(
+            33,
+            2,
+            'visa',
+            '5',
+            'client',
+            ['type' => 'existing', 'name' => 'Form 80'],
+            8
+        );
+
+        Assert::assertNotNull($resolved);
+        Assert::assertNotSame($filled->id, $resolved->id);
+        Assert::assertSame('Form 80', $resolved->checklist);
+        Assert::assertSame(8, (int) $resolved->client_matter_id);
+        Assert::assertNull($resolved->file_name);
+    }
+
+    #[Test]
+    public function visa_bulk_mapping_ui_only_lists_visible_current_matter_checklists(): void
+    {
+        $visaBlade = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/visa_documents.blade.php'));
+        Assert::assertNotFalse($visaBlade);
+        Assert::assertStringContainsString('function visaBulkChecklistRowIsSelectable', $visaBlade);
+        Assert::assertStringContainsString("#visadocuments-tab .migdocumnetlist_' + categoryId + ' .visachecklist-row", $visaBlade);
+        Assert::assertStringContainsString('$row.is(\':visible\')', $visaBlade);
+        Assert::assertStringContainsString('currentVisaMatterId', $visaBlade);
+        Assert::assertStringContainsString('resolveFolderChecklistForBulk', file_get_contents($this->projectPath('app/Http/Controllers/CRM/Clients/ClientDocumentsController.php')));
+
+        $nominationBlade = file_get_contents($this->projectPath('resources/views/crm/companies/tabs/nomination_documents.blade.php'));
+        Assert::assertNotFalse($nominationBlade);
+        Assert::assertStringContainsString("#nominationdocuments-tab .migdocumnetlist_' + categoryId + ' .visachecklist-row", $nominationBlade);
+        Assert::assertStringContainsString('function visaBulkChecklistRowIsSelectable', $nominationBlade);
+
+        $personalBlade = file_get_contents($this->projectPath('resources/views/crm/clients/tabs/personal_documents.blade.php'));
+        Assert::assertNotFalse($personalBlade);
+        Assert::assertStringNotContainsString('visaBulkChecklistRowIsSelectable', $personalBlade);
+        Assert::assertStringNotContainsString('resolveFolderChecklistForBulk', $personalBlade);
+    }
+
+    #[Test]
     public function document_tab_blades_do_not_run_per_row_staff_lookups_or_per_category_document_queries(): void
     {
         foreach ([

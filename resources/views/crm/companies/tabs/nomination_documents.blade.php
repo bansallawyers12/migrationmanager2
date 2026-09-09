@@ -1838,14 +1838,31 @@
                     });
                 }
                 
-                // Get existing visa checklists
+                function visaBulkChecklistRowIsSelectable($row, matterId) {
+                    if (!$row || $row.length === 0 || !$row.is(':visible')) {
+                        return false;
+                    }
+                    if (!matterId) {
+                        return true;
+                    }
+                    const docMatterId = $row.data('matterid');
+                    const hasNoMatter = !docMatterId || docMatterId === '' || docMatterId === 'null' || docMatterId === null || docMatterId === 0;
+                    return docMatterId == matterId || hasNoMatter;
+                }
+
+                // Get existing nomination checklists visible for the current matter (same rule as the table filter).
                 function getExistingVisaChecklists(categoryId, callback) {
                     const checklists = [];
                     const checklistNames = new Set();
+                    const matterId = currentVisaMatterId;
                     
-                    $('.migdocumnetlist_' + categoryId + ' .visachecklist-row').each(function() {
+                    $('#nominationdocuments-tab .migdocumnetlist_' + categoryId + ' .visachecklist-row').each(function() {
+                        const $row = $(this).closest('tr');
+                        if (!visaBulkChecklistRowIsSelectable($row, matterId)) {
+                            return;
+                        }
                         const checklistName = $(this).data('visachecklistname');
-                        const checklistId = $(this).closest('tr').attr('id').replace('id_', '');
+                        const checklistId = $row.attr('id') ? $row.attr('id').replace('id_', '') : '';
                         
                         if (checklistName && !checklistNames.has(checklistName)) {
                             checklistNames.add(checklistName);

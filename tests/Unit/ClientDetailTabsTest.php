@@ -618,6 +618,8 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringContainsString('displayVisaMappingInterface', $blade);
         Assert::assertStringContainsString('id="bulk-upload-mapping-modal"', $blade);
         Assert::assertStringContainsString('.bulk-upload-mapping-modal', $blade);
+        Assert::assertStringContainsString('function visaBulkChecklistRowIsSelectable', $blade);
+        Assert::assertStringContainsString("#visadocuments-tab .migdocumnetlist_' + categoryId + ' .visachecklist-row", $blade);
     }
 
     #[Test]

@@ -177,6 +177,105 @@ final class ClientDetailDocumentsTab
     }
 
     /**
+     * Resolve a visa/nomination checklist row for bulk upload.
+     * Prefers an empty row on this matter, then an empty legacy row with no matter.
+     * Creates a new row on this matter when no empty slot exists (including names that
+     * only exist on another matter — those previously failed as "not found").
+     *
+     * @param  array{type?: string, name?: string}  $mapping
+     */
+    public static function resolveFolderChecklistForBulk(
+        int $clientId,
+        int $userId,
+        string $docType,
+        string $folderName,
+        string $recordType,
+        array $mapping,
+        int|string|null $matterId
+    ): ?Document {
+        $name = trim((string) ($mapping['name'] ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        $empty = self::emptyFolderChecklistForName(
+            $clientId,
+            $docType,
+            $folderName,
+            $recordType,
+            $name,
+            $matterId
+        );
+        if ($empty instanceof Document) {
+            return $empty;
+        }
+
+        return self::addFolderChecklist(
+            $clientId,
+            $userId,
+            $docType,
+            $folderName,
+            $recordType,
+            $name,
+            $matterId
+        );
+    }
+
+    private static function emptyFolderChecklistForName(
+        int $clientId,
+        string $docType,
+        string $folderName,
+        string $recordType,
+        string $checklist,
+        int|string|null $matterId
+    ): ?Document {
+        $query = Document::query()
+            ->where('client_id', $clientId)
+            ->where('doc_type', $docType)
+            ->where('folder_name', $folderName)
+            ->where('type', $recordType)
+            ->where('checklist', $checklist)
+            ->whereNull('not_used_doc')
+            ->whereNull('file_name');
+
+        if (self::hasMatterId($matterId)) {
+            $query->where(function ($inner) use ($matterId) {
+                $inner->where('client_matter_id', $matterId)
+                    ->orWhereNull('client_matter_id');
+            })->orderByRaw('CASE WHEN client_matter_id = ? THEN 0 ELSE 1 END', [$matterId]);
+        }
+
+        return $query->first();
+    }
+
+    private static function addFolderChecklist(
+        int $clientId,
+        int $userId,
+        string $docType,
+        string $folderName,
+        string $recordType,
+        string $checklist,
+        int|string|null $matterId
+    ): Document {
+        $document = new Document;
+        $document->user_id = $userId;
+        $document->client_id = $clientId;
+        $document->type = $recordType;
+        $document->doc_type = $docType;
+        $document->folder_name = $folderName;
+        $document->checklist = $checklist;
+        $document->client_matter_id = self::hasMatterId($matterId) ? $matterId : null;
+        $document->save();
+
+        return $document;
+    }
+
+    private static function hasMatterId(int|string|null $matterId): bool
+    {
+        return ! ($matterId === null || $matterId === '' || $matterId === false);
+    }
+
+    /**
      * @param  Builder<Document>  $query
      */
     private static function constrainReceiptMatter($query, ?int $matterId): void

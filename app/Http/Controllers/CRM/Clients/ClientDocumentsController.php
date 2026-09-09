@@ -8,19 +8,19 @@ use App\Http\Requests\StoreDibpReceiptBulkUploadRequest;
 use App\Http\Requests\StoreDibpReceiptChecklistRequest;
 use App\Http\Requests\StoreDibpReceiptDownloadRequest;
 use App\Http\Requests\StoreDibpReceiptHubdocRequest;
-use App\Mail\HubdocDibpReceiptMail;
-use App\Services\SystemEmailLogService;
 use App\Http\Requests\StoreDibpReceiptRenameChecklistRequest;
 use App\Http\Requests\StoreDibpReceiptRenameFileRequest;
 use App\Http\Requests\StoreDibpReceiptUploadRequest;
+use App\Mail\HubdocDibpReceiptMail;
 use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\Form956;
-// use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
 use App\Models\NominationDocumentType;
+// use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
+use App\Services\SystemEmailLogService;
 use App\Support\ClientDetailDocumentsTab;
 use App\Support\DocumentFilenameRules;
 use App\Support\DocumentStoredFilename;
@@ -4096,56 +4096,15 @@ class ClientDocumentsController extends Controller
                         continue;
                     }
 
-                    // Check if checklist exists, create if needed
-                    $document = Document::query()->where('client_id', $clientid)
-                        ->where('doc_type', $doctype)
-                        ->where('folder_name', $categoryid)
-                        ->where('checklist', $checklistName)
-                        ->where('type', $type)
-                        ->whereNull('not_used_doc')
-                        ->whereNull('file_name') // Only get checklists without files
-                        ->when($matterid, function ($query) use ($matterid) {
-                            return $query->where('client_matter_id', $matterid);
-                        })
-                        ->first();
-
-                    // If checklist doesn't exist and mapping type is 'new', create it
-                    if (! $document && $mapping['type'] === 'new') {
-                        $document = new Document;
-                        $document->user_id = Auth::user()->id;
-                        $document->client_id = $clientid;
-                        $document->type = $type;
-                        $document->doc_type = $doctype;
-                        $document->folder_name = $categoryid;
-                        $document->checklist = $checklistName;
-                        $document->client_matter_id = $matterid;
-                        $document->save();
-                    } elseif (! $document && $mapping['type'] === 'existing') {
-                        // If trying to use existing checklist but all instances have files, create new one
-                        $hasAnyChecklist = Document::query()->where('client_id', $clientid)
-                            ->where('doc_type', $doctype)
-                            ->where('folder_name', $categoryid)
-                            ->where('checklist', $checklistName)
-                            ->where('type', $type)
-                            ->whereNull('not_used_doc')
-                            ->when($matterid, function ($query) use ($matterid) {
-                                return $query->where('client_matter_id', $matterid);
-                            })
-                            ->exists();
-
-                        if ($hasAnyChecklist) {
-                            // Checklist exists but all have files - create a new instance
-                            $document = new Document;
-                            $document->user_id = Auth::user()->id;
-                            $document->client_id = $clientid;
-                            $document->type = $type;
-                            $document->doc_type = $doctype;
-                            $document->folder_name = $categoryid;
-                            $document->checklist = $checklistName;
-                            $document->client_matter_id = $matterid;
-                            $document->save();
-                        }
-                    }
+                    $document = ClientDetailDocumentsTab::resolveFolderChecklistForBulk(
+                        (int) $clientid,
+                        (int) Auth::id(),
+                        (string) $doctype,
+                        (string) $categoryid,
+                        (string) $type,
+                        $mapping,
+                        $matterid
+                    );
 
                     if (! $document) {
                         $errors[] = "Checklist '{$checklistName}' not found for file '{$fileName}'";
