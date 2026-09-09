@@ -157,6 +157,7 @@ final class ClientDetailDocumentsTab
 
     /**
      * Prefer an empty receipt row; otherwise create one. Visa/personal rows are ignored.
+     * Catalog names with no receipts row yet are created instead of failing as "not found".
      *
      * @param  array{type?: string, name?: string}  $mapping
      */
@@ -170,11 +171,6 @@ final class ClientDetailDocumentsTab
         $empty = self::emptyChecklistForName($clientId, $name, $matterId);
         if ($empty instanceof Document) {
             return $empty;
-        }
-
-        $type = (string) ($mapping['type'] ?? 'new');
-        if ($type === 'existing' && ! self::hasChecklistName($clientId, $name, $matterId)) {
-            return null;
         }
 
         return self::addChecklist($clientId, $userId, $name, $matterId);

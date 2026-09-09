@@ -71,10 +71,18 @@ class DibpReceiptBulkUploadTest extends TestCase
         Assert::assertSame($empty->id, $resolved->id);
         Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE, $resolved->doc_type);
         Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME, $resolved->folder_name);
-        Assert::assertNull(ClientDetailDocumentsTab::resolveChecklistForBulk(20, 3, [
+
+        $created = ClientDetailDocumentsTab::resolveChecklistForBulk(20, 3, [
             'type' => 'existing',
-            'name' => 'Visa only',
-        ], 4));
+            'name' => 'DIBP1',
+        ], 4);
+        Assert::assertNotNull($created);
+        Assert::assertNotSame($empty->id, $created->id);
+        Assert::assertSame('DIBP1', $created->checklist);
+        Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE, $created->doc_type);
+        Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME, $created->folder_name);
+        Assert::assertNull($created->file_name);
+        Assert::assertSame(1, Document::query()->where('doc_type', 'visa')->where('checklist', 'Lodgement')->count());
     }
 
     #[Test]
@@ -143,6 +151,45 @@ class DibpReceiptBulkUploadTest extends TestCase
         Assert::assertSame('visa', $visa->doc_type);
         Assert::assertNull($visa->file_name);
         Assert::assertSame(0, Document::query()->where('doc_type', 'visa')->whereNotNull('file_name')->count());
+    }
+
+    #[Test]
+    public function bulk_endpoint_creates_receipt_row_when_existing_catalog_name_has_no_empty_slot(): void
+    {
+        Storage::fake('s3');
+        $this->seedClient(20);
+
+        $staff = Staff::query()->create([
+            'first_name' => 'Dibp',
+            'last_name' => 'Catalog',
+            'email' => 'dibp-catalog-bulk@test.com',
+            'password' => Hash::make('password'),
+            'role' => 1,
+            'status' => 1,
+        ]);
+
+        $response = $this->actingAs($staff, 'admin')
+            ->post('/documents/bulk-upload-dibp-receipt-documents', [
+                'clientid' => 20,
+                'client_matter_id' => 4,
+                'files' => [
+                    UploadedFile::fake()->create('application.pdf', 20, 'application/pdf'),
+                ],
+                'mappings' => [
+                    json_encode(['type' => 'existing', 'name' => 'DIBP2']),
+                ],
+            ]);
+
+        $response->assertOk();
+        Assert::assertTrue($response->json('status'));
+        Assert::assertSame(1, (int) $response->json('uploaded'));
+
+        $created = Document::query()->where('checklist', 'DIBP2')->first();
+        Assert::assertNotNull($created);
+        Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE, $created->doc_type);
+        Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME, $created->folder_name);
+        Assert::assertNotEmpty($created->file_name);
+        Storage::disk('s3')->assertExists('C20/dibp_receipt/'.$created->myfile_key);
     }
 
     #[Test]

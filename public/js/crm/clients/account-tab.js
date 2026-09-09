@@ -562,6 +562,21 @@
         return names;
     }
 
+    function dibpReceiptsChecklistExistsOnTable(name) {
+        var match = String(name || '').trim();
+        if (!match) {
+            return false;
+        }
+        var found = false;
+        document.querySelectorAll('#dibp-receipts-list .dibp-receipts-checklist').forEach(function (el) {
+            var existing = (el.getAttribute('data-checklist') || el.textContent || '').trim();
+            if (existing === match) {
+                found = true;
+            }
+        });
+        return found;
+    }
+
     function dibpReceiptsAutoMatchChecklist(fileName, names) {
         var base = String(fileName || '').replace(/\.[^/.]+$/, '').toLowerCase();
         var match = '';
@@ -663,7 +678,7 @@
                         mapping = { type: 'new', name: dibpReceiptsChecklistNameFromFile(file.name) };
                     }
                 } else if (value) {
-                    mapping = { type: 'existing', name: value };
+                    mapping = { type: dibpReceiptsChecklistExistsOnTable(value) ? 'existing' : 'new', name: value };
                 } else if (allowAuto) {
                     mapping = { type: 'new', name: dibpReceiptsChecklistNameFromFile(file.name) };
                 }

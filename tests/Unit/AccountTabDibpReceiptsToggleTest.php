@@ -171,6 +171,7 @@ class AccountTabDibpReceiptsToggleTest extends TestCase
         Assert::assertStringContainsString('dibp-receipts-drag-zone', $js);
         Assert::assertStringContainsString('dibp-receipts-bulk-dropzone', $js);
         Assert::assertStringContainsString('dibp-receipts-bulk-confirm', $js);
+        Assert::assertStringContainsString('dibpReceiptsChecklistExistsOnTable', $js);
         Assert::assertStringContainsString('data-bulk-url', $js);
         Assert::assertStringNotContainsString('bulk-upload-dropzone-visa', $js);
         Assert::assertStringNotContainsString('id="confirm-bulk-upload"', $js);
