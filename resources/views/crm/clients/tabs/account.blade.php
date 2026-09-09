@@ -18,6 +18,8 @@
     $latest_outstanding_balance = $accountTabPayload['latest_outstanding_balance'];
     $receipts_lists_invoice = $accountTabPayload['receipts_lists_invoice'];
     $receipts_lists_office = $accountTabPayload['receipts_lists_office'];
+    $dibp_receipts_lists = $accountTabPayload['dibp_receipts_lists'] ?? collect();
+    $dibp_receipts_checklists = $accountTabPayload['dibp_receipts_checklists'] ?? collect();
 @endphp
 
            <!-- Account Tab -->
@@ -38,6 +40,9 @@
             <a class="btn btn-info createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3">
                 @icon('fa-file-invoice-dollar') Invoice
             </a>
+            <button type="button" class="btn btn-outline-secondary dibp-receipts-toggle" id="dibp-receipts-toggle" style="margin-left: 5px;" aria-pressed="false" aria-controls="dibp-receipts-panel">
+                @icon('fa-receipt') Receipts
+            </button>
         </div>
     </div>
 
@@ -615,6 +620,184 @@
             </div>
         </section>
     </div>
+
+    <div id="dibp-receipts-panel" class="dibp-receipts-panel" hidden
+         data-upload-url="{{ route('clients.documents.uploadDibpReceiptDocument') }}"
+         data-bulk-url="{{ route('clients.documents.bulkUploadDibpReceiptDocuments') }}"
+         data-rename-url="{{ route('clients.documents.renameDibpReceiptDocument') }}"
+         data-rename-checklist-url="{{ route('clients.documents.renameDibpReceiptChecklist') }}"
+         data-download-url="{{ route('clients.documents.downloadDibpReceiptDocument') }}"
+         data-hubdoc-url="{{ route('clients.documents.sendDibpReceiptToHubdoc') }}"
+         data-clientid="{{ (int) ($fetchedData->id ?? 0) }}">
+        <div class="dibp-receipts-body">
+            <div class="dibp-receipts-table-container" style="vertical-align: top; margin-top: 10px; width: 760px; overflow: visible;">
+                <div class="dibp-receipts-header" style="margin-left: 10px;">
+                    <h3>@icon('fa-receipt') Receipts</h3>
+                    <div class="dibp-receipts-header-actions">
+                        <button type="button" class="btn dibp-receipts-add-checklist" id="dibp-receipts-add-checklist">
+                            @icon('fa-plus') Add Checklist
+                        </button>
+                        <button type="button" class="btn dibp-receipts-bulk-toggle" id="dibp-receipts-bulk-toggle" aria-pressed="false" aria-controls="dibp-receipts-bulk-dropzone-container">
+                            @icon('fa-upload') <span class="dibp-receipts-bulk-toggle-label">Bulk Upload</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="dibp-receipts-bulk-dropzone-container" class="dibp-receipts-bulk-dropzone-container" hidden>
+                    <div class="dibp-receipts-bulk-dropzone" id="dibp-receipts-bulk-dropzone">
+                        @icon('fa-cloud-upload-alt')
+                        <p><strong>Drag and drop files here</strong> or <strong>click to browse</strong></p>
+                        <p>You can select multiple files at once</p>
+                        <input type="file" id="dibp-receipts-bulk-file-input" class="dibp-receipts-bulk-file-input" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" hidden>
+                    </div>
+                    <div id="dibp-receipts-bulk-file-list" class="dibp-receipts-bulk-file-list" hidden>
+                        <h5>Files Selected: <span id="dibp-receipts-bulk-file-count">0</span></h5>
+                    </div>
+                </div>
+                <table class="checklist-table" id="dibp-receipts-table">
+                    <thead>
+                        <tr>
+                            <th>Checklist</th>
+                            <th>File Name</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="dibp-receipts-list">
+                        <?php if ($dibp_receipts_lists->isEmpty()) { ?>
+                        <tr class="dibp-receipts-empty-row">
+                            <td colspan="3">No receipts yet.</td>
+                        </tr>
+                        <?php } else { ?>
+                        <?php foreach ($dibp_receipts_lists as $receiptDoc) { ?>
+                        <?php
+                            $receiptUploader = $receiptDoc->staff->first_name ?? 'NA';
+                            $receiptUploadedAt = $receiptDoc->created_at ? date('d/m/Y H:i', strtotime((string) $receiptDoc->created_at)) : '';
+                            $receiptTitle = 'Uploaded by: '.$receiptUploader.($receiptUploadedAt !== '' ? ' on '.$receiptUploadedAt : '');
+                        ?>
+                        <tr class="dibp-receipts-row" id="dibp-receipts-row-<?= (int) $receiptDoc->id ?>">
+                            <td>
+                                <div class="dibp-receipts-checklist" data-id="<?= (int) $receiptDoc->id ?>" data-checklist="<?= htmlspecialchars((string) ($receiptDoc->checklist ?? '')) ?>" title="<?= htmlspecialchars($receiptTitle) ?>">
+                                    <?= htmlspecialchars((string) ($receiptDoc->checklist ?? '')) ?>
+                                </div>
+                            </td>
+                            <td>
+                                <?php if (! empty($receiptDoc->file_name)) { ?>
+                                    <?php
+                                        $receiptHubdocSent = \App\Support\ClientDetailDocumentsTab::hasHubdocColumns() && ! empty($receiptDoc->hubdoc_sent);
+                                        $receiptHubdocAt = $receiptHubdocSent && $receiptDoc->hubdoc_sent_at
+                                            ? $receiptDoc->hubdoc_sent_at->format('d/m/Y H:i')
+                                            : '';
+                                    ?>
+                                    <div class="dibp-receipts-file" data-id="<?= (int) $receiptDoc->id ?>" data-name="<?= htmlspecialchars((string) $receiptDoc->file_name) ?>" data-filetype="<?= htmlspecialchars($receiptDoc->getPreviewFileExtension()) ?>" data-fileurl="<?= htmlspecialchars((string) ($receiptDoc->myfile ?? '')) ?>" data-filename="<?= htmlspecialchars((string) ($receiptDoc->myfile_key ?? '')) ?>" data-hubdoc-sent="<?= $receiptHubdocSent ? '1' : '0' ?>" data-hubdoc-sent-at="<?= htmlspecialchars($receiptHubdocAt) ?>" title="<?= htmlspecialchars($receiptTitle) ?>">
+                                        <a href="javascript:void(0);" class="dibp-receipts-preview-link">
+                                            @icon('fa-file-image')
+                                            <span class="dibp-receipts-file-label"><?= htmlspecialchars($receiptDoc->getFilenameWithExtensionForDisplay()) ?></span>
+                                        </a>
+                                    </div>
+                                <?php } else { ?>
+                                    <form class="dibp-receipts-upload-form" id="dibp-receipts-upload-form-<?= (int) $receiptDoc->id ?>" action="{{ route('clients.documents.uploadDibpReceiptDocument') }}" method="post" enctype="multipart/form-data">
+                                        @csrf
+                                        <input type="hidden" name="clientid" value="{{ (int) ($fetchedData->id ?? 0) }}">
+                                        <input type="hidden" name="fileid" value="<?= (int) $receiptDoc->id ?>">
+                                        <div class="document-drag-drop-zone dibp-receipts-drag-zone" data-fileid="<?= (int) $receiptDoc->id ?>" data-formid="dibp-receipts-upload-form-<?= (int) $receiptDoc->id ?>">
+                                            <div class="drag-zone-inner">
+                                                @icon('fa-cloud-upload-alt')
+                                                <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
+                                            </div>
+                                        </div>
+                                        <input class="dibp-receipts-upload d-none" type="file" name="document_upload" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                                    </form>
+                                <?php } ?>
+                            </td>
+                            <td></td>
+                        </tr>
+                        <?php } ?>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+            <div id="dibp-receipts-preview" class="dibp-receipts-preview">
+                <p>Click on a file to preview it here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade custom_modal" id="dibp-receipts-add-checklist-modal" tabindex="-1" role="dialog" aria-labelledby="dibp-receipts-add-checklist-title" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dibp-receipts-add-checklist-title">Add Receipt Checklist</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{{ route('clients.documents.addDibpReceiptChecklist') }}" id="dibp-receipts-add-checklist-form" autocomplete="off">
+                    @csrf
+                    <input type="hidden" name="clientid" value="{{ (int) ($fetchedData->id ?? 0) }}">
+                    <input type="hidden" name="client_matter_id" id="dibp-receipts-client-matter-id" value="">
+                    <div class="form-group">
+                        <label for="dibp-receipts-checklist-name">Checklist<span class="span_req">*</span></label>
+                        <select class="form-control" name="checklist" id="dibp-receipts-checklist-name" required>
+                            <option value="">Select Checklist</option>
+                            @foreach ($dibp_receipts_checklists as $dibpChecklist)
+                                <option value="{{ $dibpChecklist->name }}">{{ $dibpChecklist->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <p class="text-danger" id="dibp-receipts-add-checklist-error" hidden></p>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="dibp-receipts-bulk-mapping-modal" class="dibp-receipts-bulk-mapping-modal" hidden>
+    <div class="dibp-receipts-bulk-mapping-content">
+        <div class="dibp-receipts-bulk-mapping-header">
+            <h3>@icon('fa-link') Map Files to Checklists</h3>
+            <button type="button" class="dibp-receipts-bulk-close-mapping" id="dibp-receipts-bulk-close-mapping" aria-label="Close">&times;</button>
+        </div>
+        <div id="dibp-receipts-bulk-mapping-table"></div>
+        <div class="dibp-receipts-bulk-actions">
+            <label>
+                <input type="checkbox" id="dibp-receipts-bulk-auto-create" checked>
+                <span>Auto-create checklist for unmatched files</span>
+            </label>
+            <div>
+                <button type="button" class="btn btn-secondary" id="dibp-receipts-bulk-cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="dibp-receipts-bulk-confirm">Upload All</button>
+            </div>
+        </div>
+        <div class="dibp-receipts-bulk-progress" id="dibp-receipts-bulk-progress" hidden>
+            <p>Uploading files...</p>
+            <div class="dibp-receipts-bulk-progress-track">
+                <div class="dibp-receipts-bulk-progress-bar" id="dibp-receipts-bulk-progress-bar">0%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="dibp-receipts-checklist-context-menu" class="dibp-receipts-context-menu" hidden>
+    <button type="button" class="dibp-receipts-context-item" data-action="rename-checklist">
+        @icon('fa-edit') Rename Checklist
+    </button>
+</div>
+<div id="dibp-receipts-file-context-menu" class="dibp-receipts-context-menu" hidden>
+    <button type="button" class="dibp-receipts-context-item" data-action="rename-file">
+        @icon('fa-file-text') Rename File Name
+    </button>
+    <button type="button" class="dibp-receipts-context-item" data-action="preview">
+        @icon('fa-eye') Preview
+    </button>
+    <button type="button" class="dibp-receipts-context-item" data-action="download">
+        @icon('fa-download') Download
+    </button>
+    <button type="button" class="dibp-receipts-context-item" data-action="send-hubdoc" id="dibp-receipts-send-hubdoc">
+        @icon('fa-paper-plane') Send to Hubdoc
+    </button>
 </div>
 
 <!-- Account Tab JavaScript -->

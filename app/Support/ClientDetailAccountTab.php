@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\AccountClientReceipt;
 use App\Models\ClientMatter;
 use App\Models\Document;
+use App\Models\DocumentChecklist;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -22,7 +23,9 @@ final class ClientDetailAccountTab
      *     receipts_lists: Collection,
      *     latest_outstanding_balance: float,
      *     receipts_lists_invoice: array<int, object>,
-     *     receipts_lists_office: Collection
+     *     receipts_lists_office: Collection,
+     *     dibp_receipts_lists: \Illuminate\Support\Collection<int, Document>,
+     *     dibp_receipts_checklists: Collection<int, DocumentChecklist>
      * }
      */
     public static function build(object $client, ?string $matterRefNo = null): array
@@ -80,6 +83,8 @@ final class ClientDetailAccountTab
             'latest_outstanding_balance' => $latestOutstandingBalance,
             'receipts_lists_invoice' => $invoiceRows,
             'receipts_lists_office' => $officeReceipts,
+            'dibp_receipts_lists' => ClientDetailDocumentsTab::dibpReceiptDocuments($clientId, $matterId),
+            'dibp_receipts_checklists' => DocumentChecklist::activeDibpReceipts(),
         ];
     }
 

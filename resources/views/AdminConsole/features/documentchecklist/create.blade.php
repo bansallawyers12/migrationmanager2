@@ -53,6 +53,7 @@
                                                             <option value="1" {{ old('doc_type') == '1' ? 'selected' : '' }}>Personal</option>
                                                             <option value="2" {{ old('doc_type') == '2' ? 'selected' : '' }}>Visa</option>
                                                             <option value="3" {{ old('doc_type') == '3' ? 'selected' : '' }}>Nomination</option>
+                                                            <option value="4" {{ old('doc_type') == '4' ? 'selected' : '' }}>DIBP Receipt</option>
                                                         </select>
                                                         @if ($errors->has('doc_type'))
                                                             <span class="custom-error" role="alert">

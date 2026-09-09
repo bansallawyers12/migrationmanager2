@@ -45,11 +45,15 @@ class Document extends Model
         'is_client_portal_verify',
         'created_by',
         'lead_id',
+        'hubdoc_sent',
+        'hubdoc_sent_at',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'hubdoc_sent' => 'boolean',
+        'hubdoc_sent_at' => 'datetime',
     ];
 
     public $sortable = [

@@ -32,6 +32,8 @@ class DocumentChecklistIndexFilterTest extends TestCase
         $this->assertStringContainsString('name="doc_type"', $blade);
         $this->assertStringContainsString('id="checklist_name_filter"', $blade);
         $this->assertStringContainsString('id="doc_type_filter"', $blade);
+        $this->assertStringContainsString('value="4"', $blade);
+        $this->assertStringContainsString('DIBP Receipt', $blade);
     }
 
     #[Test]
@@ -96,8 +98,21 @@ class DocumentChecklistIndexFilterTest extends TestCase
             'doc_type' => '99',
         ]);
 
-        $this->assertSame(4, $view->getData()['totalData']);
-        $this->assertCount(4, $view->getData()['lists']);
+        $this->assertSame(5, $view->getData()['totalData']);
+        $this->assertCount(5, $view->getData()['lists']);
+    }
+
+    #[Test]
+    public function index_filters_by_dibp_receipt_document_type(): void
+    {
+        $this->seedChecklists();
+
+        $view = $this->indexView(['doc_type' => '4']);
+        $lists = $view->getData()['lists'];
+
+        $this->assertSame(1, $view->getData()['totalData']);
+        $this->assertSame(['Lodgement'], $lists->pluck('name')->all());
+        $this->assertTrue($lists->every(fn (DocumentChecklist $checklist): bool => (int) $checklist->doc_type === DocumentChecklist::DOC_TYPE_DIBP_RECEIPT));
     }
 
     #[Test]
@@ -138,6 +153,7 @@ class DocumentChecklistIndexFilterTest extends TestCase
         DocumentChecklist::query()->create(['name' => 'Statement of Service', 'doc_type' => 2, 'status' => 1]);
         DocumentChecklist::query()->create(['name' => 'DIBP Receipt', 'doc_type' => 3, 'status' => 1]);
         DocumentChecklist::query()->create(['name' => 'Refund Receipt', 'doc_type' => 2, 'status' => 1]);
+        DocumentChecklist::query()->create(['name' => 'Lodgement', 'doc_type' => DocumentChecklist::DOC_TYPE_DIBP_RECEIPT, 'status' => 1]);
     }
 
     private function createSchema(): void

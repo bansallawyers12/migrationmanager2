@@ -153,6 +153,106 @@ class ClientDetailDocumentsTabTest extends TestCase
     }
 
     #[Test]
+    public function dibp_receipt_documents_are_scoped_to_client_matter_and_exclude_other_doc_types(): void
+    {
+        $this->createDocumentsSchema();
+
+        $now = now();
+        DB::table('documents')->insert([
+            [
+                'client_id' => 20,
+                'client_matter_id' => 4,
+                'doc_type' => ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE,
+                'type' => 'client',
+                'folder_name' => ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME,
+                'file_name' => 'dibp.pdf',
+                'checklist' => 'DIBP Receipt',
+                'not_used_doc' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'client_id' => 20,
+                'client_matter_id' => 5,
+                'doc_type' => ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE,
+                'type' => 'client',
+                'folder_name' => ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME,
+                'file_name' => 'other-matter.pdf',
+                'checklist' => 'Other matter',
+                'not_used_doc' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'client_id' => 20,
+                'client_matter_id' => 4,
+                'doc_type' => ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE,
+                'type' => 'client',
+                'folder_name' => 'not-general',
+                'file_name' => 'wrong-folder.pdf',
+                'checklist' => 'Wrong folder',
+                'not_used_doc' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'client_id' => 20,
+                'client_matter_id' => 4,
+                'doc_type' => 'visa',
+                'type' => 'client',
+                'folder_name' => '1',
+                'file_name' => 'visa.pdf',
+                'checklist' => 'Visa checklist',
+                'not_used_doc' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'client_id' => 20,
+                'client_matter_id' => null,
+                'doc_type' => 'personal',
+                'type' => 'client',
+                'folder_name' => '1',
+                'file_name' => 'personal.pdf',
+                'checklist' => 'Personal checklist',
+                'not_used_doc' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'client_id' => 20,
+                'client_matter_id' => 4,
+                'doc_type' => ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE,
+                'type' => 'client',
+                'folder_name' => ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME,
+                'file_name' => 'unused.pdf',
+                'checklist' => 'Unused',
+                'not_used_doc' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ]);
+
+        $dibp = ClientDetailDocumentsTab::dibpReceiptDocuments(20, 4);
+        Assert::assertCount(1, $dibp);
+        Assert::assertSame('dibp.pdf', $dibp->first()->file_name);
+        Assert::assertSame(ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE, $dibp->first()->doc_type);
+
+        $visa = ClientDetailDocumentsTab::visaDocumentsByFolder(20);
+        Assert::assertTrue($visa->has('1'));
+        Assert::assertCount(1, $visa->get('1'));
+        Assert::assertSame('visa.pdf', $visa->get('1')->first()->file_name);
+        Assert::assertFalse($visa->has(ClientDetailDocumentsTab::DIBP_RECEIPT_FOLDER_NAME));
+
+        $personal = ClientDetailDocumentsTab::personalDocumentsByFolder(20);
+        Assert::assertCount(1, $personal->get('1'));
+        Assert::assertSame('personal.pdf', $personal->get('1')->first()->file_name);
+
+        $notUsed = ClientDetailDocumentsTab::notUsedDocuments(20);
+        Assert::assertCount(0, $notUsed);
+    }
+
+    #[Test]
     public function document_tab_blades_do_not_run_per_row_staff_lookups_or_per_category_document_queries(): void
     {
         foreach ([
@@ -205,6 +305,19 @@ class ClientDetailDocumentsTabTest extends TestCase
                 $table->string('status')->nullable();
                 $table->unsignedTinyInteger('not_used_doc')->nullable();
                 $table->timestamps();
+            });
+        } elseif (! Schema::hasColumn('documents', 'doc_type')) {
+            Schema::table('documents', function (Blueprint $table) {
+                $table->unsignedBigInteger('client_id')->nullable();
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->unsignedBigInteger('client_matter_id')->nullable();
+                $table->string('doc_type')->nullable();
+                $table->string('type')->nullable();
+                $table->string('folder_name')->nullable();
+                $table->string('file_name')->nullable();
+                $table->string('checklist')->nullable();
+                $table->string('status')->nullable();
+                $table->unsignedTinyInteger('not_used_doc')->nullable();
             });
         }
 

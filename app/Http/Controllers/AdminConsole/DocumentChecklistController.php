@@ -35,7 +35,7 @@ class DocumentChecklistController extends Controller
             ->when($name !== '', function ($query) use ($name) {
                 $query->where('name', 'like', '%'.$name.'%');
             })
-            ->when(in_array($docType, ['1', '2', '3'], true), function ($query) use ($docType) {
+            ->when(in_array($docType, DocumentChecklist::adminDocTypeValues(), true), function ($query) use ($docType) {
                 $query->where('doc_type', $docType);
             });
 
@@ -60,7 +60,7 @@ class DocumentChecklistController extends Controller
                         return $query->where('doc_type', request('doc_type'));
                     }),
                 ],
-                'doc_type' => 'required',
+                'doc_type' => ['required', Rule::in(DocumentChecklist::adminDocTypeValues())],
             ]);
 
             $requestData = $request->all();
@@ -105,7 +105,7 @@ class DocumentChecklistController extends Controller
     {
         $requestData = $request->all();
         $this->validate($request, [
-            'doc_type' => 'required',
+            'doc_type' => ['required', Rule::in(DocumentChecklist::adminDocTypeValues())],
             'name' => [
                 'required',
                 'max:255',

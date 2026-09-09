@@ -247,6 +247,13 @@ Route::post('/documents/add-edu-checklist', [ClientDocumentsController::class, '
 Route::post('/documents/refresh-category-list', [ClientDocumentsController::class, 'refreshDocumentCategoryList'])->name('clients.documents.refreshDocumentCategoryList');
 Route::post('/documents/upload-edu-document', [ClientDocumentsController::class, 'uploadedudocument'])->name('clients.documents.uploadedudocument');
 Route::post('/documents/add-visa-checklist', [ClientDocumentsController::class, 'addvisadocchecklist'])->name('clients.documents.addvisadocchecklist');
+Route::post('/documents/add-dibp-receipt-checklist', [ClientDocumentsController::class, 'addDibpReceiptChecklist'])->name('clients.documents.addDibpReceiptChecklist');
+Route::post('/documents/upload-dibp-receipt-document', [ClientDocumentsController::class, 'uploadDibpReceiptDocument'])->name('clients.documents.uploadDibpReceiptDocument');
+Route::post('/documents/rename-dibp-receipt-document', [ClientDocumentsController::class, 'renameDibpReceiptDocument'])->name('clients.documents.renameDibpReceiptDocument');
+Route::post('/documents/rename-dibp-receipt-checklist', [ClientDocumentsController::class, 'renameDibpReceiptChecklist'])->name('clients.documents.renameDibpReceiptChecklist');
+Route::post('/documents/download-dibp-receipt-document', [ClientDocumentsController::class, 'downloadDibpReceiptDocument'])->name('clients.documents.downloadDibpReceiptDocument');
+Route::post('/documents/bulk-upload-dibp-receipt-documents', [ClientDocumentsController::class, 'bulkUploadDibpReceiptDocuments'])->name('clients.documents.bulkUploadDibpReceiptDocuments');
+Route::post('/documents/send-dibp-receipt-to-hubdoc', [ClientDocumentsController::class, 'sendDibpReceiptToHubdoc'])->name('clients.documents.sendDibpReceiptToHubdoc');
 Route::post('/documents/add-nomination-checklist', [ClientDocumentsController::class, 'addNominationDocChecklist'])->name('clients.documents.addNominationDocChecklist');
 Route::post('/documents/upload-visa-document', [ClientDocumentsController::class, 'uploadvisadocument'])->name('clients.documents.uploadvisadocument');
 Route::post('/documents/upload-nomination-document', [ClientDocumentsController::class, 'uploadNominationDocument'])->name('clients.documents.uploadNominationDocument');

@@ -102,6 +102,7 @@
 														<option value="1" {{ (string) request('doc_type') === '1' ? 'selected' : '' }}>Personal</option>
 														<option value="2" {{ (string) request('doc_type') === '2' ? 'selected' : '' }}>Visa</option>
 														<option value="3" {{ (string) request('doc_type') === '3' ? 'selected' : '' }}>Nomination</option>
+														<option value="4" {{ (string) request('doc_type') === '4' ? 'selected' : '' }}>DIBP Receipt</option>
 													</select>
 												</div>
 											</div>
@@ -151,6 +152,8 @@
                                                     echo "Visa";
                                                 } else if($list->doc_type == 3 ){
                                                     echo "Nomination";
+                                                } else if($list->doc_type == 4 ){
+                                                    echo "DIBP Receipt";
                                                 }
                                             }?>
                                         </td>

@@ -2,32 +2,43 @@
 
 namespace App\Http\Controllers\CRM\Clients;
 
+use App\Helpers\IconHelper;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-
+use App\Http\Requests\StoreDibpReceiptBulkUploadRequest;
+use App\Http\Requests\StoreDibpReceiptChecklistRequest;
+use App\Http\Requests\StoreDibpReceiptDownloadRequest;
+use App\Http\Requests\StoreDibpReceiptHubdocRequest;
+use App\Mail\HubdocDibpReceiptMail;
+use App\Services\SystemEmailLogService;
+use App\Http\Requests\StoreDibpReceiptRenameChecklistRequest;
+use App\Http\Requests\StoreDibpReceiptRenameFileRequest;
+use App\Http\Requests\StoreDibpReceiptUploadRequest;
 use App\Models\Admin;
-use App\Models\ActivitiesLog;
+use App\Models\ClientMatter;
 use App\Models\Document;
 use App\Models\Form956;
-use App\Models\ClientMatter;
 // use App\Models\VisaDocChecklist; // REMOVED: VisaDocChecklist model has been deleted
+use App\Models\NominationDocumentType;
 use App\Models\PersonalDocumentType;
 use App\Models\VisaDocumentType;
-use App\Models\NominationDocumentType;
-
+use App\Support\ClientDetailDocumentsTab;
+use App\Support\DocumentFilenameRules;
+use App\Support\DocumentStoredFilename;
+use App\Support\StaffClientVisibility;
 use App\Traits\ClientAuthorization;
 use App\Traits\ClientHelpers;
 use App\Traits\LogsClientActivity;
-use App\Support\DocumentStoredFilename;
-use App\Support\DocumentFilenameRules;
-use App\Support\StaffClientVisibility;
-use App\Helpers\IconHelper;
+use Illuminate\Database\QueryException;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use mikehaertl\pdftk\Pdf;
 
 class ClientDocumentsController extends Controller
@@ -42,12 +53,9 @@ class ClientDocumentsController extends Controller
         $this->middleware('auth:admin');
     }
 
-    /**
-     * @return \Illuminate\Filesystem\FilesystemAdapter
-     */
-    private function s3Disk(): \Illuminate\Filesystem\FilesystemAdapter
+    private function s3Disk(): FilesystemAdapter
     {
-        /** @var \Illuminate\Filesystem\FilesystemAdapter */
+        /** @var FilesystemAdapter */
         return Storage::disk('s3');
     }
 
@@ -106,7 +114,7 @@ class ClientDocumentsController extends Controller
     }
 
     /**
-     * @param list<Document> $documents
+     * @param  list<Document>  $documents
      */
     private function finalizeDeletedPersonalDocuments(int $clientId, array $documents): void
     {
@@ -117,7 +125,7 @@ class ClientDocumentsController extends Controller
         $admin = Admin::query()->select('client_id')->where('id', $clientId)->first();
 
         foreach ($documents as $document) {
-            if (!empty($document->myfile_key) && $admin && !empty($admin->client_id)) {
+            if (! empty($document->myfile_key) && $admin && ! empty($admin->client_id)) {
                 try {
                     $this->s3Disk()->delete($admin->client_id.'/'.$document->doc_type.'/'.$document->myfile_key);
                 } catch (\Exception $e) {
@@ -131,7 +139,7 @@ class ClientDocumentsController extends Controller
 
             $documentName = $document->file_name ?? 'unknown';
             $matterRef = $this->getMatterReference($clientId);
-            $subject = !empty($matterRef)
+            $subject = ! empty($matterRef)
                 ? "deleted Personal: {$documentName} - {$matterRef}"
                 : "deleted Personal: {$documentName}";
 
@@ -169,7 +177,7 @@ class ClientDocumentsController extends Controller
     }
 
     /**
-     * @param list<Document> $documents
+     * @param  list<Document>  $documents
      */
     private function finalizeDeletedVisaDocuments(int $clientId, array $documents): void
     {
@@ -180,7 +188,7 @@ class ClientDocumentsController extends Controller
         $admin = Admin::query()->select('client_id')->where('id', $clientId)->first();
 
         foreach ($documents as $document) {
-            if (!empty($document->myfile_key) && $admin && !empty($admin->client_id)) {
+            if (! empty($document->myfile_key) && $admin && ! empty($admin->client_id)) {
                 try {
                     $this->s3Disk()->delete($admin->client_id.'/'.$document->doc_type.'/'.$document->myfile_key);
                 } catch (\Exception $e) {
@@ -194,7 +202,7 @@ class ClientDocumentsController extends Controller
 
             $documentName = $document->file_name ?? 'unknown';
             $matterRef = $this->getMatterReference($clientId);
-            $subject = !empty($matterRef)
+            $subject = ! empty($matterRef)
                 ? "deleted Visa: {$documentName} - {$matterRef}"
                 : "deleted Visa: {$documentName}";
 
@@ -244,21 +252,21 @@ class ClientDocumentsController extends Controller
             $categoryTitle = NominationDocumentType::query()->where('id', $folderName)->value('title');
         }
 
-        if (!$categoryTitle) {
+        if (! $categoryTitle) {
             return '';
         }
 
-        if (in_array($document->doc_type, ['visa', 'nomination'], true) && !empty($document->client_matter_id)) {
+        if (in_array($document->doc_type, ['visa', 'nomination'], true) && ! empty($document->client_matter_id)) {
             $clientMatter = ClientMatter::with('matter:id,title')->find($document->client_matter_id);
             if ($clientMatter) {
                 $matterLabel = $clientMatter->client_unique_matter_no ?? '';
-                if ($clientMatter->matter && !empty($clientMatter->matter->title)) {
+                if ($clientMatter->matter && ! empty($clientMatter->matter->title)) {
                     $matterLabel = trim($matterLabel) !== ''
-                        ? $matterLabel . ' - ' . $clientMatter->matter->title
+                        ? $matterLabel.' - '.$clientMatter->matter->title
                         : $clientMatter->matter->title;
                 }
                 if ($matterLabel !== '') {
-                    return $categoryTitle . ' (' . $matterLabel . ')';
+                    return $categoryTitle.' ('.$matterLabel.')';
                 }
             }
         }
@@ -273,7 +281,7 @@ class ClientDocumentsController extends Controller
     {
         $addedBy = 'N/A';
         $addedDate = 'N/A';
-        if (!empty($docInfo->user_id) && $docInfo->staff) {
+        if (! empty($docInfo->user_id) && $docInfo->staff) {
             $addedBy = $docInfo->staff->first_name;
             $addedDate = date('d/m/Y', strtotime($docInfo->created_at));
         }
@@ -307,49 +315,49 @@ class ClientDocumentsController extends Controller
     /**
      * Add Personal/Education Document Checklist
      */
-    public function addedudocchecklist(Request $request){
+    public function addedudocchecklist(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $clientid = $request->clientid;
-            if(empty($clientid)) {
+            if (empty($clientid)) {
                 $response['message'] = 'Client ID is required';
+
                 return response()->json($response);
             }
 
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
                 return $deny;
             }
-            
+
             $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
-            if(!empty($admin_info1)){
+            if (! empty($admin_info1)) {
                 $client_unique_id = $admin_info1->client_id;
             } else {
-                $client_unique_id = "";
+                $client_unique_id = '';
             }
-            $doctype = isset($request->doctype)? $request->doctype : '';
-            
+            $doctype = isset($request->doctype) ? $request->doctype : '';
+
             // Validate folder_name
-            if(empty($request->folder_name)) {
+            if (empty($request->folder_name)) {
                 $response['message'] = 'Document category is required';
+
                 return response()->json($response);
             }
 
-            if ($request->has('checklist'))
-            {
+            if ($request->has('checklist')) {
                 $checklistArray = $request->input('checklist');
-                if (is_array($checklistArray) && !empty($checklistArray))
-                {
+                if (is_array($checklistArray) && ! empty($checklistArray)) {
                     $saved = false;
                     $savedCount = 0;
                     $errors = [];
-                    
-                    foreach ($checklistArray as $item)
-                    {
-                        if(empty(trim($item))) {
+
+                    foreach ($checklistArray as $item) {
+                        if (empty(trim($item))) {
                             continue; // Skip empty checklist items
                         }
-                        
+
                         try {
                             $obj = new Document;
                             $obj->user_id = Auth::user()->id;
@@ -358,17 +366,17 @@ class ClientDocumentsController extends Controller
                             $obj->doc_type = $doctype;
                             // For PostgreSQL, keep folder_name as string to avoid type issues
                             // PostgreSQL will handle the conversion if needed
-                            $obj->folder_name = (string)$request->folder_name;
+                            $obj->folder_name = (string) $request->folder_name;
                             $obj->checklist = trim($item);
-                            
+
                             // Validate required fields before saving
-                            if(empty($obj->user_id) || empty($obj->client_id) || empty($obj->folder_name) || empty($obj->checklist)) {
-                                throw new \Exception('Required fields are missing: user_id=' . $obj->user_id . ', client_id=' . $obj->client_id . ', folder_name=' . $obj->folder_name . ', checklist=' . $obj->checklist);
+                            if (empty($obj->user_id) || empty($obj->client_id) || empty($obj->folder_name) || empty($obj->checklist)) {
+                                throw new \Exception('Required fields are missing: user_id='.$obj->user_id.', client_id='.$obj->client_id.', folder_name='.$obj->folder_name.', checklist='.$obj->checklist);
                             }
-                            
+
                             $saved = $obj->save();
-                            
-                            if($saved) {
+
+                            if ($saved) {
                                 $savedCount++;
                             } else {
                                 $errors[] = "Failed to save checklist item: {$item}";
@@ -379,63 +387,59 @@ class ClientDocumentsController extends Controller
                                 'client_id' => $clientid,
                                 'folder_name' => $request->folder_name,
                                 'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString()
+                                'trace' => $e->getTraceAsString(),
                             ]);
-                            $errors[] = "Error saving '{$item}': " . $e->getMessage();
+                            $errors[] = "Error saving '{$item}': ".$e->getMessage();
                         }
-                    } //end foreach
+                    } // end foreach
 
-                    if($savedCount > 0)
-                {
-                    if($request->type == 'client'){
-                        $checklistCount = count($checklistArray);
-                        $subject = "added Personal Checklist";
-                        $description = "<p>Added {$checklistCount} document checklist items in '{$request->folder_name}' category: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
-                        
-                        $this->logClientActivity(
-                            $clientid,
-                            $subject,
-                            $description,
-                            'document'
-                        );
-                    }
+                    if ($savedCount > 0) {
+                        if ($request->type == 'client') {
+                            $checklistCount = count($checklistArray);
+                            $subject = 'added Personal Checklist';
+                            $description = "<p>Added {$checklistCount} document checklist items in '{$request->folder_name}' category: ".implode(', ', array_slice($checklistArray, 0, 3)).($checklistCount > 3 ? '...' : '').'</p>';
 
-                    $response['status'] = true;
-                    $response['message'] = 'You\'ve successfully added your personal checklist';
+                            $this->logClientActivity(
+                                $clientid,
+                                $subject,
+                                $description,
+                                'document'
+                            );
+                        }
 
-                    $fetchd = Document::with('staff')->where('client_id',$clientid)->whereNull('not_used_doc')->where('doc_type',$doctype)->where('type',$request->type)->where('folder_name',$request->folder_name)->orderby('updated_at', 'DESC')->get();
-                    ob_start();
-                    foreach($fetchd as $docKey=>$fetch)
-                    {
-                        $admin = $fetch->staff;
-                        $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientid . '/personal/' . $fetch->myfile;
-                        ?>
+                        $response['status'] = true;
+                        $response['message'] = 'You\'ve successfully added your personal checklist';
+
+                        $fetchd = Document::with('staff')->where('client_id', $clientid)->whereNull('not_used_doc')->where('doc_type', $doctype)->where('type', $request->type)->where('folder_name', $request->folder_name)->orderby('updated_at', 'DESC')->get();
+                        ob_start();
+                        foreach ($fetchd as $docKey => $fetch) {
+                            $admin = $fetch->staff;
+                            $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$clientid.'/personal/'.$fetch->myfile;
+                            ?>
                         <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                             <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showPersonalChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
+                                <div data-id="<?php echo $fetch->id; ?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showPersonalChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
                                     <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
                                 </div>
                             </td>
                             <td style="white-space: initial;">
                                 <?php
-                                if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
+                                    if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->getPreviewFileExtension()); ?>', '<?php echo $fileUrl; ?>', '<?php echo $request->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension();?>','<?php echo $fileUrl; ?>','preview-container-<?php echo $request->folder_name;?>')">
-                                            <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
+                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension(); ?>','<?php echo $fileUrl; ?>','preview-container-<?php echo $request->folder_name; ?>')">
+                                            <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
                                         </a>
                                     </div>
                                 <?php
-                                }
-                                else
-                                {?>
+                                    } else {?>
                                     <div class="upload_document" style="display:inline-block;">
-                                        <form method="POST" enctype="multipart/form-data" id="upload_form_<?php echo $fetch->id;?>">
-                                            <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
-                                            <input type="hidden" name="clientid" value="<?php echo $clientid;?>">
-                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
+                                        <form method="POST" enctype="multipart/form-data" id="upload_form_<?php echo $fetch->id; ?>">
+                                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>" />
+                                            <input type="hidden" name="clientid" value="<?php echo $clientid; ?>">
+                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id; ?>">
                                             <input type="hidden" name="type" value="client">
                                             <input type="hidden" name="doctype" value="personal">
-                                            <input type="hidden" name="doccategory" value="<?php echo $request->doccategory;?>">
+                                            <input type="hidden" name="doccategory" value="<?php echo $request->doccategory; ?>">
                                             
                                             <!-- Drag and Drop Zone -->
                                             <div class="document-drag-drop-zone personal-doc-drag-zone" 
@@ -443,58 +447,57 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $request->folder_name; ?>"
                                                  data-formid="upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
+                                                    <?php echo IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
                                             
                                             <!-- Keep existing file input (hidden, used as fallback) -->
-                                            <input class="docupload d-none" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $request->folder_name;?>" type="file" name="document_upload" style="display: none;"/>
+                                            <input class="docupload d-none" data-fileid="<?php echo $fetch->id; ?>" data-doccategory="<?php echo $request->folder_name; ?>" type="file" name="document_upload" style="display: none;"/>
                                         </form>
                                     </div>
                                 <?php
-                                }?>
+                                    }?>
                             </td>
                             <td>
                                 <!-- Hidden elements for context menu actions -->
                                 <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                <?php if (!$fetch->file_name): ?>
+                                <?php if (! $fetch->file_name) { ?>
                                 <a class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" href="javascript:;" style="display: none;"></a>
-                                <?php endif; ?>
-                                <?php if ($fetch->myfile): ?>
+                                <?php } ?>
+                                <?php if ($fetch->myfile) { ?>
                                     <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
-                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="personal" data-doccategory="<?php echo $request->doccategory;?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
-                                <?php endif; ?>
+                                    <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="personal" data-doccategory="<?php echo $request->doccategory; ?>" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
+                                <?php } ?>
                             </td>
                         </tr>
 			        <?php
-			        } //end foreach
+                        } // end foreach
 
-                    $data = ob_get_clean();
-                    ob_start();
-                    foreach($fetchd as $fetch)
-                    {
-                        $admin = $fetch->staff;
-                        ?>
+                        $data = ob_get_clean();
+                        ob_start();
+                        foreach ($fetchd as $fetch) {
+                            $admin = $fetch->staff;
+                            ?>
                         <div class="grid_list">
                             <div class="grid_col">
                                 <div class="grid_icon">
-                                    <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-file-image'); ?>
+                                    <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?>
                                 </div>
                                 <div class="grid_content">
                                     <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?php echo \App\Helpers\IconHelper::fromLegacy('fa fa-ellipsis-v'); ?></a>
+                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?php echo IconHelper::fromLegacy('fa fa-ellipsis-v'); ?></a>
                                         <div class="dropdown-menu">
                                             <?php
-                                            $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                            ?>
-                                            <?php if( isset($fetch->myfile) && $fetch->myfile != ""){?>
+                                                $url = 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/';
+                            ?>
+                                            <?php if (isset($fetch->myfile) && $fetch->myfile != '') {?>
                                             <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
 
-                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?php echo $request->folder_name;?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
+                                            <a data-id="<?php echo $fetch->id; ?>" class="dropdown-item notuseddoc" data-doctype="personal" data-doccategory="<?php echo $request->folder_name; ?>" data-href="notuseddoc" href="javascript:;">Not Used</a>
                                             <?php }?>
                                         </div>
                                     </div>
@@ -502,36 +505,33 @@ class ClientDocumentsController extends Controller
                             </div>
                         </div>
                     <?php
-                    } //end foreach
-                    $griddata = ob_get_clean();
-                    $response['data'] = $data;
-                    $response['griddata'] = $griddata;
-                    } //end if
-                    else
-                    {
+                        } // end foreach
+                        $griddata = ob_get_clean();
+                        $response['data'] = $data;
+                        $response['griddata'] = $griddata;
+                    } // end if
+                    else {
                         $response['status'] = false;
-                        $errorMsg = !empty($errors) ? implode('; ', $errors) : 'Failed to save checklist. Please try again';
+                        $errorMsg = ! empty($errors) ? implode('; ', $errors) : 'Failed to save checklist. Please try again';
                         $response['message'] = $errorMsg;
                         Log::error('Failed to save any checklist items', [
                             'client_id' => $clientid,
                             'folder_name' => $request->folder_name,
                             'checklist_array' => $checklistArray,
-                            'errors' => $errors
+                            'errors' => $errors,
                         ]);
-                    } //end else
-                } //end if
-                else
-                {
+                    } // end else
+                } // end if
+                else {
                     $response['status'] = false;
                     $response['message'] = 'Please select at least one checklist item';
-                } //end else
-            } //end if
-            else
-            {
+                } // end else
+            } // end if
+            else {
                 $response['status'] = false;
                 $response['message'] = 'Please select at least one checklist item';
-            } //end else
-        } catch (\Illuminate\Database\QueryException $e) {
+            } // end else
+        } catch (QueryException $e) {
             // PostgreSQL-specific errors
             $errorMessage = $e->getMessage();
             Log::error('PostgreSQL error adding personal checklist', [
@@ -542,9 +542,9 @@ class ClientDocumentsController extends Controller
                 'sql_state' => $e->errorInfo[0] ?? null,
                 'sql_code' => $e->errorInfo[1] ?? null,
                 'sql_message' => $e->errorInfo[2] ?? null,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Provide more specific error messages
             if (strpos($errorMessage, 'column') !== false && strpos($errorMessage, 'does not exist') !== false) {
                 $response['message'] = 'Database column error. Please contact support.';
@@ -553,7 +553,7 @@ class ClientDocumentsController extends Controller
             } elseif (strpos($errorMessage, 'foreign key') !== false) {
                 $response['message'] = 'Invalid client or staff reference. Please refresh and try again.';
             } else {
-                $response['message'] = 'Database error: ' . substr($errorMessage, 0, 100);
+                $response['message'] = 'Database error: '.substr($errorMessage, 0, 100);
             }
             $response['status'] = false;
             $response['message'] = 'Please try again';
@@ -563,20 +563,22 @@ class ClientDocumentsController extends Controller
                 'folder_name' => $request->folder_name ?? null,
                 'checklist' => $request->input('checklist'),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
         }
+
         return response()->json($response);
-	}
-    
+    }
+
     /**
      * Upload Personal/Education Document
      */
-    public function uploadedudocument(Request $request) {
+    public function uploadedudocument(Request $request)
+    {
         ob_start();
-    
+
         $response = ['status' => false, 'message' => 'Please try again', 'data' => '', 'griddata' => ''];
         $clientid = $request->clientid;
         if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
@@ -584,26 +586,26 @@ class ClientDocumentsController extends Controller
             exit;
         }
         $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
-        $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-        $client_first_name = !empty($admin_info1)
+        $client_unique_id = ! empty($admin_info1) ? $admin_info1->client_id : '';
+        $client_first_name = ! empty($admin_info1)
             ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
             : 'client';
         $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
-    
+
         $doctype = $request->doctype ?? '';
-    
+
         try {
             if ($request->hasfile('document_upload')) {
                 $file = $request->file('document_upload');
                 $size = $file->getSize();
                 $fileName = $file->getClientOriginalName();
-    
-                if (!DocumentFilenameRules::isAllowed($fileName)) {
+
+                if (! DocumentFilenameRules::isAllowed($fileName)) {
                     $response['message'] = DocumentFilenameRules::validationMessage();
                 } else {
                     $originalName = $file->getClientOriginalName();
                     $extension = $file->getClientOriginalExtension();
-    
+
                     // Validate fileid
                     if (empty($request->fileid)) {
                         $response['message'] = 'Document ID is required';
@@ -612,16 +614,16 @@ class ClientDocumentsController extends Controller
                         echo json_encode($response);
                         exit;
                     }
-    
+
                     // Fetch and validate document
                     $req_file_id = $request->fileid;
                     $obj = Document::query()->find($req_file_id);
-                    
-                    if (!$obj) {
+
+                    if (! $obj) {
                         Log::warning('Document upload failed: Document not found', [
                             'fileid' => $req_file_id,
                             'clientid' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Document record not found.';
                         ob_end_clean();
@@ -629,14 +631,14 @@ class ClientDocumentsController extends Controller
                         echo json_encode($response);
                         exit;
                     }
-    
+
                     // Validate document belongs to client (security check)
                     if ($obj->client_id != $clientid) {
                         Log::warning('Document upload failed: Client mismatch', [
                             'fileid' => $req_file_id,
                             'document_client_id' => $obj->client_id,
                             'request_client_id' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Document does not belong to this client.';
                         ob_end_clean();
@@ -644,13 +646,13 @@ class ClientDocumentsController extends Controller
                         echo json_encode($response);
                         exit;
                     }
-    
+
                     // Validate checklist exists
                     if (empty($obj->checklist)) {
                         Log::warning('Document upload failed: Missing checklist', [
                             'fileid' => $req_file_id,
                             'clientid' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Document checklist not found. Please select a valid checklist.';
                         ob_end_clean();
@@ -658,18 +660,18 @@ class ClientDocumentsController extends Controller
                         echo json_encode($response);
                         exit;
                     }
-    
+
                     // Get checklist name right before use to prevent race conditions
                     // Refresh document to get latest checklist name
                     $obj->refresh();
                     $checklistName = $obj->checklist;
-    
+
                     // Validate checklist name is still present after refresh
                     if (empty($checklistName)) {
                         Log::error('Document upload failed: Checklist disappeared during upload', [
                             'fileid' => $req_file_id,
                             'clientid' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Checklist name not found. Please try again.';
                         ob_end_clean();
@@ -677,25 +679,25 @@ class ClientDocumentsController extends Controller
                         echo json_encode($response);
                         exit;
                     }
-    
+
                     // Build file name with current checklist name
                     $timestamp = time();
-                    $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
-    
-                    $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                    $name = $namePrefix.'_'.$checklistName.'_'.$timestamp.'.'.$extension;
+
+                    $filePath = $client_unique_id.'/'.$doctype.'/'.$name;
                     $this->s3Disk()->put($filePath, file_get_contents($file));
-    
+
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
                     $finalChecklistName = $obj->checklist;
-                    
+
                     // Use the latest checklist name
-                    if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
+                    if (! empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
                         // Checklist changed during upload - rebuild name with same timestamp
                         $checklistName = $finalChecklistName;
-                        $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
+                        $name = $namePrefix.'_'.$checklistName.'_'.$timestamp.'.'.$extension;
                         // Update file path and move S3 file
-                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                        $newFilePath = $client_unique_id.'/'.$doctype.'/'.$name;
                         if ($newFilePath !== $filePath) {
                             try {
                                 // Copy to new path and delete old
@@ -706,21 +708,21 @@ class ClientDocumentsController extends Controller
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'old_checklist' => $checklistName,
-                                    'new_checklist' => $finalChecklistName
+                                    'new_checklist' => $finalChecklistName,
                                 ]);
                             } catch (\Exception $e) {
                                 Log::error('Failed to move S3 file after checklist change', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
-                                    'error' => $e->getMessage()
+                                    'error' => $e->getMessage(),
                                 ]);
                                 // Continue with old path - at least the file is uploaded
                             }
                         }
                     }
-    
+
                     // Update document with file information
-                    $obj->file_name = $namePrefix . "_" . $checklistName . "_" . $timestamp;
+                    $obj->file_name = $namePrefix.'_'.$checklistName.'_'.$timestamp;
                     $obj->filetype = $extension;
                     $obj->user_id = Auth::user()->id;
                     $fileUrl = $this->s3Disk()->url($filePath);
@@ -730,47 +732,47 @@ class ClientDocumentsController extends Controller
                     $obj->file_size = $size;
                     $obj->doc_type = $doctype;
                     $saved = $obj->save();
-                    
+
                     Log::info('Document uploaded successfully', [
                         'fileid' => $req_file_id,
                         'checklist_name' => $checklistName,
                         'file_name' => $name,
                         'clientid' => $clientid,
-                        'user_id' => Auth::user()->id ?? 'unknown'
+                        'user_id' => Auth::user()->id ?? 'unknown',
                     ]);
-    
-                        if ($saved && $request->type == 'client') {
-                            $matterRef = $this->getMatterReference($clientid);
-                            $subject = !empty($matterRef) 
-                                ? "uploaded {$checklistName} - {$matterRef}"
-                                : "uploaded {$checklistName}";
-                            $description = "<p>Uploaded document in '{$request->doccategory}' category</p>";
-                            
-                            $this->logClientActivity(
-                                $clientid,
-                                $subject,
-                                $description,
-                                'document'
-                            );
-                        }
-    
-                        if ($saved) {
-                            $response['status'] = true;
-                            $response['message'] = 'File uploaded successfully';
-                            $response['filename'] = $name;
-                            $response['filetype'] = $extension;
-                            $response['fileurl'] = $fileUrl;
-                            $response['filekey'] = $name;
-                            $response['doccategory'] = $checklistName;
-                            $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
-                            $response['uploaded_at'] = $obj->created_at ? $obj->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
-                        }
+
+                    if ($saved && $request->type == 'client') {
+                        $matterRef = $this->getMatterReference($clientid);
+                        $subject = ! empty($matterRef)
+                            ? "uploaded {$checklistName} - {$matterRef}"
+                            : "uploaded {$checklistName}";
+                        $description = "<p>Uploaded document in '{$request->doccategory}' category</p>";
+
+                        $this->logClientActivity(
+                            $clientid,
+                            $subject,
+                            $description,
+                            'document'
+                        );
+                    }
+
+                    if ($saved) {
+                        $response['status'] = true;
+                        $response['message'] = 'File uploaded successfully';
+                        $response['filename'] = $name;
+                        $response['filetype'] = $extension;
+                        $response['fileurl'] = $fileUrl;
+                        $response['filekey'] = $name;
+                        $response['doccategory'] = $checklistName;
+                        $response['uploaded_by'] = Auth::user()->first_name ?? 'Staff';
+                        $response['uploaded_at'] = $obj->created_at ? $obj->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
+                    }
                 }
             }
         } catch (\Exception $e) {
-            $response['message'] = 'An error occurred: ' . $e->getMessage();
+            $response['message'] = 'An error occurred: '.$e->getMessage();
         }
-    
+
         ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode($response);
@@ -780,179 +782,172 @@ class ClientDocumentsController extends Controller
     /**
      * Add Visa Document Checklist
      */
-    public function addvisadocchecklist(Request $request) {
+    public function addvisadocchecklist(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $clientid = $request->clientid;
             if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
                 return;
             }
             $admin_info1 = Admin::select('client_id')->where('id', $clientid)->first();
-            if(!empty($admin_info1)){
+            if (! empty($admin_info1)) {
                 $client_unique_id = $admin_info1->client_id;
             } else {
-                $client_unique_id = "";
+                $client_unique_id = '';
             }
 
-            $doctype = isset($request->doctype)? $request->doctype : '';
-            if ($request->has('visa_checklist'))
-        {
-            $checklistArray = $request->input('visa_checklist');
-            if (is_array($checklistArray))
-            {
-                $saved = false;
-                foreach ($checklistArray as $item)
-                {
-                    $obj = new Document;
-                    $obj->user_id = Auth::user()->id;
-                    $obj->client_id = $clientid;
-                    $obj->type = $request->type;
-                    $obj->doc_type = $doctype;
-                    $obj->client_matter_id = $request->client_matter_id;
-                    $obj->checklist = $item;
-                    $obj->folder_name = $request->folder_name;
-                    $saved = $obj->save();
-                }  //end foreach
+            $doctype = isset($request->doctype) ? $request->doctype : '';
+            if ($request->has('visa_checklist')) {
+                $checklistArray = $request->input('visa_checklist');
+                if (is_array($checklistArray)) {
+                    $saved = false;
+                    foreach ($checklistArray as $item) {
+                        $obj = new Document;
+                        $obj->user_id = Auth::user()->id;
+                        $obj->client_id = $clientid;
+                        $obj->type = $request->type;
+                        $obj->doc_type = $doctype;
+                        $obj->client_matter_id = $request->client_matter_id;
+                        $obj->checklist = $item;
+                        $obj->folder_name = $request->folder_name;
+                        $saved = $obj->save();
+                    }  // end foreach
 
-                if($saved)
-                {
-                    if($request->type == 'client'){
-                        $checklistCount = count($checklistArray);
-                        $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
-                        $subject = !empty($matterRef) 
-                            ? "added Visa Checklist - {$matterRef}"
-                            : "added Visa Checklist";
-                        $description = "<p>Added {$checklistCount} visa document checklist items: " . implode(', ', array_slice($checklistArray, 0, 3)) . ($checklistCount > 3 ? '...' : '') . "</p>";
-                        
-                        $this->logClientActivity(
-                            $clientid,
-                            $subject,
-                            $description,
-                            'document'
-                        );
-                    }
+                    if ($saved) {
+                        if ($request->type == 'client') {
+                            $checklistCount = count($checklistArray);
+                            $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
+                            $subject = ! empty($matterRef)
+                                ? "added Visa Checklist - {$matterRef}"
+                                : 'added Visa Checklist';
+                            $description = "<p>Added {$checklistCount} visa document checklist items: ".implode(', ', array_slice($checklistArray, 0, 3)).($checklistCount > 3 ? '...' : '').'</p>';
 
-                    //Update date in client matter table
-                    if( isset($request->client_matter_id) && $request->client_matter_id != ""){
-                        $obj1 = ClientMatter::query()->find($request->client_matter_id);
-                        $obj1->updated_at = date('Y-m-d H:i:s');
-                        $obj1->save();
-                    }
-                    $response['status'] 	= 	true;
-                    $response['message']	=	'You have added uploaded your visa checklist';
-
-                    // Get all documents for this client (original behavior - no strict filtering)
-                    $fetchd = Document::with('staff')->where('client_id',$clientid)
-                        ->whereNull('not_used_doc')
-                        ->where('doc_type',$doctype)
-                        ->where('type',$request->type)
-                        ->orderBy('updated_at', 'DESC')
-                        ->get();
-                    
-                    ob_start();
-                    foreach($fetchd as $visaKey=>$fetch)
-                    {
-                        $admin = $fetch->staff;
-                        $VisaDocumentType = VisaDocumentType::query()->where('id', $fetch->folder_name)->first();
-                        $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
-                        
-                        // Hide non-matching documents with CSS (original behavior)
-                        if (
-                            $request->client_matter_id != $fetch->client_matter_id ||
-                            $request->folder_name != $fetch->folder_name
-                        ) {
-                            $showCls = "style='display: none;'";
-                        } else {
-                            $showCls = "";
+                            $this->logClientActivity(
+                                $clientid,
+                                $subject,
+                                $description,
+                                'document'
+                            );
                         }
-                        ?>
-                        <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id;?>" data-catid="<?php echo $fetch->folder_name;?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls;?>>
+
+                        // Update date in client matter table
+                        if (isset($request->client_matter_id) && $request->client_matter_id != '') {
+                            $obj1 = ClientMatter::query()->find($request->client_matter_id);
+                            $obj1->updated_at = date('Y-m-d H:i:s');
+                            $obj1->save();
+                        }
+                        $response['status'] = true;
+                        $response['message'] = 'You have added uploaded your visa checklist';
+
+                        // Get all documents for this client (original behavior - no strict filtering)
+                        $fetchd = Document::with('staff')->where('client_id', $clientid)
+                            ->whereNull('not_used_doc')
+                            ->where('doc_type', $doctype)
+                            ->where('type', $request->type)
+                            ->orderBy('updated_at', 'DESC')
+                            ->get();
+
+                        ob_start();
+                        foreach ($fetchd as $visaKey => $fetch) {
+                            $admin = $fetch->staff;
+                            $VisaDocumentType = VisaDocumentType::query()->where('id', $fetch->folder_name)->first();
+                            $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$fetch->client_id.'/visa/'.$fetch->myfile;
+
+                            // Hide non-matching documents with CSS (original behavior)
+                            if (
+                                $request->client_matter_id != $fetch->client_matter_id ||
+                                $request->folder_name != $fetch->folder_name
+                            ) {
+                                $showCls = "style='display: none;'";
+                            } else {
+                                $showCls = '';
+                            }
+                            ?>
+                        <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id; ?>" data-catid="<?php echo $fetch->folder_name; ?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls; ?>>
                             <td style="white-space: initial;">
-                                <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showVisaChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
+                                <div data-id="<?php echo $fetch->id; ?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showVisaChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
                                     <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
                                 </div>
                             </td>
                             <td style="white-space: initial;">
                                 <?php
-                                if( isset($fetch->file_name) && $fetch->file_name !=""){ ?>
+                                    if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showVisaFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->getPreviewFileExtension()); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension();?>','<?php echo $fetch->myfile; ?>','preview-container-migdocumnetlist')">
-                                            <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
+                                        <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension(); ?>','<?php echo $fetch->myfile; ?>','preview-container-migdocumnetlist')">
+                                            <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
                                         </a>
                                     </div>
                                 <?php
-                                }
-                                else
-                                {?>
+                                    } else {?>
                                     <div class="migration_upload_document" style="display: inline-block;">
-                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id;?>">
-                                            <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
-                                            <input type="hidden" name="clientid" value="<?php echo $fetch->client_id;?>">
-                                            <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id;?>">
-                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
+                                        <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id; ?>">
+                                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>" />
+                                            <input type="hidden" name="clientid" value="<?php echo $fetch->client_id; ?>">
+                                            <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id; ?>">
+                                            <input type="hidden" name="fileid" value="<?php echo $fetch->id; ?>">
                                             <input type="hidden" name="type" value="client">
                                             <input type="hidden" name="doctype" value="visa">
                                             <input type="hidden" name="doccategory" value="<?php echo $VisaDocumentType->title; ?>">
                                             
                                             <!-- Drag and Drop Zone -->
                                             <div class="document-drag-drop-zone visa-doc-drag-zone" 
-                                                 data-fileid="<?php echo $fetch->id;?>" 
-                                                 data-doccategory="<?php echo $fetch->folder_name;?>"
-                                                 data-formid="mig_upload_form_<?php echo $fetch->id;?>">
+                                                 data-fileid="<?php echo $fetch->id; ?>" 
+                                                 data-doccategory="<?php echo $fetch->folder_name; ?>"
+                                                 data-formid="mig_upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
+                                                    <?php echo IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
                                             
                                             <!-- Keep existing file input (hidden) -->
                                             <input class="migdocupload d-none" 
-                                                   data-fileid="<?php echo $fetch->id;?>" 
-                                                   data-doccategory="<?php echo $fetch->folder_name;?>" 
+                                                   data-fileid="<?php echo $fetch->id; ?>" 
+                                                   data-doccategory="<?php echo $fetch->folder_name; ?>" 
                                                    type="file" 
                                                    name="document_upload" 
                                                    style="display: none;"/>
                                         </form>
                                     </div>
                                 <?php
-                                }?>
+                                    }?>
                             </td>
                             <td>
                                 <!-- Hidden elements for context menu actions -->
                                 <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                                <?php if (!$fetch->file_name): ?>
+                                <?php if (! $fetch->file_name) { ?>
                                 <a class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" href="javascript:;" style="display: none;"></a>
-                                <?php endif; ?>
-                                <?php if ($fetch->myfile): ?>
+                                <?php } ?>
+                                <?php if ($fetch->myfile) { ?>
                                     <a class="renamedoc" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
                                     <a class="download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>" href="#" style="display: none;"></a>
                                     <a class="notuseddoc" data-id="<?php echo $fetch->id; ?>" data-doctype="visa" data-href="documents/not-used" href="javascript:;" style="display: none;"></a>
-                                <?php endif; ?>
+                                <?php } ?>
                             </td>
                         </tr>
                     <?php
-                    } //end foreach
+                        } // end foreach
 
-                    $data = ob_get_clean();
-                    ob_start();
-                    foreach($fetchd as $fetch)
-                    {
-                        $admin = $fetch->staff;
-                        ?>
+                        $data = ob_get_clean();
+                        ob_start();
+                        foreach ($fetchd as $fetch) {
+                            $admin = $fetch->staff;
+                            ?>
                         <div class="grid_list">
                             <div class="grid_col">
                                 <div class="grid_icon">
-                                    <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-file-image'); ?>
+                                    <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?>
                                 </div>
                                 <div class="grid_content">
                                     <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?php echo \App\Helpers\IconHelper::fromLegacy('fa fa-ellipsis-v'); ?></a>
+                                        <a class="dropdown-toggle" type="button" id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?php echo IconHelper::fromLegacy('fa fa-ellipsis-v'); ?></a>
                                         <div class="dropdown-menu">
                                             <?php
-                                            $url = 'https://'.env('AWS_BUCKET').'.s3.'. env('AWS_DEFAULT_REGION') . '.amazonaws.com/';
-                                            ?>
+                                                $url = 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/';
+                            ?>
                                             <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
 
@@ -965,33 +960,29 @@ class ClientDocumentsController extends Controller
                             </div>
                         </div>
                         <?php
-                    } //end foreach
-                    $griddata = ob_get_clean();
-                    $response['data']	= $data;
-                    $response['griddata'] = $griddata;
-                } //end if
-                else
-                {
+                        } // end foreach
+                        $griddata = ob_get_clean();
+                        $response['data'] = $data;
+                        $response['griddata'] = $griddata;
+                    } // end if
+                    else {
+                        $response['status'] = false;
+                        $response['message'] = 'Please try again';
+                    } // end else
+                } // end if
+                else {
                     $response['status'] = false;
                     $response['message'] = 'Please try again';
-                } //end else
-            } //end if
-            else
-            {
+                } // end else
+            } else {
                 $response['status'] = false;
                 $response['message'] = 'Please try again';
-            } //end else
-        }
-        else
-        {
-            $response['status'] = false;
-            $response['message'] = 'Please try again';
-        } //end else
+            } // end else
         } catch (\Exception $e) {
             Log::error('Error adding visa document checklist', [
                 'client_id' => $request->clientid ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
@@ -1090,27 +1081,27 @@ class ClientDocumentsController extends Controller
         ob_start();
         foreach ($documents as $fetch) {
             $admin = $fetch->staff;
-            $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $clientid . '/personal/' . $fetch->myfile;
+            $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$clientid.'/personal/'.$fetch->myfile;
             ?>
             <tr class="drow" id="id_<?php echo $fetch->id; ?>">
                 <td style="white-space: initial;">
-                    <div data-id="<?php echo $fetch->id;?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showPersonalChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
+                    <div data-id="<?php echo $fetch->id; ?>" data-personalchecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="personalchecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showPersonalChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
                         <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
                     </div>
                 </td>
                 <td style="white-space: initial;">
                     <?php if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
                         <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->getPreviewFileExtension()); ?>', '<?php echo $fileUrl; ?>', '<?php echo $folderName; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                            <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension();?>','<?php echo $fileUrl; ?>','preview-container-<?php echo $folderName;?>')">
+                            <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension(); ?>','<?php echo $fileUrl; ?>','preview-container-<?php echo $folderName; ?>')">
                                 <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
                             </a>
                         </div>
                     <?php } else { ?>
                         <div class="upload_document" style="display:inline-block;">
-                            <form method="POST" enctype="multipart/form-data" id="upload_form_<?php echo $fetch->id;?>">
-                                <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
-                                <input type="hidden" name="clientid" value="<?php echo $clientid;?>">
-                                <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
+                            <form method="POST" enctype="multipart/form-data" id="upload_form_<?php echo $fetch->id; ?>">
+                                <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>" />
+                                <input type="hidden" name="clientid" value="<?php echo $clientid; ?>">
+                                <input type="hidden" name="fileid" value="<?php echo $fetch->id; ?>">
                                 <input type="hidden" name="type" value="client">
                                 <input type="hidden" name="doctype" value="personal">
                                 <input type="hidden" name="doccategory" value="<?php echo htmlspecialchars($doccategoryTitle); ?>">
@@ -1123,14 +1114,14 @@ class ClientDocumentsController extends Controller
                                         <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                     </div>
                                 </div>
-                                <input class="docupload d-none" data-fileid="<?php echo $fetch->id;?>" data-doccategory="<?php echo $folderName;?>" type="file" name="document_upload" style="display: none;"/>
+                                <input class="docupload d-none" data-fileid="<?php echo $fetch->id; ?>" data-doccategory="<?php echo $folderName; ?>" type="file" name="document_upload" style="display: none;"/>
                             </form>
                         </div>
                     <?php } ?>
                 </td>
                 <td>
                     <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                    <?php if (!$fetch->file_name) { ?>
+                    <?php if (! $fetch->file_name) { ?>
                     <a class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" href="javascript:;" style="display: none;"></a>
                     <?php } ?>
                     <?php if ($fetch->myfile) { ?>
@@ -1196,7 +1187,7 @@ class ClientDocumentsController extends Controller
         foreach ($documents as $fetch) {
             $admin = $fetch->staff;
             $visaDocumentType = VisaDocumentType::query()->where('id', $fetch->folder_name)->first();
-            $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://' . env('AWS_BUCKET') . '.s3.' . env('AWS_DEFAULT_REGION') . '.amazonaws.com/' . $fetch->client_id . '/visa/' . $fetch->myfile;
+            $fileUrl = $fetch->myfile_key ? $fetch->myfile : 'https://'.env('AWS_BUCKET').'.s3.'.env('AWS_DEFAULT_REGION').'.amazonaws.com/'.$fetch->client_id.'/visa/'.$fetch->myfile;
 
             if ($clientMatterId != $fetch->client_matter_id || $folderName != $fetch->folder_name) {
                 $showCls = "style='display: none;'";
@@ -1204,41 +1195,41 @@ class ClientDocumentsController extends Controller
                 $showCls = '';
             }
             ?>
-            <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id;?>" data-catid="<?php echo $fetch->folder_name;?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls;?>>
+            <tr class="drow" data-matterid="<?php echo $fetch->client_matter_id; ?>" data-catid="<?php echo $fetch->folder_name; ?>" id="id_<?php echo $fetch->id; ?>" <?php echo $showCls; ?>>
                 <td style="white-space: initial;">
-                    <div data-id="<?php echo $fetch->id;?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showVisaChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
+                    <div data-id="<?php echo $fetch->id; ?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;" oncontextmenu="showVisaChecklistContextMenu(event, <?php echo $fetch->id; ?>); return false;">
                         <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
                     </div>
                 </td>
                 <td style="white-space: initial;">
                     <?php if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
                         <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showVisaFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->getPreviewFileExtension()); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
-                            <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension();?>','<?php echo $fetch->myfile; ?>','preview-container-migdocumnetlist')">
+                            <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension(); ?>','<?php echo $fetch->myfile; ?>','preview-container-migdocumnetlist')">
                                 <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
                             </a>
                         </div>
                     <?php } else { ?>
                         <div class="migration_upload_document" style="display: inline-block;">
-                            <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id;?>">
-                                <input type="hidden" name="_token" value="<?php echo csrf_token();?>" />
-                                <input type="hidden" name="clientid" value="<?php echo $fetch->client_id;?>">
-                                <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id;?>">
-                                <input type="hidden" name="fileid" value="<?php echo $fetch->id;?>">
+                            <form method="POST" enctype="multipart/form-data" id="mig_upload_form_<?php echo $fetch->id; ?>">
+                                <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>" />
+                                <input type="hidden" name="clientid" value="<?php echo $fetch->client_id; ?>">
+                                <input type="hidden" name="client_matter_id" value="<?php echo $fetch->client_matter_id; ?>">
+                                <input type="hidden" name="fileid" value="<?php echo $fetch->id; ?>">
                                 <input type="hidden" name="type" value="client">
                                 <input type="hidden" name="doctype" value="visa">
                                 <input type="hidden" name="doccategory" value="<?php echo $visaDocumentType->title ?? ''; ?>">
                                 <div class="document-drag-drop-zone visa-doc-drag-zone"
-                                     data-fileid="<?php echo $fetch->id;?>"
-                                     data-doccategory="<?php echo $fetch->folder_name;?>"
-                                     data-formid="mig_upload_form_<?php echo $fetch->id;?>">
+                                     data-fileid="<?php echo $fetch->id; ?>"
+                                     data-doccategory="<?php echo $fetch->folder_name; ?>"
+                                     data-formid="mig_upload_form_<?php echo $fetch->id; ?>">
                                     <div class="drag-zone-inner">
                                         <?php echo IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
                                         <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                     </div>
                                 </div>
                                 <input class="migdocupload d-none"
-                                       data-fileid="<?php echo $fetch->id;?>"
-                                       data-doccategory="<?php echo $fetch->folder_name;?>"
+                                       data-fileid="<?php echo $fetch->id; ?>"
+                                       data-doccategory="<?php echo $fetch->folder_name; ?>"
                                        type="file"
                                        name="document_upload"
                                        style="display: none;"/>
@@ -1248,7 +1239,7 @@ class ClientDocumentsController extends Controller
                 </td>
                 <td>
                     <a class="renamechecklist" data-id="<?php echo $fetch->id; ?>" href="javascript:;" style="display: none;"></a>
-                    <?php if (!$fetch->file_name) { ?>
+                    <?php if (! $fetch->file_name) { ?>
                     <a class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" href="javascript:;" style="display: none;"></a>
                     <?php } ?>
                     <?php if ($fetch->myfile) { ?>
@@ -1302,14 +1293,14 @@ class ClientDocumentsController extends Controller
 
             $doctype = $request->doctype ?? '';
 
-            if (!$request->has('nomination_checklist')) {
+            if (! $request->has('nomination_checklist')) {
                 echo json_encode($response);
 
                 return;
             }
 
             $checklistArray = $request->input('nomination_checklist');
-            if (!is_array($checklistArray)) {
+            if (! is_array($checklistArray)) {
                 echo json_encode($response);
 
                 return;
@@ -1317,7 +1308,7 @@ class ClientDocumentsController extends Controller
 
             $saved = false;
             foreach ($checklistArray as $item) {
-                $obj = new Document();
+                $obj = new Document;
                 $obj->user_id = Auth::user()->id;
                 $obj->client_id = $clientid;
                 $obj->type = $request->type;
@@ -1328,7 +1319,7 @@ class ClientDocumentsController extends Controller
                 $saved = $obj->save();
             }
 
-            if (!$saved) {
+            if (! $saved) {
                 echo json_encode($response);
 
                 return;
@@ -1337,7 +1328,7 @@ class ClientDocumentsController extends Controller
             if ($request->type == 'client') {
                 $checklistCount = count($checklistArray);
                 $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
-                $subject = !empty($matterRef)
+                $subject = ! empty($matterRef)
                     ? "added Nomination Checklist - {$matterRef}"
                     : 'added Nomination Checklist';
                 $description = '<p>Added '.$checklistCount.' file document checklist items: '.implode(', ', array_slice($checklistArray, 0, 3)).($checklistCount > 3 ? '...' : '').'</p>';
@@ -1389,12 +1380,12 @@ class ClientDocumentsController extends Controller
                                 <div data-id="<?php echo $fetch->id; ?>" data-visachecklistname="<?php echo htmlspecialchars($fetch->checklist); ?>" class="visachecklist-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" style="display: flex; align-items: center; gap: 8px;">
                                     <span style="flex: 1;"><?php echo htmlspecialchars($fetch->checklist); ?></span>
                                     <div class="checklist-actions" style="display: flex; gap: 5px;">
-                                        <?php if (!$fetch->file_name) { ?>
+                                        <?php if (! $fetch->file_name) { ?>
                                         <a href="javascript:;" class="edit-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Edit Checklist Name" style="color: #007bff; cursor: pointer;">
-                                            <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-edit'); ?>
+                                            <?php echo IconHelper::fromLegacy('fas fa-edit'); ?>
                                         </a>
                                         <a href="javascript:;" class="delete-checklist-btn" data-id="<?php echo $fetch->id; ?>" data-checklist="<?php echo htmlspecialchars($fetch->checklist); ?>" title="Delete Checklist" style="color: #dc3545; cursor: pointer;">
-                                            <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-trash'); ?>
+                                            <?php echo IconHelper::fromLegacy('fas fa-trash'); ?>
                                         </a>
                                         <?php } ?>
                                     </div>
@@ -1404,7 +1395,7 @@ class ClientDocumentsController extends Controller
                                 <?php if (isset($fetch->file_name) && $fetch->file_name != '') { ?>
                                     <div data-id="<?php echo $fetch->id; ?>" data-name="<?php echo htmlspecialchars($fetch->file_name); ?>" class="doc-row" title="Uploaded by: <?php echo htmlspecialchars($admin->first_name ?? 'NA'); ?> on <?php echo date('d/m/Y H:i', strtotime($fetch->created_at)); ?>" oncontextmenu="showNominationFileContextMenu(event, <?php echo $fetch->id; ?>, '<?php echo htmlspecialchars($fetch->getPreviewFileExtension()); ?>', '<?php echo $fileUrl; ?>', '<?php echo $fetch->folder_name; ?>', '<?php echo $fetch->status ?? 'draft'; ?>'); return false;">
                                         <a href="javascript:void(0);" onclick="previewFile('<?php echo $fetch->getPreviewFileExtension(); ?>','<?php echo $fetch->myfile; ?>','preview-container-nomdocumnetlist')">
-                                            <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
+                                            <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?> <span><?php echo htmlspecialchars($fetch->getFilenameWithExtensionForDisplay()); ?></span>
                                         </a>
                                     </div>
                                 <?php } else { ?>
@@ -1423,7 +1414,7 @@ class ClientDocumentsController extends Controller
                                                  data-doccategory="<?php echo $fetch->folder_name; ?>"
                                                  data-formid="mig_upload_form_<?php echo $fetch->id; ?>">
                                                 <div class="drag-zone-inner">
-                                                    <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
+                                                    <?php echo IconHelper::fromLegacy('fas fa-cloud-upload-alt'); ?>
                                                     <span class="drag-zone-text">Drag file here or <strong>click to browse</strong></span>
                                                 </div>
                                             </div>
@@ -1457,12 +1448,12 @@ class ClientDocumentsController extends Controller
                         <div class="grid_list">
                             <div class="grid_col">
                                 <div class="grid_icon">
-                                    <?php echo \App\Helpers\IconHelper::fromLegacy('fas fa-file-image'); ?>
+                                    <?php echo IconHelper::fromLegacy('fas fa-file-image'); ?>
                                 </div>
                                 <div class="grid_content">
                                     <span id="grid_<?php echo $fetch->id; ?>" class="gridfilename"><?php echo $fetch->file_name; ?></span>
                                     <div class="dropdown d-inline dropdown_ellipsis_icon">
-                                        <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?php echo \App\Helpers\IconHelper::fromLegacy('fa fa-ellipsis-v'); ?></a>
+                                        <a class="dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?php echo IconHelper::fromLegacy('fa fa-ellipsis-v'); ?></a>
                                         <div class="dropdown-menu">
                                             <a target="_blank" class="dropdown-item" href="<?php echo $fetch->myfile; ?>">Preview</a>
                                             <a href="#" class="dropdown-item download-file" data-filelink="<?php echo $fetch->myfile; ?>" data-filename="<?php echo $fetch->myfile_key; ?>">Download</a>
@@ -1505,9 +1496,10 @@ class ClientDocumentsController extends Controller
     /**
      * Upload Visa Document
      */
-    public function uploadvisadocument(Request $request) {
+    public function uploadvisadocument(Request $request)
+    {
         ob_start();
-        
+
         $response = ['status' => false, 'message' => 'Please try again', 'data' => '', 'griddata' => ''];
         $clientid = $request->clientid;
         if ($this->blockEchoUnlessStaffClientAccess((int) $clientid)) {
@@ -1515,22 +1507,22 @@ class ClientDocumentsController extends Controller
             exit;
         }
         $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
-        $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-        $client_first_name = !empty($admin_info1)
+        $client_unique_id = ! empty($admin_info1) ? $admin_info1->client_id : '';
+        $client_first_name = ! empty($admin_info1)
             ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
             : 'client';
-    
-        $doctype = isset($request->doctype)? $request->doctype : '';
+
+        $doctype = isset($request->doctype) ? $request->doctype : '';
         $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
-        
+
         try {
             if ($request->hasfile('document_upload')) {
                 $file = $request->file('document_upload');
                 $size = $file->getSize();
                 $fileName = $file->getClientOriginalName();
-                
+
                 // Allow only letters, numbers, underscores, dashes, spaces, dots, and dollar signs
-                if (!DocumentFilenameRules::isAllowed($fileName)) {
+                if (! DocumentFilenameRules::isAllowed($fileName)) {
                     $response['message'] = DocumentFilenameRules::validationMessage();
                 } else {
                     $originalName = $file->getClientOriginalName();
@@ -1548,12 +1540,12 @@ class ClientDocumentsController extends Controller
                     // Fetch and validate document
                     $req_file_id = $request->fileid;
                     $obj = Document::query()->find($req_file_id);
-                    
-                    if (!$obj) {
+
+                    if (! $obj) {
                         Log::warning('Visa document upload failed: Document not found', [
                             'fileid' => $req_file_id,
                             'clientid' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Document record not found.';
                         ob_end_clean();
@@ -1568,7 +1560,7 @@ class ClientDocumentsController extends Controller
                             'fileid' => $req_file_id,
                             'document_client_id' => $obj->client_id,
                             'request_client_id' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Document does not belong to this client.';
                         ob_end_clean();
@@ -1582,7 +1574,7 @@ class ClientDocumentsController extends Controller
                         Log::warning('Visa document upload failed: Missing checklist', [
                             'fileid' => $req_file_id,
                             'clientid' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Document checklist not found. Please select a valid checklist.';
                         ob_end_clean();
@@ -1601,7 +1593,7 @@ class ClientDocumentsController extends Controller
                         Log::error('Visa document upload failed: Checklist disappeared during upload', [
                             'fileid' => $req_file_id,
                             'clientid' => $clientid,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                         $response['message'] = 'Checklist name not found. Please try again.';
                         ob_end_clean();
@@ -1612,9 +1604,9 @@ class ClientDocumentsController extends Controller
 
                     // Build new file name: prefix_checklist_timestamp.ext (company name when is_company)
                     $timestamp = time();
-                    $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
+                    $name = $namePrefix.'_'.$checklistName.'_'.$timestamp.'.'.$extension;
 
-                    $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                    $filePath = $client_unique_id.'/'.$doctype.'/'.$name;
                     $fileContent = $this->flattenPdfIfForm956($file, $obj);
                     $this->s3Disk()->put($filePath, $fileContent);
                     $size = strlen($fileContent);
@@ -1622,14 +1614,14 @@ class ClientDocumentsController extends Controller
                     // Re-fetch checklist name one more time right before saving to ensure we have the latest
                     $obj->refresh();
                     $finalChecklistName = $obj->checklist;
-                    
+
                     // Use the latest checklist name
-                    if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
+                    if (! empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
                         // Checklist changed during upload - rebuild name with same timestamp
                         $checklistName = $finalChecklistName;
-                        $name = $namePrefix . "_" . $checklistName . "_" . $timestamp . "." . $extension;
+                        $name = $namePrefix.'_'.$checklistName.'_'.$timestamp.'.'.$extension;
                         // Update file path and move S3 file
-                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                        $newFilePath = $client_unique_id.'/'.$doctype.'/'.$name;
                         if ($newFilePath !== $filePath) {
                             try {
                                 // Copy to new path and delete old
@@ -1640,20 +1632,20 @@ class ClientDocumentsController extends Controller
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
                                     'old_checklist' => $checklistName,
-                                    'new_checklist' => $finalChecklistName
+                                    'new_checklist' => $finalChecklistName,
                                 ]);
                             } catch (\Exception $e) {
                                 Log::error('Failed to move S3 file after checklist change', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
-                                    'error' => $e->getMessage()
+                                    'error' => $e->getMessage(),
                                 ]);
                                 // Continue with old path - at least the file is uploaded
                             }
                         }
                     }
 
-                    $obj->file_name = $namePrefix . "_" . $checklistName . "_" . $timestamp;
+                    $obj->file_name = $namePrefix.'_'.$checklistName.'_'.$timestamp;
                     $obj->filetype = $extension;
                     $obj->user_id = Auth::user()->id;
                     $fileUrl = $this->s3Disk()->url($filePath);
@@ -1663,24 +1655,24 @@ class ClientDocumentsController extends Controller
                     $obj->file_size = $size;
                     $obj->doc_type = $doctype;
                     $saved = $obj->save();
-                    
+
                     Log::info('Visa document uploaded successfully', [
                         'fileid' => $req_file_id,
                         'checklist_name' => $checklistName,
                         'file_name' => $name,
                         'clientid' => $clientid,
-                        'user_id' => Auth::user()->id ?? 'unknown'
+                        'user_id' => Auth::user()->id ?? 'unknown',
                     ]);
-                    
-                    if($saved){
-                        if($request->type == 'client'){
+
+                    if ($saved) {
+                        if ($request->type == 'client') {
                             $matterRef = $this->getMatterReference($clientid, $request->client_matter_id ?? null);
                             $docLabel = $doctype === 'nomination' ? 'Nomination' : 'Visa';
-                            $subject = !empty($matterRef)
+                            $subject = ! empty($matterRef)
                                 ? "uploaded {$docLabel} Document: {$checklistName} - {$matterRef}"
                                 : "uploaded {$docLabel} Document: {$checklistName}";
                             $description = '<p>Uploaded '.strtolower($docLabel).' document</p>';
-                            
+
                             $this->logClientActivity(
                                 $clientid,
                                 $subject,
@@ -1689,13 +1681,13 @@ class ClientDocumentsController extends Controller
                             );
                         }
 
-                        //Update date in client matter table
-                        if( isset($request->client_matter_id) && $request->client_matter_id != ""){
+                        // Update date in client matter table
+                        if (isset($request->client_matter_id) && $request->client_matter_id != '') {
                             $obj1 = ClientMatter::query()->find($request->client_matter_id);
                             $obj1->updated_at = date('Y-m-d H:i:s');
                             $obj1->save();
                         }
-                        
+
                         $response['status'] = true;
                         $response['message'] = $doctype === 'nomination'
                             ? 'You have successfully uploaded your file document'
@@ -1716,9 +1708,9 @@ class ClientDocumentsController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            $response['message'] = 'An error occurred: ' . $e->getMessage();
+            $response['message'] = 'An error occurred: '.$e->getMessage();
         }
-        
+
         ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode($response);
@@ -1727,13 +1719,14 @@ class ClientDocumentsController extends Controller
 
     /**
      * Check S3 file existence with retry logic to handle eventual consistency and transient failures
-     * 
-     * @param string $s3Path The S3 path to check
-     * @param int $maxRetries Maximum number of retry attempts (default: 3)
-     * @param int $initialDelay Initial delay in milliseconds before first retry (default: 500ms)
+     *
+     * @param  string  $s3Path  The S3 path to check
+     * @param  int  $maxRetries  Maximum number of retry attempts (default: 3)
+     * @param  int  $initialDelay  Initial delay in milliseconds before first retry (default: 500ms)
      * @return array ['exists' => bool, 'attempts' => int, 'last_error' => string|null]
      */
-    private function checkS3FileExistsWithRetry($s3Path, $maxRetries = 3, $initialDelay = 500) {
+    private function checkS3FileExistsWithRetry($s3Path, $maxRetries = 3, $initialDelay = 500)
+    {
         if (empty($s3Path)) {
             return ['exists' => false, 'attempts' => 0, 'last_error' => 'Empty S3 path'];
         }
@@ -1744,23 +1737,24 @@ class ClientDocumentsController extends Controller
 
         for ($i = 0; $i < $maxRetries; $i++) {
             $attempts++;
-            
+
             try {
                 // Attempt to check file existence
                 $exists = $this->s3Disk()->exists($s3Path);
-                
+
                 if ($exists) {
                     // File exists - success!
                     if ($i > 0) {
                         Log::info('S3 file existence confirmed after retry', [
                             's3_path' => $s3Path,
                             'attempts' => $attempts,
-                            'retry_count' => $i
+                            'retry_count' => $i,
                         ]);
                     }
+
                     return ['exists' => true, 'attempts' => $attempts, 'last_error' => null];
                 }
-                
+
                 // File doesn't exist - if this is not the last attempt, wait and retry
                 if ($i < $maxRetries - 1) {
                     // Use exponential backoff: 500ms, 1000ms, 2000ms
@@ -1770,43 +1764,44 @@ class ClientDocumentsController extends Controller
                     // Last attempt failed - file truly doesn't exist
                     Log::debug('S3 file does not exist after all retries', [
                         's3_path' => $s3Path,
-                        'attempts' => $attempts
+                        'attempts' => $attempts,
                     ]);
+
                     return ['exists' => false, 'attempts' => $attempts, 'last_error' => null];
                 }
-                
+
             } catch (\Exception $e) {
                 $lastError = $e->getMessage();
-                
+
                 // Check if this is a retryable error (network, timeout, throttling)
                 $retryableErrors = [
-                    'timeout', 
-                    'Connection', 
-                    'Throttling', 
-                    '503', 
+                    'timeout',
+                    'Connection',
+                    'Throttling',
+                    '503',
                     '500',
                     'SlowDown',
-                    'RequestTimeout'
+                    'RequestTimeout',
                 ];
-                
+
                 $isRetryable = false;
                 foreach ($retryableErrors as $errorPattern) {
-                    if (stripos($e->getMessage(), $errorPattern) !== false || 
+                    if (stripos($e->getMessage(), $errorPattern) !== false ||
                         stripos($e->getCode(), $errorPattern) !== false) {
                         $isRetryable = true;
                         break;
                     }
                 }
-                
+
                 if ($isRetryable && $i < $maxRetries - 1) {
                     // Retryable error - wait and try again
                     Log::warning('S3 file check failed with retryable error, retrying', [
                         's3_path' => $s3Path,
                         'attempt' => $attempts,
                         'error' => $lastError,
-                        'retry_delay_ms' => $delay
+                        'retry_delay_ms' => $delay,
                     ]);
-                    
+
                     usleep($delay * 1000);
                     $delay *= 2;
                 } else {
@@ -1815,8 +1810,9 @@ class ClientDocumentsController extends Controller
                         's3_path' => $s3Path,
                         'attempts' => $attempts,
                         'error' => $lastError,
-                        'retryable' => $isRetryable
+                        'retryable' => $isRetryable,
                     ]);
+
                     return ['exists' => false, 'attempts' => $attempts, 'last_error' => $lastError];
                 }
             }
@@ -1828,7 +1824,8 @@ class ClientDocumentsController extends Controller
     /**
      * Rename Document
      */
-    public function renamedoc(Request $request) {
+    public function renamedoc(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
         $id = $request->id;
         $filename = trim($request->filename ?? ''); // new file name without extension
@@ -1839,6 +1836,7 @@ class ClientDocumentsController extends Controller
                 $response['message'] = 'Document ID is required';
                 $response['error_type'] = 'missing_id';
                 echo json_encode($response);
+
                 return;
             }
 
@@ -1846,22 +1844,24 @@ class ClientDocumentsController extends Controller
                 $response['message'] = 'File name cannot be empty';
                 $response['error_type'] = 'empty_filename';
                 echo json_encode($response);
+
                 return;
             }
 
             // Step 2: Validate document exists
-            if (!\App\Models\Document::query()->where('id', $id)->exists()) {
+            if (! Document::query()->where('id', $id)->exists()) {
                 Log::warning('Document rename failed: Document not found', [
                     'document_id' => $id,
-                    'user_id' => Auth::user()->id ?? 'unknown'
+                    'user_id' => Auth::user()->id ?? 'unknown',
                 ]);
                 $response['message'] = 'Document not found';
                 $response['error_type'] = 'document_not_found';
                 echo json_encode($response);
+
                 return;
             }
 
-            $doc = \App\Models\Document::query()->where('id', $id)->first();
+            $doc = Document::query()->where('id', $id)->first();
             $client_id = $doc->client_id;
             if ($this->blockEchoUnlessStaffClientAccess((int) $client_id)) {
                 return;
@@ -1872,24 +1872,25 @@ class ClientDocumentsController extends Controller
             if (empty($doc->file_name) && empty($doc->myfile_key) && empty($doc->myfile)) {
                 Log::info('Document rename: Checklist-only document, no file to rename', [
                     'document_id' => $id,
-                    'checklist' => $doc->checklist ?? 'N/A'
+                    'checklist' => $doc->checklist ?? 'N/A',
                 ]);
                 $response['message'] = 'This is a checklist item only. No file to rename. Use checklist rename instead.';
                 $response['error_type'] = 'checklist_only';
                 echo json_encode($response);
+
                 return;
             }
 
             // Step 4: Get and validate extension
             $extension = $doc->filetype ?? '';
-            
+
             // If extension is missing but myfile_key exists, try to extract it
-            if (empty($extension) && !empty($doc->myfile_key)) {
+            if (empty($extension) && ! empty($doc->myfile_key)) {
                 $extension = pathinfo($doc->myfile_key, PATHINFO_EXTENSION);
             }
 
             // Step 5: Get client unique id for S3 path
-            $admin = \App\Models\Admin::select('client_id')->where('id', $client_id)->first();
+            $admin = Admin::select('client_id')->where('id', $client_id)->first();
             $client_unique_id = $admin ? ($admin->client_id ?? '') : '';
 
             // Step 6: Validate client_unique_id
@@ -1897,11 +1898,12 @@ class ClientDocumentsController extends Controller
                 Log::warning('Document rename failed: Client ID not found', [
                     'document_id' => $id,
                     'client_id' => $client_id,
-                    'user_id' => Auth::user()->id ?? 'unknown'
+                    'user_id' => Auth::user()->id ?? 'unknown',
                 ]);
                 $response['message'] = 'Client ID not found. Cannot rename document.';
                 $response['error_type'] = 'missing_client_id';
                 echo json_encode($response);
+
                 return;
             }
 
@@ -1912,18 +1914,18 @@ class ClientDocumentsController extends Controller
             // Use unique number at the end only (same convention as upload: name_timestamp.ext)
             // so download filename does not show unique number twice (at start and end).
             $timestamp = time();
-            if (!empty($extension)) {
-                $newKey = $filename . '_' . $timestamp . '.' . $extension;
+            if (! empty($extension)) {
+                $newKey = $filename.'_'.$timestamp.'.'.$extension;
             } else {
-                $newKey = $filename . '_' . $timestamp;
+                $newKey = $filename.'_'.$timestamp;
             }
-            
-            $newS3Path = $client_unique_id . '/' . $doc_type . '/' . $newKey;
+
+            $newS3Path = $client_unique_id.'/'.$doc_type.'/'.$newKey;
             $oldS3Path = '';
-            
+
             // Only build old path if we have the key
-            if (!empty($oldKey)) {
-                $oldS3Path = $client_unique_id . '/' . $doc_type . '/' . $oldKey;
+            if (! empty($oldKey)) {
+                $oldS3Path = $client_unique_id.'/'.$doc_type.'/'.$oldKey;
             }
 
             // Step 9: Attempt S3 file rename if file exists (with retry logic)
@@ -1932,17 +1934,17 @@ class ClientDocumentsController extends Controller
             $updateDbOnly = false;
             $fileCheckResult = ['exists' => false, 'attempts' => 0, 'last_error' => null];
 
-            if (!empty($oldS3Path)) {
+            if (! empty($oldS3Path)) {
                 // Use retry logic to check file existence (handles eventual consistency and transient failures)
                 $fileCheckResult = $this->checkS3FileExistsWithRetry($oldS3Path, 3, 500);
                 $s3FileExists = $fileCheckResult['exists'];
-                
+
                 Log::info('S3 file existence check completed', [
                     'document_id' => $id,
                     's3_path' => $oldS3Path,
                     'exists' => $s3FileExists,
                     'attempts' => $fileCheckResult['attempts'],
-                    'last_error' => $fileCheckResult['last_error'] ?? null
+                    'last_error' => $fileCheckResult['last_error'] ?? null,
                 ]);
             }
 
@@ -1950,29 +1952,30 @@ class ClientDocumentsController extends Controller
                 try {
                     // Attempt to copy first
                     $copySuccess = $this->s3Disk()->copy($oldS3Path, $newS3Path);
-                    
+
                     if ($copySuccess) {
                         // Only delete original if copy was successful
                         $this->s3Disk()->delete($oldS3Path);
                         $s3RenameSuccess = true;
-                        
+
                         Log::info('Document renamed on S3 successfully', [
                             'document_id' => $id,
                             'old_path' => $oldS3Path,
                             'new_path' => $newS3Path,
-                            'user_id' => Auth::user()->id ?? 'unknown'
+                            'user_id' => Auth::user()->id ?? 'unknown',
                         ]);
                     } else {
                         // Copy failed, don't proceed with database update
                         Log::error('S3 copy failed: Copy operation returned false', [
                             'document_id' => $id,
                             'old_path' => $oldS3Path,
-                            'new_path' => $newS3Path
+                            'new_path' => $newS3Path,
                         ]);
                         $response['status'] = false;
                         $response['message'] = 'Failed to copy file. Please try again.';
                         $response['error_type'] = 's3_copy_failed';
                         echo json_encode($response);
+
                         return;
                     }
                 } catch (\Exception $e) {
@@ -1982,13 +1985,14 @@ class ClientDocumentsController extends Controller
                         'old_path' => $oldS3Path,
                         'new_path' => $newS3Path,
                         'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
+                        'trace' => $e->getTraceAsString(),
                     ]);
-                    
+
                     $response['status'] = false;
                     $response['message'] = 'File operation failed. Please try again.';
                     $response['error_type'] = 's3_exception';
                     echo json_encode($response);
+
                     return;
                 }
             } else {
@@ -2000,22 +2004,22 @@ class ClientDocumentsController extends Controller
                     'old_key' => $oldKey,
                     'new_filename' => $filename,
                     'user_id' => Auth::user()->id ?? 'unknown',
-                    'has_myfile_key' => !empty($oldKey),
-                    'has_myfile' => !empty($doc->myfile),
+                    'has_myfile_key' => ! empty($oldKey),
+                    'has_myfile' => ! empty($doc->myfile),
                     'check_attempts' => $fileCheckResult['attempts'] ?? 0,
-                    'last_error' => $fileCheckResult['last_error'] ?? null
+                    'last_error' => $fileCheckResult['last_error'] ?? null,
                 ]);
             }
 
             // Step 10: Update database
             $updateData = ['file_name' => $filename];
-            
+
             if ($s3RenameSuccess) {
                 // File was successfully renamed on S3, update all fields
                 $newS3Url = $this->s3Disk()->url($newS3Path);
                 $updateData['myfile'] = $newS3Url;
                 $updateData['myfile_key'] = $newKey;
-            } else if ($updateDbOnly) {
+            } elseif ($updateDbOnly) {
                 // File doesn't exist on S3, only update file_name
                 // Keep existing myfile and myfile_key unchanged
                 // This allows the document name to be updated even if file is missing
@@ -2027,14 +2031,14 @@ class ClientDocumentsController extends Controller
                 // Log activity for document rename
                 $oldName = $doc->file_name ?? 'N/A';
                 $matterRef = $this->getMatterReference($client_id);
-                $subject = !empty($matterRef) 
+                $subject = ! empty($matterRef)
                     ? "renamed Document - {$matterRef}"
-                    : "renamed Document";
-                
-                $renameNote = $updateDbOnly 
-                    ? " (Note: Original file not found on server, name updated in database only)"
-                    : "";
-                
+                    : 'renamed Document';
+
+                $renameNote = $updateDbOnly
+                    ? ' (Note: Original file not found on server, name updated in database only)'
+                    : '';
+
                 $description = "<p>Renamed {$doc_type} document from '{$oldName}' to '{$filename}'{$renameNote}</p>";
 
                 $this->logClientActivity(
@@ -2043,7 +2047,7 @@ class ClientDocumentsController extends Controller
                     $description,
                     'document'
                 );
-                
+
                 $response['status'] = true;
                 $response['data'] = 'Document saved successfully';
                 $response['Id'] = $id;
@@ -2053,7 +2057,7 @@ class ClientDocumentsController extends Controller
                 // Include file URL only if file was renamed on S3
                 if ($s3RenameSuccess) {
                     $response['fileurl'] = $this->s3Disk()->url($newS3Path);
-                } else if (!empty($doc->myfile)) {
+                } elseif (! empty($doc->myfile)) {
                     // Keep existing URL if available
                     $response['fileurl'] = $doc->myfile;
                 }
@@ -2067,16 +2071,16 @@ class ClientDocumentsController extends Controller
                 }
 
                 if ($doc->doc_type == 'personal') {
-                    $response['folder_name'] = 'preview-container-' . ($doc->folder_name ?? '');
-                } else if ($doc->doc_type == 'visa') {
+                    $response['folder_name'] = 'preview-container-'.($doc->folder_name ?? '');
+                } elseif ($doc->doc_type == 'visa') {
                     $response['folder_name'] = 'preview-container-migdocumnetlist';
-                } else if ($doc->doc_type == 'nomination') {
+                } elseif ($doc->doc_type == 'nomination') {
                     $response['folder_name'] = 'preview-container-nomdocumnetlist';
                 }
             } else {
                 Log::error('Document rename failed: Database update failed', [
                     'document_id' => $id,
-                    'update_data' => $updateData
+                    'update_data' => $updateData,
                 ]);
                 $response['status'] = false;
                 $response['message'] = 'Failed to update document. Please try again.';
@@ -2087,7 +2091,7 @@ class ClientDocumentsController extends Controller
                 'document_id' => $id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'user_id' => Auth::user()->id ?? 'unknown'
+                'user_id' => Auth::user()->id ?? 'unknown',
             ]);
             $response['status'] = false;
             $response['message'] = 'An unexpected error occurred. Please try again.';
@@ -2100,70 +2104,71 @@ class ClientDocumentsController extends Controller
     /**
      * Delete Document
      */
-    public function deletedocs(Request $request) {
+    public function deletedocs(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
         $data = null;
-        
+
         try {
             $note_id = $request->note_id;
-            if(\App\Models\Document::query()->where('id',$note_id)->exists()){
-            $data = DB::table('documents')->where('id', @$note_id)->first();
-            if ($this->blockEchoUnlessStaffClientAccess((int) ($data->client_id ?? 0))) {
-                return;
-            }
-            $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
-            $res = DB::table('documents')->where('id', @$note_id)->delete();
-            //$this->s3Disk()->delete('documents/' . $data->myfile);
-            if($data->doc_type == 'migration') {
-                $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
-            } else {
-                $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
-            }
-            if($res){
-                $documentName = $data->file_name ?? 'unknown';
-                $documentType = ucfirst($data->doc_type ?? 'Document');
-                $matterRef = $this->getMatterReference($data->client_id);
-                $subject = !empty($matterRef) 
-                    ? "deleted {$documentType}: {$documentName} - {$matterRef}"
-                    : "deleted {$documentType}: {$documentName}";
-                $description = "<p>Deleted {$documentType} document</p>";
+            if (Document::query()->where('id', $note_id)->exists()) {
+                $data = DB::table('documents')->where('id', @$note_id)->first();
+                if ($this->blockEchoUnlessStaffClientAccess((int) ($data->client_id ?? 0))) {
+                    return;
+                }
+                $admin = DB::table('admins')->select('client_id')->where('id', @$data->client_id)->first();
+                $res = DB::table('documents')->where('id', @$note_id)->delete();
+                // $this->s3Disk()->delete('documents/' . $data->myfile);
+                if ($data->doc_type == 'migration') {
+                    $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
+                } else {
+                    $this->s3Disk()->delete($admin->client_id.'/'.$data->doc_type.'/'.$data->myfile_key);
+                }
+                if ($res) {
+                    $documentName = $data->file_name ?? 'unknown';
+                    $documentType = ucfirst($data->doc_type ?? 'Document');
+                    $matterRef = $this->getMatterReference($data->client_id);
+                    $subject = ! empty($matterRef)
+                        ? "deleted {$documentType}: {$documentName} - {$matterRef}"
+                        : "deleted {$documentType}: {$documentName}";
+                    $description = "<p>Deleted {$documentType} document</p>";
 
-                $this->logClientActivity(
-                    $data->client_id,
-                    $subject,
-                    $description,
-                    'document'
-                );
-                $response['status'] 	= 	true;
-                $response['data']	=	'Document removed successfully';
-                if(isset($data->doc_type) && $data->doc_type == 'personal'){
-                    $response['doc_categry']	= $data->folder_name;
+                    $this->logClientActivity(
+                        $data->client_id,
+                        $subject,
+                        $description,
+                        'document'
+                    );
+                    $response['status'] = true;
+                    $response['data'] = 'Document removed successfully';
+                    if (isset($data->doc_type) && $data->doc_type == 'personal') {
+                        $response['doc_categry'] = $data->folder_name;
+                    } else {
+                        $response['doc_categry'] = '';
+                    }
                 } else {
-                    $response['doc_categry']	= "";
+                    $response['status'] = false;
+                    $response['message'] = 'Please try again';
+                    if (isset($data->doc_type) && $data->doc_type == 'personal') {
+                        $response['doc_categry'] = $data->folder_name;
+                    } else {
+                        $response['doc_categry'] = '';
+                    }
                 }
-            }else{
-                $response['status'] 	= 	false;
-                $response['message']	=	'Please try again';
-                if(isset($data->doc_type) && $data->doc_type == 'personal'){
-                    $response['doc_categry']	= $data->folder_name;
-                } else {
-                    $response['doc_categry']	= "";
-                }
-            }
-        } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-            if(isset($data->doc_type) && $data->doc_type == 'personal'){
-                $response['doc_categry']	= $data->folder_name;
             } else {
-                $response['doc_categry']	= "";
+                $response['status'] = false;
+                $response['message'] = 'Please try again';
+                if (isset($data->doc_type) && $data->doc_type == 'personal') {
+                    $response['doc_categry'] = $data->folder_name;
+                } else {
+                    $response['doc_categry'] = '';
+                }
             }
-        }
         } catch (\Exception $e) {
             Log::error('Error deleting document', [
                 'document_id' => $request->note_id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
@@ -2179,9 +2184,10 @@ class ClientDocumentsController extends Controller
      * - Personal to Visa (with matter selection)
      * - Visa to Personal (with category selection)
      */
-    public function moveDocument(Request $request) {
+    public function moveDocument(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             // Validate required fields
             $request->validate([
@@ -2190,60 +2196,63 @@ class ClientDocumentsController extends Controller
                 'target_id' => 'required|integer', // Category ID for both personal and visa
                 'target_matter_id' => 'nullable|integer', // Client matter id when moving to visa (e.g. Personal → Visa)
             ]);
-            
+
             $documentId = $request->document_id;
             $targetType = $request->target_type;
             $targetId = $request->target_id;
-            
+
             // Get the document
-            $document = \App\Models\Document::query()->find($documentId);
-            
-            if (!$document) {
+            $document = Document::query()->find($documentId);
+
+            if (! $document) {
                 $response['message'] = 'Document not found';
+
                 return response()->json($response);
             }
 
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $document->client_id)) {
                 return $deny;
             }
-            
+
             // Check user permission (basic check - user must be authenticated)
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 $response['message'] = 'Unauthorized';
+
                 return response()->json($response, 403);
             }
-            
+
             // Store old values for activity log
             $oldType = $document->doc_type;
             $oldFolderName = $document->folder_name;
             $oldMatterId = $document->client_matter_id;
             $oldChecklistName = $document->checklist;
-            
+
             // Update document based on target type
             $targetName = '';
             $docClientId = (int) $document->client_id;
             if ($targetType === 'personal') {
                 // Moving to Personal Documents — allow shared (null client_id) or this client's categories only
-                $category = \App\Models\PersonalDocumentType::query()
+                $category = PersonalDocumentType::query()
                     ->where('id', $targetId)
                     ->where(function ($query) use ($docClientId) {
                         $query->whereNull('client_id')
                             ->orWhere('client_id', $docClientId);
                     })
                     ->first();
-                if (!$category) {
+                if (! $category) {
                     $response['message'] = 'Target category not found';
+
                     return response()->json($response);
                 }
-                
-                $document->type       = 'client';
-                $document->doc_type   = 'personal';
+
+                $document->type = 'client';
+                $document->doc_type = 'personal';
                 $document->folder_name = $targetId;
                 $document->client_matter_id = null; // Clear matter association
                 $document->cp_list_id = null;       // Remove from workflow checklist scope
-                
+
                 $targetName = $category->title;
-                
+
             } elseif ($targetType === 'visa') {
                 // Moving to Visa Documents - targetId is the CATEGORY ID
                 // When the UI sends target_matter_id (e.g. Personal → Visa), validate matter then scope category like getVisaCategories.
@@ -2257,11 +2266,12 @@ class ClientDocumentsController extends Controller
                         ->first();
                     if (! $clientMatter) {
                         $response['message'] = 'The selected matter does not belong to this client.';
+
                         return response()->json($response);
                     }
                 }
 
-                $categoryQuery = \App\Models\VisaDocumentType::query()->where('id', $targetId);
+                $categoryQuery = VisaDocumentType::query()->where('id', $targetId);
                 if ($requestedMatterId !== null) {
                     $categoryQuery->where(function ($query) use ($docClientId, $requestedMatterId) {
                         $query->where(function ($q) {
@@ -2289,13 +2299,14 @@ class ClientDocumentsController extends Controller
                     });
                 }
                 $category = $categoryQuery->first();
-                if (!$category) {
+                if (! $category) {
                     $response['message'] = 'Target visa category not found';
+
                     return response()->json($response);
                 }
-                
-                $document->type       = 'client';
-                $document->doc_type   = 'visa';
+
+                $document->type = 'client';
+                $document->doc_type = 'visa';
                 $document->folder_name = $targetId; // Category ID
                 if ($requestedMatterId !== null) {
                     $document->client_matter_id = $requestedMatterId;
@@ -2303,7 +2314,7 @@ class ClientDocumentsController extends Controller
                     $document->client_matter_id = $category->client_matter_id ?? $document->client_matter_id;
                 }
                 $document->cp_list_id = null;       // Remove from workflow checklist scope
-                
+
                 $targetName = $category->title;
             } elseif ($targetType === 'nomination') {
                 // Shared (null client/matter) or this client's nomination categories only
@@ -2319,8 +2330,9 @@ class ClientDocumentsController extends Controller
                             });
                     })
                     ->first();
-                if (!$category) {
+                if (! $category) {
                     $response['message'] = 'Target nomination category not found';
+
                     return response()->json($response);
                 }
 
@@ -2332,10 +2344,10 @@ class ClientDocumentsController extends Controller
 
                 $targetName = $category->title;
             }
-            
+
             $document->updated_at = now();
             $saved = $document->save();
-            
+
             if ($saved) {
                 // Log activity
                 $documentName = $document->file_name ?? $document->checklist ?? 'Document';
@@ -2346,20 +2358,20 @@ class ClientDocumentsController extends Controller
                     : ($oldChecklistName ? "{$oldLane} ({$oldChecklistName})" : $oldLane);
 
                 $newLocation = $targetType === 'personal' ? "Personal ({$targetName})" : "{$newLane} ({$targetName})";
-                
+
                 $matterRef = $this->getMatterReference($document->client_id, $document->client_matter_id);
-                $subject = !empty($matterRef) 
+                $subject = ! empty($matterRef)
                     ? "moved document: {$documentName} - {$matterRef}"
                     : "moved document: {$documentName}";
                 $description = "<p>Document moved from <strong>{$oldLocation}</strong> to <strong>{$newLocation}</strong></p>";
-                
+
                 $this->logClientActivity(
                     $document->client_id,
                     $subject,
                     $description,
                     'document'
                 );
-                
+
                 $response['status'] = true;
                 $response['message'] = "Document moved successfully to {$newLocation}";
                 $response['document_id'] = $documentId;
@@ -2386,12 +2398,12 @@ class ClientDocumentsController extends Controller
             } else {
                 $response['message'] = 'Failed to save document changes';
             }
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            $response['message'] = 'Invalid input: ' . implode(', ', $e->errors());
+
+        } catch (ValidationException $e) {
+            $response['message'] = 'Invalid input: '.implode(', ', $e->errors());
             Log::warning('Document move validation failed', [
                 'document_id' => $request->document_id ?? null,
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ]);
         } catch (\Exception $e) {
             Log::error('Error moving document', [
@@ -2399,11 +2411,11 @@ class ClientDocumentsController extends Controller
                 'target_type' => $request->target_type ?? null,
                 'target_id' => $request->target_id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            $response['message'] = 'An error occurred while moving the document: ' . $e->getMessage();
+            $response['message'] = 'An error occurred while moving the document: '.$e->getMessage();
         }
-        
+
         return response()->json($response);
     }
 
@@ -2411,50 +2423,52 @@ class ClientDocumentsController extends Controller
      * BUGFIX #3: Get visa categories for a specific matter
      * Returns all visa document categories for the given client and matter
      */
-    public function getVisaCategories(Request $request) {
+    public function getVisaCategories(Request $request)
+    {
         try {
             $clientId = $request->client_id;
             $matterId = $request->matter_id;
-            
-            if (!$clientId || !$matterId) {
+
+            if (! $clientId || ! $matterId) {
                 return response()->json([]);
             }
 
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientId)) {
                 return $deny;
             }
-            
+
             // Get visa document categories for this client and matter
-            $categories = \App\Models\VisaDocumentType::select(['id', 'title', 'client_id', 'client_matter_id'])
+            $categories = VisaDocumentType::select(['id', 'title', 'client_id', 'client_matter_id'])
                 ->where('status', 1)
-                ->where(function($query) use ($clientId, $matterId) {
-                    $query->where(function($q) {
-                            // Global categories (both NULL)
-                            $q->whereNull('client_id')
-                              ->whereNull('client_matter_id');
-                        })
-                        ->orWhere(function($q) use ($clientId) {
+                ->where(function ($query) use ($clientId, $matterId) {
+                    $query->where(function ($q) {
+                        // Global categories (both NULL)
+                        $q->whereNull('client_id')
+                            ->whereNull('client_matter_id');
+                    })
+                        ->orWhere(function ($q) use ($clientId) {
                             // Client-specific categories (matter NULL)
                             $q->where('client_id', $clientId)
-                              ->whereNull('client_matter_id');
+                                ->whereNull('client_matter_id');
                         })
-                        ->orWhere(function($q) use ($clientId, $matterId) {
+                        ->orWhere(function ($q) use ($clientId, $matterId) {
                             // Matter-specific categories
                             $q->where('client_id', $clientId)
-                              ->where('client_matter_id', $matterId);
+                                ->where('client_matter_id', $matterId);
                         });
                 })
                 ->orderBy('id', 'ASC')
                 ->get();
-            
+
             return response()->json($categories);
-            
+
         } catch (\Exception $e) {
             Log::error('Error getting visa categories', [
                 'client_id' => $request->client_id ?? null,
                 'matter_id' => $request->matter_id ?? null,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return response()->json([]);
         }
     }
@@ -2465,7 +2479,7 @@ class ClientDocumentsController extends Controller
             $clientId = $request->client_id;
             $matterId = $request->matter_id;
 
-            if (!$clientId || !$matterId) {
+            if (! $clientId || ! $matterId) {
                 return response()->json([]);
             }
 
@@ -2504,74 +2518,75 @@ class ClientDocumentsController extends Controller
         }
     }
 
-
     /**
      * Get Visa Checklist
      */
-    public function getvisachecklist(Request $request) {
+    public function getvisachecklist(Request $request)
+    {
         // DISABLED: VisaDocChecklist model has been removed
         // Visa checklist functionality disabled - VisaDocChecklist model has been removed
         $response = [
-            'status' => false, 
-            'message' => 'Visa checklist functionality has been disabled - VisaDocChecklist model has been removed', 
-            'visaCheckListInfo' => []
+            'status' => false,
+            'message' => 'Visa checklist functionality has been disabled - VisaDocChecklist model has been removed',
+            'visaCheckListInfo' => [],
         ];
         echo json_encode($response);
-        return;
+
     }
 
     /**
      * Mark Document as Not Used
      */
-    public function notuseddoc(Request $request) {
+    public function notuseddoc(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $doc_id = $request->doc_id;
             $doc_type = $request->doc_type;
-            if(\App\Models\Document::query()->where('id',$doc_id)->exists()){
-            $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
-            if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
-                return;
+            if (Document::query()->where('id', $doc_id)->exists()) {
+                $docInfo = Document::with(['staff'])->where('id', $doc_id)->first();
+                if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
+                    return;
+                }
+
+                $alreadyNotUsed = (int) ($docInfo->not_used_doc ?? 0) === 1;
+                if (! $alreadyNotUsed) {
+                    DB::table('documents')->where('id', $doc_id)->update(['not_used_doc' => 1]);
+                    $docInfo->not_used_doc = 1;
+
+                    $matterRef = $this->getMatterReference($docInfo->client_id);
+                    $subject = ! empty($matterRef)
+                        ? "moved {$doc_type} Document to Not Used - {$matterRef}"
+                        : "moved {$doc_type} Document to Not Used";
+                    $description = '<p>Document moved to Not Used tab</p>';
+
+                    $this->logClientActivity(
+                        $docInfo->client_id,
+                        $subject,
+                        $description,
+                        'document'
+                    );
+                }
+
+                $response = $this->buildNotUsedDocumentJsonResponse($docInfo, $doc_type, $doc_id);
+            } else {
+                $response['status'] = false;
+                $response['message'] = 'Please try again';
+                $response['doc_type'] = '';
+                $response['doc_id'] = '';
+                $response['docInfo'] = '';
+                $response['doc_category'] = '';
+                $response['Added_By'] = '';
+                $response['Added_date'] = '';
+                $response['Verified_By'] = '';
+                $response['Verified_At'] = '';
             }
-
-            $alreadyNotUsed = (int) ($docInfo->not_used_doc ?? 0) === 1;
-            if (!$alreadyNotUsed) {
-                DB::table('documents')->where('id', $doc_id)->update(['not_used_doc' => 1]);
-                $docInfo->not_used_doc = 1;
-
-                $matterRef = $this->getMatterReference($docInfo->client_id);
-                $subject = !empty($matterRef)
-                    ? "moved {$doc_type} Document to Not Used - {$matterRef}"
-                    : "moved {$doc_type} Document to Not Used";
-                $description = '<p>Document moved to Not Used tab</p>';
-
-                $this->logClientActivity(
-                    $docInfo->client_id,
-                    $subject,
-                    $description,
-                    'document'
-                );
-            }
-
-            $response = $this->buildNotUsedDocumentJsonResponse($docInfo, $doc_type, $doc_id);
-        } else {
-            $response['status'] = false;
-            $response['message'] = 'Please try again';
-            $response['doc_type'] = "";
-            $response['doc_id'] = "";
-            $response['docInfo'] = "";
-            $response['doc_category'] = "";
-            $response['Added_By'] = "";
-            $response['Added_date'] = "";
-            $response['Verified_By'] = "";
-            $response['Verified_At'] = "";
-        }
         } catch (\Exception $e) {
             Log::error('Error marking document as not used', [
                 'doc_id' => $request->doc_id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
@@ -2582,41 +2597,42 @@ class ClientDocumentsController extends Controller
     /**
      * Rename Checklist in Document
      */
-    public function renamechecklistdoc(Request $request) {
+    public function renamechecklistdoc(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $id = $request->id;
             $checklist = $request->checklist;
-            if(\App\Models\Document::query()->where('id',$id)->exists()){
-            $doc = \App\Models\Document::query()->where('id',$id)->first();
-            if ($this->blockEchoUnlessStaffClientAccess((int) ($doc->client_id ?? 0))) {
-                return;
-            }
-            $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
-            if($res){
-                // Build complete HTML structure to restore UI state (actions via right-click only)
-                $html = '<span style="flex: 1;">' . htmlspecialchars($checklist) . '</span>';
-                
-                $response['status'] = true;
-                $response['data'] = 'Checklist saved successfully';
-                $response['message'] = 'Checklist saved successfully';
-                $response['Id'] = $id;
-                $response['checklist'] = $checklist;
-                $response['html'] = $html;
-            }else{
+            if (Document::query()->where('id', $id)->exists()) {
+                $doc = Document::query()->where('id', $id)->first();
+                if ($this->blockEchoUnlessStaffClientAccess((int) ($doc->client_id ?? 0))) {
+                    return;
+                }
+                $res = DB::table('documents')->where('id', @$id)->update(['checklist' => $checklist]);
+                if ($res) {
+                    // Build complete HTML structure to restore UI state (actions via right-click only)
+                    $html = '<span style="flex: 1;">'.htmlspecialchars($checklist).'</span>';
+
+                    $response['status'] = true;
+                    $response['data'] = 'Checklist saved successfully';
+                    $response['message'] = 'Checklist saved successfully';
+                    $response['Id'] = $id;
+                    $response['checklist'] = $checklist;
+                    $response['html'] = $html;
+                } else {
+                    $response['status'] = false;
+                    $response['message'] = 'Please try again';
+                }
+            } else {
                 $response['status'] = false;
                 $response['message'] = 'Please try again';
             }
-        }else{
-            $response['status'] = false;
-            $response['message'] = 'Please try again';
-        }
         } catch (\Exception $e) {
             Log::error('Error renaming checklist', [
                 'document_id' => $request->id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
@@ -2627,79 +2643,80 @@ class ClientDocumentsController extends Controller
     /**
      * Move Document Back from Not Used
      */
-    public function backtodoc(Request $request) {
+    public function backtodoc(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $doc_id = $request->doc_id;
             $doc_type = $request->doc_type;
-            if(\App\Models\Document::query()->where('id',$doc_id)->exists()){
-            $docInfo = \App\Models\Document::with(['staff'])->where('id',$doc_id)->first();
-            if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
-                return;
-            }
-            $upd = DB::table('documents')->where('id', $doc_id)->update(array('not_used_doc' => null));
-            if($upd){
-                $matterRef = $this->getMatterReference($docInfo->client_id);
-                $subject = !empty($matterRef) 
-                    ? "restored {$doc_type} Document - {$matterRef}"
-                    : "restored {$doc_type} Document";
-                $description = "<p>Document moved back to {$doc_type} tab</p>";
-                
-                $this->logClientActivity(
-                    $docInfo->client_id,
-                    $subject,
-                    $description,
-                    'document'
-                );
+            if (Document::query()->where('id', $doc_id)->exists()) {
+                $docInfo = Document::with(['staff'])->where('id', $doc_id)->first();
+                if ($this->blockEchoUnlessStaffClientAccess((int) ($docInfo->client_id ?? 0))) {
+                    return;
+                }
+                $upd = DB::table('documents')->where('id', $doc_id)->update(['not_used_doc' => null]);
+                if ($upd) {
+                    $matterRef = $this->getMatterReference($docInfo->client_id);
+                    $subject = ! empty($matterRef)
+                        ? "restored {$doc_type} Document - {$matterRef}"
+                        : "restored {$doc_type} Document";
+                    $description = "<p>Document moved back to {$doc_type} tab</p>";
 
-                if($docInfo){
-                    if( isset($docInfo->user_id) && $docInfo->user_id!= "" && $docInfo->staff ){
-                        $response['Added_By'] = $docInfo->staff->first_name;
-                        $response['Added_date'] = date('d/m/Y',strtotime($docInfo->created_at));
-                    } else {
-                        $response['Added_By'] = "N/A";
-                        $response['Added_date'] = "N/A";
+                    $this->logClientActivity(
+                        $docInfo->client_id,
+                        $subject,
+                        $description,
+                        'document'
+                    );
+
+                    if ($docInfo) {
+                        if (isset($docInfo->user_id) && $docInfo->user_id != '' && $docInfo->staff) {
+                            $response['Added_By'] = $docInfo->staff->first_name;
+                            $response['Added_date'] = date('d/m/Y', strtotime($docInfo->created_at));
+                        } else {
+                            $response['Added_By'] = 'N/A';
+                            $response['Added_date'] = 'N/A';
+                        }
+
+                        $response['Verified_By'] = 'N/A';
+                        $response['Verified_At'] = 'N/A';
                     }
 
-                    $response['Verified_By'] = "N/A";
-                    $response['Verified_At'] = "N/A";
+                    $response['docInfo'] = $docInfo;
+                    $response['doc_type'] = $doc_type;
+                    $response['doc_id'] = $doc_id;
+                    $response['status'] = true;
+                    $response['data'] = $doc_type.' document moved to '.$doc_type.' document tab';
+                } else {
+                    $response['status'] = false;
+                    $response['message'] = 'Please try again';
+                    $response['doc_type'] = '';
+                    $response['doc_id'] = '';
+                    $response['docInfo'] = '';
+
+                    $response['Added_By'] = '';
+                    $response['Added_date'] = '';
+                    $response['Verified_By'] = '';
+                    $response['Verified_At'] = '';
                 }
-
-                $response['docInfo'] = $docInfo;
-                $response['doc_type'] = $doc_type;
-                $response['doc_id'] = $doc_id;
-                $response['status'] = 	true;
-                $response['data']	=	$doc_type.' document moved to '.$doc_type.' document tab';
             } else {
-                $response['status'] 	= 	false;
-                $response['message']	=	'Please try again';
-                $response['doc_type'] = "";
-                $response['doc_id'] = "";
-                $response['docInfo'] = "";
+                $response['status'] = false;
+                $response['message'] = 'Please try again';
+                $response['doc_type'] = '';
+                $response['doc_id'] = '';
+                $response['docInfo'] = '';
 
-                $response['Added_By'] = "";
-                $response['Added_date'] = "";
-            $response['Verified_By'] = "";
-            $response['Verified_At'] = "";
-        }
-        } else {
-            $response['status'] 	= 	false;
-            $response['message']	=	'Please try again';
-            $response['doc_type'] = "";
-            $response['doc_id'] = "";
-            $response['docInfo'] = "";
-
-            $response['Added_By'] = "";
-            $response['Added_date'] = "";
-            $response['Verified_By'] = "";
-            $response['Verified_At'] = "";
-        }
+                $response['Added_By'] = '';
+                $response['Added_date'] = '';
+                $response['Verified_By'] = '';
+                $response['Verified_At'] = '';
+            }
         } catch (\Exception $e) {
             Log::error('Error moving document back from not used', [
                 'doc_id' => $request->doc_id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
@@ -2710,54 +2727,58 @@ class ClientDocumentsController extends Controller
     /**
      * Delete Checklist Item (only if no file uploaded)
      */
-    public function deleteChecklist(Request $request) {
+    public function deleteChecklist(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $checklist_id = $request->id;
-            
-            if (!$checklist_id) {
+
+            if (! $checklist_id) {
                 $response['message'] = 'Checklist ID is required';
+
                 return response()->json($response);
             }
-            
+
             $document = Document::query()->find($checklist_id);
-            
-            if (!$document instanceof Document) {
+
+            if (! $document instanceof Document) {
                 $response['message'] = 'Checklist not found';
+
                 return response()->json($response);
             }
 
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $document->client_id)) {
                 return $deny;
             }
-            
+
             // Only allow deletion if no file has been uploaded
             if ($document->file_name || $document->myfile) {
                 $response['message'] = 'Cannot delete checklist with uploaded file. Please remove the file first.';
+
                 return response()->json($response);
             }
-            
+
             $checklistName = $document->checklist;
             $clientId = $document->client_id;
             $folderName = $document->folder_name;
             $form956Id = $document->form956_id;
-            
+
             // Delete the document record
             /** @disregard P1005 Intelephense: Model::delete() is 0-arg; can be confused with Query Builder. */
             $deleted = $document->delete();
-            
+
             if ($deleted) {
-                if ($form956Id && !Document::query()->where('form956_id', $form956Id)->exists()) {
+                if ($form956Id && ! Document::query()->where('form956_id', $form956Id)->exists()) {
                     Form956::query()->where('id', $form956Id)->delete();
                 }
 
                 // Log activity
                 $matterRef = $this->getMatterReference($clientId);
-                $subject = !empty($matterRef) 
+                $subject = ! empty($matterRef)
                     ? "deleted Checklist: {$checklistName} - {$matterRef}"
                     : "deleted Checklist: {$checklistName}";
-                $description = "<p>Deleted personal document checklist</p>";
+                $description = '<p>Deleted personal document checklist</p>';
 
                 $this->logClientActivity(
                     $clientId,
@@ -2765,7 +2786,7 @@ class ClientDocumentsController extends Controller
                     $description,
                     'document'
                 );
-                
+
                 $response['status'] = true;
                 $response['message'] = 'Checklist deleted successfully';
                 $response['folder_name'] = $folderName;
@@ -2776,23 +2797,24 @@ class ClientDocumentsController extends Controller
             Log::error('Error deleting checklist', [
                 'checklist_id' => $request->id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $response['status'] = false;
             $response['message'] = 'An error occurred. Please try again.';
         }
-        
+
         return response()->json($response);
     }
 
     /**
      * Download Document (S3 Temporary URL)
      */
-    public function download_document(Request $request) {
+    public function download_document(Request $request)
+    {
         $fileUrl = $request->input('filelink');
         $filename = $request->input('filename', 'downloaded.pdf');
 
-        if (!$fileUrl) {
+        if (! $fileUrl) {
             return abort(400, 'Missing file URL');
         }
 
@@ -2805,7 +2827,7 @@ class ClientDocumentsController extends Controller
         try {
             // Extract S3 key from the URL
             $parsed = parse_url($fileUrl);
-            if (!isset($parsed['path'])) {
+            if (! isset($parsed['path'])) {
                 return abort(400, 'Invalid S3 URL format');
             }
 
@@ -2815,29 +2837,30 @@ class ClientDocumentsController extends Controller
             if (strpos($path, '/personal/') !== false) {
                 $filename = $this->normalizePersonalDownloadFilename($filename);
             }
-            
+
             $s3Key = ltrim(urldecode($parsed['path']), '/');
-            
+
             // Check if file exists in S3
-            if (!$this->s3Disk()->exists($s3Key)) {
+            if (! $this->s3Disk()->exists($s3Key)) {
                 return abort(404, 'File not found in S3');
             }
-            
+
             // Generate temporary URL with proper headers
             $tempUrl = $this->s3Disk()->temporaryUrl(
                 $s3Key,
                 now()->addMinutes(5), // 5 minutes expiration
                 [
-                    'ResponseContentDisposition' => 'attachment; filename="' . $filename . '"',
-                    'ResponseContentType' => 'application/pdf'
+                    'ResponseContentDisposition' => 'attachment; filename="'.$filename.'"',
+                    'ResponseContentType' => 'application/pdf',
                 ]
             );
-            
+
             // Redirect to S3 temporary URL
             return redirect($tempUrl);
-            
+
         } catch (\Exception $e) {
-            Log::error('S3 download error: ' . $e->getMessage());
+            Log::error('S3 download error: '.$e->getMessage());
+
             return abort(500, 'Error generating download link');
         }
     }
@@ -2861,7 +2884,7 @@ class ClientDocumentsController extends Controller
         $base = pathinfo($filename, PATHINFO_FILENAME);
 
         // Match leading numeric token with optional separator: 123..., 123_..., 123-..., 123 ...
-        if (!preg_match('/^(\d{8,})(?:[_\-\s]+)?(.+)$/', $base, $matches)) {
+        if (! preg_match('/^(\d{8,})(?:[_\-\s]+)?(.+)$/', $base, $matches)) {
             return $filename;
         }
 
@@ -2872,19 +2895,20 @@ class ClientDocumentsController extends Controller
         }
 
         // Avoid duplicate suffix if already present.
-        if (preg_match('/(?:_|-|\s)' . preg_quote($unique, '/') . '$/', $rest)) {
+        if (preg_match('/(?:_|-|\s)'.preg_quote($unique, '/').'$/', $rest)) {
             $newBase = $rest;
         } else {
-            $newBase = $rest . '_' . $unique;
+            $newBase = $rest.'_'.$unique;
         }
 
-        return $ext !== '' ? ($newBase . '.' . $ext) : $newBase;
+        return $ext !== '' ? ($newBase.'.'.$ext) : $newBase;
     }
 
     /**
      * Add Personal Document Category
      */
-    public function addPersonalDocCategory(Request $request) {
+    public function addPersonalDocCategory(Request $request)
+    {
         $categoryTitle = trim($request->input('personal_doc_category'));
         $clientId = $request->input('clientid');
 
@@ -2898,7 +2922,7 @@ class ClientDocumentsController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => $validator->errors()->first('personal_doc_category')
+                'message' => $validator->errors()->first('personal_doc_category'),
             ]);
         }
 
@@ -2917,7 +2941,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally (for NULL client).'
+                'message' => 'This category already exists globally (for NULL client).',
             ]);
         }
 
@@ -2930,12 +2954,12 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client.'
+                'message' => 'This category already exists for this client.',
             ]);
         }
 
         try {
-            $category = new PersonalDocumentType();
+            $category = new PersonalDocumentType;
             $category->title = $categoryTitle;
             $category->status = 1;
             $category->type = 'personal';
@@ -2959,7 +2983,7 @@ class ClientDocumentsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error adding category: ' . $e->getMessage()
+                'message' => 'Error adding category: '.$e->getMessage(),
             ]);
         }
     }
@@ -2967,7 +2991,8 @@ class ClientDocumentsController extends Controller
     /**
      * Update Personal Document Category
      */
-    public function updatePersonalDocCategory(Request $request) {
+    public function updatePersonalDocCategory(Request $request)
+    {
         $request->validate([
             'id' => 'required|exists:personal_document_types,id',
             'title' => 'required|string|max:255',
@@ -2998,7 +3023,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally for all client.Pls try other.'
+                'message' => 'This category already exists globally for all client.Pls try other.',
             ]);
         }
 
@@ -3012,7 +3037,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client.Pls try other.'
+                'message' => 'This category already exists for this client.Pls try other.',
             ]);
         }
 
@@ -3020,16 +3045,17 @@ class ClientDocumentsController extends Controller
             $category->title = $categoryTitle;
             $category->save();
 
-            return response()->json(['status' => true,'message' => 'This category is updated successfully.']);
+            return response()->json(['status' => true, 'message' => 'This category is updated successfully.']);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Error updating category: ' . $e->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Error updating category: '.$e->getMessage()]);
         }
     }
 
     /**
      * Add Visa Document Category
      */
-    public function addVisaDocCategory(Request $request) {
+    public function addVisaDocCategory(Request $request)
+    {
         $categoryTitle = trim($request->input('visa_doc_category'));
         $clientId = $request->input('clientid');
         $clientMatterId = $request->input('clientmatterid');
@@ -3044,7 +3070,7 @@ class ClientDocumentsController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => $validator->errors()->first('visa_doc_category')
+                'message' => $validator->errors()->first('visa_doc_category'),
             ]);
         }
 
@@ -3064,7 +3090,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally.'
+                'message' => 'This category already exists globally.',
             ]);
         }
 
@@ -3077,12 +3103,12 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client matter.'
+                'message' => 'This category already exists for this client matter.',
             ]);
         }
 
         try {
-            $category = new VisaDocumentType();
+            $category = new VisaDocumentType;
             $category->title = $categoryTitle;
             $category->status = 1;
             $category->client_id = $clientId ?? null;
@@ -3107,15 +3133,16 @@ class ClientDocumentsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error adding category: ' . $e->getMessage()
+                'message' => 'Error adding category: '.$e->getMessage(),
             ]);
         }
     }
 
     /**
-     * Update Visa Document Category  
+     * Update Visa Document Category
      */
-    public function updateVisaDocCategory(Request $request) {
+    public function updateVisaDocCategory(Request $request)
+    {
         $request->validate([
             'id' => 'required|exists:visa_document_types,id',
             'title' => 'required|string|max:255',
@@ -3146,7 +3173,7 @@ class ClientDocumentsController extends Controller
         if ($existsForNullClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists globally for all client matters.Pls try other.'
+                'message' => 'This category already exists globally for all client matters.Pls try other.',
             ]);
         }
 
@@ -3160,7 +3187,7 @@ class ClientDocumentsController extends Controller
         if ($existsForSameClient) {
             return response()->json([
                 'status' => false,
-                'message' => 'This category already exists for this client matter.'
+                'message' => 'This category already exists for this client matter.',
             ]);
         }
 
@@ -3170,12 +3197,12 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Visa Document Category updated successfully.'
+                'message' => 'Visa Document Category updated successfully.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error updating category: ' . $e->getMessage()
+                'message' => 'Error updating category: '.$e->getMessage(),
             ]);
         }
     }
@@ -3184,7 +3211,8 @@ class ClientDocumentsController extends Controller
      * Delete Visa Document Category (allowed roles: config crm.visa_document_category_delete_role_ids;
      * empty categories only; matter-specific rows only — default/global rows have client_matter_id NULL)
      */
-    public function deleteVisaDocCategory(Request $request) {
+    public function deleteVisaDocCategory(Request $request)
+    {
         try {
             $allowedRoles = config('crm.visa_document_category_delete_role_ids', [1, 16]);
             if (! in_array((int) (Auth::user()->role ?? 0), $allowedRoles, true)) {
@@ -3225,7 +3253,7 @@ class ClientDocumentsController extends Controller
             if ($activeDocumentCount > 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Cannot delete category. It contains ' . $activeDocumentCount . ' document(s). Please remove all documents first.',
+                    'message' => 'Cannot delete category. It contains '.$activeDocumentCount.' document(s). Please remove all documents first.',
                 ]);
             }
 
@@ -3247,9 +3275,9 @@ class ClientDocumentsController extends Controller
 
             $this->finalizeDeletedVisaDocuments($clientId, $notUsedDocuments);
 
-            $message = 'Category "' . $categoryTitle . '" deleted successfully.';
+            $message = 'Category "'.$categoryTitle.'" deleted successfully.';
             if ($notUsedRemovedCount > 0) {
-                $message .= ' ' . $notUsedRemovedCount . ' not-used document(s) were also removed.';
+                $message .= ' '.$notUsedRemovedCount.' not-used document(s) were also removed.';
             }
 
             return response()->json([
@@ -3266,7 +3294,7 @@ class ClientDocumentsController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => 'Error deleting category: ' . $e->getMessage(),
+                'message' => 'Error deleting category: '.$e->getMessage(),
             ]);
         }
     }
@@ -3322,7 +3350,7 @@ class ClientDocumentsController extends Controller
         }
 
         try {
-            $category = new NominationDocumentType();
+            $category = new NominationDocumentType;
             $category->title = $categoryTitle;
             $category->status = 1;
             $category->client_id = $clientId ?? null;
@@ -3412,7 +3440,8 @@ class ClientDocumentsController extends Controller
      * Delete Personal Document Category (allowed roles: config crm.personal_document_category_delete_role_ids;
      * empty categories only; client-specific categories only — default/global rows have client_id NULL and cannot be deleted)
      */
-    public function deletePersonalDocCategory(Request $request) {
+    public function deletePersonalDocCategory(Request $request)
+    {
         try {
             $allowedRoles = config('crm.personal_document_category_delete_role_ids', [1, 16]);
             if (! in_array((int) (Auth::user()->role ?? 0), $allowedRoles, true)) {
@@ -3457,7 +3486,7 @@ class ClientDocumentsController extends Controller
             if ($activeDocumentCount > 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Cannot delete category. It contains ' . $activeDocumentCount . ' document(s). Please remove all documents first.',
+                    'message' => 'Cannot delete category. It contains '.$activeDocumentCount.' document(s). Please remove all documents first.',
                 ]);
             }
 
@@ -3483,9 +3512,9 @@ class ClientDocumentsController extends Controller
 
             $this->finalizeDeletedPersonalDocuments($clientId, $notUsedDocuments);
 
-            $message = 'Category "' . $categoryTitle . '" deleted successfully.';
+            $message = 'Category "'.$categoryTitle.'" deleted successfully.';
             if ($notUsedRemovedCount > 0) {
-                $message .= ' ' . $notUsedRemovedCount . ' not-used document(s) were also removed.';
+                $message .= ' '.$notUsedRemovedCount.' not-used document(s) were also removed.';
             }
 
             return response()->json([
@@ -3498,12 +3527,12 @@ class ClientDocumentsController extends Controller
                 'category_id' => $request->id ?? null,
                 'user_id' => Auth::user()->id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'status' => false,
-                'message' => 'Error deleting category: ' . $e->getMessage()
+                'message' => 'Error deleting category: '.$e->getMessage(),
             ]);
         }
     }
@@ -3511,20 +3540,22 @@ class ClientDocumentsController extends Controller
     /**
      * Get auto-checklist matches for bulk upload
      */
-    public function getAutoChecklistMatches(Request $request) {
+    public function getAutoChecklistMatches(Request $request)
+    {
         $response = ['status' => false, 'matches' => []];
-        
+
         try {
             $files = $request->input('files', []);
             $checklists = $request->input('checklists', []);
-            
+
             if (empty($files) || empty($checklists)) {
                 $response['status'] = true;
+
                 return response()->json($response);
             }
-            
+
             $matches = [];
-            
+
             foreach ($files as $file) {
                 $fileName = (string) ($file['name'] ?? '');
                 $match = $this->findBestChecklistMatch($fileName, $checklists);
@@ -3532,20 +3563,20 @@ class ClientDocumentsController extends Controller
                     $matches[$fileName] = $match;
                 }
             }
-            
+
             $response['status'] = true;
             $response['matches'] = $matches;
-            
+
         } catch (\Exception $e) {
             Log::error('Error getting auto-checklist matches', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
-        
+
         return response()->json($response);
     }
-    
+
     /**
      * Find best checklist match for a filename.
      *
@@ -3557,35 +3588,36 @@ class ClientDocumentsController extends Controller
      *     method: string
      * }|null
      */
-    private function findBestChecklistMatch(string $fileName, array $checklists): ?array {
+    private function findBestChecklistMatch(string $fileName, array $checklists): ?array
+    {
         if (empty($fileName) || empty($checklists)) {
             return null;
         }
-        
+
         // Clean filename
         $cleanFileName = $this->cleanFileName($fileName);
         $fileNameLower = strtolower($cleanFileName);
         $fileNameWords = $this->extractKeywords($cleanFileName);
-        
+
         $bestMatch = null;
         $bestScore = 0;
         $bestConfidence = 'low';
-        
+
         foreach ($checklists as $checklist) {
             $checklist = (string) $checklist;
             $checklistLower = strtolower($checklist);
             $checklistWords = $this->extractKeywords($checklist);
-            
+
             // Strategy 1: Exact match (after cleaning)
             if ($fileNameLower === $checklistLower) {
                 return [
                     'checklist' => $checklist,
                     'confidence' => 'high',
                     'score' => 100,
-                    'method' => 'exact'
+                    'method' => 'exact',
                 ];
             }
-            
+
             // Strategy 2: Fuzzy matching
             $similarity = $this->calculateSimilarity($fileNameLower, $checklistLower);
             if ($similarity > 85) {
@@ -3593,14 +3625,14 @@ class ClientDocumentsController extends Controller
                     'checklist' => $checklist,
                     'confidence' => 'high',
                     'score' => $similarity,
-                    'method' => 'fuzzy'
+                    'method' => 'fuzzy',
                 ];
             } elseif ($similarity > 70 && $similarity > $bestScore) {
                 $bestMatch = $checklist;
                 $bestScore = $similarity;
                 $bestConfidence = 'medium';
             }
-            
+
             // Strategy 3: Pattern matching
             $patternMatch = $this->checkPatternMatch($fileNameWords, $checklistWords);
             if ($patternMatch['matched'] && $patternMatch['score'] > $bestScore) {
@@ -3608,7 +3640,7 @@ class ClientDocumentsController extends Controller
                 $bestScore = $patternMatch['score'];
                 $bestConfidence = $patternMatch['score'] > 80 ? 'high' : 'medium';
             }
-            
+
             // Strategy 4: Abbreviation matching
             $abbrevMatch = $this->checkAbbreviationMatch($cleanFileName, $checklist);
             if ($abbrevMatch && $abbrevMatch > $bestScore) {
@@ -3616,7 +3648,7 @@ class ClientDocumentsController extends Controller
                 $bestScore = $abbrevMatch;
                 $bestConfidence = 'high';
             }
-            
+
             // Strategy 5: Partial word matching
             $partialMatch = $this->checkPartialMatch($fileNameWords, $checklistWords);
             if ($partialMatch && $partialMatch > $bestScore) {
@@ -3625,71 +3657,77 @@ class ClientDocumentsController extends Controller
                 $bestConfidence = 'low';
             }
         }
-        
+
         if ($bestMatch && $bestScore > 50) {
             return [
                 'checklist' => $bestMatch,
                 'confidence' => $bestConfidence,
                 'score' => $bestScore,
-                'method' => 'combined'
+                'method' => 'combined',
             ];
         }
-        
+
         return null;
     }
-    
+
     /**
      * Clean filename for matching
      */
-    private function cleanFileName(string $fileName): string {
+    private function cleanFileName(string $fileName): string
+    {
         // Remove extension
         $name = pathinfo($fileName, PATHINFO_FILENAME);
         // Remove common prefixes (client name, timestamps)
         $name = preg_replace('/^[^_]+_/', '', $name); // Remove prefix before first underscore
         $name = preg_replace('/_\d{10,}$/', '', $name); // Remove timestamps
         $name = preg_replace('/[^a-zA-Z0-9\s]/', ' ', $name); // Replace special chars with spaces
+
         return trim($name);
     }
-    
+
     /**
      * Extract keywords from text
      *
      * @return array<int|string, string>
      */
-    private function extractKeywords(string $text): array {
+    private function extractKeywords(string $text): array
+    {
         $text = strtolower($text);
         $words = preg_split('/[\s_\-]+/', $text);
         $stopWords = ['the', 'of', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'is', 'are', 'was', 'were'];
-        return array_filter($words, function($word) use ($stopWords) {
-            return strlen($word) > 2 && !in_array($word, $stopWords);
+
+        return array_filter($words, function ($word) use ($stopWords) {
+            return strlen($word) > 2 && ! in_array($word, $stopWords);
         });
     }
-    
+
     /**
      * Calculate similarity between two strings (Levenshtein-based)
      */
-    private function calculateSimilarity(string $str1, string $str2): float {
+    private function calculateSimilarity(string $str1, string $str2): float
+    {
         $len1 = strlen($str1);
         $len2 = strlen($str2);
-        
+
         if ($len1 === 0 || $len2 === 0) {
             return 0;
         }
-        
+
         $maxLen = max($len1, $len2);
         $distance = levenshtein($str1, $str2);
-        
+
         return (1 - ($distance / $maxLen)) * 100;
     }
-    
+
     /**
      * Check pattern match
      *
-     * @param array<int|string, string> $fileNameWords
-     * @param array<int|string, string> $checklistWords
+     * @param  array<int|string, string>  $fileNameWords
+     * @param  array<int|string, string>  $checklistWords
      * @return array{matched: bool, score: int}
      */
-    private function checkPatternMatch(array $fileNameWords, array $checklistWords): array {
+    private function checkPatternMatch(array $fileNameWords, array $checklistWords): array
+    {
         $patterns = [
             'passport' => ['passport', 'pass', 'pp'],
             'visa' => ['visa', 'grant', 'vg'],
@@ -3697,16 +3735,16 @@ class ClientDocumentsController extends Controller
             'birth' => ['birth', 'certificate', 'bc'],
             'marriage' => ['marriage', 'certificate', 'mc'],
             'education' => ['education', 'degree', 'diploma', 'certificate'],
-            'employment' => ['employment', 'experience', 'work', 'job']
+            'employment' => ['employment', 'experience', 'work', 'job'],
         ];
-        
+
         $matched = false;
         $score = 0;
-        
+
         foreach ($patterns as $key => $keywords) {
             $fileHasKeyword = false;
             $checklistHasKeyword = false;
-            
+
             foreach ($keywords as $keyword) {
                 if (in_array($keyword, $fileNameWords)) {
                     $fileHasKeyword = true;
@@ -3715,56 +3753,58 @@ class ClientDocumentsController extends Controller
                     $checklistHasKeyword = true;
                 }
             }
-            
+
             if ($fileHasKeyword && $checklistHasKeyword) {
                 $matched = true;
                 $score = 90; // High score for pattern match
                 break;
             }
         }
-        
+
         return ['matched' => $matched, 'score' => $score];
     }
-    
+
     /**
      * Check abbreviation match
      */
-    private function checkAbbreviationMatch(string $fileName, string $checklist): int {
+    private function checkAbbreviationMatch(string $fileName, string $checklist): int
+    {
         $abbreviations = [
             'pp' => 'passport',
             'vg' => 'visa grant',
             'nic' => 'national identity',
             'dob' => 'birth',
             'bc' => 'birth certificate',
-            'mc' => 'marriage certificate'
+            'mc' => 'marriage certificate',
         ];
-        
+
         $fileNameLower = strtolower($fileName);
         $checklistLower = strtolower($checklist);
-        
+
         foreach ($abbreviations as $abbrev => $full) {
             if (strpos($fileNameLower, $abbrev) !== false && strpos($checklistLower, $full) !== false) {
                 return 85;
             }
         }
-        
+
         return 0;
     }
-    
+
     /**
      * Check partial word match
      *
-     * @param array<int|string, string> $fileNameWords
-     * @param array<int|string, string> $checklistWords
+     * @param  array<int|string, string>  $fileNameWords
+     * @param  array<int|string, string>  $checklistWords
      */
-    private function checkPartialMatch(array $fileNameWords, array $checklistWords): float {
+    private function checkPartialMatch(array $fileNameWords, array $checklistWords): float
+    {
         $matches = 0;
         $total = count($checklistWords);
-        
+
         if ($total === 0) {
             return 0;
         }
-        
+
         foreach ($checklistWords as $checklistWord) {
             foreach ($fileNameWords as $fileNameWord) {
                 if (strpos($fileNameWord, $checklistWord) !== false || strpos($checklistWord, $fileNameWord) !== false) {
@@ -3773,16 +3813,17 @@ class ClientDocumentsController extends Controller
                 }
             }
         }
-        
+
         return ($matches / $total) * 100;
     }
-    
+
     /**
      * Bulk upload personal documents
      */
-    public function bulkUploadPersonalDocuments(Request $request) {
+    public function bulkUploadPersonalDocuments(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $clientid = $request->clientid;
             $categoryid = $request->categoryid;
@@ -3792,26 +3833,27 @@ class ClientDocumentsController extends Controller
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
                 return $deny;
             }
-            
+
             $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
-            $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-            $client_first_name = !empty($admin_info1)
+            $client_unique_id = ! empty($admin_info1) ? $admin_info1->client_id : '';
+            $client_first_name = ! empty($admin_info1)
                 ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
                 : 'client';
             $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
-            
-            if (!$request->hasFile('files')) {
+
+            if (! $request->hasFile('files')) {
                 $response['message'] = 'No files uploaded';
+
                 return response()->json($response);
             }
-            
+
             $files = $request->file('files');
             $mappingsInput = $request->input('mappings', []);
-            
-            if (!is_array($files)) {
+
+            if (! is_array($files)) {
                 $files = [$files];
             }
-            
+
             // Parse mappings JSON strings
             $mappings = [];
             foreach ($mappingsInput as $mappingStr) {
@@ -3820,10 +3862,10 @@ class ClientDocumentsController extends Controller
                     $mappings[] = $mapping;
                 }
             }
-            
+
             $uploadedCount = 0;
             $errors = [];
-            
+
             foreach ($files as $index => $file) {
                 $fileName = $file->getClientOriginalName();
                 try {
@@ -3831,28 +3873,32 @@ class ClientDocumentsController extends Controller
 
                     if ($size > self::BULK_UPLOAD_MAX_BYTES) {
                         $errors[] = "File '{$fileName}' exceeds 20MB limit";
+
                         continue;
                     }
-                    
+
                     // Validate filename
-                    if (!DocumentFilenameRules::isAllowed($fileName)) {
+                    if (! DocumentFilenameRules::isAllowed($fileName)) {
                         $errors[] = "File '{$fileName}' has invalid characters in name";
+
                         continue;
                     }
-                    
+
                     // Get mapping for this file
                     $mapping = isset($mappings[$index]) ? $mappings[$index] : null;
-                    if (!$mapping || !isset($mapping['name'])) {
+                    if (! $mapping || ! isset($mapping['name'])) {
                         $errors[] = "No mapping found for file '{$fileName}'";
+
                         continue;
                     }
-                    
+
                     $checklistName = $mapping['name'] ?? null;
-                    if (!$checklistName) {
+                    if (! $checklistName) {
                         $errors[] = "No checklist name specified for file '{$fileName}'";
+
                         continue;
                     }
-                    
+
                     // Check if checklist exists, create if needed
                     $document = Document::query()->where('client_id', $clientid)
                         ->where('doc_type', $doctype)
@@ -3862,10 +3908,10 @@ class ClientDocumentsController extends Controller
                         ->whereNull('not_used_doc')
                         ->whereNull('file_name') // Only get checklists without files
                         ->first();
-                    
+
                     // If checklist doesn't exist and mapping type is 'new', create it
-                    if (!$document && $mapping['type'] === 'new') {
-                        $document = new Document();
+                    if (! $document && $mapping['type'] === 'new') {
+                        $document = new Document;
                         $document->user_id = Auth::user()->id;
                         $document->client_id = $clientid;
                         $document->type = $type;
@@ -3873,7 +3919,7 @@ class ClientDocumentsController extends Controller
                         $document->folder_name = $categoryid;
                         $document->checklist = $checklistName;
                         $document->save();
-                    } elseif (!$document && $mapping['type'] === 'existing') {
+                    } elseif (! $document && $mapping['type'] === 'existing') {
                         // If trying to use existing checklist but all instances have files, create new one
                         $hasAnyChecklist = Document::query()->where('client_id', $clientid)
                             ->where('doc_type', $doctype)
@@ -3882,10 +3928,10 @@ class ClientDocumentsController extends Controller
                             ->where('type', $type)
                             ->whereNull('not_used_doc')
                             ->exists();
-                        
+
                         if ($hasAnyChecklist) {
                             // Checklist exists but all have files - create a new instance
-                            $document = new Document();
+                            $document = new Document;
                             $document->user_id = Auth::user()->id;
                             $document->client_id = $clientid;
                             $document->type = $type;
@@ -3895,83 +3941,85 @@ class ClientDocumentsController extends Controller
                             $document->save();
                         }
                     }
-                    
-                    if (!$document) {
+
+                    if (! $document) {
                         $errors[] = "Checklist '{$checklistName}' not found for file '{$fileName}'";
+
                         continue;
                     }
-                    
+
                     // Upload file
                     $extension = $file->getClientOriginalExtension();
                     $timestamp = time();
-                    $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
-                    $name = $namePrefix . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
-                    $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
-                    
+                    $uniqueId = $timestamp.'_'.$index.'_'.mt_rand(1000, 9999);
+                    $name = $namePrefix.'_'.$checklistName.'_'.$uniqueId.'.'.$extension;
+                    $filePath = $client_unique_id.'/'.$doctype.'/'.$name;
+
                     $this->s3Disk()->put($filePath, file_get_contents($file));
-                    
+
                     // Update document
                     $fileUrl = $this->s3Disk()->url($filePath);
-                    $document->file_name = $namePrefix . "_" . $checklistName . "_" . $uniqueId;
+                    $document->file_name = $namePrefix.'_'.$checklistName.'_'.$uniqueId;
                     $document->filetype = $extension;
                     $document->user_id = Auth::user()->id;
                     $document->myfile = $fileUrl;
                     $document->myfile_key = $name;
                     $document->file_size = $size;
                     $document->save();
-                    
+
                     $uploadedCount++;
-                    
+
                 } catch (\Exception $e) {
-                    $errors[] = "Error uploading '{$fileName}': " . $e->getMessage();
+                    $errors[] = "Error uploading '{$fileName}': ".$e->getMessage();
                     Log::error('Bulk upload error for file', [
                         'file' => $fileName,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
-            
+
             if ($uploadedCount > 0) {
                 // Log activity
                 $matterRef = $this->getMatterReference($clientid);
-                $subject = !empty($matterRef) 
+                $subject = ! empty($matterRef)
                     ? "bulk uploaded {$uploadedCount} documents - {$matterRef}"
                     : "bulk uploaded {$uploadedCount} documents";
                 $description = "<p>Bulk uploaded {$uploadedCount} personal documents</p>";
-                
+
                 $this->logClientActivity(
                     $clientid,
                     $subject,
                     $description,
                     'document'
                 );
-                
+
                 $response['status'] = true;
                 $response['message'] = "Successfully uploaded {$uploadedCount} file(s)";
                 $response['uploaded'] = $uploadedCount;
                 $response['errors'] = $errors;
             } else {
-                $response['message'] = 'No files were uploaded. ' . implode('; ', $errors);
+                $response['message'] = 'No files were uploaded. '.implode('; ', $errors);
                 $response['errors'] = $errors;
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Error in bulk upload', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            $response['message'] = 'An error occurred: ' . $e->getMessage();
+            $response['message'] = 'An error occurred: '.$e->getMessage();
         }
-        
+
         return response()->json($response);
     }
-    
+
     /**
      * Bulk upload visa documents
      */
-    public function bulkUploadVisaDocuments(Request $request) {
+    public function bulkUploadVisaDocuments(Request $request)
+    {
         $response = ['status' => false, 'message' => 'Please try again'];
-        
+
         try {
             $clientid = $request->clientid;
             $categoryid = $request->categoryid;
@@ -3982,26 +4030,27 @@ class ClientDocumentsController extends Controller
             if ($deny = $this->denyJsonUnlessStaffClientAccess((int) $clientid)) {
                 return $deny;
             }
-            
+
             $admin_info1 = Admin::select(['id', 'client_id', 'first_name', 'is_company'])->where('id', $clientid)->first();
-            $client_unique_id = !empty($admin_info1) ? $admin_info1->client_id : "";
-            $client_first_name = !empty($admin_info1)
+            $client_unique_id = ! empty($admin_info1) ? $admin_info1->client_id : '';
+            $client_first_name = ! empty($admin_info1)
                 ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin_info1->first_name ?? ''))
                 : 'client';
             $namePrefix = DocumentStoredFilename::storedNamePrefix($admin_info1, $client_first_name);
-            
-            if (!$request->hasFile('files')) {
+
+            if (! $request->hasFile('files')) {
                 $response['message'] = 'No files uploaded';
+
                 return response()->json($response);
             }
-            
+
             $files = $request->file('files');
             $mappingsInput = $request->input('mappings', []);
-            
-            if (!is_array($files)) {
+
+            if (! is_array($files)) {
                 $files = [$files];
             }
-            
+
             // Parse mappings JSON strings
             $mappings = [];
             foreach ($mappingsInput as $mappingStr) {
@@ -4010,10 +4059,10 @@ class ClientDocumentsController extends Controller
                     $mappings[] = $mapping;
                 }
             }
-            
+
             $uploadedCount = 0;
             $errors = [];
-            
+
             foreach ($files as $index => $file) {
                 $fileName = $file->getClientOriginalName();
                 try {
@@ -4021,28 +4070,32 @@ class ClientDocumentsController extends Controller
 
                     if ($size > self::BULK_UPLOAD_MAX_BYTES) {
                         $errors[] = "File '{$fileName}' exceeds 20MB limit";
+
                         continue;
                     }
-                    
+
                     // Validate filename
-                    if (!DocumentFilenameRules::isAllowed($fileName)) {
+                    if (! DocumentFilenameRules::isAllowed($fileName)) {
                         $errors[] = "File '{$fileName}' has invalid characters in name";
+
                         continue;
                     }
-                    
+
                     // Get mapping for this file
                     $mapping = isset($mappings[$index]) ? $mappings[$index] : null;
-                    if (!$mapping || !isset($mapping['name'])) {
+                    if (! $mapping || ! isset($mapping['name'])) {
                         $errors[] = "No mapping found for file '{$fileName}'";
+
                         continue;
                     }
-                    
+
                     $checklistName = $mapping['name'] ?? null;
-                    if (!$checklistName) {
+                    if (! $checklistName) {
                         $errors[] = "No checklist name specified for file '{$fileName}'";
+
                         continue;
                     }
-                    
+
                     // Check if checklist exists, create if needed
                     $document = Document::query()->where('client_id', $clientid)
                         ->where('doc_type', $doctype)
@@ -4051,14 +4104,14 @@ class ClientDocumentsController extends Controller
                         ->where('type', $type)
                         ->whereNull('not_used_doc')
                         ->whereNull('file_name') // Only get checklists without files
-                        ->when($matterid, function($query) use ($matterid) {
+                        ->when($matterid, function ($query) use ($matterid) {
                             return $query->where('client_matter_id', $matterid);
                         })
                         ->first();
-                    
+
                     // If checklist doesn't exist and mapping type is 'new', create it
-                    if (!$document && $mapping['type'] === 'new') {
-                        $document = new Document();
+                    if (! $document && $mapping['type'] === 'new') {
+                        $document = new Document;
                         $document->user_id = Auth::user()->id;
                         $document->client_id = $clientid;
                         $document->type = $type;
@@ -4067,7 +4120,7 @@ class ClientDocumentsController extends Controller
                         $document->checklist = $checklistName;
                         $document->client_matter_id = $matterid;
                         $document->save();
-                    } elseif (!$document && $mapping['type'] === 'existing') {
+                    } elseif (! $document && $mapping['type'] === 'existing') {
                         // If trying to use existing checklist but all instances have files, create new one
                         $hasAnyChecklist = Document::query()->where('client_id', $clientid)
                             ->where('doc_type', $doctype)
@@ -4075,14 +4128,14 @@ class ClientDocumentsController extends Controller
                             ->where('checklist', $checklistName)
                             ->where('type', $type)
                             ->whereNull('not_used_doc')
-                            ->when($matterid, function($query) use ($matterid) {
+                            ->when($matterid, function ($query) use ($matterid) {
                                 return $query->where('client_matter_id', $matterid);
                             })
                             ->exists();
-                        
+
                         if ($hasAnyChecklist) {
                             // Checklist exists but all have files - create a new instance
-                            $document = new Document();
+                            $document = new Document;
                             $document->user_id = Auth::user()->id;
                             $document->client_id = $clientid;
                             $document->type = $type;
@@ -4093,50 +4146,52 @@ class ClientDocumentsController extends Controller
                             $document->save();
                         }
                     }
-                    
-                    if (!$document) {
+
+                    if (! $document) {
                         $errors[] = "Checklist '{$checklistName}' not found for file '{$fileName}'";
+
                         continue;
                     }
-                    
+
                     // Refresh document to get latest checklist name (prevent race conditions)
                     $document->refresh();
                     $finalChecklistName = $document->checklist;
-                    
+
                     // Validate checklist name exists
                     if (empty($finalChecklistName)) {
                         $errors[] = "Checklist name not found for file '{$fileName}'";
                         Log::warning('Bulk visa upload: Checklist name missing', [
                             'document_id' => $document->id,
                             'file' => $fileName,
-                            'clientid' => $clientid
+                            'clientid' => $clientid,
                         ]);
+
                         continue;
                     }
-                    
+
                     // Use document's current checklist name (not mapping name) to ensure consistency
                     $checklistName = $finalChecklistName;
-                    
+
                     // Upload file
                     $extension = $file->getClientOriginalExtension();
                     $timestamp = time();
-                    $uniqueId = $timestamp . '_' . $index . '_' . mt_rand(1000, 9999);
-                    $name = $namePrefix . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
-                    $filePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                    $uniqueId = $timestamp.'_'.$index.'_'.mt_rand(1000, 9999);
+                    $name = $namePrefix.'_'.$checklistName.'_'.$uniqueId.'.'.$extension;
+                    $filePath = $client_unique_id.'/'.$doctype.'/'.$name;
 
                     $fileContent = $this->flattenPdfIfForm956($file, $document);
                     $this->s3Disk()->put($filePath, $fileContent);
                     $size = strlen($fileContent);
-                    
+
                     // Refresh one more time before saving to catch any changes during S3 upload
                     $document->refresh();
                     $finalChecklistName = $document->checklist;
-                    
+
                     // If checklist changed during upload, rebuild filename and move S3 file
-                    if (!empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
+                    if (! empty($finalChecklistName) && $finalChecklistName !== $checklistName) {
                         $checklistName = $finalChecklistName;
-                        $name = $namePrefix . "_" . $checklistName . "_" . $uniqueId . "." . $extension;
-                        $newFilePath = $client_unique_id . '/' . $doctype . '/' . $name;
+                        $name = $namePrefix.'_'.$checklistName.'_'.$uniqueId.'.'.$extension;
+                        $newFilePath = $client_unique_id.'/'.$doctype.'/'.$name;
                         if ($newFilePath !== $filePath) {
                             try {
                                 $this->s3Disk()->copy($filePath, $newFilePath);
@@ -4145,55 +4200,55 @@ class ClientDocumentsController extends Controller
                                 Log::info('Bulk visa upload: File moved due to checklist change', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
-                                    'file' => $fileName
+                                    'file' => $fileName,
                                 ]);
                             } catch (\Exception $e) {
                                 Log::error('Bulk visa upload: Failed to move S3 file', [
                                     'old_path' => $filePath,
                                     'new_path' => $newFilePath,
-                                    'error' => $e->getMessage()
+                                    'error' => $e->getMessage(),
                                 ]);
                             }
                         }
                     }
-                    
+
                     // Update document
                     $fileUrl = $this->s3Disk()->url($filePath);
-                    $document->file_name = $namePrefix . "_" . $checklistName . "_" . $uniqueId;
+                    $document->file_name = $namePrefix.'_'.$checklistName.'_'.$uniqueId;
                     $document->filetype = $extension;
                     $document->user_id = Auth::user()->id;
                     $document->myfile = $fileUrl;
                     $document->myfile_key = $name;
                     $document->file_size = $size;
                     $document->save();
-                    
+
                     $uploadedCount++;
-                    
+
                 } catch (\Exception $e) {
-                    $errors[] = "Error uploading '{$fileName}': " . $e->getMessage();
+                    $errors[] = "Error uploading '{$fileName}': ".$e->getMessage();
                     Log::error('Bulk visa upload error for file', [
                         'file' => $fileName,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
-            
+
             if ($uploadedCount > 0) {
                 // Log activity
                 $matterRef = $this->getMatterReference($clientid, $matterid);
                 $docLabel = $doctype === 'nomination' ? 'nomination' : 'visa';
-                $subject = !empty($matterRef) 
+                $subject = ! empty($matterRef)
                     ? "bulk uploaded {$uploadedCount} {$docLabel} documents - {$matterRef}"
                     : "bulk uploaded {$uploadedCount} {$docLabel} documents";
                 $description = "<p>Bulk uploaded {$uploadedCount} {$docLabel} documents</p>";
-                
+
                 $this->logClientActivity(
                     $clientid,
                     $subject,
                     $description,
                     'document'
                 );
-                
+
                 // Update matter date
                 if ($matterid) {
                     $matter = ClientMatter::query()->find($matterid);
@@ -4202,55 +4257,52 @@ class ClientDocumentsController extends Controller
                         $matter->save();
                     }
                 }
-                
+
                 $response['status'] = true;
                 $response['message'] = "Successfully uploaded {$uploadedCount} file(s)";
                 $response['uploaded'] = $uploadedCount;
                 $response['errors'] = $errors;
             } else {
-                $response['message'] = 'No files were uploaded. ' . implode('; ', $errors);
+                $response['message'] = 'No files were uploaded. '.implode('; ', $errors);
                 $response['errors'] = $errors;
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Error in visa bulk upload', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            $response['message'] = 'An error occurred: ' . $e->getMessage();
+            $response['message'] = 'An error occurred: '.$e->getMessage();
         }
-        
+
         return response()->json($response);
     }
-    
+
     /**
      * Get matter reference for activity logging
-     *
-     * @param int|string|null $clientId
-     * @param int|string|null $matterId
      */
     private function getMatterReference(int|string|null $clientId, int|string|null $matterId = null): string
     {
         $matterReference = '';
-        
+
         // First try to get from provided matter ID
-        if($matterId) {
+        if ($matterId) {
             $matter = ClientMatter::query()->find($matterId);
-            if($matter && $matter->client_unique_matter_no) {
+            if ($matter && $matter->client_unique_matter_no) {
                 return $matter->client_unique_matter_no;
             }
         }
-        
+
         // Fall back to latest active matter
         $latestMatter = ClientMatter::query()->where('client_id', $clientId)
             ->where('matter_status', 1)
             ->orderBy('id', 'desc')
             ->first();
-            
-        if($latestMatter && $latestMatter->client_unique_matter_no) {
+
+        if ($latestMatter && $latestMatter->client_unique_matter_no) {
             return $latestMatter->client_unique_matter_no;
         }
-        
+
         return '';
     }
 
@@ -4260,7 +4312,7 @@ class ClientDocumentsController extends Controller
      * non-editable when previewed or downloaded after upload.
      * Falls back to the original file content if flattening fails.
      */
-    private function flattenPdfIfForm956(\Illuminate\Http\UploadedFile $file, Document $doc): string
+    private function flattenPdfIfForm956(UploadedFile $file, Document $doc): string
     {
         $content = file_get_contents($file->getRealPath());
 
@@ -4268,40 +4320,527 @@ class ClientDocumentsController extends Controller
             return $content;
         }
 
-        $tempInput  = null;
+        $tempInput = null;
         $tempOutput = null;
 
         try {
-            $tempInput  = tempnam(sys_get_temp_dir(), 'pdf956in_');
+            $tempInput = tempnam(sys_get_temp_dir(), 'pdf956in_');
             $tempOutput = tempnam(sys_get_temp_dir(), 'pdf956out_');
 
             file_put_contents($tempInput, $content);
 
-            $pdf    = new Pdf($tempInput);
+            $pdf = new Pdf($tempInput);
             $result = $pdf->flatten()->saveAs($tempOutput);
 
             if ($result !== false && file_exists($tempOutput) && filesize($tempOutput) > 0) {
                 $flatContent = file_get_contents($tempOutput);
             } else {
                 Log::warning('Form 956 PDF flattening failed, uploading original', [
-                    'doc_id'      => $doc->id,
-                    'form956_id'  => $doc->form956_id,
+                    'doc_id' => $doc->id,
+                    'form956_id' => $doc->form956_id,
                     'pdftk_error' => $pdf->getError(),
                 ]);
                 $flatContent = $content;
             }
         } catch (\Exception $e) {
             Log::error('Exception during Form 956 PDF flattening, uploading original', [
-                'doc_id'     => $doc->id,
+                'doc_id' => $doc->id,
                 'form956_id' => $doc->form956_id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             $flatContent = $content;
         } finally {
-            if ($tempInput  && file_exists($tempInput))  @unlink($tempInput);
-            if ($tempOutput && file_exists($tempOutput)) @unlink($tempOutput);
+            if ($tempInput && file_exists($tempInput)) {
+                @unlink($tempInput);
+            }
+            if ($tempOutput && file_exists($tempOutput)) {
+                @unlink($tempOutput);
+            }
         }
 
         return $flatContent;
+    }
+
+    public function addDibpReceiptChecklist(StoreDibpReceiptChecklistRequest $request): JsonResponse
+    {
+        $clientId = (int) $request->validated('clientid');
+        if ($deny = $this->denyJsonUnlessStaffClientAccess($clientId)) {
+            return $deny;
+        }
+
+        $matterId = $request->validated('client_matter_id');
+        $matterId = $matterId === null ? null : (int) $matterId;
+        if ($matterId === 0) {
+            $matterId = null;
+        }
+
+        $document = ClientDetailDocumentsTab::addChecklist(
+            $clientId,
+            (int) Auth::id(),
+            trim((string) $request->validated('checklist')),
+            $matterId
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Checklist added.',
+            'document' => ClientDetailDocumentsTab::jsonPayload($document),
+        ]);
+    }
+
+    public function uploadDibpReceiptDocument(StoreDibpReceiptUploadRequest $request): JsonResponse
+    {
+        $clientId = (int) $request->validated('clientid');
+        if ($deny = $this->denyJsonUnlessStaffClientAccess($clientId)) {
+            return $deny;
+        }
+
+        $document = Document::query()->find((int) $request->validated('fileid'));
+        if (! $document || (int) $document->client_id !== $clientId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Document record not found.',
+            ], 404);
+        }
+
+        if ($document->doc_type !== ClientDetailDocumentsTab::DIBP_RECEIPT_DOC_TYPE) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This upload is only for DIBP receipts.',
+            ], 422);
+        }
+
+        if (empty($document->checklist)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Document checklist not found. Please select a valid checklist.',
+            ], 422);
+        }
+
+        $file = $request->file('document_upload');
+        $originalName = (string) $file->getClientOriginalName();
+        if (! DocumentFilenameRules::isAllowed($originalName)) {
+            return response()->json([
+                'status' => false,
+                'message' => DocumentFilenameRules::validationMessage(),
+            ], 422);
+        }
+
+        $admin = Admin::query()->select(['id', 'client_id', 'first_name', 'is_company'])->find($clientId);
+        $clientUniqueId = $admin?->client_id ?? '';
+        $sanitizedFirstName = $admin
+            ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin->first_name ?? ''))
+            : 'client';
+        $namePrefix = DocumentStoredFilename::storedNamePrefix($admin, (string) $sanitizedFirstName);
+        $extension = $file->getClientOriginalExtension();
+        $timestamp = time();
+        $storedName = $namePrefix.'_'.$document->checklist.'_'.$timestamp.'.'.$extension;
+        $filePath = $clientUniqueId.'/'.ClientDetailDocumentsTab::storageFolder().'/'.$storedName;
+
+        try {
+            $this->s3Disk()->put($filePath, $file->getContent());
+        } catch (\Exception $e) {
+            Log::error('DIBP receipt upload failed', [
+                'fileid' => $document->id,
+                'clientid' => $clientId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to store the file.',
+            ], 500);
+        }
+
+        $fileUrl = $this->s3Disk()->url($filePath);
+        $document = ClientDetailDocumentsTab::attachFile($document, [
+            'file_name' => $namePrefix.'_'.$document->checklist.'_'.$timestamp,
+            'filetype' => $extension,
+            'myfile' => $fileUrl,
+            'myfile_key' => $storedName,
+            'file_size' => (int) $file->getSize(),
+            'user_id' => (int) Auth::id(),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'File uploaded successfully',
+            'document' => ClientDetailDocumentsTab::jsonPayload($document),
+        ]);
+    }
+
+    public function renameDibpReceiptDocument(StoreDibpReceiptRenameFileRequest $request): JsonResponse
+    {
+        $document = $this->dibpReceiptDocumentForClient(
+            (int) $request->validated('clientid'),
+            (int) $request->validated('id')
+        );
+        if ($document instanceof JsonResponse) {
+            return $document;
+        }
+
+        ob_start();
+        $this->renamedoc($request);
+        $raw = ob_get_clean();
+        $payload = json_decode(is_string($raw) ? $raw : '', true);
+        if (! is_array($payload)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to rename file.',
+            ], 500);
+        }
+
+        return response()->json($payload);
+    }
+
+    public function renameDibpReceiptChecklist(StoreDibpReceiptRenameChecklistRequest $request): JsonResponse
+    {
+        $document = $this->dibpReceiptDocumentForClient(
+            (int) $request->validated('clientid'),
+            (int) $request->validated('id')
+        );
+        if ($document instanceof JsonResponse) {
+            return $document;
+        }
+
+        ob_start();
+        $this->renamechecklistdoc($request);
+        $raw = ob_get_clean();
+        $payload = json_decode(is_string($raw) ? $raw : '', true);
+        if (! is_array($payload)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to rename checklist.',
+            ], 500);
+        }
+
+        return response()->json($payload);
+    }
+
+    public function downloadDibpReceiptDocument(StoreDibpReceiptDownloadRequest $request)
+    {
+        $document = $this->dibpReceiptDocumentForClient(
+            (int) $request->validated('clientid'),
+            (int) $request->validated('fileid')
+        );
+        if ($document instanceof JsonResponse) {
+            return $document;
+        }
+
+        if (empty($document->myfile_key) && empty($document->myfile)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No file to download.',
+            ], 422);
+        }
+
+        $admin = Admin::query()->select(['id', 'client_id'])->find((int) $document->client_id);
+        $clientUniqueId = $admin?->client_id ?? '';
+        $s3Key = $clientUniqueId.'/'.ClientDetailDocumentsTab::storageFolder().'/'.$document->myfile_key;
+        $downloadName = $document->myfile_key ?: ($document->file_name.'.'.$document->getPreviewFileExtension());
+
+        try {
+            if ($clientUniqueId !== '' && ! empty($document->myfile_key) && $this->s3Disk()->exists($s3Key)) {
+                $tempUrl = $this->s3Disk()->temporaryUrl(
+                    $s3Key,
+                    now()->addMinutes(5),
+                    [
+                        'ResponseContentDisposition' => 'attachment; filename="'.$downloadName.'"',
+                    ]
+                );
+
+                return redirect($tempUrl);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('DIBP receipt temporary URL failed', [
+                'fileid' => $document->id,
+                's3_key' => $s3Key,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $fallback = Request::create('/documents/download', 'POST', [
+            'filelink' => (string) $document->myfile,
+            'filename' => $downloadName,
+        ]);
+
+        return $this->download_document($fallback);
+    }
+
+    public function bulkUploadDibpReceiptDocuments(StoreDibpReceiptBulkUploadRequest $request): JsonResponse
+    {
+        $clientId = (int) $request->validated('clientid');
+        if ($deny = $this->denyJsonUnlessStaffClientAccess($clientId)) {
+            return $deny;
+        }
+
+        $matterId = $request->validated('client_matter_id');
+        $matterId = $matterId === null ? null : (int) $matterId;
+        if ($matterId === 0) {
+            $matterId = null;
+        }
+
+        $files = $request->file('files', []);
+        if (! is_array($files)) {
+            $files = [$files];
+        }
+
+        $mappings = [];
+        foreach ($request->validated('mappings') as $mappingStr) {
+            $mapping = json_decode((string) $mappingStr, true);
+            $mappings[] = is_array($mapping) ? $mapping : null;
+        }
+
+        $admin = Admin::query()->select(['id', 'client_id', 'first_name', 'is_company'])->find($clientId);
+        $clientUniqueId = $admin?->client_id ?? '';
+        $sanitizedFirstName = $admin
+            ? preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($admin->first_name ?? ''))
+            : 'client';
+        $namePrefix = DocumentStoredFilename::storedNamePrefix($admin, (string) $sanitizedFirstName);
+
+        $uploaded = [];
+        $errors = [];
+
+        foreach ($files as $index => $file) {
+            $fileName = $file instanceof UploadedFile ? (string) $file->getClientOriginalName() : 'file';
+            try {
+                if (! $file instanceof UploadedFile) {
+                    $errors[] = "Invalid file for '{$fileName}'";
+
+                    continue;
+                }
+
+                if ($file->getSize() > self::BULK_UPLOAD_MAX_BYTES) {
+                    $errors[] = "File '{$fileName}' exceeds 20MB limit";
+
+                    continue;
+                }
+
+                if (! DocumentFilenameRules::isAllowed($fileName)) {
+                    $errors[] = "File '{$fileName}' has invalid characters in name";
+
+                    continue;
+                }
+
+                $mapping = $mappings[$index] ?? null;
+                $checklistName = is_array($mapping) ? trim((string) ($mapping['name'] ?? '')) : '';
+                if ($checklistName === '') {
+                    $errors[] = "No checklist specified for file '{$fileName}'";
+
+                    continue;
+                }
+
+                $document = ClientDetailDocumentsTab::resolveChecklistForBulk(
+                    $clientId,
+                    (int) Auth::id(),
+                    [
+                        'type' => is_array($mapping) ? (string) ($mapping['type'] ?? 'new') : 'new',
+                        'name' => $checklistName,
+                    ],
+                    $matterId
+                );
+
+                if (! $document instanceof Document) {
+                    $errors[] = "Checklist '{$checklistName}' not found for file '{$fileName}'";
+
+                    continue;
+                }
+
+                if (! ClientDetailDocumentsTab::isReceipt($document)) {
+                    $errors[] = "Checklist '{$checklistName}' is not a DIBP receipt";
+
+                    continue;
+                }
+
+                $document->refresh();
+                $finalChecklistName = trim((string) $document->checklist);
+                if ($finalChecklistName === '') {
+                    $errors[] = "Checklist name not found for file '{$fileName}'";
+
+                    continue;
+                }
+
+                $extension = $file->getClientOriginalExtension();
+                $uniqueId = time().'_'.$index.'_'.mt_rand(1000, 9999);
+                $storedName = $namePrefix.'_'.$finalChecklistName.'_'.$uniqueId.'.'.$extension;
+                $filePath = $clientUniqueId.'/'.ClientDetailDocumentsTab::storageFolder().'/'.$storedName;
+
+                $this->s3Disk()->put($filePath, $file->getContent());
+
+                $document = ClientDetailDocumentsTab::attachFile($document, [
+                    'file_name' => $namePrefix.'_'.$finalChecklistName.'_'.$uniqueId,
+                    'filetype' => $extension,
+                    'myfile' => $this->s3Disk()->url($filePath),
+                    'myfile_key' => $storedName,
+                    'file_size' => (int) $file->getSize(),
+                    'user_id' => (int) Auth::id(),
+                ]);
+
+                $uploaded[] = ClientDetailDocumentsTab::jsonPayload($document);
+            } catch (\Exception $e) {
+                $errors[] = "Error uploading '{$fileName}': ".$e->getMessage();
+                Log::error('DIBP receipt bulk upload error for file', [
+                    'file' => $fileName,
+                    'clientid' => $clientId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if ($uploaded === []) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No files were uploaded. '.implode('; ', $errors),
+                'errors' => $errors,
+                'documents' => [],
+            ]);
+        }
+
+        $count = count($uploaded);
+        $this->logClientActivity(
+            $clientId,
+            "bulk uploaded {$count} DIBP receipt documents",
+            "<p>Bulk uploaded {$count} DIBP receipt documents</p>",
+            'document'
+        );
+
+        if ($matterId) {
+            $matter = ClientMatter::query()->find($matterId);
+            if ($matter) {
+                $matter->updated_at = now();
+                $matter->save();
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "Successfully uploaded {$count} file(s)",
+            'uploaded' => $count,
+            'errors' => $errors,
+            'documents' => $uploaded,
+        ]);
+    }
+
+    public function sendDibpReceiptToHubdoc(StoreDibpReceiptHubdocRequest $request): JsonResponse
+    {
+        $document = $this->dibpReceiptDocumentForClient(
+            (int) $request->validated('clientid'),
+            (int) $request->validated('fileid')
+        );
+        if ($document instanceof JsonResponse) {
+            return $document;
+        }
+
+        if (empty($document->myfile_key) && empty($document->myfile)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No file to send to Hubdoc.',
+            ], 422);
+        }
+
+        $admin = Admin::query()->select(['id', 'client_id', 'first_name'])->find((int) $document->client_id);
+        $clientUniqueId = $admin?->client_id ?? '';
+        $s3Key = $clientUniqueId.'/'.ClientDetailDocumentsTab::storageFolder().'/'.$document->myfile_key;
+        if ($clientUniqueId === '' || empty($document->myfile_key) || ! $this->s3Disk()->exists($s3Key)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Receipt file was not found in storage.',
+            ], 422);
+        }
+
+        $downloadName = $document->myfile_key ?: ($document->file_name.'.'.$document->getPreviewFileExtension());
+        $extension = strtolower((string) $document->getPreviewFileExtension());
+        $mime = match ($extension) {
+            'pdf' => 'application/pdf',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            default => 'application/octet-stream',
+        };
+
+        $tempDir = storage_path('app/temp');
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        $tempPath = $tempDir.DIRECTORY_SEPARATOR.'dibp_receipt_hubdoc_'.$document->id.'_'.time().'.'.$extension;
+
+        try {
+            file_put_contents($tempPath, $this->s3Disk()->get($s3Key));
+
+            $hubdocEmail = env('HUBDOC_EMAIL', 'bansalcrm11@gmail.com');
+            $receiptData = [
+                'client_name' => (string) ($admin?->first_name ?? 'N/A'),
+                'checklist' => (string) ($document->checklist ?? 'N/A'),
+                'file_name' => $downloadName,
+                'pdf_path' => $tempPath,
+                'mime' => $mime,
+            ];
+
+            app(SystemEmailLogService::class)->logAndSendMailable([
+                'category' => 'hubdoc',
+                'from_mail' => config('mail.from.address'),
+                'to_mail' => $hubdocEmail,
+                'subject' => 'Receipt for Hubdoc Processing',
+                'client_id' => (int) $document->client_id,
+                'client_matter_id' => $document->client_matter_id ? (int) $document->client_matter_id : null,
+                'user_id' => Auth::id(),
+            ], new HubdocDibpReceiptMail($receiptData), $hubdocEmail);
+
+            $document = ClientDetailDocumentsTab::markHubdocSent($document);
+        } catch (\Throwable $e) {
+            Log::error('DIBP receipt Hubdoc send failed', [
+                'fileid' => $document->id,
+                'clientid' => $document->client_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to send this receipt to Hubdoc.',
+            ], 500);
+        } finally {
+            if (is_file($tempPath)) {
+                @unlink($tempPath);
+            }
+        }
+
+        $payload = ClientDetailDocumentsTab::jsonPayload($document);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Receipt sent to Hubdoc successfully!',
+            'document' => $payload,
+            'hubdoc_sent' => true,
+            'hubdoc_sent_at' => $payload['hubdoc_sent_at'],
+            'hubdoc_sent_at_formatted' => $payload['hubdoc_sent_at_formatted'],
+        ]);
+    }
+
+    /**
+     * @return Document|JsonResponse
+     */
+    private function dibpReceiptDocumentForClient(int $clientId, int $documentId)
+    {
+        if ($deny = $this->denyJsonUnlessStaffClientAccess($clientId)) {
+            return $deny;
+        }
+
+        $document = Document::query()->find($documentId);
+        if (! $document || (int) $document->client_id !== $clientId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Document record not found.',
+            ], 404);
+        }
+
+        if (! ClientDetailDocumentsTab::isReceipt($document)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This action is only for DIBP receipts.',
+            ], 422);
+        }
+
+        return $document;
     }
 }
