@@ -282,6 +282,9 @@ class HomeController extends Controller
         try {
             // Use BansalApiClient to call the website API
             $apiClient = new \App\Services\BansalAppointmentSync\BansalApiClient();
+            // Extra CRM slots come from get-datetime-backend end_time. Do not send
+            // include_crm_extra_slots here: the Bansal API puts those times in
+            // disabledtimeslotes, and the CRM UI hides anything in that list.
             $response = $apiClient->getDisabledDateTime(
                 $specific_service,
                 $service_type,
@@ -289,8 +292,7 @@ class HomeController extends Controller
                 $sel_date,
                 $slot_overwrite,
                 $isPaid,
-                $preferredLanguage,
-                true
+                $preferredLanguage
             );
             
             // Return the response from external API

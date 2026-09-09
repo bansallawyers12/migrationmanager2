@@ -401,7 +401,7 @@ class BansalApiClient
      * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
      * @param ?bool $isPaid Melbourne routing (omit when null)
      * @param ?string $preferredLanguage Melbourne routing (omit when null)
-     * @param bool $includeCrmExtraSlots If true, extra CRM-only slots after end time are included
+     * @param bool $includeCrmExtraSlots Leave false for CRM slot listing. The Bansal API puts extra slot times in disabledtimeslotes, which the UI hides.
      * @return array API response with disabledtimeslotes array
      */
     public function getDisabledDateTime(
