@@ -923,7 +923,8 @@ class BookingAppointmentsController extends Controller
                 $apiDate,
                 $apiTime,
                 $apiMeetingType,
-                $apiPreferredLanguage
+                $apiPreferredLanguage,
+                true
             );
 
             $apiSynced = $result['synced'];
@@ -1096,6 +1097,7 @@ class BookingAppointmentsController extends Controller
                 'final_amount' => $appointment->final_amount ?? 0,
                 'payment_status' => $appointment->payment_status ?? ($appointment->is_paid ? 'pending' : null),
                 'slot_overwrite' => 0,
+                'include_crm_extra_slots' => 1,
             ];
 
             $apiResponse = $this->bansalApiClient->createAppointment($payload);

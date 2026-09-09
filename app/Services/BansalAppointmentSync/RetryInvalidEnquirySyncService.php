@@ -101,6 +101,7 @@ class RetryInvalidEnquirySyncService
             'final_amount' => $appointment->final_amount ?? 0,
             'payment_status' => $appointment->payment_status ?? ($appointment->is_paid ? 'pending' : null),
             'slot_overwrite' => 0,
+            'include_crm_extra_slots' => 1,
         ];
     }
 

@@ -400,6 +400,7 @@ trait ClientAppointments
                 'final_amount' => ($serviceId == 2) ? 0 : 150,
                 'payment_status' => ($serviceId == 2) ? null : 'pending',
                 'slot_overwrite' => AppointmentSlotOverwrite::fromRequest($requestData),
+                'include_crm_extra_slots' => 1,
             ];
 
             // Call Bansal API to create appointment and get real bansal_appointment_id

@@ -137,7 +137,8 @@ class HomeController extends Controller
             'specific_service' => $specific_service,
             'service_type' => $service_type,
             'location' => $location,
-            'slot_overwrite' => $slot_overwrite
+            'slot_overwrite' => $slot_overwrite,
+            'include_crm_extra_slots' => 1,
         ];
         [$isPaid, $preferredLanguage] = BansalSchedulingServiceType::melbourneApiExtras(
             $request,
@@ -288,7 +289,8 @@ class HomeController extends Controller
                 $sel_date,
                 $slot_overwrite,
                 $isPaid,
-                $preferredLanguage
+                $preferredLanguage,
+                true
             );
             
             // Return the response from external API

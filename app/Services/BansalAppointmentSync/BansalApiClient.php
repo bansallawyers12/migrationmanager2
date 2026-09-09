@@ -235,7 +235,14 @@ class BansalApiClient
     /**
      * Reschedule an appointment on the Bansal API.
      */
-    public function rescheduleAppointment(int $appointmentId, string $date, string $time, ?string $meetingType = null, ?string $preferredLanguage = null): array
+    public function rescheduleAppointment(
+        int $appointmentId,
+        string $date,
+        string $time,
+        ?string $meetingType = null,
+        ?string $preferredLanguage = null,
+        bool $includeCrmExtraSlots = false
+    ): array
     {
         try {
             $payload = [
@@ -252,6 +259,10 @@ class BansalApiClient
             // Add preferred_language if provided
             if ($preferredLanguage !== null) {
                 $payload['preferred_language'] = $preferredLanguage;
+            }
+
+            if ($includeCrmExtraSlots) {
+                $payload['include_crm_extra_slots'] = 1;
             }
 
             $response = $this->client()->post("{$this->baseUrl}/appointments/update-appointment", $payload);
@@ -299,6 +310,7 @@ class BansalApiClient
      * @param int $slotOverwrite If 1, disabledatesarray will be blank (allows booking on blocked dates)
      * @param ?bool $isPaid Melbourne routing (omit when null, e.g. Adelaide)
      * @param ?string $preferredLanguage Melbourne routing (omit when null)
+     * @param bool $includeCrmExtraSlots If true, extra CRM-only slots after end time are included
      * @return array API response with duration, weeks, start_time, end_time, disabledatesarray
      */
     public function getDateTimeBackend(
@@ -307,7 +319,8 @@ class BansalApiClient
         string $location,
         int $slotOverwrite = 0,
         ?bool $isPaid = null,
-        ?string $preferredLanguage = null
+        ?string $preferredLanguage = null,
+        bool $includeCrmExtraSlots = false
     ): array {
         $payload = [
             'specific_service' => $specificService,
@@ -320,6 +333,9 @@ class BansalApiClient
         }
         if ($preferredLanguage !== null && $preferredLanguage !== '') {
             $payload['preferred_language'] = $preferredLanguage;
+        }
+        if ($includeCrmExtraSlots) {
+            $payload['include_crm_extra_slots'] = 1;
         }
 
         try {
@@ -385,6 +401,7 @@ class BansalApiClient
      * @param int $slotOverwrite If 1, disabledtimeslotes will be blank (allows booking on blocked slots)
      * @param ?bool $isPaid Melbourne routing (omit when null)
      * @param ?string $preferredLanguage Melbourne routing (omit when null)
+     * @param bool $includeCrmExtraSlots If true, extra CRM-only slots after end time are included
      * @return array API response with disabledtimeslotes array
      */
     public function getDisabledDateTime(
@@ -394,7 +411,8 @@ class BansalApiClient
         string $selectedDate,
         int $slotOverwrite = 0,
         ?bool $isPaid = null,
-        ?string $preferredLanguage = null
+        ?string $preferredLanguage = null,
+        bool $includeCrmExtraSlots = false
     ): array {
         $payload = [
             'specific_service' => $specificService,
@@ -408,6 +426,9 @@ class BansalApiClient
         }
         if ($preferredLanguage !== null && $preferredLanguage !== '') {
             $payload['preferred_language'] = $preferredLanguage;
+        }
+        if ($includeCrmExtraSlots) {
+            $payload['include_crm_extra_slots'] = 1;
         }
 
         try {

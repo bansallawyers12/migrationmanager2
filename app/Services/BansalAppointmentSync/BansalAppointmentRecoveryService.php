@@ -128,7 +128,8 @@ class BansalAppointmentRecoveryService
         string $apiDate,
         string $apiTime,
         string $apiMeetingType,
-        string $apiPreferredLanguage
+        string $apiPreferredLanguage,
+        bool $includeCrmExtraSlots = false
     ): array {
         if (self::isUnsyncedBansalId($appointment->bansal_appointment_id)) {
             return $this->recoverWithCreate($appointment, 'Temporary Bansal appointment ID detected during reschedule.');
@@ -140,7 +141,8 @@ class BansalAppointmentRecoveryService
                 $apiDate,
                 $apiTime,
                 $apiMeetingType,
-                $apiPreferredLanguage
+                $apiPreferredLanguage,
+                $includeCrmExtraSlots
             );
 
             if ($apiResponse['success'] ?? false) {

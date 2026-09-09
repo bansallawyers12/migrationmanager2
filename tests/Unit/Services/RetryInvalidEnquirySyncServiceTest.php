@@ -39,6 +39,7 @@ class RetryInvalidEnquirySyncServiceTest extends TestCase
         $this->assertSame('jrp-skill-assessment', $payload['service_type']);
         $this->assertSame('consultation', $payload['specific_service']);
         $this->assertSame('in-person', $payload['meeting_type']);
+        $this->assertSame(1, $payload['include_crm_extra_slots']);
     }
 
     public function test_build_create_payload_maps_melbourne_complex_enquiry_type_to_ajay(): void
