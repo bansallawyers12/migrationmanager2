@@ -127,6 +127,7 @@
 
     $(document).on('click', '.apply-invoice-discount', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         var $link = $(this);
         var invoiceNo = $link.data('invoice-no') || '';
         var outstanding = parseFloat($link.data('invoice-balance')) || 0;

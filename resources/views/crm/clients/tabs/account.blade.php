@@ -2746,6 +2746,10 @@ $(document).ready(function() {
         $('#editLedgerModal').appendTo('body');
         console.log('✅ Edit Ledger Modal moved to body level');
     }
+
+    if ($('#applyInvoiceDiscountModal').length > 0 && !$('#applyInvoiceDiscountModal').parent().is('body')) {
+        $('#applyInvoiceDiscountModal').appendTo('body');
+    }
     
     // Function to load invoices for the edit modal
     const loadInvoicesForEdit = function(matterId, selectedInvoice) {

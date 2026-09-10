@@ -1171,7 +1171,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/documents.js') }}?v={{ file_exists(public_path('js/crm/clients/modules/documents.js')) ? filemtime(public_path('js/crm/clients/modules/documents.js')) : 1 }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/signature-placement.js') }}?v={{ file_exists(public_path('js/crm/clients/modules/signature-placement.js')) ? filemtime(public_path('js/crm/clients/modules/signature-placement.js')) : 1 }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/accounts.js') }}?v={{ file_exists(public_path('js/crm/clients/modules/accounts.js')) ? filemtime(public_path('js/crm/clients/modules/accounts.js')) : time() }}"></script>
-<script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}"></script>
+<script src="{{ URL::asset('js/crm/clients/modules/invoices.js') }}?v={{ file_exists(public_path('js/crm/clients/modules/invoices.js')) ? filemtime(public_path('js/crm/clients/modules/invoices.js')) : time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/appointments.js') }}?v={{ file_exists(public_path('js/crm/clients/modules/appointments.js')) ? filemtime(public_path('js/crm/clients/modules/appointments.js')) : 1 }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/visa-expiry.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/modules/subtabs.js') }}"></script>

@@ -123,7 +123,13 @@ class ApplyInvoiceOfficeDiscountTest extends TestCase
         Assert::assertStringContainsString('apply-invoice-discount', $blade);
         Assert::assertStringContainsString("@icon('fa-percentage') Apply Discount", $blade);
         Assert::assertStringContainsString('id="applyInvoiceDiscountModal"', $blade);
+        Assert::assertStringContainsString("$('#applyInvoiceDiscountModal').appendTo('body')", $blade);
         Assert::assertStringContainsString('applyInvoiceDiscount', $invoicesJs);
+        Assert::assertStringContainsString('.apply-invoice-discount', $invoicesJs);
+        Assert::assertMatchesRegularExpression(
+            '/apply-invoice-discount[\s\S]{0,200}e\.stopPropagation\(\)/',
+            $invoicesJs
+        );
         Assert::assertStringNotContainsString('payment_type[]', $blade);
     }
 
