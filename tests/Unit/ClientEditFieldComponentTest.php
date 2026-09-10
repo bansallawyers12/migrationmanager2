@@ -61,6 +61,21 @@ class ClientEditFieldComponentTest extends TestCase
         Assert::assertStringContainsString('hydrateClientEditSelects();', $js);
     }
 
+    public function test_edit_client_js_parses_pasted_dob_without_removing_existing_picker_behaviour(): void
+    {
+        $js = $this->viewContents('public/js/clients/edit-client.js');
+
+        Assert::assertStringContainsString('function parseFlexibleDobDate(', $js);
+        Assert::assertStringContainsString("dobInput.addEventListener('paste'", $js);
+        Assert::assertStringContainsString('fp.setDate(parsed, true)', $js);
+        Assert::assertStringContainsString("dateFormat: 'd/m/Y'", $js);
+        Assert::assertStringContainsString('allowInput: true', $js);
+        Assert::assertStringContainsString("maxDate: 'today'", $js);
+        Assert::assertStringContainsString("minDate: '01/01/1000'", $js);
+        Assert::assertStringContainsString('parseDate:', $js);
+        Assert::assertStringContainsString('updateAge()', $js);
+    }
+
     public function test_client_edit_views_pass_visa_types_json_once(): void
     {
         $edit = $this->viewContents('resources/views/crm/clients/edit.blade.php');

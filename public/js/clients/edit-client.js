@@ -1532,6 +1532,80 @@ async function addTravelDetail() {
 }
 
 /**
+ * Parse Date of Birth from common typed/pasted formats (day-first).
+ * Supports dd/mm/yyyy, yyyy-mm-dd, and values like "21 Feb 2021".
+ * Returns a local Date at midnight, or null if invalid.
+ */
+function parseFlexibleDobDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') {
+        return null;
+    }
+
+    const raw = dateStr.trim().replace(/\s+/g, ' ');
+    if (!raw) {
+        return null;
+    }
+
+    const monthNames = {
+        jan: 1, january: 1,
+        feb: 2, february: 2,
+        mar: 3, march: 3,
+        apr: 4, april: 4,
+        may: 5,
+        jun: 6, june: 6,
+        jul: 7, july: 7,
+        aug: 8, august: 8,
+        sep: 9, sept: 9, september: 9,
+        oct: 10, october: 10,
+        nov: 11, november: 11,
+        dec: 12, december: 12
+    };
+
+    const makeValidDate = function(day, month, year) {
+        if (!day || !month || !year) {
+            return null;
+        }
+        if (year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+            return null;
+        }
+        const date = new Date(year, month - 1, day);
+        if (
+            date.getFullYear() !== year ||
+            date.getMonth() !== month - 1 ||
+            date.getDate() !== day
+        ) {
+            return null;
+        }
+        date.setHours(0, 0, 0, 0);
+        return date;
+    };
+
+    let match = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (match) {
+        return makeValidDate(Number(match[1]), Number(match[2]), Number(match[3]));
+    }
+
+    match = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+    if (match) {
+        return makeValidDate(Number(match[3]), Number(match[2]), Number(match[1]));
+    }
+
+    match = raw.match(/^(\d{1,2})[\s\-/.]+([A-Za-z]+)[\s\-/.]+(\d{4})$/);
+    if (match) {
+        const month = monthNames[match[2].toLowerCase()];
+        return month ? makeValidDate(Number(match[1]), month, Number(match[3])) : null;
+    }
+
+    match = raw.match(/^([A-Za-z]+)[\s\-/.]+(\d{1,2}),?[\s\-/.]+(\d{4})$/);
+    if (match) {
+        const month = monthNames[match[1].toLowerCase()];
+        return month ? makeValidDate(Number(match[2]), month, Number(match[3])) : null;
+    }
+
+    return null;
+}
+
+/**
  * Function to calculate age from date of birth (expects dd/mm/yyyy format)
  */
 function calculateAge(dob) {
@@ -4572,11 +4646,29 @@ $(document).ready(function() {
         // Handle manual input changes (e.g., typing or pasting)
         dobInput.addEventListener('input', updateAge);
 
+        const applyParsedDob = function(parsed) {
+            if (!(parsed instanceof Date) || isNaN(parsed.getTime())) {
+                return false;
+            }
+
+            const fp = dobInput._flatpickr || $(dobInput).data('flatpickr');
+            if (fp) {
+                fp.setDate(parsed, true);
+            } else {
+                const day = String(parsed.getDate()).padStart(2, '0');
+                const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                dobInput.value = day + '/' + month + '/' + parsed.getFullYear();
+                updateAge();
+            }
+
+            return true;
+        };
+
         // Initialize Flatpickr for DOB field with age calculation
         if (typeof flatpickr !== 'undefined') {
             // Check if already initialized
-            if (!$(dobInput).data('flatpickr')) {
-                flatpickr(dobInput, {
+            if (!$(dobInput).data('flatpickr') && !dobInput._flatpickr) {
+                const fpInstance = flatpickr(dobInput, {
                     dateFormat: 'd/m/Y',
                     allowInput: true,
                     clickOpens: true,
@@ -4586,16 +4678,41 @@ $(document).ready(function() {
                     locale: {
                         firstDayOfWeek: 1 // Monday
                     },
+                    parseDate: function(datestr, format) {
+                        return parseFlexibleDobDate(datestr) || undefined;
+                    },
                     onChange: function(selectedDates, dateStr, instance) {
                         // Update the input value and calculate age when a date is selected
                         dobInput.value = dateStr;
                         updateAge();
                     }
                 });
+                $(dobInput).data('flatpickr', fpInstance);
             }
         } else {
             console.warn('⚠️ Flatpickr not loaded for DOB field');
         }
+
+        dobInput.addEventListener('paste', function(e) {
+            const clipboard = (e.clipboardData || window.clipboardData);
+            if (!clipboard) {
+                return;
+            }
+
+            const parsed = parseFlexibleDobDate(clipboard.getData('text'));
+            if (!parsed) {
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            if (parsed.getTime() > today.getTime()) {
+                return;
+            }
+
+            e.preventDefault();
+            applyParsedDob(parsed);
+        });
         
         // Fallback for any direct changes
         $(dobInput).on('change', updateAge);
