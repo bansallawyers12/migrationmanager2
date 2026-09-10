@@ -37,6 +37,9 @@
 		height: 0.95rem;
 		stroke-width: 2.25;
 	}
+	.workflow-stage-portal-name {
+		color: #6c757d;
+	}
 </style>
 @endsection
 
@@ -67,6 +70,7 @@
 									<thead>
 										<tr>
 											<th>Stage</th>
+											<th>Portal Stage</th>
 											<th>Total Matters</th>
 											<th>Workflow Checklists</th>
 											<th>Portal Tasklists</th>
@@ -80,6 +84,7 @@
 									<?php $checklistCount = $checklistCounts[$list->id] ?? 0; ?>
 									<?php $portalTasklistCount = $portalTasklistCounts[$list->id] ?? 0; ?>
 									<?php $stageFrozen = $list->isFrozen(); ?>
+									<?php $portalName = \App\Support\WorkflowV2Display::distinctClientLabelForStage($list->name); ?>
 									<tr>
 										<td>
 											{{ $list->name ?: config('constants.empty', '—') }}
@@ -87,6 +92,7 @@
 												@include('AdminConsole.features.workflow.partials.protected-lock')
 											@endif
 										</td>
+										<td class="workflow-stage-portal-name">{{ $portalName ?: config('constants.empty', '—') }}</td>
 										<td>{{ $countmatters }}</td>
 										<td>{{ $checklistCount }}</td>
 										<td>{{ $portalTasklistCount }}</td>
@@ -110,7 +116,7 @@
 									</tbody>
 									@else
 									<tbody>
-										<tr><td colspan="5" class="text-center">No stages. <a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}">Add stage</a>.</td></tr>
+										<tr><td colspan="6" class="text-center">No stages. <a href="{{ route('adminconsole.features.workflow.createStage', base64_encode(convert_uuencode($workflow->id))) }}">Add stage</a>.</td></tr>
 									</tbody>
 									@endif
 								</table>

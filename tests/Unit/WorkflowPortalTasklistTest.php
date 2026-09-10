@@ -177,10 +177,21 @@ class WorkflowPortalTasklistTest extends TestCase
         Assert::assertStringContainsString('title="Workflow Checklists"', $stages);
         Assert::assertStringContainsString('$portalTasklistCount', $stages);
         Assert::assertStringContainsString('workflow.stagePortalTasklists', $stages);
+        Assert::assertStringContainsString('distinctClientLabelForStage', $stages);
+        Assert::assertStringContainsString('workflow-stage-portal-name', $stages);
+        Assert::assertStringContainsString('<th>Portal Stage</th>', $stages);
+        Assert::assertStringContainsString('colspan="6"', $stages);
 
         $routes = file_get_contents($this->projectPath('routes/adminconsole.php'));
         Assert::assertNotFalse($routes);
         Assert::assertStringContainsString("name('workflow.stagePortalTasklists')", $routes);
+
+        $portalTasklists = file_get_contents($this->projectPath('resources/views/AdminConsole/features/workflow/stage-portal-tasklists-index.blade.php'));
+        Assert::assertNotFalse($portalTasklists);
+        Assert::assertStringContainsString('Workflow Tasklists: {{ $stage->name }}', $portalTasklists);
+        Assert::assertStringContainsString('clientLabelForStage', $portalTasklists);
+        Assert::assertStringContainsString('@endphp', $portalTasklists);
+        Assert::assertStringContainsString('Portal Tasklists: {{ $portalName }}', $portalTasklists);
     }
 
     #[Test]

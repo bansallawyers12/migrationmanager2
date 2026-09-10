@@ -40,6 +40,16 @@ class WorkflowV2PortalMappingTest extends TestCase
     }
 
     #[Test]
+    public function distinct_client_label_omits_labels_that_match_the_crm_name(): void
+    {
+        $this->assertSame('Getting started', WorkflowV2Display::distinctClientLabelForStage('Checklist & Agreement Sent'));
+        $this->assertSame('File completed', WorkflowV2Display::distinctClientLabelForStage('File Closed'));
+        $this->assertNull(WorkflowV2Display::distinctClientLabelForStage('Decision Received'));
+        $this->assertNull(WorkflowV2Display::distinctClientLabelForStage('Some custom stage'));
+        $this->assertNull(WorkflowV2Display::distinctClientLabelForStage(null));
+    }
+
+    #[Test]
     public function portal_mapping_uses_portal_tasklists_not_staff_checklists(): void
     {
         $mapping = WorkflowV2Display::portalMappingForStage('Documents Review & Completion', [

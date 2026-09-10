@@ -280,6 +280,20 @@ class WorkflowV2Display
     }
 
     /**
+     * Portal label for Admin display. Null when it matches the CRM stage name.
+     */
+    public static function distinctClientLabelForStage(?string $stageName): ?string
+    {
+        $stageName = trim((string) $stageName);
+        $clientLabel = self::clientLabelForStage($stageName);
+        if ($clientLabel === '' || strcasecmp($clientLabel, $stageName) === 0) {
+            return null;
+        }
+
+        return $clientLabel;
+    }
+
+    /**
      * Client Portal Activities mapping copy, keyed by CRM stage name.
      *
      * @return array{client_label: string, tag: string, pct: int, silent: bool, notif_title: ?string, notif_body: ?string, app_note: string, rule: string}|null

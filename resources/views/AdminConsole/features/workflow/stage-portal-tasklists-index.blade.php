@@ -2,6 +2,9 @@
 @section('title', 'Portal Tasklists: ' . ($stage->name ?? ''))
 
 @section('content')
+@php
+	$portalName = \App\Support\WorkflowV2Display::clientLabelForStage($stage->name ?? null);
+@endphp
 <div class="main-content">
 	<section class="section">
 		<div class="section-body">
@@ -15,7 +18,12 @@
 				<div class="col-9 col-md-9 col-lg-9">
 					<div class="card">
 						<div class="card-header">
-							<h4>Portal Tasklists: {{ $stage->name }}</h4>
+							<h4 class="mb-0">
+								<div>Workflow Tasklists: {{ $stage->name }}</div>
+								@if($portalName)
+									<div class="font-weight-normal mt-1">Portal Tasklists: {{ $portalName }}</div>
+								@endif
+							</h4>
 							<div class="card-header-action">
 								<a href="{{ route('adminconsole.features.workflow.stages', base64_encode(convert_uuencode($workflow->id))) }}" class="btn btn-secondary">@icon('fa-arrow-left') Back to Stages</a>
 							</div>
