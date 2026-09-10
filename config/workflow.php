@@ -87,8 +87,10 @@ return [
     | Client Portal Activities — CRM → client mapping (UI)
     |--------------------------------------------------------------------------
     |
-    | Shown only on Client Portal → Activities when a stage is selected.
+    | Shown on Client Portal → Activities when a stage is selected, and as
+    | client_label on the mobile /api/workflow/stages responses.
     | Keys are matched case-insensitively against workflow_stages.name.
+    | CRM / website keep using workflow_stages.name; do not rename those.
     | This is separate from stage_display_defaults (Workflow tab).
     | "Client tasks created" are loaded from workflow_stage_portal_tasklists.
     |

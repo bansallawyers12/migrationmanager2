@@ -13,6 +13,7 @@ use App\Support\DocumentFilenameRules;
 use App\Models\Notification;
 use App\Models\Staff;
 use App\Support\WorkflowStageChecklistSync;
+use App\Support\WorkflowV2Display;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -107,6 +108,7 @@ class ClientPortalWorkflowController extends Controller
                         'id' => $stage->id,
                         'name' => $stage->name,
                         'stage_name' => $stage->name, // Alias for consistency
+                        'client_label' => WorkflowV2Display::clientLabelForStage($stage->name),
                         'allowed_checklist_count' => $allowedChecklistCount,
                         'allowed_checklist' => $allowedChecklist,
                         'created_at' => $stage->created_at,
@@ -201,6 +203,7 @@ class ClientPortalWorkflowController extends Controller
                     'id' => $activeStageInfo->workflow_stage_id,
                     'name' => $activeStageInfo->stage_name,
                     'stage_name' => $activeStageInfo->stage_name,
+                    'client_label' => WorkflowV2Display::clientLabelForStage($activeStageInfo->stage_name),
                     'client_matter_no' => $activeStageInfo->client_unique_matter_no,
                     'matter_status' => $activeStageInfo->matter_status,
                     'stage_updated_at' => $activeStageInfo->stage_updated_at,
@@ -364,6 +367,7 @@ class ClientPortalWorkflowController extends Controller
                         'id' => $stage->id,
                         'name' => $stage->name,
                         'stage_name' => $stage->name,
+                        'client_label' => WorkflowV2Display::clientLabelForStage($stage->name),
                         'is_active' => $isActive,
                         'created_at' => $stage->created_at,
                         'updated_at' => $stage->updated_at

@@ -264,6 +264,22 @@ class WorkflowV2Display
     }
 
     /**
+     * Mobile display label for a CRM stage. Falls back to the CRM name when unmapped.
+     */
+    public static function clientLabelForStage(?string $stageName): string
+    {
+        $stageName = trim((string) $stageName);
+        if ($stageName === '') {
+            return '';
+        }
+
+        $meta = self::portalMappingMeta($stageName);
+        $clientLabel = trim((string) ($meta['client_label'] ?? ''));
+
+        return $clientLabel !== '' ? $clientLabel : $stageName;
+    }
+
+    /**
      * Client Portal Activities mapping copy, keyed by CRM stage name.
      *
      * @return array{client_label: string, tag: string, pct: int, silent: bool, notif_title: ?string, notif_body: ?string, app_note: string, rule: string}|null

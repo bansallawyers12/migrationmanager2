@@ -30,6 +30,16 @@ class WorkflowV2PortalMappingTest extends TestCase
     }
 
     #[Test]
+    public function client_label_for_stage_uses_portal_mapping_and_falls_back_to_crm_name(): void
+    {
+        $this->assertSame('Getting started', WorkflowV2Display::clientLabelForStage('Checklist & Agreement Sent'));
+        $this->assertSame('Getting started', WorkflowV2Display::clientLabelForStage('checklist & agreement sent'));
+        $this->assertSame('Some custom stage', WorkflowV2Display::clientLabelForStage('Some custom stage'));
+        $this->assertSame('', WorkflowV2Display::clientLabelForStage(null));
+        $this->assertSame('', WorkflowV2Display::clientLabelForStage('  '));
+    }
+
+    #[Test]
     public function portal_mapping_uses_portal_tasklists_not_staff_checklists(): void
     {
         $mapping = WorkflowV2Display::portalMappingForStage('Documents Review & Completion', [
