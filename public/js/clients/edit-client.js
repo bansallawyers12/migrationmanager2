@@ -1605,6 +1605,89 @@ function parseFlexibleDobDate(dateStr) {
     return null;
 }
 
+function isPassportOrVisaDateField(element) {
+    if (!element) {
+        return false;
+    }
+
+    const name = element.getAttribute('name') || '';
+    if (element.classList.contains('visa-expiry-field') || element.classList.contains('visa-grant-field')) {
+        return true;
+    }
+
+    return /passports\[[^\]]+\]\[(issue_date|expiry_date)\]/.test(name)
+        || /^visa_expiry_date(\[|$)/.test(name)
+        || /^visa_grant_date(\[|$)/.test(name);
+}
+
+function isDateWithinPickerLimits(fp, parsed) {
+    if (!fp || !fp.config) {
+        return true;
+    }
+
+    const day = parsed.getTime();
+    if (fp.config.minDate) {
+        const min = new Date(fp.config.minDate);
+        min.setHours(0, 0, 0, 0);
+        if (day < min.getTime()) {
+            return false;
+        }
+    }
+
+    if (fp.config.maxDate) {
+        const max = new Date(fp.config.maxDate);
+        max.setHours(23, 59, 59, 999);
+        if (day > max.getTime()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function applyFlexibleParsedDate(input, parsed) {
+    if (!(parsed instanceof Date) || isNaN(parsed.getTime())) {
+        return false;
+    }
+
+    const fp = input._flatpickr || $(input).data('flatpickr');
+    if (!fp) {
+        return false;
+    }
+
+    if (!isDateWithinPickerLimits(fp, parsed)) {
+        return false;
+    }
+
+    fp.setDate(parsed, true);
+    return true;
+}
+
+function bindFlexibleDatePaste(input) {
+    if (!input || input.dataset.flexibleDatePaste === '1') {
+        return;
+    }
+
+    input.dataset.flexibleDatePaste = '1';
+    input.addEventListener('paste', function(e) {
+        const clipboard = (e.clipboardData || window.clipboardData);
+        if (!clipboard) {
+            return;
+        }
+
+        const parsed = parseFlexibleDobDate(clipboard.getData('text'));
+        if (!parsed) {
+            return;
+        }
+
+        if (!applyFlexibleParsedDate(input, parsed)) {
+            return;
+        }
+
+        e.preventDefault();
+    });
+}
+
 /**
  * Function to calculate age from date of birth (expects dd/mm/yyyy format)
  */
@@ -1918,36 +2001,42 @@ function initializeDatepickers() {
         const element = this;
         const currentValue = $this.val(); // Get the current value of the field
         const isPastOnly = $this.hasClass('date-picker-past-only');
+        const enableFlexiblePaste = isPassportOrVisaDateField(element);
 
-        // Skip if already initialized
-        if ($this.data('flatpickr')) {
-            return;
+        if (!$this.data('flatpickr')) {
+            // Past-only fields (address, travel, employment, passport issue, visa grant): maxDate = today
+            // Other fields (passport expiry, visa expiry): allow future
+            const maxDateObj = isPastOnly ? 'today' : new Date(new Date().getFullYear() + 50, 11, 31);
+            const config = {
+                dateFormat: 'd/m/Y',
+                allowInput: true,
+                clickOpens: true,
+                defaultDate: currentValue || null,
+                minDate: '01/01/1000',
+                maxDate: maxDateObj,
+                locale: {
+                    firstDayOfWeek: 1 // Monday
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Update the input value when date is selected
+                    $this.val(dateStr);
+                    $this.trigger('change'); // Trigger change event for any listeners
+                }
+            };
+
+            if (enableFlexiblePaste) {
+                config.parseDate = function(datestr, format) {
+                    return parseFlexibleDobDate(datestr) || undefined;
+                };
+            }
+
+            const fp = flatpickr(element, config);
+            $this.data('flatpickr', fp);
         }
 
-        // Initialize Flatpickr
-        // Past-only fields (DOB, address, travel, employment, passport issue, visa grant): maxDate = today
-        // Other fields (passport expiry, visa expiry): allow future
-        const maxDateObj = isPastOnly ? 'today' : new Date(new Date().getFullYear() + 50, 11, 31);
-        
-        const fp = flatpickr(element, {
-            dateFormat: 'd/m/Y',
-            allowInput: true,
-            clickOpens: true,
-            defaultDate: currentValue || null,
-            minDate: '01/01/1000',
-            maxDate: maxDateObj,
-            locale: {
-                firstDayOfWeek: 1 // Monday
-            },
-            onChange: function(selectedDates, dateStr, instance) {
-                // Update the input value when date is selected
-                $this.val(dateStr);
-                $this.trigger('change'); // Trigger change event for any listeners
-            }
-        });
-
-        // Store instance for later reference
-        $this.data('flatpickr', fp);
+        if (enableFlexiblePaste) {
+            bindFlexibleDatePaste(element);
+        }
     });
 }
 

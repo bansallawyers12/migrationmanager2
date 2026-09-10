@@ -76,6 +76,20 @@ class ClientEditFieldComponentTest extends TestCase
         Assert::assertStringContainsString('updateAge()', $js);
     }
 
+    public function test_edit_client_js_parses_pasted_passport_and_visa_dates_without_changing_limits(): void
+    {
+        $js = $this->viewContents('public/js/clients/edit-client.js');
+
+        Assert::assertStringContainsString('function isPassportOrVisaDateField(', $js);
+        Assert::assertStringContainsString('function bindFlexibleDatePaste(', $js);
+        Assert::assertStringContainsString('enableFlexiblePaste', $js);
+        Assert::assertStringContainsString('class="date-picker date-picker-past-only"', $js);
+        Assert::assertStringContainsString('visa-expiry-field date-picker', $js);
+        Assert::assertStringContainsString('visa-grant-field date-picker date-picker-past-only', $js);
+        Assert::assertStringContainsString("const maxDateObj = isPastOnly ? 'today' : new Date(new Date().getFullYear() + 50, 11, 31);", $js);
+        Assert::assertStringContainsString('$this.trigger(\'change\')', $js);
+    }
+
     public function test_client_edit_views_pass_visa_types_json_once(): void
     {
         $edit = $this->viewContents('resources/views/crm/clients/edit.blade.php');
