@@ -20,6 +20,8 @@ use App\Models\ClientMatter;
 use App\Mail\HubdocInvoiceMail;
 use App\Services\ClientPortalActionNoteService;
 use App\Services\FinancialStatsService;
+use App\Http\Requests\ApplyInvoiceDiscountRequest;
+use App\Services\ApplyInvoiceOfficeDiscount;
 use App\Services\InvoicePaymentSyncService;
 use App\Services\FCMService;
 use App\Services\SystemEmailLogService;
@@ -2108,6 +2110,22 @@ class ClientAccountsController extends Controller
       }
   }
 
+  public function applyInvoiceDiscount(ApplyInvoiceDiscountRequest $request, ApplyInvoiceOfficeDiscount $applyInvoiceOfficeDiscount)
+  {
+      $validated = $request->validated();
+      $this->ensureCrmRecordAccess((int) $validated['client_id']);
+
+      $result = $applyInvoiceOfficeDiscount->handle(
+          (int) $validated['client_id'],
+          (string) $validated['invoice_no'],
+          (float) $validated['amount'],
+          isset($validated['description']) ? (string) $validated['description'] : null,
+          Auth::guard('admin')->id() ?? Auth::id()
+      );
+
+      return response()->json($result, $result['status'] ? 200 : 422);
+  }
+
   // Helper methods
   private function generateTransNo()
   {
@@ -3100,6 +3118,13 @@ class ClientAccountsController extends Controller
           $voidForPending
       );
 
+      $invoiceKeyForDiscount = ! empty($record_get[0]->invoice_no)
+          ? (string) $record_get[0]->invoice_no
+          : (string) ($record_get[0]->trans_no ?? '');
+      $office_discount_amount = $invoiceKeyForDiscount !== ''
+          ? $invoicePaymentSyncPdf->sumOfficeDiscountForInvoice((int) $queryClientId, $invoiceKeyForDiscount)
+          : 0.0;
+
     Log::info('Total Pending Amount: ' . $total_Pending_amount);
 
       $clientname = DB::table('admins')->where('id',$record_get[0]->client_id)->first();
@@ -3220,6 +3245,7 @@ class ClientAccountsController extends Controller
            'total_Gross_Amount',
            'total_Invoice_Amount',
            'total_GST_amount',
+           'office_discount_amount',
            'total_Pending_amount',
 
            'clientname',
@@ -3302,6 +3328,7 @@ class ClientAccountsController extends Controller
            'total_Gross_Amount',
            'total_Invoice_Amount',
            'total_GST_amount',
+           'office_discount_amount',
            'total_Pending_amount',
 
            'clientname',
@@ -5934,6 +5961,13 @@ public function getInvoiceAmount(Request $request)
              $total_Pending_amount = 0.00;
          }
 
+         $invoiceKeyForDiscount = ! empty($record_get[0]->invoice_no)
+             ? (string) $record_get[0]->invoice_no
+             : (string) ($record_get[0]->trans_no ?? '');
+         $office_discount_amount = $invoiceKeyForDiscount !== ''
+             ? $invoicePaymentSyncHubdoc->sumOfficeDiscountForInvoice((int) $record_get[0]->client_id, $invoiceKeyForDiscount)
+             : 0.0;
+
          // Get payment method
          $invoice_payment_method = '';
          if( !empty($record_get) && $record_get[0]->invoice_no != '') {
@@ -6009,6 +6043,7 @@ public function getInvoiceAmount(Request $request)
              'total_Gross_Amount',
              'total_Invoice_Amount',
              'total_GST_amount',
+             'office_discount_amount',
              'total_Pending_amount',
 
              'clientname',

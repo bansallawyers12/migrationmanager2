@@ -933,6 +933,12 @@
                 } catch (\Exception $e) {
                     $displayPending = 0;
                 }
+
+                try {
+                    $displayOfficeDiscount = floatval($office_discount_amount ?? 0);
+                } catch (\Exception $e) {
+                    $displayOfficeDiscount = 0;
+                }
             @endphp
             <div class="totals-row">
                 <span class="totals-label">Gross Amount:</span>
@@ -946,6 +952,12 @@
                 <span class="totals-label">Total Invoice Amount:</span>
                 <span class="totals-value">${{ number_format($displayInvoice, 2) }}</span>
             </div>
+            @if($displayOfficeDiscount > 0)
+            <div class="totals-row">
+                <span class="totals-label">Discount:</span>
+                <span class="totals-value">${{ number_format($displayOfficeDiscount, 2) }}</span>
+            </div>
+            @endif
             <div class="totals-row">
                 <span class="totals-label">Total Pending Amount:</span>
                 <span class="totals-value">${{ number_format($displayPending, 2) }}</span>

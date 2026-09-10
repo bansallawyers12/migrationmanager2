@@ -107,12 +107,19 @@ class SendHubdocInvoiceJob implements ShouldQueue
                 ->first();
             $voidHubdocJob = $hubdocJobAcr && isset($hubdocJobAcr->void_invoice) && (int) $hubdocJobAcr->void_invoice === 1 ? 1 : null;
 
-            $total_Pending_amount = app(InvoicePaymentSyncService::class)->pendingAmountForReceiptPdf(
+            $invoicePaymentSync = app(InvoicePaymentSyncService::class);
+            $total_Pending_amount = $invoicePaymentSync->pendingAmountForReceiptPdf(
                 (int) $record_get[0]->client_id,
                 (int) $this->invoiceId,
                 (float) $total_Invoice_Amount,
                 $voidHubdocJob
             );
+            $invoiceKeyForDiscount = ! empty($record_get[0]->invoice_no)
+                ? (string) $record_get[0]->invoice_no
+                : (string) ($record_get[0]->trans_no ?? '');
+            $office_discount_amount = $invoiceKeyForDiscount !== ''
+                ? $invoicePaymentSync->sumOfficeDiscountForInvoice((int) $record_get[0]->client_id, $invoiceKeyForDiscount)
+                : 0.0;
 
             // Get payment method
             $invoice_payment_method = '';
@@ -174,6 +181,7 @@ class SendHubdocInvoiceJob implements ShouldQueue
                 'total_Gross_Amount',
                 'total_Invoice_Amount',
                 'total_GST_amount',
+                'office_discount_amount',
                 'total_Pending_amount',
 
                 'clientname',

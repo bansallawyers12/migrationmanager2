@@ -40,7 +40,7 @@
             <a class="btn btn-info createreceipt" href="javascript:;" role="button" data-account-entry="true" data-receipt-type="3">
                 @icon('fa-file-invoice-dollar') Invoice
             </a>
-            <button type="button" class="btn btn-outline-secondary dibp-receipts-toggle" id="dibp-receipts-toggle" style="margin-left: 5px;" aria-pressed="false" aria-controls="dibp-receipts-panel">
+            <button type="button" class="btn btn-warning dibp-receipts-toggle" id="dibp-receipts-toggle" style="margin-left: 5px;" aria-pressed="false" aria-controls="dibp-receipts-panel">
                 @icon('fa-receipt') Receipts
             </button>
         </div>
@@ -321,6 +321,14 @@
                                                 <a class="dropdown-item send-invoice-to-client" href="javascript:;" data-invoice-id="<?php echo $inc_val->receipt_id; ?>" data-invoice-no="<?php echo $inc_val->trans_no; ?>">
                                                     @icon('fa-envelope') Send to Client
                                                 </a>
+                                                <?php if ((int) $inc_val->void_invoice !== 1 && in_array((int) $inc_val->invoice_status, [0, 2], true)) { ?>
+                                                <a class="dropdown-item apply-invoice-discount" href="javascript:;"
+                                                    data-invoice-no="<?php echo $inc_val->trans_no; ?>"
+                                                    data-invoice-balance="{{ $inc_val->balance_amount }}"
+                                                    data-client-id="{{ $fetchedData->id }}">
+                                                    @icon('fa-percentage') Apply Discount
+                                                </a>
+                                                <?php } ?>
                                                 <?php } ?>
                                                 <?php if($saveTypeLower === 'draft'){ ?>
                                                 <a class="dropdown-item updatedraftinvoice" href="javascript:;" data-receiptid="<?php echo $inc_val->receipt_id;?>">
@@ -494,7 +502,8 @@
                                     'Cash' => 'fa-arrow-down',
                                     'Bank transfer' => 'fa-arrow-right-from-bracket',
                                     'EFTPOS' => 'fa-arrow-right-from-bracket',
-                                    'Refund' => 'fa-arrow-right-from-bracket'
+                                    'Refund' => 'fa-arrow-right-from-bracket',
+                                    'Discount' => 'fa-percentage'
                                 ];
                                 ?>
                                 <td class="type-cell" style="text-align: left; vertical-align: middle;">
@@ -3200,6 +3209,42 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<div class="modal fade custom_modal" id="applyInvoiceDiscountModal" tabindex="-1" role="dialog" aria-labelledby="applyInvoiceDiscountModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="applyInvoiceDiscountModalLabel">@icon('fa-percentage') Apply Discount</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="apply-invoice-discount-form" autocomplete="off">
+                @csrf
+                <input type="hidden" name="client_id" id="apply_discount_client_id" value="">
+                <input type="hidden" name="invoice_no" id="apply_discount_invoice_no" value="">
+                <div class="modal-body">
+                    <p class="text-muted" style="margin-bottom: 12px;">
+                        Discount will be applied to <strong id="apply_discount_invoice_label"></strong> and listed under Direct Office Receipts.
+                    </p>
+                    <div class="form-group">
+                        <label for="apply_discount_amount">Discount amount <span class="span_req">*</span></label>
+                        <input type="text" class="form-control" id="apply_discount_amount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" required>
+                        <small class="text-muted">Outstanding: $<span id="apply_discount_outstanding">0.00</span></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="apply_discount_description">Description</label>
+                        <input type="text" class="form-control" id="apply_discount_description" name="description" maxlength="255">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="apply_discount_submit_btn">@icon('fa-check') Apply Discount</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 </div>
 <!-- End Account Tab -->

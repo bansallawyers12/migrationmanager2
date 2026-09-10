@@ -114,6 +114,7 @@
                                     <option value="Bank transfer">Bank Transfer</option>
                                     <option value="EFTPOS">EFTPOS</option>
                                     <option value="Refund">Refund</option>
+                                    <option value="Discount">Discount</option>
                                 </select>
                             </div>
                         </div>

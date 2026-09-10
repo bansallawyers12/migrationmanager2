@@ -34,6 +34,8 @@ class DibpReceiptIsolationTest extends TestCase
         Assert::assertStringContainsString("'.createreceipt[data-account-entry=\"true\"]'", $blade);
 
         Assert::assertStringContainsString('id="dibp-receipts-toggle"', $blade);
+        Assert::assertStringContainsString('class="btn btn-warning dibp-receipts-toggle"', $blade);
+        Assert::assertStringNotContainsString('class="btn btn-outline-secondary dibp-receipts-toggle"', $blade);
         Assert::assertDoesNotMatchRegularExpression(
             '/id="dibp-receipts-toggle"[^>]*createreceipt/',
             $blade

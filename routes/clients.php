@@ -323,6 +323,7 @@ Route::post('/clients/saveadjustinvoicereport', [ClientAccountsController::class
 
 Route::get('/clients/saveofficereport/{id}', [ClientAccountsController::class, 'saveofficereport'])->name('clients.saveofficereport');
 Route::post('/clients/saveofficereport', [ClientAccountsController::class, 'saveofficereport'])->name('clients.saveofficereport.update');
+Route::post('/clients/apply-invoice-discount', [ClientAccountsController::class, 'applyInvoiceDiscount'])->name('clients.applyInvoiceDiscount');
 
 Route::get('/clients/savejournalreport/{id}', [ClientAccountsController::class, 'savejournalreport'])->name('clients.savejournalreport');
 Route::post('/clients/savejournalreport', [ClientAccountsController::class, 'savejournalreport'])->name('clients.savejournalreport.update');

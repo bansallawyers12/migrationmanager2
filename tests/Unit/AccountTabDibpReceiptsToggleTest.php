@@ -21,7 +21,7 @@ class AccountTabDibpReceiptsToggleTest extends TestCase
 
         Assert::assertStringContainsString('id="dibp-receipts-toggle"', $blade);
         Assert::assertStringContainsString('id="dibp-receipts-panel"', $blade);
-        Assert::assertMatchesRegularExpression('/class="[^"]*\bdibp-receipts-toggle\b[^"]*"/', $blade);
+        Assert::assertMatchesRegularExpression('/class="[^"]*\bbtn-warning\b[^"]*\bdibp-receipts-toggle\b[^"]*"/', $blade);
         Assert::assertDoesNotMatchRegularExpression(
             '/id="dibp-receipts-toggle"[^>]*createreceipt/',
             $blade
@@ -57,6 +57,7 @@ class AccountTabDibpReceiptsToggleTest extends TestCase
         Assert::assertStringContainsString('Send to Hubdoc', $blade);
         Assert::assertStringContainsString('data-action="send-hubdoc"', $blade);
         Assert::assertStringContainsString('class="dropdown-item send-to-hubdoc-btn"', $blade);
+        Assert::assertStringContainsString('class="dropdown-item apply-invoice-discount"', $blade);
     }
 
     #[Test]

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AccountAllInvoiceReceipt;
+use App\Models\AccountClientReceipt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -56,6 +57,22 @@ class InvoicePaymentSyncService
             ->sum('withdraw_amount');
 
         return round($totalPaidOffice + $totalPaidFeeTransfer, 2);
+    }
+
+    public function sumOfficeDiscountForInvoice(int $clientId, string $invoiceKey): float
+    {
+        $sum = (float) DB::table((new AccountClientReceipt)->getTable())
+            ->where('receipt_type', 2)
+            ->where('invoice_no', $invoiceKey)
+            ->where('client_id', $clientId)
+            ->where('payment_method', ApplyInvoiceOfficeDiscount::PAYMENT_METHOD)
+            ->where(function ($q) {
+                $q->where('save_type', 'final')
+                    ->orWhereNull('save_type');
+            })
+            ->sum('deposit_amount');
+
+        return round($sum, 2);
     }
 
     /**
@@ -163,7 +180,7 @@ class InvoicePaymentSyncService
     /**
      * Pending total for PDFs when some invoices have no matching payment-sync rows (e.g. draft-only lines).
      *
-     * @param  int|null  $voidInvoice 1 = voided invoice row (no amount owing)
+     * @param  int|null  $voidInvoice  1 = voided invoice row (no amount owing)
      */
     public function pendingAmountForReceiptPdf(int $clientId, int $receiptId, float $invoiceTotalFallback, ?int $voidInvoice = null): float
     {
@@ -347,12 +364,12 @@ class InvoicePaymentSyncService
 
                 if ($doc && ! empty($doc->myfile_key) && $clientUniqueId) {
                     $docType = $doc->doc_type ?? 'invoices';
-                    $s3Path  = $clientUniqueId . '/' . $docType . '/' . $doc->myfile_key;
+                    $s3Path = $clientUniqueId.'/'.$docType.'/'.$doc->myfile_key;
                     try {
                         Storage::disk('s3')->delete($s3Path);
                     } catch (\Exception $e) {
                         Log::warning('InvoicePaymentSyncService: failed to delete PDF from S3', [
-                            'path'  => $s3Path,
+                            'path' => $s3Path,
                             'error' => $e->getMessage(),
                         ]);
                     }
@@ -362,15 +379,15 @@ class InvoicePaymentSyncService
             }
 
             Log::info('InvoicePaymentSyncService: invoice PDF cache invalidated', [
-                'client_id'    => $clientId,
-                'invoice_key'  => $invoiceKey,
+                'client_id' => $clientId,
+                'invoice_key' => $invoiceKey,
                 'docs_removed' => count($docIds),
             ]);
         } catch (\Exception $e) {
             Log::error('InvoicePaymentSyncService: unexpected error in invalidateCachedPdf', [
-                'client_id'   => $clientId,
+                'client_id' => $clientId,
                 'invoice_key' => $invoiceKey,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
