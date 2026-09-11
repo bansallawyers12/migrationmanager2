@@ -1,5 +1,5 @@
 @extends('layouts.crm_client_detail')
-@section('title', ucfirst($type) . ' Calendar - Website Bookings')
+@section('title', $calendarTitle . ' - Website Bookings')
 
 @section('content')
 
@@ -29,7 +29,7 @@
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" 
                        class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}">
-                        @icon('fa-plane') Tourist
+                        @icon('fa-plane') Vijay bhau
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}" 
                        class="btn btn-sm {{ $type === 'adelaide' ? 'btn-primary' : 'btn-outline-primary' }}">

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class AppointmentConsultant extends Model
 {
@@ -104,11 +104,11 @@ class AppointmentConsultant extends Model
     protected function calendarTypeDisplay(): Attribute
     {
         return Attribute::make(
-            get: fn () => match($this->calendar_type) {
+            get: fn () => match ($this->calendar_type) {
                 'paid' => 'Employer Sponsored Calendar',
                 'jrp' => 'JRP/Skill Assessment',
                 'education' => 'Education/Student Visa',
-                'tourist' => 'Tourist Visa',
+                'tourist' => 'Vijay bhau',
                 'adelaide' => 'Adelaide Office',
                 'adelaide_education' => 'Adelaide Education',
                 'ajay' => 'Ajay Calendar',
@@ -146,7 +146,7 @@ class AppointmentConsultant extends Model
     protected function locationDisplay(): Attribute
     {
         return Attribute::make(
-            get: fn () => match($this->location) {
+            get: fn () => match ($this->location) {
                 'melbourne' => 'Melbourne',
                 'adelaide' => 'Adelaide',
                 default => ucfirst($this->location)
@@ -201,9 +201,8 @@ class AppointmentConsultant extends Model
         ];
 
         return array_map(
-            fn($noeId) => $noeNames[$noeId] ?? "Service $noeId",
+            fn ($noeId) => $noeNames[$noeId] ?? "Service $noeId",
             $this->specializations ?? []
         );
     }
 }
-

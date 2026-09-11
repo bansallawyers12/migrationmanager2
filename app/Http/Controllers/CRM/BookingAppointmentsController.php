@@ -358,7 +358,7 @@ class BookingAppointmentsController extends Controller
             'paid' => 'Employer Sponsored Calendar',
             'jrp' => 'JRP/Skill Assessment',
             'education' => 'Education/Student Visa',
-            'tourist' => 'Tourist Visa',
+            'tourist' => 'Vijay bhau',
             'adelaide' => 'Adelaide Office',
             'adelaide_education' => 'Adelaide Education',
             'ajay' => 'Ajay Calendar',

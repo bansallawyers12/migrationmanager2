@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use App\Models\AppointmentConsultant;
 use App\Models\BookingAppointment;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentConsultantSeeder extends Seeder
 {
@@ -20,29 +20,29 @@ class AppointmentConsultantSeeder extends Seeder
             6 => 1,  // Arun Kumar (paid) - old ID 6 -> new ID 1
             7 => 2,  // Shubham/Yadwinder (jrp) - old ID 7 -> new ID 2
             8 => 3,  // Education Team - old ID 8 -> new ID 3
-            9 => 4,  // Tourist Visa Team - old ID 9 -> new ID 4
+            9 => 4,  // Vijay bhau (tourist) - old ID 9 -> new ID 4
             10 => 5, // Adelaide Office - old ID 10 -> new ID 5
             11 => 6, // Ajay Calendar - old ID 11 -> new ID 6
             12 => 7, // Kunal Calendar - old ID 12 -> new ID 7 (if exists)
         ];
-        
+
         // Update appointments to use temporary IDs (1000+) to avoid conflicts
         foreach ($idMapping as $oldId => $newId) {
             BookingAppointment::where('consultant_id', $oldId)
                 ->update(['consultant_id' => 1000 + $newId]);
         }
-        
+
         // Delete all existing consultants
         DB::table('appointment_consultants')->truncate();
-        
+
         // Reset the auto-increment sequence for PostgreSQL
         if (DB::getDriverName() === 'pgsql') {
-            DB::statement("ALTER SEQUENCE appointment_consultants_id_seq RESTART WITH 1");
+            DB::statement('ALTER SEQUENCE appointment_consultants_id_seq RESTART WITH 1');
         } else {
             // For MySQL, reset auto increment
-            DB::statement("ALTER TABLE appointment_consultants AUTO_INCREMENT = 1");
+            DB::statement('ALTER TABLE appointment_consultants AUTO_INCREMENT = 1');
         }
-        
+
         $consultants = [
             [
                 'name' => 'Arun Kumar (Employer Sponsored Calendar)',
@@ -72,7 +72,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'show_in_filter' => true,
             ],
             [
-                'name' => 'Tourist Visa Team',
+                'name' => 'Vijay bhau',
                 'email' => 'tourist@bansalimmigration.com',
                 'calendar_type' => 'tourist',
                 'location' => 'melbourne',
@@ -148,9 +148,8 @@ class AppointmentConsultantSeeder extends Seeder
             BookingAppointment::where('consultant_id', 1000 + $newId)
                 ->update(['consultant_id' => $newId]);
         }
-        
+
         $this->command->info('✓ Created 8 appointment consultants with IDs 1-8 (including Ajay, Kunal, and Arun Calendar)');
         $this->command->info('✓ Updated all appointments to reference new consultant IDs');
     }
 }
-

@@ -37,7 +37,7 @@
                         @icon('fa-graduation-cap', ['class' => 'mr-2']) Education
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}">
-                        @icon('fa-plane', ['class' => 'mr-2']) Tourist Visa
+                        @icon('fa-plane', ['class' => 'mr-2']) Vijay bhau
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}">
                         @icon('fa-city', ['class' => 'mr-2']) Adelaide
