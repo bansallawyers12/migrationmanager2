@@ -153,9 +153,6 @@
                   <p style="margin:0 0 6px 0; font-size:13px; line-height:1.6; color:#333;">
                     &#128222; <a href="{{ $callUsHref }}" target="_blank" rel="noopener noreferrer" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">{{ $locationPhone }}</a>
                   </p>
-                  <p style="margin:0 0 6px 0; font-size:13px; line-height:1.6; color:#333;">
-                    &#128231; <a href="mailto:info@bansalimmigration.com.au" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">info@bansalimmigration.com.au</a>
-                  </p>
                   <p style="margin:0; font-size:13px; line-height:1.6; color:#333;">
                     &#127760; <a href="https://bansalimmigration.com.au" target="_blank" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">bansalimmigration.com.au</a>
                   </p>
@@ -179,7 +176,7 @@
           <td style="padding:10px 24px 24px 24px;">
             <p style="margin:0 0 6px 0; font-size:14px; line-height:1.7; color:#333;">We truly value your time and trust in Bansal Immigration. We hope to have the opportunity to assist you soon.</p>
             <p style="margin:0; font-size:14px; line-height:1.7; color:#333;">Warm regards,</p>
-            <p style="margin:6px 0 0 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Bansal Immigration Team</p>
+            <p style="margin:6px 0 0 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Bansal Immigration Consultant</p>
           </td>
         </tr>
 

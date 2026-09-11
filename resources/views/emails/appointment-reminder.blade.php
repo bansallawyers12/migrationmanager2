@@ -138,7 +138,7 @@
             <div style="display:inline-block; background:#f5a623; color:#fff; font-size:10px; font-weight:bold; padding:2px 9px; border-radius:20px; letter-spacing:0.8px; margin-bottom:8px; text-transform:uppercase;">🔖 First-Time Clients Only</div>
             <p style="line-height:1.7; color:#5a3e00; margin:0;">
               <strong>Haven't sent us your CV yet?</strong> If this is your first appointment with us, please email your resume to
-              <a href="{{ $resumeMailtoHref }}">info@bansalimmigration.com</a>
+              <a href="{{ $resumeMailtoHref }}">our team</a>
               before your visit — it helps our consultant prepare tailored advice just for you.
               <span style="font-style:italic; color:#888;"> (Returning clients can disregard this note.)</span>
             </p>
@@ -161,14 +161,13 @@
     <div class="contact-box">
       <h3>📞 Need Help or Have Questions?</h3>
       <p>📱 <strong>Phone:</strong> <a href="tel:{{ $locationPhoneTel }}">{{ $locationPhone }}</a></p>
-      <p>📧 <strong>Email:</strong> <a href="mailto:info@bansalimmigration.com">info@bansalimmigration.com</a></p>
       <p>🌐 <strong>Website:</strong> <a href="https://bansalimmigration.com" target="_blank">bansalimmigration.com</a></p>
     </div>
 
     <div class="closing">
       <p>We look forward to seeing you and assisting with your immigration needs. If there is anything you need before your appointment, our team is always happy to help.</p>
       <p>Warm regards,</p>
-      <p class="signature">Bansal Immigration Team</p>
+      <p class="signature">Bansal Immigration Consultant</p>
     </div>
 
   </div>

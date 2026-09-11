@@ -33,7 +33,7 @@
                   <p style="margin:0 0 8px 0; font-size:12px; font-style:italic; color:#7a5c00;">Returning clients may disregard this section.</p>
                   <p style="margin:0; font-size:13px; line-height:1.6; color:#333;">
                     Email your up-to-date resume/CV to
-                    <a href="{{ $resumeMailtoHref }}" style="color:#c47d0e; font-weight:bold; text-decoration:none;">info@bansalimmigration.com.au</a>
+                    <a href="{{ $resumeMailtoHref }}" style="color:#c47d0e; font-weight:bold; text-decoration:none;">our team</a>
                     with the subject <em>&quot;Resume – [Your Full Name] – {{ $resumeDateForSubject }} Appointment&quot;</em>
                     at least <strong>48 hours before</strong> your appointment.
                   </p>
@@ -178,9 +178,6 @@
                   <p style="margin:0 0 6px 0; font-size:13px; line-height:1.6; color:#333;">
                     &#128222; <a href="tel:{{ $locationPhoneTel }}" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">{{ $locationPhone }}</a>
                   </p>
-                  <p style="margin:0 0 6px 0; font-size:13px; line-height:1.6; color:#333;">
-                    &#128231; <a href="mailto:info@bansalimmigration.com.au" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">info@bansalimmigration.com.au</a>
-                  </p>
                   <p style="margin:0 0 10px 0; font-size:13px; line-height:1.6; color:#333;">
                     &#127760; <a href="https://bansalimmigration.com.au" target="_blank" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">bansalimmigration.com.au</a>
                   </p>
@@ -232,7 +229,7 @@
           <td style="padding:10px 24px 24px 24px;">
             <p style="margin:0 0 6px 0; font-size:14px; line-height:1.7; color:#333;">We look forward to assisting you with your immigration journey.</p>
             <p style="margin:0; font-size:14px; line-height:1.7; color:#333;">Warm regards,</p>
-            <p style="margin:6px 0 0 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Bansal Immigration Team</p>
+            <p style="margin:6px 0 0 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Bansal Immigration Consultant</p>
           </td>
         </tr>
 

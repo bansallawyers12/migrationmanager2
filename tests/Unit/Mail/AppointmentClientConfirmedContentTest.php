@@ -18,6 +18,9 @@ class AppointmentClientConfirmedContentTest extends TestCase
         $this->assertStringNotContainsString('10:40 AM', $html);
         $this->assertStringContainsString('Tourist Visa', $html);
         $this->assertStringContainsString('In-Person', $html);
+        $this->assertStringContainsString('Bansal Immigration Consultant', $html);
+        $this->assertStringNotContainsString('Bansal Immigration Team', $html);
+        $this->assertStringNotContainsString('info@bansalimmigration.com.au', $html);
     }
 
     /**

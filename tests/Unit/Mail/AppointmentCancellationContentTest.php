@@ -28,6 +28,9 @@ class AppointmentCancellationContentTest extends TestCase
         $this->assertStringContainsString('Client requested a new time', $html);
         $this->assertStringContainsString('Request to Reschedule', $html);
         $this->assertStringContainsString('Call Us', $html);
+        $this->assertStringContainsString('Bansal Immigration Consultant', $html);
+        $this->assertStringNotContainsString('Bansal Immigration Team', $html);
+        $this->assertStringNotContainsString('>info@bansalimmigration.com.au</a>', $html);
         $this->assertStringContainsString('mailto:info@bansalimmigration.com.au', $html);
         $this->assertStringContainsString('Reschedule%20Request', $html);
         $this->assertStringNotContainsString('/appointment/', $html);

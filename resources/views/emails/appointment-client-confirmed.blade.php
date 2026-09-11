@@ -63,13 +63,12 @@
 
     <div class="contact-box">
       <p><strong>Phone:</strong> <a href="tel:{{ $locationPhoneTel }}">{{ $locationPhone }}</a></p>
-      <p><strong>Email:</strong> <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a></p>
     </div>
 
     <div class="closing">
       <p>We look forward to speaking with you.</p>
       <p>Warm regards,</p>
-      <p class="signature">Bansal Immigration Team</p>
+      <p class="signature">Bansal Immigration Consultant</p>
     </div>
   </div>
 

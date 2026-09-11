@@ -115,11 +115,8 @@
                 </td>
                 <td style="padding:16px 16px 16px 10px;">
                   <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Need help?</p>
-                  <p style="margin:0 0 6px 0; font-size:13px; line-height:1.6; color:#333;">
-                    &#128222; <a href="tel:{{ $locationPhoneTel }}" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">{{ $locationPhone }}</a>
-                  </p>
                   <p style="margin:0; font-size:13px; line-height:1.6; color:#333;">
-                    &#128231; <a href="mailto:info@bansalimmigration.com.au" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">info@bansalimmigration.com.au</a>
+                    &#128222; <a href="tel:{{ $locationPhoneTel }}" style="color:#1c2a3a; text-decoration:none; font-weight:bold;">{{ $locationPhone }}</a>
                   </p>
                 </td>
               </tr>
@@ -130,7 +127,7 @@
         <tr>
           <td style="padding:10px 24px 24px 24px;">
             <p style="margin:0; font-size:14px; line-height:1.7; color:#333;">Kind regards,</p>
-            <p style="margin:6px 0 0 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Bansal Immigration Team</p>
+            <p style="margin:6px 0 0 0; font-size:14px; font-weight:bold; color:#1c2a3a;">Bansal Immigration Consultant</p>
           </td>
         </tr>
 

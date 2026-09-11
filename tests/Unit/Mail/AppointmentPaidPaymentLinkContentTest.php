@@ -37,6 +37,9 @@ class AppointmentPaidPaymentLinkContentTest extends TestCase
         $this->assertStringNotContainsString('Appointment Payment Required', $html);
         $this->assertStringContainsString('Pay now securely', $html);
         $this->assertStringContainsString('$150.00 AUD', $html);
+        $this->assertStringContainsString('Bansal Immigration Consultant', $html);
+        $this->assertStringNotContainsString('Bansal Immigration Team', $html);
+        $this->assertStringNotContainsString('info@bansalimmigration.com.au', $html);
         $mailable->assertHasAttachment(
             Attachment::fromPath(public_path('img/logo.png'))
                 ->as('Bansal-Immigration-Logo.png')

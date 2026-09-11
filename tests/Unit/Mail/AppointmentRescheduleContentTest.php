@@ -17,6 +17,9 @@ class AppointmentRescheduleContentTest extends TestCase
 
         $this->assertStringContainsString('Registered Migration Agents', $html);
         $this->assertStringContainsString('Appointment Details', $html);
+        $this->assertStringContainsString('Bansal Immigration Consultant', $html);
+        $this->assertStringNotContainsString('Bansal Immigration Team', $html);
+        $this->assertStringNotContainsString('>info@bansalimmigration.com.au</a>', $html);
         $this->assertStringContainsString('width:50%', $html);
         $this->assertStringContainsString('max-width:240px', $html);
         $this->assertStringContainsString('Previous Date', $html);
