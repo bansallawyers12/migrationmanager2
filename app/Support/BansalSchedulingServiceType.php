@@ -9,13 +9,16 @@ use Illuminate\Http\Request;
  * and builds Melbourne-only extras (is_paid, preferred_language) for get-datetime-backend
  * and get-disabled-datetime. Adelaide uses no extras so payloads stay unchanged for legacy behaviour.
  * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots on the
- * schedule API. add-appointment / re-sync use Bansal-valid enquiry_type slugs and service_type
- * slugs; CRM keeps display labels locally.
+ * schedule API. Melbourne TR 485 (2) uses tourist-visa / Vijay timeslots. add-appointment /
+ * re-sync use Bansal-valid enquiry_type slugs and service_type slugs; CRM keeps display labels locally.
  */
 class BansalSchedulingServiceType
 {
     /** NOE ids using Melbourne employer-sponsored timeslots (schedule API only). */
     private const FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS = [11, 12];
+
+    /** Melbourne TR 485 uses Vijay (tourist-visa) timeslots and CRM tourist calendar. */
+    private const MELBOURNE_VIJAY_TR_485_NOE_ID = 2;
 
     /** enquiry_type values accepted by Bansal add-appointment API. */
     private const BANSAL_VALID_ENQUIRY_TYPES = ['tr', 'tourist', 'education', 'pr_complex', 'ajay', 'kunal', 'arun'];
@@ -47,6 +50,10 @@ class BansalSchedulingServiceType
     {
         $key = (int) $enquiryItem;
 
+        if (self::melbourneUsesVijayCalendarRouting($key, $location)) {
+            return 'tourist-visa';
+        }
+
         if (self::melbourneUsesEmployerSponsoredRouting($key, $location)) {
             return 'employer-sponsored';
         }
@@ -62,6 +69,10 @@ class BansalSchedulingServiceType
     {
         $key = (int) $noeId;
         $loc = $location !== null ? strtolower(trim($location)) : '';
+
+        if (self::melbourneUsesVijayCalendarRouting($key, $location)) {
+            return 'tourist';
+        }
 
         $directByNoe = [
             2 => 'tr',
@@ -101,9 +112,13 @@ class BansalSchedulingServiceType
     /**
      * service_type slug for Bansal add-appointment / re-sync API.
      */
-    public static function bansalServiceTypeForApi(mixed $noeId, string $crmServiceType): string
+    public static function bansalServiceTypeForApi(mixed $noeId, string $crmServiceType, ?string $location = null): string
     {
         $key = (int) $noeId;
+
+        if (self::melbourneUsesVijayCalendarRouting($key, $location)) {
+            return 'tourist-visa';
+        }
 
         if (isset(self::ENQUIRY_TO_SERVICE_TYPE[$key])) {
             return self::ENQUIRY_TO_SERVICE_TYPE[$key];
@@ -125,6 +140,16 @@ class BansalSchedulingServiceType
 
         return strtolower(trim($location)) === 'melbourne'
             && in_array($noeId, self::FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS, true);
+    }
+
+    public static function melbourneUsesVijayCalendarRouting(int $noeId, ?string $location): bool
+    {
+        if ($location === null || $location === '') {
+            return false;
+        }
+
+        return strtolower(trim($location)) === 'melbourne'
+            && $noeId === self::MELBOURNE_VIJAY_TR_485_NOE_ID;
     }
 
     /**

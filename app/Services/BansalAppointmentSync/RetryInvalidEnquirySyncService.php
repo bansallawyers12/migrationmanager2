@@ -39,8 +39,7 @@ class RetryInvalidEnquirySyncService
 
     public function __construct(
         protected BansalApiClient $apiClient
-    ) {
-    }
+    ) {}
 
     /**
      * Appointments that failed because CRM sent an invalid enquiry_type slug to Bansal.
@@ -51,7 +50,7 @@ class RetryInvalidEnquirySyncService
             ->where('sync_status', 'error')
             ->where(function (Builder $query): void {
                 $query->whereIn('sync_error', self::invalidEnquirySyncErrors())
-                    ->orWhere('sync_error', 'like', '%' . self::INVALID_ENQUIRY_SYNC_ERROR);
+                    ->orWhere('sync_error', 'like', '%'.self::INVALID_ENQUIRY_SYNC_ERROR);
             })
             ->where('bansal_appointment_id', '>=', self::MIN_UNSYNCED_BANSAL_ID)
             ->where('appointment_datetime', '>', now())
@@ -93,7 +92,8 @@ class RetryInvalidEnquirySyncService
             ),
             'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
                 $appointment->noe_id ?? 0,
-                $appointment->service_type ?? 'Permanent Residency'
+                $appointment->service_type ?? 'Permanent Residency',
+                $location
             ),
             'enquiry_details' => $appointment->enquiry_details ?? '',
             'is_paid' => (bool) ($appointment->is_paid ?? false),
@@ -116,7 +116,7 @@ class RetryInvalidEnquirySyncService
 
         if ($bansalAppointmentId === null) {
             throw new Exception(
-                'Bansal API did not return appointment ID. Response: ' . json_encode($apiResponse)
+                'Bansal API did not return appointment ID. Response: '.json_encode($apiResponse)
             );
         }
 
@@ -148,7 +148,7 @@ class RetryInvalidEnquirySyncService
     }
 
     /**
-     * @param array<string, mixed> $apiResponse
+     * @param  array<string, mixed>  $apiResponse
      */
     public function extractBansalAppointmentId(array $apiResponse): ?int
     {

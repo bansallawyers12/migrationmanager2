@@ -36,7 +36,7 @@
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'education']) }}">
                         @icon('fa-graduation-cap', ['class' => 'mr-2']) Education
                     </a>
-                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" title="Vijay (Tourist Visa)">
+                    <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" title="Vijay(Tourist Visa)">
                         @icon('fa-plane', ['class' => 'mr-2']) Vijay
                     </a>
                     <a class="dropdown-item" href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}">

@@ -29,7 +29,7 @@
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" 
                        class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}"
-                       title="Vijay (Tourist Visa)">
+                       title="Vijay(Tourist Visa)">
                         @icon('fa-plane') Vijay
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}" 
@@ -55,7 +55,7 @@
                 <div class="card-header">
                     <h4>
                         @icon('fa-calendar-alt', ['class' => 'mr-2'])
-                        {{ $calendarTitle }}
+                        <span @if($type === 'tourist') title="Vijay(Tourist Visa)" @endif>{{ $calendarTitle }}</span>
                         <small class="text-muted">(Website Bookings - v6)</small>
                     </h4>
                     <div class="card-header-action">

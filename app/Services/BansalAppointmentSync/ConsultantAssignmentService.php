@@ -13,7 +13,7 @@ class ConsultantAssignmentService
      *
      * Adelaide: education (NOE 5) or tourist (NOE 4) → Adelaide Education calendar; all other Adelaide bookings → Adelaide calendar.
      * Melbourne: calendar follows service line (tourist, education, Ajay, JRP, employer-sponsored, etc.).
-     * GSM, EOI/ROI, TR 485, and JRP/Skill Assessment use free → JRP calendar, paid → Employer Sponsored calendar (all languages).
+     * Melbourne Tourist Visa and TR 485 → tourist (Vijay) calendar. GSM, EOI/ROI, and JRP/Skill Assessment use free → JRP, paid → Employer Sponsored (all languages).
      */
     public function assignConsultant(array $appointmentData): ?AppointmentConsultant
     {
@@ -65,8 +65,8 @@ class ConsultantAssignmentService
             return null;
         }
 
-        // Tourist
-        if ($noeId === 4) {
+        // Tourist Visa and TR 485 → Vijay (tourist) calendar
+        if (in_array($noeId, [2, 4], true)) {
             return 'tourist';
         }
 
@@ -108,8 +108,8 @@ class ConsultantAssignmentService
             return 'paid';
         }
 
-        // GSM, EOI/ROI, TR (485), JRP / Skill assessment → free: JRP; paid: Employer Sponsored (all languages)
-        if (in_array($noeId, [1, 2, 3, 9], true)) {
+        // GSM, EOI/ROI, JRP / Skill assessment → free: JRP; paid: Employer Sponsored (all languages)
+        if (in_array($noeId, [1, 3, 9], true)) {
             return $this->melbourneFreePaidCalendarOverride($appointment, $noeId) ?? 'jrp';
         }
 
@@ -167,7 +167,7 @@ class ConsultantAssignmentService
     }
 
     /**
-     * Melbourne GSM, EOI/ROI, TR 485, JRP/Skill Assessment: free → JRP calendar; paid → Employer Sponsored calendar.
+     * Melbourne GSM, EOI/ROI, JRP/Skill Assessment: free → JRP calendar; paid → Employer Sponsored calendar.
      * Applies to all languages (English, Hindi, Punjabi).
      *
      * @param  int|null  $noeId  Resolved NOE when already known by caller.
@@ -176,7 +176,7 @@ class ConsultantAssignmentService
     protected function melbourneFreePaidCalendarOverride(array $appointment, ?int $noeId = null, bool $legacyGsmOrEoiFromText = false): ?string
     {
         $resolvedNoe = $noeId ?? $this->resolveNoeId($appointment);
-        $applies = in_array($resolvedNoe, [1, 2, 3, 9], true)
+        $applies = in_array($resolvedNoe, [1, 3, 9], true)
             || ($legacyGsmOrEoiFromText && $resolvedNoe === null);
 
         if (! $applies) {

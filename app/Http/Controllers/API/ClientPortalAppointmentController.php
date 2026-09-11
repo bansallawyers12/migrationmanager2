@@ -681,7 +681,8 @@ class ClientPortalAppointmentController extends BaseController
                 ),
                 'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
                     $requestData['noe_id'],
-                    $serviceTypeMapping['service_type']
+                    $serviceTypeMapping['service_type'],
+                    $location
                 ),
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
@@ -1076,7 +1077,8 @@ class ClientPortalAppointmentController extends BaseController
                 ),
                 'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
                     $requestData['noe_id'],
-                    $serviceTypeMapping['service_type']
+                    $serviceTypeMapping['service_type'],
+                    $location
                 ),
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
@@ -2086,7 +2088,8 @@ class ClientPortalAppointmentController extends BaseController
                 ),
                 'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
                     $appointment->noe_id ?? 0,
-                    $appointment->service_type ?? 'Permanent Residency'
+                    $appointment->service_type ?? 'Permanent Residency',
+                    $appointment->location ?? 'melbourne'
                 ),
                 'enquiry_details' => $appointment->enquiry_details ?? '',
                 'is_paid' => $appointment->is_paid ?? false,

@@ -141,11 +141,43 @@ class BansalSchedulingServiceTypeTest extends TestCase
         );
     }
 
-    public function test_melbourne_tr_bansal_sync_unchanged(): void
+    public function test_melbourne_tr_485_uses_tourist_visa_timeslots(): void
+    {
+        $this->assertSame(
+            'tourist-visa',
+            BansalSchedulingServiceType::fromEnquiryItem(2, 'melbourne')
+        );
+    }
+
+    public function test_adelaide_tr_485_keeps_own_timeslots(): void
+    {
+        $this->assertSame(
+            'temporary-residency',
+            BansalSchedulingServiceType::fromEnquiryItem(2, 'adelaide')
+        );
+    }
+
+    public function test_melbourne_tr_bansal_sync_uses_tourist(): void
+    {
+        $this->assertSame(
+            'tourist',
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(2, 'melbourne', 'tr')
+        );
+        $this->assertSame(
+            'tourist-visa',
+            BansalSchedulingServiceType::bansalServiceTypeForApi(2, 'TR: 485 visa', 'melbourne')
+        );
+    }
+
+    public function test_adelaide_tr_bansal_sync_unchanged(): void
     {
         $this->assertSame(
             'tr',
-            BansalSchedulingServiceType::bansalEnquiryTypeForApi(2, 'melbourne', 'tr')
+            BansalSchedulingServiceType::bansalEnquiryTypeForApi(2, 'adelaide', 'tr')
+        );
+        $this->assertSame(
+            'temporary-residency',
+            BansalSchedulingServiceType::bansalServiceTypeForApi(2, 'TR: 485 visa', 'adelaide')
         );
     }
 

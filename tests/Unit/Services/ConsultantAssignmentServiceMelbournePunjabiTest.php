@@ -98,9 +98,9 @@ class ConsultantAssignmentServiceMelbournePunjabiTest extends TestCase
         ]));
     }
 
-    public function test_melbourne_tr_485_free_goes_jrp(): void
+    public function test_melbourne_tr_485_free_goes_tourist(): void
     {
-        $this->assertSame('jrp', $this->calendarType([
+        $this->assertSame('tourist', $this->calendarType([
             'noe_id' => 2,
             'location' => 'melbourne',
             'inperson_address' => 2,
@@ -111,15 +111,27 @@ class ConsultantAssignmentServiceMelbournePunjabiTest extends TestCase
         ]));
     }
 
-    public function test_melbourne_tr_485_paid_goes_employer_sponsored(): void
+    public function test_melbourne_tr_485_paid_goes_tourist(): void
     {
-        $this->assertSame('paid', $this->calendarType([
+        $this->assertSame('tourist', $this->calendarType([
             'noe_id' => 2,
             'location' => 'melbourne',
             'inperson_address' => 2,
             'service_id' => 1,
             'specific_service' => 'paid-consultation',
             'preferred_language' => 'Hindi',
+            'service_type' => 'TR: 485 visa',
+        ]));
+    }
+
+    public function test_adelaide_tr_485_stays_adelaide(): void
+    {
+        $this->assertSame('adelaide', $this->calendarType([
+            'noe_id' => 2,
+            'location' => 'adelaide',
+            'inperson_address' => 1,
+            'service_id' => 2,
+            'specific_service' => 'consultation',
             'service_type' => 'TR: 485 visa',
         ]));
     }

@@ -392,7 +392,8 @@ trait ClientAppointments
                 ),
                 'service_type' => BansalSchedulingServiceType::bansalServiceTypeForApi(
                     $requestData['noe_id'],
-                    $serviceTypeMapping['service_type']
+                    $serviceTypeMapping['service_type'],
+                    $location
                 ),
                 'enquiry_details' => $requestData['description'],
                 'is_paid' => ($serviceId == 2) ? false : true,
