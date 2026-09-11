@@ -2,21 +2,22 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Support\Facades\View;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
 
 class EmailTemplateRenderingTest extends TestCase
 {
-    /** @test */
-    public function signature_send_template_renders_correctly()
+    #[Test]
+    public function signature_send_template_renders_correctly(): void
     {
         $data = [
             'signerName' => 'John Doe',
             'documentTitle' => 'Service Agreement',
             'signingUrl' => 'https://example.com/sign/123/token',
-            'message' => 'Please sign this document.',
+            'emailMessage' => 'Please sign this document.',
             'documentType' => 'agreement',
-            'dueDate' => 'January 15, 2025'
+            'dueDate' => 'January 15, 2025',
         ];
 
         $html = View::make('emails.signature.send', $data)->render();
@@ -27,27 +28,30 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('https://example.com/sign/123/token', $html);
         $this->assertStringContainsString('Please sign this document.', $html);
         $this->assertStringContainsString('January 15, 2025', $html);
-        $this->assertStringContainsString('Bansal Migration', $html);
-        
+        $this->assertStringContainsString('Bansal immigration Consultant', $html);
+        $this->assertStringNotContainsString('Bansal Migration Team', $html);
+
         // Assert branding elements
         $this->assertStringContainsString('Document Signature Request', $html);
         $this->assertStringContainsString('Review & Sign Document', $html);
-        
+
         // Assert footer content
-        $this->assertStringContainsString('info@bansalimmigration.com.au', $html);
+        $this->assertStringNotContainsString('info@bansalimmigration.com.au', $html);
         $this->assertStringContainsString('www.bansalimmigration.com.au', $html);
+        $this->assertStringContainsString('data:image/png;base64,', $html);
+        $this->assertStringNotContainsString('/public/img/logo.png', $html);
     }
 
-    /** @test */
-    public function signature_send_template_handles_optional_fields()
+    #[Test]
+    public function signature_send_template_handles_optional_fields(): void
     {
         $data = [
             'signerName' => 'Jane Smith',
             'documentTitle' => 'Document',
             'signingUrl' => 'https://example.com/sign/456/token',
-            'message' => 'Please sign.',
+            'emailMessage' => 'Please sign.',
             'documentType' => 'general',
-            'dueDate' => null // Optional field
+            'dueDate' => null,
         ];
 
         $html = View::make('emails.signature.send', $data)->render();
@@ -68,7 +72,7 @@ class EmailTemplateRenderingTest extends TestCase
             'signingUrl' => 'https://example.com/sign/789/token',
             'message' => 'Please review and sign this agreement.',
             'documentType' => 'agreement',
-            'dueDate' => 'February 1, 2025'
+            'dueDate' => 'February 1, 2025',
         ];
 
         $html = View::make('emails.signature.send_agreement', $data)->render();
@@ -78,12 +82,12 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('Cost Agreement', $html);
         $this->assertStringContainsString('https://example.com/sign/789/token', $html);
         $this->assertStringContainsString('Please review and sign this agreement.', $html);
-        
+
         // Assert agreement-specific elements
         $this->assertStringContainsString('Agreement Signature Request', $html);
         $this->assertStringContainsString('Review & Sign Agreement', $html);
         $this->assertStringContainsString('Important Legal Notice', $html);
-        
+
         // Assert green theme (agreement template uses green)
         $this->assertStringContainsString('#047857', $html);
         $this->assertStringContainsString('#10b981', $html);
@@ -97,7 +101,7 @@ class EmailTemplateRenderingTest extends TestCase
             'documentTitle' => 'Pending Document',
             'signingUrl' => 'https://example.com/sign/999/token',
             'reminderNumber' => 2,
-            'dueDate' => 'January 20, 2025'
+            'dueDate' => 'January 20, 2025',
         ];
 
         $html = View::make('emails.signature.reminder', $data)->render();
@@ -108,12 +112,12 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringContainsString('https://example.com/sign/999/token', $html);
         $this->assertStringContainsString('January 20, 2025', $html);
         $this->assertStringContainsString('Reminder #2', $html);
-        
+
         // Assert reminder-specific elements
         $this->assertStringContainsString('Document Signature Reminder', $html);
         $this->assertStringContainsString('Sign Now', $html);
         $this->assertStringContainsString('Action Required', $html);
-        
+
         // Assert urgent theme (reminder template uses red/orange)
         $this->assertStringContainsString('#dc2626', $html);
         $this->assertStringContainsString('#f59e0b', $html);
@@ -129,24 +133,24 @@ class EmailTemplateRenderingTest extends TestCase
             'message' => 'Test message',
             'documentType' => 'general',
             'dueDate' => 'Test Date',
-            'reminderNumber' => 1
+            'reminderNumber' => 1,
         ];
 
         $templates = [
             'emails.signature.send',
             'emails.signature.send_agreement',
-            'emails.signature.reminder'
+            'emails.signature.reminder',
         ];
 
         foreach ($templates as $template) {
             $html = View::make($template, $data)->render();
-            
+
             // Assert responsive meta tag
             $this->assertStringContainsString('viewport', $html);
-            
+
             // Assert media queries for mobile
             $this->assertStringContainsString('@media only screen and (max-width: 600px)', $html);
-            
+
             // Assert max-width container
             $this->assertStringContainsString('max-width: 600px', $html);
         }
@@ -162,18 +166,18 @@ class EmailTemplateRenderingTest extends TestCase
             'message' => 'Test message',
             'documentType' => 'general',
             'dueDate' => 'Test Date',
-            'reminderNumber' => 1
+            'reminderNumber' => 1,
         ];
 
         $templates = [
             'emails.signature.send',
             'emails.signature.send_agreement',
-            'emails.signature.reminder'
+            'emails.signature.reminder',
         ];
 
         foreach ($templates as $template) {
             $html = View::make($template, $data)->render();
-            
+
             // Assert proper HTML structure
             $this->assertStringContainsString('<!DOCTYPE html>', $html);
             $this->assertStringContainsString('<html', $html);
@@ -182,7 +186,7 @@ class EmailTemplateRenderingTest extends TestCase
             $this->assertStringContainsString('</head>', $html);
             $this->assertStringContainsString('<body>', $html);
             $this->assertStringContainsString('</body>', $html);
-            
+
             // Assert UTF-8 charset
             $this->assertStringContainsString('charset="UTF-8"', $html);
         }
@@ -198,22 +202,22 @@ class EmailTemplateRenderingTest extends TestCase
             'message' => '<b>Bold</b> and <script>dangerous</script>',
             'documentType' => 'general',
             'dueDate' => null,
-            'reminderNumber' => 1
+            'reminderNumber' => 1,
         ];
 
         $templates = [
             'emails.signature.send',
             'emails.signature.send_agreement',
-            'emails.signature.reminder'
+            'emails.signature.reminder',
         ];
 
         foreach ($templates as $template) {
             $html = View::make($template, $data)->render();
-            
+
             // Assert dangerous scripts are escaped or removed
             $this->assertStringNotContainsString('<script>alert("xss")</script>', $html);
             $this->assertStringNotContainsString('onerror=alert(1)', $html);
-            
+
             // In send_agreement, message uses {!! !!} with nl2br(e())
             // So <b> tags should be escaped but newlines preserved
             if ($template === 'emails.signature.send_agreement') {
@@ -232,22 +236,22 @@ class EmailTemplateRenderingTest extends TestCase
             'message' => 'Test message',
             'documentType' => 'general',
             'dueDate' => null,
-            'reminderNumber' => 1
+            'reminderNumber' => 1,
         ];
 
         $templates = [
             'emails.signature.send',
             'emails.signature.send_agreement',
-            'emails.signature.reminder'
+            'emails.signature.reminder',
         ];
 
         foreach ($templates as $template) {
             $html = View::make($template, $data)->render();
-            
+
             // Assert CTA button is present
             $this->assertStringContainsString('cta-button', $html);
             $this->assertStringContainsString('https://example.com/sign/test/token', $html);
-            
+
             // Assert button text varies by template
             if ($template === 'emails.signature.reminder') {
                 $this->assertStringContainsString('Sign Now', $html);
@@ -267,25 +271,30 @@ class EmailTemplateRenderingTest extends TestCase
             'message' => 'Test message',
             'documentType' => 'general',
             'dueDate' => null,
-            'reminderNumber' => 1
+            'reminderNumber' => 1,
         ];
 
         $templates = [
             'emails.signature.send',
             'emails.signature.send_agreement',
-            'emails.signature.reminder'
+            'emails.signature.reminder',
         ];
 
         foreach ($templates as $template) {
             $html = View::make($template, $data)->render();
-            
+
             // Assert footer information
-            $this->assertStringContainsString('Bansal Migration', $html);
-            $this->assertStringContainsString('info@bansalimmigration.com.au', $html);
             $this->assertStringContainsString('www.bansalimmigration.com.au', $html);
-            $this->assertStringContainsString('Privacy Policy', $html);
-            $this->assertStringContainsString('Terms of Service', $html);
+
+            if ($template === 'emails.signature.send') {
+                $this->assertStringContainsString('Bansal immigration Consultant', $html);
+                $this->assertStringNotContainsString('info@bansalimmigration.com.au', $html);
+            } else {
+                $this->assertStringContainsString('Bansal Migration', $html);
+                $this->assertStringContainsString('info@bansalimmigration.com.au', $html);
+                $this->assertStringContainsString('Privacy Policy', $html);
+                $this->assertStringContainsString('Terms of Service', $html);
+            }
         }
     }
 }
-

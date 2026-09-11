@@ -191,7 +191,11 @@
         <div class="email-container">
             <!-- Header -->
             <div class="email-header">
-                <img src="{{URL::to('/public/img/logo.png')}}" alt="Bansal Migration" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+                @if(isset($message) && is_object($message) && method_exists($message, 'embed') && is_file(public_path('img/logo.png')))
+                    <img src="{{ $message->embed(public_path('img/logo.png')) }}" alt="Bansal Immigration Consultant" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+                @else
+                    @include('emails.partials.inline-logo', ['style' => 'max-width: 200px; height: auto; margin-bottom: 15px;'])
+                @endif
                 <h1>Document Signature Request</h1>
                 <div class="header-subtitle">Bansal Migration Immigration & Visa Services</div>
             </div>
@@ -246,7 +250,7 @@
                 <!-- Signature -->
                 <div class="signature-section">
                     <p class="signature-text"><strong>Regards,</strong></p>
-                    <p class="signature-name">Bansal Migration Team</p>
+                    <p class="signature-name">Bansal immigration Consultant</p>
                 </div>
 
                 <!-- Email Signature Block -->
@@ -259,12 +263,9 @@
 
             <!-- Footer -->
             <div class="email-footer">
-                <div class="footer-brand-name">Bansal Migration</div>
+                <div class="footer-brand-name">Bansal immigration Consultant</div>
                 <div class="footer-brand-tagline">Immigration & Visa Services</div>
                 
-                <div class="footer-contact-item">
-                    Email: <a href="mailto:info@bansalimmigration.com.au">info@bansalimmigration.com.au</a>
-                </div>
                 <div class="footer-contact-item">
                     Website: <a href="https://www.bansalimmigration.com.au" target="_blank">www.bansalimmigration.com.au</a>
                 </div>
