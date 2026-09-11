@@ -3,6 +3,7 @@
 namespace Tests\Unit\Mail;
 
 use App\Mail\AppointmentClientConfirmed;
+use Illuminate\Mail\Mailables\Attachment;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -11,7 +12,8 @@ class AppointmentClientConfirmedContentTest extends TestCase
     #[Test]
     public function it_shows_start_time_only_after_email_confirm(): void
     {
-        $html = (new AppointmentClientConfirmed($this->details()))->render();
+        $mailable = new AppointmentClientConfirmed($this->details());
+        $html = $mailable->render();
 
         $this->assertStringContainsString('Appointment Confirmed - Bansal Immigration', $html);
         $this->assertStringContainsString('10:20 AM', $html);
@@ -21,6 +23,19 @@ class AppointmentClientConfirmedContentTest extends TestCase
         $this->assertStringContainsString('Bansal Immigration Consultant', $html);
         $this->assertStringNotContainsString('Bansal Immigration Team', $html);
         $this->assertStringNotContainsString('info@bansalimmigration.com.au', $html);
+        $this->assertStringContainsString('Registered Migration Agents', $html);
+        $this->assertStringContainsString('Appointment Details', $html);
+        $this->assertStringContainsString('CONFIRMED', $html);
+        $this->assertStringContainsString('width:50%', $html);
+        $this->assertStringContainsString('max-width:240px', $html);
+        $this->assertStringNotContainsString('>Cancel</a>', $html);
+        $this->assertStringNotContainsString('>Confirm</a>', $html);
+        $this->assertStringNotContainsString('This appointment stays pending until you confirm it', $html);
+        $mailable->assertHasAttachment(
+            Attachment::fromPath(public_path('img/logo.png'))
+                ->as('Bansal-Immigration-Logo.png')
+                ->withMime('image/png')
+        );
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\AttachesAppointmentLogo;
 use App\Mail\Concerns\UsesAppointmentMailFrom;
 use App\Support\AppointmentEmailFormatter;
 use App\Support\AppointmentMeetingTypeCopy;
@@ -14,7 +15,7 @@ use Illuminate\Queue\SerializesModels;
 
 class AppointmentClientConfirmed extends Mailable
 {
-    use Queueable, SerializesModels, UsesAppointmentMailFrom;
+    use AttachesAppointmentLogo, Queueable, SerializesModels, UsesAppointmentMailFrom;
 
     public function __construct(
         public array $details
@@ -61,7 +62,7 @@ class AppointmentClientConfirmed extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        return $this->appointmentLogoAttachments();
     }
 
     protected function getLocationAddress(string $location): string
