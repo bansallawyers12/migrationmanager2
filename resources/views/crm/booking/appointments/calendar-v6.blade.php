@@ -28,7 +28,8 @@
                         @icon('fa-graduation-cap') Education
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'tourist']) }}" 
-                       class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}">
+                       class="btn btn-sm {{ $type === 'tourist' ? 'btn-primary' : 'btn-outline-primary' }}"
+                       title="Vijay bhau (Tourist Visa)">
                         @icon('fa-plane') Vijay bhau
                     </a>
                     <a href="{{ route('booking.appointments.calendar', ['type' => 'adelaide']) }}" 

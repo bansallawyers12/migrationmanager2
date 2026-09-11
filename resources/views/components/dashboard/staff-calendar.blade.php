@@ -41,6 +41,7 @@
                     data-calendar-type="{{ $calendarType['key'] }}"
                     role="tab"
                     aria-selected="{{ ($calendarType['key'] ?? '') === $defaultType ? 'true' : 'false' }}"
+                    @if(($calendarType['key'] ?? '') === 'tourist') title="Vijay bhau (Tourist Visa)" @endif
                 >{{ $calendarType['label'] }}</button>
             @endforeach
         </div>
