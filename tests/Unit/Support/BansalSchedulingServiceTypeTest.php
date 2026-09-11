@@ -157,14 +157,14 @@ class BansalSchedulingServiceTypeTest extends TestCase
         );
     }
 
-    public function test_melbourne_tr_bansal_sync_uses_tourist(): void
+    public function test_melbourne_tr_bansal_sync_keeps_tr_type(): void
     {
         $this->assertSame(
-            'tourist',
+            'tr',
             BansalSchedulingServiceType::bansalEnquiryTypeForApi(2, 'melbourne', 'tr')
         );
         $this->assertSame(
-            'tourist-visa',
+            'temporary-residency',
             BansalSchedulingServiceType::bansalServiceTypeForApi(2, 'TR: 485 visa', 'melbourne')
         );
     }

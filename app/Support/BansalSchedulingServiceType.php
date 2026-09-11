@@ -9,15 +9,16 @@ use Illuminate\Http\Request;
  * and builds Melbourne-only extras (is_paid, preferred_language) for get-datetime-backend
  * and get-disabled-datetime. Adelaide uses no extras so payloads stay unchanged for legacy behaviour.
  * Melbourne Family Visas (11) and Citizenship (12) use employer-sponsored timeslots on the
- * schedule API. Melbourne TR 485 (2) uses tourist-visa / Vijay timeslots. add-appointment /
- * re-sync use Bansal-valid enquiry_type slugs and service_type slugs; CRM keeps display labels locally.
+ * schedule API. Melbourne TR 485 (2) uses tourist-visa / Vijay timeslots for slot lookup
+ * and CRM assignment only. add-appointment / re-sync still send tr / temporary-residency
+ * so the Bansal website Type stays TR: 485 visa. CRM keeps display labels locally.
  */
 class BansalSchedulingServiceType
 {
     /** NOE ids using Melbourne employer-sponsored timeslots (schedule API only). */
     private const FAMILY_VISA_AND_CITIZENSHIP_NOE_IDS = [11, 12];
 
-    /** Melbourne TR 485 uses Vijay (tourist-visa) timeslots and CRM tourist calendar. */
+    /** Melbourne TR 485 uses Vijay (tourist-visa) timeslots and CRM tourist calendar; Bansal Type stays TR. */
     private const MELBOURNE_VIJAY_TR_485_NOE_ID = 2;
 
     /** enquiry_type values accepted by Bansal add-appointment API. */
@@ -70,10 +71,6 @@ class BansalSchedulingServiceType
         $key = (int) $noeId;
         $loc = $location !== null ? strtolower(trim($location)) : '';
 
-        if (self::melbourneUsesVijayCalendarRouting($key, $location)) {
-            return 'tourist';
-        }
-
         $directByNoe = [
             2 => 'tr',
             4 => 'tourist',
@@ -115,10 +112,6 @@ class BansalSchedulingServiceType
     public static function bansalServiceTypeForApi(mixed $noeId, string $crmServiceType, ?string $location = null): string
     {
         $key = (int) $noeId;
-
-        if (self::melbourneUsesVijayCalendarRouting($key, $location)) {
-            return 'tourist-visa';
-        }
 
         if (isset(self::ENQUIRY_TO_SERVICE_TYPE[$key])) {
             return self::ENQUIRY_TO_SERVICE_TYPE[$key];
