@@ -20,7 +20,7 @@ class AppointmentConsultantSeeder extends Seeder
             6 => 1,  // Arun Kumar (paid) - old ID 6 -> new ID 1
             7 => 2,  // Shubham/Yadwinder (jrp) - old ID 7 -> new ID 2
             8 => 3,  // Education Team - old ID 8 -> new ID 3
-            9 => 4,  // Vijay bhau (tourist) - old ID 9 -> new ID 4
+            9 => 4,  // Vijay (tourist) - old ID 9 -> new ID 4
             10 => 5, // Adelaide Office - old ID 10 -> new ID 5
             11 => 6, // Ajay Calendar - old ID 11 -> new ID 6
             12 => 7, // Kunal Calendar - old ID 12 -> new ID 7 (if exists)
@@ -72,7 +72,7 @@ class AppointmentConsultantSeeder extends Seeder
                 'show_in_filter' => true,
             ],
             [
-                'name' => 'Vijay bhau',
+                'name' => 'Vijay',
                 'email' => 'tourist@bansalimmigration.com',
                 'calendar_type' => 'tourist',
                 'location' => 'melbourne',

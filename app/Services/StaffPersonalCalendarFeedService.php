@@ -31,7 +31,7 @@ class StaffPersonalCalendarFeedService
         'paid' => 'Employer Sponsored',
         'jrp' => 'JRP',
         'education' => 'Education',
-        'tourist' => 'Vijay bhau',
+        'tourist' => 'Vijay',
         'adelaide' => 'Adelaide',
         'adelaide_education' => 'Adelaide Education',
         'ajay' => 'Ajay',

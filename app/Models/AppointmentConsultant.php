@@ -108,7 +108,7 @@ class AppointmentConsultant extends Model
                 'paid' => 'Employer Sponsored Calendar',
                 'jrp' => 'JRP/Skill Assessment',
                 'education' => 'Education/Student Visa',
-                'tourist' => 'Vijay bhau',
+                'tourist' => 'Vijay',
                 'adelaide' => 'Adelaide Office',
                 'adelaide_education' => 'Adelaide Education',
                 'ajay' => 'Ajay Calendar',
