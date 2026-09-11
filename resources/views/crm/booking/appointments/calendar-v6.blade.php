@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </button>
                                 ${!props.is_paid || !props.final_amount || parseFloat(props.final_amount) <= 0 ? `
                                 <button type="button" class="btn btn-sm btn-outline-success" id="manualPaymentActions-${event.id}" onclick="markAppointmentManualPayment(${event.id})">
-                                    @icon('fa-hand-holding-usd') Mark as Manual payment received
+                                    @icon('fa-hand-holding-usd') Manual Payment Received
                                 </button>
                                 ` : ''}
                                 ${!props.is_paid ? `
