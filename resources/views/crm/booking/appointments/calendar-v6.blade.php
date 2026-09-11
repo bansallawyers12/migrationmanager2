@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-md-6">
                             <h6>@icon('fa-exchange-alt') Change Calendar Type</h6>
                             <div class="form-group">
-                                <select class="form-control form-control-sm" id="consultantSelect-${event.id}" data-stable-consultant-id="${stableConsultantIdAttr}" onchange="updateAppointmentConsultant(${event.id}, this.value)">
+                                <select class="form-control form-control-sm" id="consultantSelect-${event.id}" data-stable-consultant-id="${stableConsultantIdAttr}" onchange="updateAppointmentConsultant(${event.id}, this.value); this.title = (this.options[this.selectedIndex] && this.options[this.selectedIndex].getAttribute('data-calendar-type') === 'tourist') ? 'Vijay(Tourist Visa)' : '';"${props.consultant_calendar_type === 'tourist' ? ' title="Vijay(Tourist Visa)"' : ''}>
                                     <option value="">Select Consultant...</option>
                                     ${(() => {
                                         // Deduplicate consultants by ID to prevent duplicates
@@ -590,10 +590,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                         return uniqueConsultants.map(consultant => {
                                             const isSelected = currentId != null && Number(consultant.id) === currentId;
                                             const label = consultant.crm_display_label || consultant.name;
-                                            const typeSuffix = (consultant.calendar_type && consultant.calendar_type !== 'paid')
+                                            const isTourist = consultant.calendar_type === 'tourist';
+                                            const typeSuffix = (!isTourist && consultant.calendar_type && consultant.calendar_type !== 'paid')
                                                 ? ` (${consultant.calendar_type})`
                                                 : '';
-                                            return `<option value="${consultant.id}" data-calendar-type="${consultant.calendar_type || ''}" ${isSelected ? 'selected' : ''}>${label}${typeSuffix}</option>`;
+                                            const titleAttr = isTourist ? ' title="Vijay(Tourist Visa)"' : '';
+                                            return `<option value="${consultant.id}" data-calendar-type="${consultant.calendar_type || ''}"${titleAttr} ${isSelected ? 'selected' : ''}>${label}${typeSuffix}</option>`;
                                         }).join('');
                                     })()}
                                 </select>
