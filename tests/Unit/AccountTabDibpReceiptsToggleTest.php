@@ -158,8 +158,24 @@ class AccountTabDibpReceiptsToggleTest extends TestCase
     #[Test]
     public function account_tab_script_toggles_receipts_panel_with_hidden_attribute(): void
     {
-        $js = file_get_contents($this->projectPath('public/js/crm/clients/account-tab.js'));
+        $js = file_get_contents($this->projectPath('public/js/crm/clients/dibp-receipts-tab.js'));
         Assert::assertNotFalse($js);
+
+        $accountTabJs = file_get_contents($this->projectPath('public/js/crm/clients/account-tab.js'));
+        Assert::assertNotFalse($accountTabJs);
+        Assert::assertStringContainsString('function ensureAccountTabLoaded', $accountTabJs);
+        Assert::assertStringNotContainsString('dibp-receipts-toggle', $accountTabJs);
+        Assert::assertStringNotContainsString('dibpReceiptsSendHubdoc', $accountTabJs);
+
+        $clientDetail = file_get_contents($this->projectPath('resources/views/crm/clients/detail.blade.php'));
+        Assert::assertNotFalse($clientDetail);
+        Assert::assertStringContainsString('account-tab.js', $clientDetail);
+        Assert::assertStringContainsString('dibp-receipts-tab.js', $clientDetail);
+
+        $companyDetail = file_get_contents($this->projectPath('resources/views/crm/companies/detail.blade.php'));
+        Assert::assertNotFalse($companyDetail);
+        Assert::assertStringContainsString('dibp-receipts-tab.js', $companyDetail);
+        Assert::assertStringNotContainsString('account-tab.js', $companyDetail);
 
         Assert::assertStringContainsString('#account-tab .dibp-receipts-toggle', $js);
         Assert::assertStringContainsString('.account-layout', $js);
@@ -171,6 +187,9 @@ class AccountTabDibpReceiptsToggleTest extends TestCase
         Assert::assertStringContainsString('dibp-receipts-upload', $js);
         Assert::assertStringContainsString('dibp-receipts-drag-zone', $js);
         Assert::assertStringContainsString('dibp-receipts-bulk-dropzone', $js);
+        Assert::assertSame(8, substr_count($js, '}, true);'));
+        Assert::assertSame(2, substr_count($js, "addEventListener('drop'"));
+        Assert::assertSame(2, substr_count($js, "addEventListener('dragover'"));
         Assert::assertStringContainsString('dibp-receipts-bulk-confirm', $js);
         Assert::assertStringContainsString('dibpReceiptsChecklistExistsOnTable', $js);
         Assert::assertStringContainsString('data-bulk-url', $js);

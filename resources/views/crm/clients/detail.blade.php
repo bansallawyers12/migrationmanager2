@@ -1178,6 +1178,7 @@ $(document).ready(function() {
 <script src="{{ URL::asset('js/crm/clients/modules/ledger-dragdrop.js') }}"></script>
 <script src="{{ URL::asset('js/crm/clients/workflow-tab.js') }}?v={{ time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/account-tab.js') }}?v={{ time() }}"></script>
+<script src="{{ URL::asset('js/crm/clients/dibp-receipts-tab.js') }}?v={{ time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/checklists-tab.js') }}?v={{ time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/emails-tab.js') }}?v={{ time() }}"></script>
 <script src="{{ URL::asset('js/crm/clients/personaldocuments-tab.js') }}?v={{ time() }}"></script>

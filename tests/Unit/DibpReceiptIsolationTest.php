@@ -42,15 +42,22 @@ class DibpReceiptIsolationTest extends TestCase
         );
         Assert::assertStringNotContainsString('class="account-layout" hidden', $blade);
 
-        $js = file_get_contents($this->projectPath('public/js/crm/clients/account-tab.js'));
+        $js = file_get_contents($this->projectPath('public/js/crm/clients/dibp-receipts-tab.js'));
         Assert::assertNotFalse($js);
         Assert::assertStringContainsString('#account-tab .dibp-receipts-toggle', $js);
         Assert::assertStringContainsString("layout.setAttribute('hidden', '')", $js);
         Assert::assertStringContainsString("layout.removeAttribute('hidden')", $js);
         Assert::assertStringNotContainsString(".account-layout').hide(", $js);
         Assert::assertStringNotContainsString('.account-layout").hide(', $js);
-        Assert::assertStringContainsString('window.listOfInvoice', $js);
-        Assert::assertStringContainsString('window.clientLedgerBalanceAmount', $js);
+        Assert::assertStringNotContainsString('window.listOfInvoice', $js);
+        Assert::assertStringNotContainsString('window.clientLedgerBalanceAmount', $js);
+        Assert::assertStringNotContainsString('ensureAccountTabLoaded', $js);
+
+        $accountTabJs = file_get_contents($this->projectPath('public/js/crm/clients/account-tab.js'));
+        Assert::assertNotFalse($accountTabJs);
+        Assert::assertStringContainsString('window.listOfInvoice', $accountTabJs);
+        Assert::assertStringContainsString('window.clientLedgerBalanceAmount', $accountTabJs);
+        Assert::assertStringNotContainsString('dibp-receipts-toggle', $accountTabJs);
     }
 
     #[Test]
@@ -146,20 +153,32 @@ class DibpReceiptIsolationTest extends TestCase
         Assert::assertStringNotContainsString('upload-edu-document', $accountJs);
         Assert::assertStringNotContainsString('migdocupload', $accountJs);
         Assert::assertStringNotContainsString('visa-doc-drag-zone', $accountJs);
-        Assert::assertStringContainsString('dibp-receipts-drag-zone', $accountJs);
-        Assert::assertStringContainsString('dibp-receipts-bulk-dropzone', $accountJs);
-        Assert::assertStringContainsString('dibpReceiptsSendHubdoc', $accountJs);
-        Assert::assertStringContainsString('dibp-receipts-hubdoc-sending', $accountJs);
-        Assert::assertStringNotContainsString('showSendInProgress', $accountJs);
-        Assert::assertStringNotContainsString('sendToHubdocAjax', $accountJs);
-        Assert::assertStringNotContainsString('send-to-hubdoc-btn', $accountJs);
-        Assert::assertStringNotContainsString('/clients/sendToHubdoc', $accountJs);
-        Assert::assertStringContainsString('dibp-receipts-bulk-dropzone', $accountJs);
-        Assert::assertStringContainsString('dibp-receipts-bulk-confirm', $accountJs);
-        Assert::assertStringNotContainsString('bulk-upload-dropzone-visa', $accountJs);
-        Assert::assertStringNotContainsString('bulkUploadVisaDocuments', $accountJs);
-        Assert::assertStringNotContainsString('bulk-upload-personal', $accountJs);
-        Assert::assertStringContainsString('Drag file here or <strong>click to browse</strong>', $accountJs);
+        Assert::assertStringNotContainsString('dibp-receipts-', $accountJs);
+
+        $receiptsJs = file_get_contents($this->projectPath('public/js/crm/clients/dibp-receipts-tab.js'));
+        Assert::assertNotFalse($receiptsJs);
+        Assert::assertStringContainsString('dibp-receipts-drag-zone', $receiptsJs);
+        Assert::assertStringContainsString('dibp-receipts-bulk-dropzone', $receiptsJs);
+        Assert::assertSame(8, substr_count($receiptsJs, '}, true);'));
+        Assert::assertSame(2, substr_count($receiptsJs, "addEventListener('drop'"));
+        Assert::assertSame(2, substr_count($receiptsJs, "addEventListener('dragover'"));
+        Assert::assertStringContainsString('.personal-doc-drag-zone, .visa-doc-drag-zone, .nomination-doc-drag-zone', $detailMain);
+        Assert::assertStringNotContainsString('dibp-receipts-drag-zone', $detailMain);
+        Assert::assertStringNotContainsString('dibp-receipts-bulk-dropzone', $detailMain);
+        Assert::assertStringContainsString('dibpReceiptsSendHubdoc', $receiptsJs);
+        Assert::assertStringContainsString('dibp-receipts-hubdoc-sending', $receiptsJs);
+        Assert::assertStringNotContainsString('showSendInProgress', $receiptsJs);
+        Assert::assertStringNotContainsString('sendToHubdocAjax', $receiptsJs);
+        Assert::assertStringNotContainsString('send-to-hubdoc-btn', $receiptsJs);
+        Assert::assertStringNotContainsString('/clients/sendToHubdoc', $receiptsJs);
+        Assert::assertStringContainsString('dibp-receipts-bulk-dropzone', $receiptsJs);
+        Assert::assertStringContainsString('dibp-receipts-bulk-confirm', $receiptsJs);
+        Assert::assertStringNotContainsString('bulk-upload-dropzone-visa', $receiptsJs);
+        Assert::assertStringNotContainsString('bulkUploadVisaDocuments', $receiptsJs);
+        Assert::assertStringNotContainsString('bulk-upload-personal', $receiptsJs);
+        Assert::assertStringContainsString('Drag file here or <strong>click to browse</strong>', $receiptsJs);
+        Assert::assertStringNotContainsString('upload-visa-document', $receiptsJs);
+        Assert::assertStringNotContainsString('ensureAccountTabLoaded', $receiptsJs);
     }
 
     #[Test]

@@ -301,6 +301,7 @@ class ClientDetailTabsTest extends TestCase
         Assert::assertStringNotContainsString('not_used_documents_lazy', $companyDetail);
         Assert::assertStringNotContainsString('notes_lazy', $companyDetail);
         Assert::assertStringNotContainsString('account-tab.js', $companyDetail);
+        Assert::assertStringContainsString('dibp-receipts-tab.js', $companyDetail);
         Assert::assertStringNotContainsString('checklists-tab.js', $companyDetail);
         Assert::assertStringNotContainsString('emails-tab.js', $companyDetail);
         Assert::assertStringContainsString('personaldocuments-tab.js', $companyDetail);
