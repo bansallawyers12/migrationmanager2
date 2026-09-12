@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\Mcp\IssueCrmMcpTokenCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -77,6 +78,9 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\ExpireCrmAccessGrants',
         '\App\Console\Commands\CacheAccessGrantGlobalCounts',
         '\App\Console\Commands\SendFollowUpReminders',
+
+        // MCP CRM
+        IssueCrmMcpTokenCommand::class,
 
         // Legal CRM — sync queued leads from Migration CRM
         '\App\Console\Commands\SyncPendingLegalCrmLeads',
