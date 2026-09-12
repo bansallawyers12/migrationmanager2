@@ -52,9 +52,14 @@ class SearchContactsTool extends Tool
                     ->orWhereRaw('LOWER(COALESCE(phone, \'\')) LIKE ?', [$like])
                     ->orWhereRaw('LOWER(COALESCE(client_id, \'\')) LIKE ?', [$like])
                     ->orWhereHas('company', function ($company) use ($like) {
+                        // Wrap mixed-case PG columns (ABN_number / ACN); bare whereRaw folds to lowercase and misses them.
+                        $grammar = $company->getQuery()->getGrammar();
+                        $abn = $grammar->wrap('ABN_number');
+                        $acn = $grammar->wrap('ACN');
+
                         $company->whereRaw('LOWER(COALESCE(company_name, \'\')) LIKE ?', [$like])
-                            ->orWhereRaw('LOWER(COALESCE(ABN_number, \'\')) LIKE ?', [$like])
-                            ->orWhereRaw('LOWER(COALESCE(ACN, \'\')) LIKE ?', [$like])
+                            ->orWhereRaw("LOWER(COALESCE({$abn}, '')) LIKE ?", [$like])
+                            ->orWhereRaw("LOWER(COALESCE({$acn}, '')) LIKE ?", [$like])
                             ->orWhereRaw('LOWER(COALESCE(trading_name, \'\')) LIKE ?', [$like]);
                     });
             });

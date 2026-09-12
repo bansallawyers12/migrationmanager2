@@ -6,6 +6,7 @@ use App\Models\ActivitiesLog;
 use App\Models\Admin;
 use App\Models\ClientMatter;
 use App\Models\WorkflowStage;
+use App\Services\MatterEmailBodyCleanupService;
 use App\Support\Mcp\CrmMcpAccess;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
@@ -45,7 +46,7 @@ class UpdateContactOrMatterStatusTool extends Tool
 
         $hasLeadUpdate = array_key_exists('lead_status', $validated) && $validated['lead_status'] !== null;
         $hasMatterUpdate = ! empty($validated['matter_id']) && (
-            array_key_exists('matter_status', $validated) && $validated['matter_status'] !== null
+            (array_key_exists('matter_status', $validated) && $validated['matter_status'] !== null)
             || ! empty($validated['workflow_stage_id'])
         );
 
@@ -104,7 +105,7 @@ class UpdateContactOrMatterStatusTool extends Tool
                     $result['lead'] = [
                         'lead_status' => $contact->lead_status,
                         'type' => $contact->type,
-                        'followup_date' => optional($contact->followup_date)?->toDateTimeString(),
+                        'followup_date' => CrmMcpAccess::formatDateTime($contact->followup_date),
                     ];
                 }
 
@@ -121,6 +122,7 @@ class UpdateContactOrMatterStatusTool extends Tool
                     }
 
                     $changes = [];
+                    $shouldCleanupEmailBodies = false;
 
                     if (array_key_exists('matter_status', $validated) && $validated['matter_status'] !== null) {
                         $newMatterStatus = (int) $validated['matter_status'];
@@ -133,6 +135,7 @@ class UpdateContactOrMatterStatusTool extends Tool
 
                             $matter->matter_status = $newMatterStatus;
                             $changes[] = 'matter_status '.$oldMatterStatus.' → '.$newMatterStatus;
+                            $shouldCleanupEmailBodies = $newMatterStatus === 0;
 
                             if ($newMatterStatus === 0) {
                                 $reason = trim((string) ($validated['discontinue_reason'] ?? 'Updated via MCP'));
@@ -195,6 +198,10 @@ class UpdateContactOrMatterStatusTool extends Tool
 
                     if ($changes !== []) {
                         $matter->save();
+
+                        if ($shouldCleanupEmailBodies) {
+                            app(MatterEmailBodyCleanupService::class)->clearBodiesForMatter((int) $matter->id);
+                        }
                     }
 
                     $matter->load('workflowStage:id,name');

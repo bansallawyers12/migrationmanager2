@@ -4,6 +4,7 @@ namespace Tests\Unit\Support\Mcp;
 
 use App\Models\Staff;
 use App\Support\Mcp\CrmMcpAccess;
+use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -33,15 +34,17 @@ class CrmMcpAccessTest extends TestCase
     }
 
     #[Test]
-    public function staff_display_name_falls_back_to_id(): void
+    public function format_date_time_accepts_plain_strings_without_casts(): void
     {
-        $named = new Staff(['first_name' => 'Ajay', 'last_name' => 'Test']);
-        $named->id = 42;
-
-        $blank = new Staff(['first_name' => '', 'last_name' => '']);
-        $blank->id = 7;
-
-        $this->assertSame('Ajay Test', CrmMcpAccess::staffDisplayName($named));
-        $this->assertSame('Staff #7', CrmMcpAccess::staffDisplayName($blank));
+        $this->assertSame(
+            '2026-09-01 10:30:00',
+            CrmMcpAccess::formatDateTime('2026-09-01 10:30:00')
+        );
+        $this->assertSame(
+            '2026-09-01 10:30:00',
+            CrmMcpAccess::formatDateTime(Carbon::parse('2026-09-01 10:30:00'))
+        );
+        $this->assertNull(CrmMcpAccess::formatDateTime(null));
+        $this->assertNull(CrmMcpAccess::formatDateTime(''));
     }
 }

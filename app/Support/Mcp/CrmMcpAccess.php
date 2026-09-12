@@ -4,6 +4,8 @@ namespace App\Support\Mcp;
 
 use App\Models\Staff;
 use App\Support\StaffClientVisibility;
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -60,5 +62,42 @@ final class CrmMcpAccess
     public static function staffDisplayName(Staff $staff): string
     {
         return trim(($staff->first_name ?? '').' '.($staff->last_name ?? '')) ?: 'Staff #'.$staff->id;
+    }
+
+    /**
+     * Safely format DB datetimes that may be Carbon, DateTime, or plain strings (e.g. notes.action_date has no cast).
+     */
+    public static function formatDateTime(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return Carbon::instance($value)->toDateTimeString();
+        }
+
+        try {
+            return Carbon::parse((string) $value)->toDateTimeString();
+        } catch (\Throwable) {
+            return (string) $value;
+        }
+    }
+
+    public static function formatDate(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return Carbon::instance($value)->toDateString();
+        }
+
+        try {
+            return Carbon::parse((string) $value)->toDateString();
+        } catch (\Throwable) {
+            return (string) $value;
+        }
     }
 }

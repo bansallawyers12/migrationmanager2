@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * Note Model
- * 
+ *
  * Represents both regular notes and actions (formerly called tasks/followups) in the system.
- * 
+ *
  * Database field clarifications for the Action feature:
  * - is_action: When set to 1, this note is an Action item. 0 = regular note
  * - task_group (field name preserved): The action category (Call, Checklist, Review, Query, Urgent, Personal Action, Follow Up)
@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * - task_status (in ActivitiesLog): Action completion status (0 = incomplete, 1 = completed)
  * - assigned_to: The staff member assigned to complete this action
  * - status: '0' = active/incomplete, '1' = completed
- * 
+ *
  * Note: Field names contain "task" and "followup" for database compatibility but refer to Actions in the UI
  */
 class Note extends Model
@@ -27,11 +27,21 @@ class Note extends Model
     use Notifiable;
 
     protected $fillable = [
-        'id','user_id','client_id','lead_id','unique_group_id','title','description','note_deadline','mail_id','type','pin','action_date','is_action','assigned_to','status','task_group','matter_id','mobile_number','created_at', 'updated_at'
+        'id', 'user_id', 'client_id', 'lead_id', 'unique_group_id', 'title', 'description', 'note_deadline', 'mail_id', 'type', 'pin', 'action_date', 'is_action', 'assigned_to', 'status', 'task_group', 'matter_id', 'mobile_number', 'created_at', 'updated_at',
     ];
 
-	public $sortable = ['id', 'created_at', 'updated_at','task_group','action_date'];
+    public $sortable = ['id', 'created_at', 'updated_at', 'task_group', 'action_date'];
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'action_date' => 'datetime',
+            'note_deadline' => 'datetime',
+        ];
+    }
 
     /**
      * Get the client that owns the note.
@@ -116,7 +126,7 @@ class Note extends Model
     /**
      * Legacy relationship - Appointment model has been removed
      * This relationship is kept for backward compatibility but will return null
-     * 
+     *
      * @deprecated Appointment system has been removed
      */
     public function lead()
@@ -144,5 +154,4 @@ class Note extends Model
 
         return (int) $this->assigned_to === $staffId || (int) $this->user_id === $staffId;
     }
-
 }

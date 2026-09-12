@@ -68,9 +68,9 @@ class GetContactTool extends Tool
                     'description' => trim(strip_tags((string) $log->description)),
                     'activity_type' => $log->activity_type,
                     'task_group' => $log->task_group,
-                    'followup_date' => optional($log->followup_date)?->toDateTimeString(),
+                    'followup_date' => CrmMcpAccess::formatDateTime($log->followup_date),
                     'created_by' => (int) $log->created_by,
-                    'created_at' => optional($log->created_at)?->toDateTimeString(),
+                    'created_at' => CrmMcpAccess::formatDateTime($log->created_at),
                 ];
             })
             ->all();
@@ -96,7 +96,7 @@ class GetContactTool extends Tool
                     'workflow_stage_id' => $matter->workflow_stage_id ? (int) $matter->workflow_stage_id : null,
                     'workflow_stage' => $matter->workflowStage?->name,
                     'matter_type' => $matter->matter?->title ?? $matter->matter?->nick_name,
-                    'deadline' => optional($matter->deadline)?->toDateString(),
+                    'deadline' => CrmMcpAccess::formatDate($matter->deadline),
                     'decision_outcome' => $matter->decision_outcome,
                     'staff' => [
                         'migration_agent_id' => $matter->sel_migration_agent ? (int) $matter->sel_migration_agent : null,
@@ -117,7 +117,7 @@ class GetContactTool extends Tool
                 'phone' => trim(($contact->country_code ? '+'.$contact->country_code.' ' : '').($contact->phone ?? '')),
                 'crm_ref' => $contact->client_id,
                 'lead_status' => $contact->lead_status,
-                'followup_date' => optional($contact->followup_date)?->toDateTimeString(),
+                'followup_date' => CrmMcpAccess::formatDateTime($contact->followup_date),
                 'assignee_staff_id' => $contact->user_id ? (int) $contact->user_id : null,
                 'company' => $contact->company ? [
                     'name' => $contact->company->company_name,

@@ -71,7 +71,7 @@ class ListOverdueFollowUpsTool extends Tool
                 'task_group' => $note->task_group,
                 'title' => $note->title,
                 'description' => trim(strip_tags((string) $note->description)),
-                'action_date' => optional($note->action_date)?->toDateTimeString(),
+                'action_date' => CrmMcpAccess::formatDateTime($note->action_date),
                 'assigned_to' => $note->assigned_to ? (int) $note->assigned_to : null,
                 'assignee_name' => $note->assignedStaff
                     ? trim($note->assignedStaff->first_name.' '.$note->assignedStaff->last_name)
